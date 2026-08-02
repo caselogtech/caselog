@@ -222,6 +222,26 @@
       "selectAtLeastOne": "Select at least one test case.",
       "submit": "Create run",
       "creating": "Creating run…"
+    },
+    "detail": {
+      "loading": "Loading test run…",
+      "eyebrow": "Run execution",
+      "start": "Start run",
+      "close": "Close run",
+      "back": "Back to runs",
+      "closeConfirmation": "Close this run? Existing results will remain available, but assignments and results will be frozen.",
+      "confirmClose": "Close run",
+      "queue": "Test case queue",
+      "attempts": "attempts",
+      "version": "Snapshot version {{version}}",
+      "assignee": "Assignee",
+      "unassigned": "Unassigned",
+      "preconditions": "Preconditions",
+      "expectedResult": "Expected result",
+      "comment": "Result comment",
+      "elapsedSeconds": "Elapsed seconds",
+      "shortcuts": "Keyboard: P passed · F failed · B blocked · Enter next case",
+      "frozen": "This run is not active. Its execution data is read-only."
     }
   }
 }

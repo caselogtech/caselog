@@ -55,7 +55,12 @@
       @for (run of items(); track run.id) {
         <article>
           <div class="run-title">
-            <h2>{{ run.name }}</h2>
+            <h2>
+              <a
+                href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ run.id }}"
+                [routerLink]="['/', workspaceSlug, projectSlug, 'runs', run.id]"
+              >{{ run.name }}</a>
+            </h2>
             <span>{{ statusTranslationKey(run.status) | transloco }}</span>
           </div>
           <p>{{ run.completedCount }} / {{ run.itemCount }} {{ 'workspace.runs.completed' | transloco }}</p>

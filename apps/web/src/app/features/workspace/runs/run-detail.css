@@ -1,0 +1,165 @@
+.runner-page {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 32px 20px 72px;
+}
+header,
+.header-actions,
+.case-heading,
+.result-actions,
+.close-confirmation {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+header,
+.case-heading {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+header {
+  margin-bottom: 20px;
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+.eyebrow {
+  color: var(--text-3);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+button,
+select,
+input,
+textarea,
+.header-actions a {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  font: inherit;
+  padding: 8px 10px;
+}
+button,
+select,
+.header-actions a {
+  cursor: pointer;
+}
+.header-actions a {
+  text-decoration: none;
+}
+.runner-layout {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+aside,
+article,
+.state,
+.close-confirmation {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+aside button {
+  align-items: center;
+  border: 0;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto 1fr auto;
+  margin-bottom: 3px;
+  text-align: left;
+  width: 100%;
+}
+aside button.active {
+  background: var(--surface-1);
+  font-weight: 600;
+}
+.status-dot {
+  border-radius: 50%;
+  height: 9px;
+  width: 9px;
+}
+article {
+  padding: 22px;
+}
+.status-badge {
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 5px 9px;
+}
+.assignee {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.steps {
+  padding-left: 24px;
+}
+.steps li {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 4px;
+}
+.steps small,
+.shortcut-hint,
+.frozen {
+  color: var(--text-2);
+}
+pre {
+  background: var(--surface-1);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  white-space: pre-wrap;
+}
+form {
+  border-top: 1px solid var(--border);
+  margin-top: 22px;
+  padding-top: 18px;
+}
+form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+textarea {
+  min-height: 90px;
+  resize: vertical;
+  width: 100%;
+}
+form input {
+  display: block;
+  margin: 10px 0 14px;
+}
+.result-actions {
+  flex-wrap: wrap;
+}
+.close-confirmation {
+  margin-bottom: 18px;
+}
+.close-confirmation p {
+  flex: 1;
+  margin-bottom: 0;
+}
+.action-error,
+.error {
+  color: var(--error-text);
+}
+@media (max-width: 760px) {
+  .runner-layout {
+    grid-template-columns: 1fr;
+  }
+  header {
+    display: block;
+  }
+  .header-actions {
+    margin-top: 12px;
+  }
+}

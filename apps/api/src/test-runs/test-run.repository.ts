@@ -1,10 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  CreateTestRunRequest,
-  TestRunListQuery,
-  TestRunListResponse,
-  TestRunStatus,
-  TestRunSummary,
+import {
+  testRunItemResponseSchema,
+  type AssignTestRunItemRequest,
+  type AssignTestRunItemResponse,
+  type CreateTestResultRequest,
+  type CreateTestResultResponse,
+  type CreateTestRunRequest,
+  type ResultStatusResponse,
+  type TestRunDetailQuery,
+  type TestRunDetailResponse,
+  type TestRunListQuery,
+  type TestRunListResponse,
+  type TestRunStatus,
+  type TestRunSummary,
 } from '@caselog/schemas';
 import {
   TenantDatabaseService,
@@ -23,7 +31,13 @@ type RunResult<T> =
   | { kind: 'found'; value: T }
   | { kind: 'project_not_found' }
   | { kind: 'case_unavailable' }
-  | { kind: 'untested_status_not_found' };
+  | { kind: 'untested_status_not_found' }
+  | { kind: 'run_not_found' }
+  | { kind: 'item_not_found' }
+  | { kind: 'member_not_found' }
+  | { kind: 'status_not_found' }
+  | { kind: 'run_closed' }
+  | { kind: 'invalid_run_state' };
 
 type RunRecord = {
   id: string;
@@ -162,6 +176,340 @@ export class TestRunRepository {
     });
   }
 
+  async detail(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    query: TestRunDetailQuery,
+  ): Promise<RunResult<TestRunDetailResponse>> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true, key: true, slug: true, name: true },
+      });
+      if (!project) return { kind: 'project_not_found' };
+      const run = await transaction.testRun.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: runId },
+          projectId: project.id,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          build: true,
+          createdAt: true,
+          closedAt: true,
+        },
+      });
+      if (!run) return { kind: 'run_not_found' };
+      const items = await transaction.testRunItem.findMany({
+        where: { testRunId: run.id },
+        cursor: query.cursor
+          ? { organizationId_id: { organizationId, id: query.cursor } }
+          : undefined,
+        skip: query.cursor ? 1 : undefined,
+        take: query.limit + 1,
+        orderBy: [{ position: 'asc' }, { id: 'asc' }],
+        select: {
+          id: true,
+          position: true,
+          caseVersion: {
+            select: {
+              id: true,
+              version: true,
+              title: true,
+              template: true,
+              preconditions: true,
+              expectedResult: true,
+              content: true,
+            },
+          },
+          status: {
+            select: {
+              id: true,
+              key: true,
+              name: true,
+              color: true,
+              isFinal: true,
+              countsAsFailure: true,
+            },
+          },
+          assignee: { select: { id: true, displayName: true } },
+          _count: { select: { results: true } },
+        },
+      });
+      const hasNextPage = items.length > query.limit;
+      const page = hasNextPage ? items.slice(0, query.limit) : items;
+      const memberships = await transaction.membership.findMany({
+        where: { deletedAt: null, role: { not: 'READ_ONLY' }, user: { deletedAt: null } },
+        orderBy: [{ user: { displayName: 'asc' } }, { userId: 'asc' }],
+        select: { user: { select: { id: true, displayName: true } } },
+      });
+      const statuses = await transaction.resultStatus.findMany({
+        where: { projectId: project.id, deletedAt: null },
+        orderBy: [{ position: 'asc' }, { id: 'asc' }],
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          color: true,
+          isFinal: true,
+          countsAsFailure: true,
+        },
+      });
+      const counts = await this.countItems(transaction, [run.id]);
+      return {
+        kind: 'found',
+        value: {
+          project,
+          run: this.toSummary(run, counts.get(run.id)),
+          items: page.map(({ _count, caseVersion, status, ...item }) =>
+            testRunItemResponseSchema.parse({
+              ...item,
+              caseVersion: {
+                ...caseVersion,
+                template: caseVersion.template.toLowerCase(),
+              },
+              status: this.toStatus(status),
+              attemptCount: _count.results,
+            }),
+          ),
+          nextCursor: hasNextPage ? (page.at(-1)?.id ?? null) : null,
+          members: memberships.map(({ user }) => user),
+          statuses: statuses.map((status) => this.toStatus(status)),
+        },
+      };
+    });
+  }
+
+  async start(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+  ): Promise<RunResult<TestRunSummary>> {
+    return this.changeLifecycle(organizationId, projectSlug, runId, 'start');
+  }
+
+  async close(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+  ): Promise<RunResult<TestRunSummary>> {
+    return this.changeLifecycle(organizationId, projectSlug, runId, 'close');
+  }
+
+  async assign(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    request: AssignTestRunItemRequest,
+  ): Promise<RunResult<AssignTestRunItemResponse>> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const context = await this.lockRun(transaction, organizationId, projectSlug, runId, 'shared');
+      if (context.kind !== 'found') return context;
+      if (
+        context.value.run.status === RunStatus.COMPLETED ||
+        context.value.run.status === RunStatus.ARCHIVED
+      ) {
+        return { kind: 'run_closed' };
+      }
+      const item = await transaction.testRunItem.findUnique({
+        where: { organizationId_id: { organizationId, id: itemId }, testRunId: runId },
+        select: { id: true },
+      });
+      if (!item) return { kind: 'item_not_found' };
+      const assignee = request.assigneeId
+        ? await transaction.membership.findFirst({
+            where: {
+              userId: request.assigneeId,
+              deletedAt: null,
+              role: { not: 'READ_ONLY' },
+              user: { deletedAt: null },
+            },
+            select: { user: { select: { id: true, displayName: true } } },
+          })
+        : null;
+      if (request.assigneeId && !assignee) return { kind: 'member_not_found' };
+      await transaction.testRunItem.update({
+        where: { organizationId_id: { organizationId, id: item.id } },
+        data: { assigneeId: assignee?.user.id ?? null },
+      });
+      return {
+        kind: 'found',
+        value: { itemId: item.id, assignee: assignee?.user ?? null },
+      };
+    });
+  }
+
+  async recordResult(
+    organizationId: string,
+    userId: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    request: CreateTestResultRequest,
+  ): Promise<RunResult<CreateTestResultResponse>> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const context = await this.lockRun(transaction, organizationId, projectSlug, runId, 'shared');
+      if (context.kind !== 'found') return context;
+      if (context.value.run.status !== RunStatus.ACTIVE) return { kind: 'run_closed' };
+      const lockedItem = await transaction.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM test_run_items
+        WHERE organization_id = ${organizationId}::uuid AND test_run_id = ${runId}::uuid
+          AND id = ${itemId}::uuid FOR UPDATE
+      `;
+      if (lockedItem.length === 0) return { kind: 'item_not_found' };
+      const status = await transaction.resultStatus.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: request.statusId },
+          projectId: context.value.projectId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          color: true,
+          isFinal: true,
+          countsAsFailure: true,
+        },
+      });
+      if (!status) return { kind: 'status_not_found' };
+      const aggregate = await transaction.testResult.aggregate({
+        where: { testRunItemId: itemId },
+        _max: { attempt: true },
+      });
+      const result = await transaction.testResult.create({
+        data: {
+          organizationId,
+          testRunItemId: itemId,
+          statusId: status.id,
+          attempt: (aggregate._max.attempt ?? 0) + 1,
+          comment: request.comment,
+          elapsedMs: request.elapsedMs,
+          executedById: userId,
+          build: context.value.run.build,
+        },
+        select: {
+          id: true,
+          attempt: true,
+          comment: true,
+          elapsedMs: true,
+          executedAt: true,
+          executedBy: { select: { id: true, displayName: true } },
+        },
+      });
+      await transaction.testRunItem.update({
+        where: { organizationId_id: { organizationId, id: itemId } },
+        data: { statusId: status.id },
+      });
+      return {
+        kind: 'found',
+        value: {
+          result: {
+            ...result,
+            status: this.toStatus(status),
+            executedAt: result.executedAt.toISOString(),
+          },
+        },
+      };
+    });
+  }
+
+  private async changeLifecycle(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    action: 'start' | 'close',
+  ): Promise<RunResult<TestRunSummary>> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const context = await this.lockRun(transaction, organizationId, projectSlug, runId);
+      if (context.kind !== 'found') return context;
+      const current = context.value.run;
+      if (current.status === RunStatus.ARCHIVED) return { kind: 'invalid_run_state' };
+      if (action === 'start' && current.status === RunStatus.COMPLETED) {
+        return { kind: 'invalid_run_state' };
+      }
+      const run =
+        action === 'start' && current.status === RunStatus.DRAFT
+          ? await transaction.testRun.update({
+              where: { organizationId_id: { organizationId, id: runId } },
+              data: { status: RunStatus.ACTIVE },
+              select: {
+                id: true,
+                name: true,
+                status: true,
+                build: true,
+                createdAt: true,
+                closedAt: true,
+              },
+            })
+          : action === 'close' && current.status !== RunStatus.COMPLETED
+            ? await transaction.testRun.update({
+                where: { organizationId_id: { organizationId, id: runId } },
+                data: { status: RunStatus.COMPLETED, closedAt: new Date() },
+                select: {
+                  id: true,
+                  name: true,
+                  status: true,
+                  build: true,
+                  createdAt: true,
+                  closedAt: true,
+                },
+              })
+            : current;
+      const counts = await this.countItems(transaction, [run.id]);
+      return { kind: 'found', value: this.toSummary(run, counts.get(run.id)) };
+    });
+  }
+
+  private async lockRun(
+    transaction: TenantTransaction,
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    mode: 'exclusive' | 'shared' = 'exclusive',
+  ): Promise<
+    RunResult<{
+      projectId: string;
+      run: RunRecord;
+    }>
+  > {
+    const project = await transaction.project.findUnique({
+      where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+      select: { id: true },
+    });
+    if (!project) return { kind: 'project_not_found' };
+    const locked =
+      mode === 'shared'
+        ? await transaction.$queryRaw<Array<{ id: string }>>`
+            SELECT id FROM test_runs
+            WHERE organization_id = ${organizationId}::uuid AND project_id = ${project.id}::uuid
+              AND id = ${runId}::uuid AND deleted_at IS NULL FOR SHARE
+          `
+        : await transaction.$queryRaw<Array<{ id: string }>>`
+            SELECT id FROM test_runs
+            WHERE organization_id = ${organizationId}::uuid AND project_id = ${project.id}::uuid
+              AND id = ${runId}::uuid AND deleted_at IS NULL FOR UPDATE
+          `;
+    if (locked.length === 0) return { kind: 'run_not_found' };
+    const run = await transaction.testRun.findUniqueOrThrow({
+      where: { organizationId_id: { organizationId, id: runId } },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        build: true,
+        createdAt: true,
+        closedAt: true,
+      },
+    });
+    return { kind: 'found', value: { projectId: project.id, run } };
+  }
+
   private async countItems(
     transaction: TenantTransaction,
     runIds: string[],
@@ -205,6 +553,10 @@ export class TestRunRepository {
       createdAt: run.createdAt.toISOString(),
       closedAt: run.closedAt?.toISOString() ?? null,
     };
+  }
+
+  private toStatus(status: ResultStatusResponse): ResultStatusResponse {
+    return status;
   }
 }
 

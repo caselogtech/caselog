@@ -19,6 +19,8 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.not_found',
   'errors.rate_limited',
   'errors.run_case_unavailable',
+  'errors.run_closed',
+  'errors.invalid_run_state',
   'errors.run_status_unavailable',
   'errors.validation_failed',
   'errors.workspace_limit_reached',

@@ -3,6 +3,8 @@ import { inject, Injectable } from '@angular/core';
 import {
   createTestCaseResponseSchema,
   createTestRunResponseSchema,
+  assignTestRunItemResponseSchema,
+  createTestResultResponseSchema,
   projectListResponseSchema,
   projectStructureResponseSchema,
   sectionResponseSchema,
@@ -12,10 +14,15 @@ import {
   testCaseDetailResponseSchema,
   testCaseVersionSchema,
   testRunListResponseSchema,
+  testRunDetailResponseSchema,
+  testRunLifecycleResponseSchema,
   type CreateTestCaseRequest,
   type CreateTestCaseResponse,
   type CreateTestRunRequest,
   type CreateTestRunResponse,
+  type AssignTestRunItemResponse,
+  type CreateTestResultRequest,
+  type CreateTestResultResponse,
   type OrganizationTokenResponse,
   type ProjectListResponse,
   type ProjectStructureResponse,
@@ -26,6 +33,8 @@ import {
   type TestCaseDetailResponse,
   type TestCaseVersion,
   type TestRunListResponse,
+  type TestRunDetailResponse,
+  type TestRunLifecycleResponse,
   type TestRunStatus,
   type UpdateTestCaseRequest,
   type UpdateTestCaseResponse,
@@ -144,6 +153,89 @@ export class WorkspaceApi {
       this.http.post<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/runs`, request),
     );
     return createTestRunResponseSchema.parse(response);
+  }
+
+  async testRun(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+    cursor?: string,
+    limit = 50,
+  ): Promise<TestRunDetailResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/runs/${encodeURIComponent(runId)}`,
+        { params: { limit, ...(cursor ? { cursor } : {}) } },
+      ),
+    );
+    return testRunDetailResponseSchema.parse(response);
+  }
+
+  async startTestRun(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+  ): Promise<TestRunLifecycleResponse> {
+    return this.changeTestRunState(workspaceSlug, projectSlug, runId, 'start');
+  }
+
+  async closeTestRun(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+  ): Promise<TestRunLifecycleResponse> {
+    return this.changeTestRunState(workspaceSlug, projectSlug, runId, 'close');
+  }
+
+  async assignTestRunItem(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    assigneeId: string | null,
+  ): Promise<AssignTestRunItemResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.put<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/runs/${encodeURIComponent(runId)}/items/${encodeURIComponent(itemId)}/assignee`,
+        { assigneeId },
+      ),
+    );
+    return assignTestRunItemResponseSchema.parse(response);
+  }
+
+  async recordTestResult(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    request: CreateTestResultRequest,
+  ): Promise<CreateTestResultResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/runs/${encodeURIComponent(runId)}/items/${encodeURIComponent(itemId)}/results`,
+        request,
+      ),
+    );
+    return createTestResultResponseSchema.parse(response);
+  }
+
+  private async changeTestRunState(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+    action: 'start' | 'close',
+  ): Promise<TestRunLifecycleResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/runs/${encodeURIComponent(runId)}/${action}`,
+        null,
+      ),
+    );
+    return testRunLifecycleResponseSchema.parse(response);
   }
 
   async createTestCase(

@@ -38,6 +38,8 @@ describe('authentication API', () => {
   let authUserId: string;
   let editableCaseId: string;
   let originalVersionId: string;
+  let createdRunId: string;
+  let createdRunItemId: string;
   let registrationCookie: string;
   let registrationResponse: Awaited<ReturnType<NestFastifyApplication['inject']>>;
 
@@ -176,7 +178,7 @@ describe('authentication API', () => {
           version: 1,
           title,
           template: 'STEPS',
-          content: { steps: [] },
+          content: { steps: [{ action: 'Execute the authentication scenario' }] },
           createdById: user.id,
         },
       });
@@ -1027,6 +1029,7 @@ describe('authentication API', () => {
       },
     });
     const runId = response.json().run.id as string;
+    createdRunId = runId;
     const snapshotItems = await admin.testRunItem.findMany({
       where: { organizationId, testRunId: runId },
       orderBy: { position: 'asc' },
@@ -1038,6 +1041,99 @@ describe('authentication API', () => {
         status: { key: 'untested' },
       })),
     );
+
+    const detail = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/runs/${runId}?limit=1`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(detail.statusCode, detail.body).toBe(200);
+    expect(detail.json()).toMatchObject({
+      run: { id: runId, status: 'active', itemCount: 2 },
+      items: [
+        expect.objectContaining({
+          attemptCount: 0,
+          caseVersion: expect.objectContaining({ template: 'steps' }),
+          status: expect.objectContaining({ key: 'untested' }),
+        }),
+      ],
+      members: [expect.objectContaining({ id: authUserId })],
+      statuses: expect.arrayContaining([
+        expect.objectContaining({ key: 'passed' }),
+        expect.objectContaining({ key: 'failed' }),
+      ]),
+    });
+    expect(detail.json().nextCursor).toEqual(expect.any(String));
+    createdRunItemId = detail.json().items[0].id as string;
+
+    const assignment = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/assignee`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { assigneeId: authUserId },
+    });
+    expect(assignment.statusCode, assignment.body).toBe(200);
+    expect(assignment.json()).toEqual({
+      itemId: createdRunItemId,
+      assignee: expect.objectContaining({ id: authUserId }),
+    });
+    const missingAssignee = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/assignee`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { assigneeId: randomUUID() },
+    });
+    expect(missingAssignee.statusCode, missingAssignee.body).toBe(404);
+
+    const startedAgain = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/start`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(startedAgain.statusCode, startedAgain.body).toBe(201);
+    expect(startedAgain.json().run.status).toBe('active');
+
+    const missingStatus = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { statusId: randomUUID() },
+    });
+    expect(missingStatus.statusCode, missingStatus.body).toBe(404);
+
+    const statuses = await admin.resultStatus.findMany({
+      where: {
+        organizationId,
+        project: { slug: 'authentication' },
+        key: { in: ['passed', 'failed'] },
+      },
+      orderBy: { key: 'asc' },
+      select: { id: true },
+    });
+    const results = await Promise.all(
+      statuses.map(({ id }, index) =>
+        app.inject({
+          method: 'POST',
+          url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results`,
+          headers: { authorization: `Bearer ${organizationAccessToken}` },
+          payload: { statusId: id, comment: `Attempt ${index + 1}`, elapsedMs: 1_000 + index },
+        }),
+      ),
+    );
+    expect(results.map(({ statusCode }) => statusCode)).toEqual([201, 201]);
+    expect(results.map((result) => result.json().result.attempt).sort()).toEqual([1, 2]);
+    await expect(
+      admin.testResult.count({ where: { organizationId, testRunItemId: createdRunItemId } }),
+    ).resolves.toBe(2);
+
+    const detailAfterResults = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/runs/${runId}?limit=1`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(detailAfterResults.statusCode, detailAfterResults.body).toBe(200);
+    expect(detailAfterResults.json().items[0].attemptCount).toBe(2);
+    expect(detailAfterResults.json().run.completedCount).toBe(1);
 
     const list = await app.inject({
       method: 'GET',
@@ -1070,6 +1166,46 @@ describe('authentication API', () => {
     });
     expect(unavailableCase.statusCode, unavailableCase.body).toBe(409);
     expect(unavailableCase.json().error.code).toBe('run_case_unavailable');
+
+    const closed = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/close`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(closed.statusCode, closed.body).toBe(201);
+    expect(closed.json().run).toMatchObject({ id: runId, status: 'completed' });
+    expect(closed.json().run.closedAt).toEqual(expect.any(String));
+    const closedAgain = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/close`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(closedAgain.statusCode, closedAgain.body).toBe(201);
+    expect(closedAgain.json().run.closedAt).toBe(closed.json().run.closedAt);
+
+    const resultAfterClose = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { statusId: statuses[0]?.id },
+    });
+    expect(resultAfterClose.statusCode, resultAfterClose.body).toBe(409);
+    expect(resultAfterClose.json().error.code).toBe('run_closed');
+    const assignmentAfterClose = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/assignee`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { assigneeId: null },
+    });
+    expect(assignmentAfterClose.statusCode, assignmentAfterClose.body).toBe(409);
+    expect(assignmentAfterClose.json().error.code).toBe('run_closed');
+    const restartClosed = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/start`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(restartClosed.statusCode, restartClosed.body).toBe(409);
+    expect(restartClosed.json().error.code).toBe('invalid_run_state');
   });
 
   it('assigns unique case numbers to concurrent creates', async () => {
@@ -1253,6 +1389,19 @@ describe('authentication API', () => {
         payload: { name: 'Forbidden run', caseIds: [editableCaseId] },
       });
       expect(createRun.statusCode, createRun.body).toBe(403);
+      const closeRun = await app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/authentication/runs/${createdRunId}/close`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+      });
+      expect(closeRun.statusCode, closeRun.body).toBe(403);
+      const recordResult = await app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/results`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: { statusId: randomUUID() },
+      });
+      expect(recordResult.statusCode, recordResult.body).toBe(403);
     } finally {
       await admin.membership.updateMany({
         where: { organizationId, userId: authUserId },
@@ -1357,6 +1506,19 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantRuns.statusCode).toBe(404);
+    const crossTenantRunDetail = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantRunDetail.statusCode).toBe(404);
+    const crossTenantResult = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/results`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+      payload: { statusId: randomUUID() },
+    });
+    expect(crossTenantResult.statusCode).toBe(404);
 
     const memberList = await app.inject({
       method: 'GET',

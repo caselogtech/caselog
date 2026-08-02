@@ -1,13 +1,26 @@
-import { Body, Controller, Get, Inject, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import type {
   CreateTestRunResponse,
+  AssignTestRunItemResponse,
+  CreateTestResultResponse,
   OrganizationAccessPrincipal,
   TestRunListResponse,
+  TestRunDetailResponse,
+  TestRunLifecycleResponse,
 } from '@caselog/schemas';
 import { OrganizationAuthGuard } from '../auth/organization-auth.guard';
 import { CurrentOrganization } from '../auth/organization-principal.decorator';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
-import { CreateTestRunRequestDto, TestRunListParamsDto, TestRunListQueryDto } from './test-run.dto';
+import {
+  AssignTestRunItemRequestDto,
+  CreateTestResultRequestDto,
+  CreateTestRunRequestDto,
+  TestRunDetailParamsDto,
+  TestRunDetailQueryDto,
+  TestRunItemParamsDto,
+  TestRunListParamsDto,
+  TestRunListQueryDto,
+} from './test-run.dto';
 import { TestRunService } from './test-run.service';
 
 @Controller('projects/:projectSlug/runs')
@@ -31,5 +44,54 @@ export class TestRunController {
     @Body() request: CreateTestRunRequestDto,
   ): Promise<CreateTestRunResponse> {
     return this.runs.create(principal, params.projectSlug, request);
+  }
+
+  @Get(':runId')
+  detail(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunDetailParamsDto,
+    @Query() query: TestRunDetailQueryDto,
+  ): Promise<TestRunDetailResponse> {
+    return this.runs.detail(principal.organizationId, params.projectSlug, params.runId, query);
+  }
+
+  @Post(':runId/start')
+  start(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunDetailParamsDto,
+  ): Promise<TestRunLifecycleResponse> {
+    return this.runs.start(principal, params.projectSlug, params.runId);
+  }
+
+  @Post(':runId/close')
+  close(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunDetailParamsDto,
+  ): Promise<TestRunLifecycleResponse> {
+    return this.runs.close(principal, params.projectSlug, params.runId);
+  }
+
+  @Put(':runId/items/:itemId/assignee')
+  assign(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunItemParamsDto,
+    @Body() request: AssignTestRunItemRequestDto,
+  ): Promise<AssignTestRunItemResponse> {
+    return this.runs.assign(principal, params.projectSlug, params.runId, params.itemId, request);
+  }
+
+  @Post(':runId/items/:itemId/results')
+  recordResult(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunItemParamsDto,
+    @Body() request: CreateTestResultRequestDto,
+  ): Promise<CreateTestResultResponse> {
+    return this.runs.recordResult(
+      principal,
+      params.projectSlug,
+      params.runId,
+      params.itemId,
+      request,
+    );
   }
 }
