@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation } from '@tanstack/angular-query-experimental';
-import { apiErrorMessage } from '../../../shared/api/api-error';
+import { apiErrorTranslationKey } from '../../../shared/api/api-error';
 import { AuthApi } from '../auth-api';
 
 @Component({
   selector: 'app-forgot-password',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe],
   templateUrl: './forgot.html',
   styleUrl: '../auth-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,7 +34,7 @@ export class ForgotPassword {
     this.forgot.mutate(this.form.getRawValue());
   }
 
-  errorMessage(): string {
-    return apiErrorMessage(this.forgot.error());
+  errorTranslationKey(): string {
+    return apiErrorTranslationKey(this.forgot.error());
   }
 }

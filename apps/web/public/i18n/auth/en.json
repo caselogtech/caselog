@@ -1,0 +1,76 @@
+{
+  "login": {
+    "eyebrow": "Caselog workspace",
+    "title": "Sign in",
+    "description": "Continue to your test management workspace.",
+    "email": "Email",
+    "emailInvalid": "Enter a valid email address.",
+    "password": "Password",
+    "passwordInvalid": "Enter your password.",
+    "forgotPassword": "Forgot password?",
+    "pending": "Signing in…",
+    "submit": "Sign in",
+    "newAccount": "New to Caselog?",
+    "createAccount": "Create an account"
+  },
+  "signup": {
+    "eyebrow": "Start with Caselog",
+    "title": "Create your account",
+    "description": "Your first workspace comes next.",
+    "name": "Name",
+    "nameInvalid": "Enter your name.",
+    "email": "Email",
+    "emailInvalid": "Enter a valid email address.",
+    "password": "Password",
+    "passwordHelp": "Use 12–128 characters.",
+    "passwordInvalid": "Password must contain at least 12 characters.",
+    "terms": "I agree to the Terms and Privacy Policy.",
+    "termsInvalid": "Accept the terms to create an account.",
+    "pending": "Creating account…",
+    "submit": "Create account",
+    "existingAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "forgot": {
+    "eyebrow": "Account recovery",
+    "title": "Reset your password",
+    "description": "Enter your email and we’ll send a link if an account exists.",
+    "email": "Email",
+    "emailInvalid": "Enter a valid email address.",
+    "pending": "Sending…",
+    "submit": "Send reset link",
+    "success": "If an account exists for this email, a reset link has been sent."
+  },
+  "reset": {
+    "eyebrow": "Account recovery",
+    "title": "Choose a new password",
+    "description": "Use 12–128 characters.",
+    "incomplete": "This reset link is incomplete.",
+    "success": "Your password has been reset. Sign in with your new password.",
+    "newPassword": "New password",
+    "passwordInvalid": "Password must contain at least 12 characters.",
+    "confirmPassword": "Confirm password",
+    "passwordsMismatch": "Passwords do not match.",
+    "pending": "Saving…",
+    "submit": "Save new password",
+    "signIn": "Sign in"
+  },
+  "verify": {
+    "eyebrow": "Email verification",
+    "verifyTitle": "Verify your email",
+    "inboxTitle": "Check your inbox",
+    "pending": "Verifying your email address…",
+    "success": "Your email is verified. You can continue to your workspaces.",
+    "continue": "Continue",
+    "expiredHelp": "The link may have expired or already been used.",
+    "sentTo": "We sent a verification link to {{email}}. The link is valid for 24 hours.",
+    "emailFallback": "your email address",
+    "resendPending": "Sending…",
+    "resend": "Send a new link",
+    "resendSuccess": "If verification is required, a new email has been sent.",
+    "resendError": "Could not send the email. Try again shortly."
+  },
+  "common": {
+    "backToSignIn": "Back to sign in"
+  }
+}

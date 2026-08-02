@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import type { SessionResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { BrowserSession } from '../../../core/auth/browser-session';
+import { i18nTestingModule } from '../../../../testing/i18n-testing';
 import { AuthApi } from '../auth-api';
 import { Login } from './login';
 
@@ -25,7 +26,7 @@ describe('Login', () => {
     queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
     authApi.login.mockReset();
     await TestBed.configureTestingModule({
-      imports: [Login],
+      imports: [Login, i18nTestingModule()],
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
@@ -48,6 +49,7 @@ describe('Login', () => {
   it('keeps the successful session in tab memory', async () => {
     authApi.login.mockResolvedValue(session);
     const fixture = TestBed.createComponent(Login);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
     fixture.componentInstance.form.setValue({
       email: 'tester@example.com',
       password: 'correct horse battery staple',
@@ -60,5 +62,6 @@ describe('Login', () => {
       password: 'correct horse battery staple',
     });
     expect(TestBed.inject(BrowserSession).user()).toEqual(session.user);
+    expect(navigate).toHaveBeenCalledWith('/auth/verify');
   });
 });

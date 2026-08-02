@@ -1,29 +1,31 @@
 <main class="auth-page">
   <section class="auth-card" aria-labelledby="reset-title">
     <div class="auth-heading">
-      <p class="eyebrow">Account recovery</p>
-      <h1 id="reset-title">Choose a new password</h1>
-      <p>Use 12–128 characters.</p>
+      <p class="eyebrow">{{ 'auth.reset.eyebrow' | transloco }}</p>
+      <h1 id="reset-title">{{ 'auth.reset.title' | transloco }}</h1>
+      <p>{{ 'auth.reset.description' | transloco }}</p>
     </div>
 
     @if (!token) {
-      <div class="form-alert" role="alert">This reset link is incomplete.</div>
+      <div class="form-alert" role="alert">{{ 'auth.reset.incomplete' | transloco }}</div>
     } @else if (reset.isSuccess()) {
-      <div class="success-message" role="status">{{ reset.data().message }}</div>
-      <a class="primary-link" href="/auth/login" routerLink="/auth/login">Sign in</a>
+      <div class="success-message" role="status">{{ 'auth.reset.success' | transloco }}</div>
+      <a class="primary-link" href="/auth/login" routerLink="/auth/login">
+        {{ 'auth.reset.signIn' | transloco }}
+      </a>
     } @else {
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         @if (reset.isError()) {
-          <div class="form-alert" role="alert">{{ errorMessage() }}</div>
+          <div class="form-alert" role="alert">{{ errorTranslationKey() | transloco }}</div>
         }
 
-        <label for="password">New password</label>
+        <label for="password">{{ 'auth.reset.newPassword' | transloco }}</label>
         <input id="password" type="password" formControlName="password" autocomplete="new-password" />
         @if (form.controls.password.touched && form.controls.password.invalid) {
-          <p class="field-error">Password must contain at least 12 characters.</p>
+          <p class="field-error">{{ 'auth.reset.passwordInvalid' | transloco }}</p>
         }
 
-        <label for="confirm-password">Confirm password</label>
+        <label for="confirm-password">{{ 'auth.reset.confirmPassword' | transloco }}</label>
         <input
           id="confirm-password"
           type="password"
@@ -31,17 +33,19 @@
           autocomplete="new-password"
         />
         @if (form.controls.confirmPassword.touched && form.hasError('passwordsMismatch')) {
-          <p class="field-error">Passwords do not match.</p>
+          <p class="field-error">{{ 'auth.reset.passwordsMismatch' | transloco }}</p>
         }
 
         <button type="submit" [disabled]="reset.isPending()">
-          {{ reset.isPending() ? 'Saving…' : 'Save new password' }}
+          {{ (reset.isPending() ? 'auth.reset.pending' : 'auth.reset.submit') | transloco }}
         </button>
       </form>
     }
 
     <p class="auth-foot">
-      <a href="/auth/login" routerLink="/auth/login">Back to sign in</a>
+      <a href="/auth/login" routerLink="/auth/login">
+        {{ 'auth.common.backToSignIn' | transloco }}
+      </a>
     </p>
   </section>
 </main>

@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation } from '@tanstack/angular-query-experimental';
 import { BrowserSession } from '../../../core/auth/browser-session';
-import { apiErrorMessage } from '../../../shared/api/api-error';
+import { apiErrorTranslationKey } from '../../../shared/api/api-error';
 import { AuthApi } from '../auth-api';
 
 @Component({
   selector: 'app-verify-email',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslocoPipe],
   templateUrl: './verify.html',
   styleUrl: '../auth-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +33,7 @@ export class VerifyEmail {
     }
   }
 
-  errorMessage(): string {
-    return apiErrorMessage(this.verification.error());
+  errorTranslationKey(): string {
+    return apiErrorTranslationKey(this.verification.error());
   }
 }

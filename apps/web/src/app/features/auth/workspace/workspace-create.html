@@ -1,0 +1,74 @@
+<main class="workspace-page" aria-labelledby="workspace-create-title">
+  <header class="workspace-header">
+    <div>
+      <h1 id="workspace-create-title">{{ 'workspace.create.title' | transloco }}</h1>
+      <p>{{ 'workspace.create.description' | transloco }}</p>
+    </div>
+  </header>
+
+  <form class="workspace-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (createWorkspace.isError()) {
+      <div class="form-alert" role="alert">{{ errorTranslationKey() | transloco }}</div>
+    }
+
+    <label for="workspace-name">{{ 'workspace.create.name' | transloco }}</label>
+    <input
+      id="workspace-name"
+      type="text"
+      formControlName="name"
+      autocomplete="organization"
+    />
+    @if (form.controls.name.touched && form.controls.name.invalid) {
+      <p class="field-error">{{ 'workspace.create.nameInvalid' | transloco }}</p>
+    }
+
+    <label for="workspace-slug">{{ 'workspace.create.slug' | transloco }}</label>
+    <input
+      id="workspace-slug"
+      type="text"
+      formControlName="slug"
+      autocomplete="off"
+      aria-describedby="workspace-slug-help workspace-slug-status"
+      (input)="markSlugAsEdited()"
+    />
+    <p id="workspace-slug-help" class="field-help">
+      {{
+        'workspace.create.urlPreview'
+          | transloco
+            : {
+                slug:
+                  form.controls.slug.value || ('workspace.create.slugFallback' | transloco),
+              }
+      }}
+    </p>
+    <div id="workspace-slug-status" aria-live="polite">
+      @if (form.controls.slug.touched && form.controls.slug.invalid) {
+        <p class="field-error">{{ 'workspace.create.slugInvalid' | transloco }}</p>
+      } @else if (availability.isFetching()) {
+        <p class="field-help">{{ 'workspace.create.checking' | transloco }}</p>
+      } @else if (availability.data()?.available === true) {
+        <p class="field-success">{{ 'workspace.create.available' | transloco }}</p>
+      } @else if (availability.data()?.available === false) {
+        <p class="field-error">{{ 'workspace.create.unavailable' | transloco }}</p>
+      }
+    </div>
+
+    <button
+      type="submit"
+      [disabled]="
+        form.invalid ||
+        availability.data()?.available !== true ||
+        createWorkspace.isPending()
+      "
+    >
+      {{
+        (createWorkspace.isPending() ? 'workspace.create.pending' : 'workspace.create.submit')
+          | transloco
+      }}
+    </button>
+  </form>
+
+  <a class="back-link" href="/auth/workspaces" routerLink="/auth/workspaces">
+    {{ 'workspace.create.back' | transloco }}
+  </a>
+</main>

@@ -8,6 +8,7 @@
     "start": "ng serve",
     "prebuild": "pnpm --filter @caselog/schemas build",
     "build": "ng build",
+    "i18n:check": "node scripts/check-translations.mjs",
     "watch": "ng build --watch --configuration development",
     "pretest": "pnpm --filter @caselog/schemas build",
     "test": "ng test --watch=false",
@@ -23,6 +24,7 @@
     "@angular/platform-browser": "^22.1.0",
     "@angular/router": "^22.1.0",
     "@caselog/schemas": "workspace:*",
+    "@jsverse/transloco": "8.4.0",
     "@tanstack/angular-query-experimental": "5.101.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

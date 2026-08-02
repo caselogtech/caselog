@@ -1,14 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation } from '@tanstack/angular-query-experimental';
 import { BrowserSession } from '../../../core/auth/browser-session';
-import { apiErrorMessage } from '../../../shared/api/api-error';
+import { apiErrorTranslationKey } from '../../../shared/api/api-error';
 import { AuthApi } from '../auth-api';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe],
   templateUrl: './login.html',
   styleUrl: '../auth-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,7 +29,9 @@ export class Login {
     mutationFn: (request: ReturnType<typeof this.form.getRawValue>) => this.authApi.login(request),
     onSuccess: async (session) => {
       this.browserSession.start(session);
-      await this.router.navigateByUrl('/auth/workspaces');
+      await this.router.navigateByUrl(
+        session.user.emailVerified ? '/auth/workspaces' : '/auth/verify',
+      );
     },
   }));
 
@@ -40,7 +43,7 @@ export class Login {
     this.login.mutate(this.form.getRawValue());
   }
 
-  errorMessage(): string {
-    return apiErrorMessage(this.login.error());
+  errorTranslationKey(): string {
+    return apiErrorTranslationKey(this.login.error());
   }
 }

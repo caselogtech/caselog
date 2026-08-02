@@ -1,7 +1,7 @@
 <header class="app-header">
-  <a class="brand" href="/" aria-label="Caselog home">
+  <a class="brand" href="/" [attr.aria-label]="'app.homeAriaLabel' | transloco">
     <img src="/caselog-mark.svg" width="28" height="28" alt="" />
-    <span>Caselog</span>
+    <span>{{ 'app.brand' | transloco }}</span>
   </a>
 </header>
 

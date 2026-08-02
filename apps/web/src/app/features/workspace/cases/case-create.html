@@ -1,0 +1,173 @@
+<main class="case-create-page" aria-labelledby="case-create-title">
+  <header class="case-create-header">
+    <div>
+      <p class="eyebrow">{{ 'workspace.cases.new.eyebrow' | transloco }}</p>
+      <h1 id="case-create-title">{{ 'workspace.cases.new.title' | transloco }}</h1>
+      <p>{{ 'workspace.cases.new.description' | transloco }}</p>
+    </div>
+    <a
+      href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
+      [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
+    >
+      {{ 'workspace.cases.new.back' | transloco }}
+    </a>
+  </header>
+
+  @if (structure.isPending()) {
+    <section class="page-state" aria-live="polite">
+      {{ 'workspace.cases.new.loading' | transloco }}
+    </section>
+  } @else if (structure.isError()) {
+    <section class="page-state error" role="alert">
+      <p>{{ errorTranslationKey() | transloco }}</p>
+      <button type="button" (click)="structure.refetch()">
+        {{ 'workspace.cases.retry' | transloco }}
+      </button>
+    </section>
+  } @else if (!canCreate()) {
+    <section class="page-state">
+      <h2>{{ 'workspace.cases.new.noPermissionTitle' | transloco }}</h2>
+      <p>{{ 'workspace.cases.new.noPermissionDescription' | transloco }}</p>
+    </section>
+  } @else if (sections().length === 0) {
+    <section class="page-state">
+      <h2>{{ 'workspace.cases.new.noSectionsTitle' | transloco }}</h2>
+      <p>{{ 'workspace.cases.new.noSectionsDescription' | transloco }}</p>
+    </section>
+  } @else {
+    <form class="case-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (createCase.isError()) {
+        <div class="form-alert" role="alert">{{ errorTranslationKey() | transloco }}</div>
+      }
+
+      <div class="field full-width">
+        <label for="case-title">{{ 'workspace.cases.new.titleLabel' | transloco }}</label>
+        <input id="case-title" type="text" formControlName="title" autocomplete="off" />
+        @if (form.controls.title.touched && form.controls.title.invalid) {
+          <p class="field-error">{{ 'workspace.cases.new.titleInvalid' | transloco }}</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="case-section">{{ 'workspace.cases.new.sectionLabel' | transloco }}</label>
+        <select id="case-section" formControlName="sectionId">
+          @for (suite of structure.data()?.suites ?? []; track suite.id) {
+            <optgroup [label]="suite.name">
+              @for (section of suite.sections; track section.id) {
+                <option [value]="section.id">{{ section.name }}</option>
+              }
+            </optgroup>
+          }
+        </select>
+        @if (form.controls.sectionId.touched && form.controls.sectionId.invalid) {
+          <p class="field-error">{{ 'workspace.cases.new.sectionInvalid' | transloco }}</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="case-template">{{ 'workspace.cases.new.templateLabel' | transloco }}</label>
+        <select id="case-template" formControlName="template">
+          <option value="steps">{{ 'workspace.cases.templates.steps' | transloco }}</option>
+          <option value="text">{{ 'workspace.cases.templates.text' | transloco }}</option>
+          <option value="exploratory">
+            {{ 'workspace.cases.templates.exploratory' | transloco }}
+          </option>
+          <option value="bdd">{{ 'workspace.cases.templates.bdd' | transloco }}</option>
+        </select>
+      </div>
+
+      <div class="field full-width">
+        <label for="automation-id">{{ 'workspace.cases.new.automationLabel' | transloco }}</label>
+        <input id="automation-id" type="text" formControlName="automationId" autocomplete="off" />
+        <p class="field-help">{{ 'workspace.cases.new.automationHint' | transloco }}</p>
+      </div>
+
+      <div class="field full-width">
+        <label for="preconditions">{{ 'workspace.cases.new.preconditionsLabel' | transloco }}</label>
+        <textarea id="preconditions" rows="3" formControlName="preconditions"></textarea>
+      </div>
+
+      @switch (form.controls.template.value) {
+        @case ('steps') {
+          <fieldset class="steps full-width" formArrayName="steps">
+            <legend>{{ 'workspace.cases.new.stepsTitle' | transloco }}</legend>
+            @for (step of form.controls.steps.controls; track step; let index = $index) {
+              <div class="step" [formGroupName]="index">
+                <div class="field">
+                  <label>
+                    {{ 'workspace.cases.new.actionLabel' | transloco }}
+                    <textarea rows="3" formControlName="action"></textarea>
+                  </label>
+                  @if (step.controls.action.touched && step.controls.action.invalid) {
+                    <p class="field-error">{{ 'workspace.cases.new.actionInvalid' | transloco }}</p>
+                  }
+                </div>
+                <div class="field">
+                  <label>
+                    {{ 'workspace.cases.new.stepExpectedLabel' | transloco }}
+                    <textarea rows="3" formControlName="expected"></textarea>
+                  </label>
+                </div>
+                <button
+                  class="remove-step"
+                  type="button"
+                  [disabled]="form.controls.steps.length === 1"
+                  (click)="removeStep(index)"
+                >
+                  {{ 'workspace.cases.new.removeStep' | transloco }}
+                </button>
+              </div>
+            }
+            <button class="secondary-button" type="button" (click)="addStep()">
+              {{ 'workspace.cases.new.addStep' | transloco }}
+            </button>
+          </fieldset>
+        }
+        @case ('text') {
+          <div class="field full-width">
+            <label for="case-text">{{ 'workspace.cases.new.textLabel' | transloco }}</label>
+            <textarea id="case-text" rows="8" formControlName="text"></textarea>
+            @if (form.controls.text.touched && form.controls.text.invalid) {
+              <p class="field-error">{{ 'workspace.cases.new.textInvalid' | transloco }}</p>
+            }
+          </div>
+        }
+        @case ('exploratory') {
+          <div class="field full-width">
+            <label for="case-charter">{{ 'workspace.cases.new.charterLabel' | transloco }}</label>
+            <textarea id="case-charter" rows="8" formControlName="charter"></textarea>
+            @if (form.controls.charter.touched && form.controls.charter.invalid) {
+              <p class="field-error">{{ 'workspace.cases.new.charterInvalid' | transloco }}</p>
+            }
+          </div>
+        }
+        @case ('bdd') {
+          <div class="field full-width">
+            <label for="case-gherkin">{{ 'workspace.cases.new.gherkinLabel' | transloco }}</label>
+            <textarea id="case-gherkin" rows="10" formControlName="gherkin"></textarea>
+            @if (form.controls.gherkin.touched && form.controls.gherkin.invalid) {
+              <p class="field-error">{{ 'workspace.cases.new.gherkinInvalid' | transloco }}</p>
+            }
+          </div>
+        }
+      }
+
+      <div class="field full-width">
+        <label for="expected-result">
+          {{ 'workspace.cases.new.expectedResultLabel' | transloco }}
+        </label>
+        <textarea id="expected-result" rows="3" formControlName="expectedResult"></textarea>
+      </div>
+
+      <div class="form-actions full-width">
+        <button type="submit" [disabled]="createCase.isPending()">
+          {{
+            (createCase.isPending()
+              ? 'workspace.cases.new.pending'
+              : 'workspace.cases.new.submit') | transloco
+          }}
+        </button>
+      </div>
+    </form>
+  }
+</main>

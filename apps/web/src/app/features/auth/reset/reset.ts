@@ -7,8 +7,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation } from '@tanstack/angular-query-experimental';
-import { apiErrorMessage } from '../../../shared/api/api-error';
+import { apiErrorTranslationKey } from '../../../shared/api/api-error';
 import { AuthApi } from '../auth-api';
 
 function passwordsMatch(control: AbstractControl): ValidationErrors | null {
@@ -19,7 +20,7 @@ function passwordsMatch(control: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-reset-password',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe],
   templateUrl: './reset.html',
   styleUrl: '../auth-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,7 +52,7 @@ export class ResetPassword {
     this.reset.mutate(this.form.controls.password.value);
   }
 
-  errorMessage(): string {
-    return apiErrorMessage(this.reset.error());
+  errorTranslationKey(): string {
+    return apiErrorTranslationKey(this.reset.error());
   }
 }

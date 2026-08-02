@@ -1,0 +1,22 @@
+{
+  "app": {
+    "brand": "Caselog",
+    "homeAriaLabel": "Caselog home"
+  },
+  "errors": {
+    "default": "Something went wrong. Please try again.",
+    "email_already_registered": "An account with this email already exists.",
+    "email_verification_required": "Verify your email before creating a workspace.",
+    "http_error": "The request could not be completed.",
+    "internal_error": "An unexpected error occurred. Please try again.",
+    "insufficient_permissions": "You do not have permission to perform this action.",
+    "invalid_credentials": "Email or password is incorrect.",
+    "invalid_or_expired_token": "This link is invalid or has expired.",
+    "invalid_session": "Your session is invalid or has expired. Sign in again.",
+    "not_found": "The requested resource was not found.",
+    "rate_limited": "Too many requests. Please wait and try again.",
+    "validation_failed": "Check the entered information and try again.",
+    "workspace_limit_reached": "This account has reached its workspace limit.",
+    "workspace_slug_taken": "This workspace URL is unavailable."
+  }
+}

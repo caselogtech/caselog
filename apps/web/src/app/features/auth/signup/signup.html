@@ -1,29 +1,29 @@
 <main class="auth-page">
   <section class="auth-card" aria-labelledby="signup-title">
     <div class="auth-heading">
-      <p class="eyebrow">Start with Caselog</p>
-      <h1 id="signup-title">Create your account</h1>
-      <p>Your first workspace comes next.</p>
+      <p class="eyebrow">{{ 'auth.signup.eyebrow' | transloco }}</p>
+      <h1 id="signup-title">{{ 'auth.signup.title' | transloco }}</h1>
+      <p>{{ 'auth.signup.description' | transloco }}</p>
     </div>
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       @if (signup.isError()) {
-        <div class="form-alert" role="alert">{{ errorMessage() }}</div>
+        <div class="form-alert" role="alert">{{ errorTranslationKey() | transloco }}</div>
       }
 
-      <label for="display-name">Name</label>
+      <label for="display-name">{{ 'auth.signup.name' | transloco }}</label>
       <input id="display-name" formControlName="displayName" autocomplete="name" />
       @if (form.controls.displayName.touched && form.controls.displayName.invalid) {
-        <p class="field-error">Enter your name.</p>
+        <p class="field-error">{{ 'auth.signup.nameInvalid' | transloco }}</p>
       }
 
-      <label for="email">Email</label>
+      <label for="email">{{ 'auth.signup.email' | transloco }}</label>
       <input id="email" type="email" formControlName="email" autocomplete="email" />
       @if (form.controls.email.touched && form.controls.email.invalid) {
-        <p class="field-error">Enter a valid email address.</p>
+        <p class="field-error">{{ 'auth.signup.emailInvalid' | transloco }}</p>
       }
 
-      <label for="password">Password</label>
+      <label for="password">{{ 'auth.signup.password' | transloco }}</label>
       <input
         id="password"
         type="password"
@@ -31,26 +31,27 @@
         autocomplete="new-password"
         aria-describedby="password-help"
       />
-      <p id="password-help" class="field-help">Use 12–128 characters.</p>
+      <p id="password-help" class="field-help">{{ 'auth.signup.passwordHelp' | transloco }}</p>
       @if (form.controls.password.touched && form.controls.password.invalid) {
-        <p class="field-error">Password must contain at least 12 characters.</p>
+        <p class="field-error">{{ 'auth.signup.passwordInvalid' | transloco }}</p>
       }
 
       <label class="checkbox-row">
         <input type="checkbox" formControlName="termsAccepted" />
-        <span>I agree to the Terms and Privacy Policy.</span>
+        <span>{{ 'auth.signup.terms' | transloco }}</span>
       </label>
       @if (form.controls.termsAccepted.touched && form.controls.termsAccepted.invalid) {
-        <p class="field-error">Accept the terms to create an account.</p>
+        <p class="field-error">{{ 'auth.signup.termsInvalid' | transloco }}</p>
       }
 
       <button type="submit" [disabled]="signup.isPending()">
-        {{ signup.isPending() ? 'Creating account…' : 'Create account' }}
+        {{ (signup.isPending() ? 'auth.signup.pending' : 'auth.signup.submit') | transloco }}
       </button>
     </form>
 
     <p class="auth-foot">
-      Already have an account? <a href="/auth/login" routerLink="/auth/login">Sign in</a>
+      {{ 'auth.signup.existingAccount' | transloco }}
+      <a href="/auth/login" routerLink="/auth/login">{{ 'auth.signup.signIn' | transloco }}</a>
     </p>
   </section>
 </main>

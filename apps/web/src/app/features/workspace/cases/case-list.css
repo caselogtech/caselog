@@ -1,0 +1,294 @@
+.cases-page {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 40px 20px 72px;
+}
+
+.cases-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.cases-header h1,
+.cases-state h2 {
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.cases-header h1 {
+  font-size: 1.75rem;
+}
+
+.cases-header > div > p:last-child,
+.cases-state p {
+  color: var(--text-2);
+}
+
+.cases-header > div > p:last-child {
+  margin: 8px 0 0;
+}
+
+.eyebrow {
+  color: var(--text-3);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.header-actions {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+}
+
+.back-link,
+.create-link {
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.create-link {
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--surface-1);
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+.repository-layout {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.structure-panel {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  padding: 8px;
+}
+
+.suite-group {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.suite-group h2 {
+  color: var(--text-2);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  margin: 4px 10px 6px;
+  text-transform: uppercase;
+}
+
+.section-option {
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  min-height: 36px;
+  padding: 8px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.section-option:hover,
+.section-option.active {
+  background: var(--surface-1);
+  color: var(--text-1);
+}
+
+.section-option.active {
+  font-weight: 600;
+}
+
+.all-cases {
+  color: var(--text-1);
+}
+
+.structure-state {
+  color: var(--text-2);
+  font-size: 0.875rem;
+  margin: 12px;
+}
+
+.structure-state.error {
+  color: var(--error-text);
+}
+
+.structure-state button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.case-search {
+  margin-bottom: 18px;
+  max-width: 560px;
+}
+
+.case-search label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+.case-search > div {
+  display: flex;
+  gap: 8px;
+}
+
+.case-search input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  flex: 1;
+  font: inherit;
+  min-height: 40px;
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.case-search button,
+.cases-state button,
+.load-more {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.case-table-wrap {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: var(--surface-1);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.case-id,
+.automation-id {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.case-id {
+  color: var(--text-2);
+}
+
+.case-title {
+  font-weight: 600;
+  min-width: 240px;
+}
+
+.automation-id {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.cases-state {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  text-align: center;
+}
+
+.cases-state p {
+  margin: 8px 0 0;
+}
+
+.cases-state button {
+  margin-top: 18px;
+}
+
+.cases-state.error {
+  background: var(--error-surface);
+  border-color: var(--error-border);
+  color: var(--error-text);
+}
+
+.load-more {
+  display: block;
+  margin: 24px auto 0;
+}
+
+.load-more:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 600px) {
+  .cases-page {
+    padding: 28px 14px 48px;
+  }
+
+  .cases-header {
+    flex-direction: column;
+  }
+
+  .header-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .repository-layout {
+    grid-template-columns: 1fr;
+  }
+}

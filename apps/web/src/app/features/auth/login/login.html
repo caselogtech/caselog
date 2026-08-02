@@ -1,25 +1,27 @@
 <main class="auth-page">
   <section class="auth-card" aria-labelledby="login-title">
     <div class="auth-heading">
-      <p class="eyebrow">Caselog workspace</p>
-      <h1 id="login-title">Sign in</h1>
-      <p>Continue to your test management workspace.</p>
+      <p class="eyebrow">{{ 'auth.login.eyebrow' | transloco }}</p>
+      <h1 id="login-title">{{ 'auth.login.title' | transloco }}</h1>
+      <p>{{ 'auth.login.description' | transloco }}</p>
     </div>
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       @if (login.isError()) {
-        <div class="form-alert" role="alert">{{ errorMessage() }}</div>
+        <div class="form-alert" role="alert">{{ errorTranslationKey() | transloco }}</div>
       }
 
-      <label for="email">Email</label>
+      <label for="email">{{ 'auth.login.email' | transloco }}</label>
       <input id="email" type="email" formControlName="email" autocomplete="email" />
       @if (form.controls.email.touched && form.controls.email.invalid) {
-        <p class="field-error">Enter a valid email address.</p>
+        <p class="field-error">{{ 'auth.login.emailInvalid' | transloco }}</p>
       }
 
       <div class="label-row">
-        <label for="password">Password</label>
-        <a href="/auth/forgot" routerLink="/auth/forgot">Forgot password?</a>
+        <label for="password">{{ 'auth.login.password' | transloco }}</label>
+        <a href="/auth/forgot" routerLink="/auth/forgot">
+          {{ 'auth.login.forgotPassword' | transloco }}
+        </a>
       </div>
       <input
         id="password"
@@ -28,16 +30,19 @@
         autocomplete="current-password"
       />
       @if (form.controls.password.touched && form.controls.password.invalid) {
-        <p class="field-error">Enter your password.</p>
+        <p class="field-error">{{ 'auth.login.passwordInvalid' | transloco }}</p>
       }
 
       <button type="submit" [disabled]="login.isPending()">
-        {{ login.isPending() ? 'Signing in…' : 'Sign in' }}
+        {{ (login.isPending() ? 'auth.login.pending' : 'auth.login.submit') | transloco }}
       </button>
     </form>
 
     <p class="auth-foot">
-      New to Caselog? <a href="/auth/signup" routerLink="/auth/signup">Create an account</a>
+      {{ 'auth.login.newAccount' | transloco }}
+      <a href="/auth/signup" routerLink="/auth/signup">
+        {{ 'auth.login.createAccount' | transloco }}
+      </a>
     </p>
   </section>
 </main>

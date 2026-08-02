@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
+import { i18nTestingModule } from '../testing/i18n-testing';
 
 describe('App', () => {
   it('renders the product navigation', async () => {
     await TestBed.configureTestingModule({
-      imports: [App],
+      imports: [App, i18nTestingModule()],
       providers: [provideRouter([])],
     }).compileComponents();
 

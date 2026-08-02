@@ -144,6 +144,9 @@ importers:
       '@caselog/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
+      '@jsverse/transloco':
+        specifier: 8.4.0
+        version: 8.4.0(@angular/core@22.1.0(@angular/compiler@22.1.0)(rxjs@7.8.2))(rxjs@7.8.2)(typescript@6.0.3)
       '@tanstack/angular-query-experimental':
         specifier: 5.101.4
         version: 5.101.4(@angular/common@22.1.0(@angular/core@22.1.0(@angular/compiler@22.1.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.1.0(@angular/compiler@22.1.0)(rxjs@7.8.2))
@@ -1140,6 +1143,19 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@jsverse/transloco-utils@8.4.0':
+    resolution: {integrity: sha512-0gJIpjX15a1UmBmwxHI3fXDu0VElU4FaunbYv6O13DOkhdSY8eV6Whdljokv5dJqXSLKdMxI624upkN13enKJg==}
+    engines: {node: '>=18'}
+
+  '@jsverse/transloco@8.4.0':
+    resolution: {integrity: sha512-dGeD2gkYqnSgbG/j6ILXCafgnrGbwcfgpL48m42DoemXutkuN2k/TFskaU27yNM9BeeaNX7zqQtFGdKmz/2wXw==}
+    peerDependencies:
+      '@angular/core': '>=16.0.0'
+      rxjs: '>=6.0.0'
+
+  '@jsverse/utils@1.0.0-beta.5':
+    resolution: {integrity: sha512-z7IdlV6BdSeF3Veii8Yyk64KuyTjNIQnFaW5PAhmDx0wN29lB2BFp8WO6+tJPLPjtlz2yKeNrjkp1XqnMPaeHA==}
 
   '@listr2/prompt-adapter-inquirer@4.2.4':
     resolution: {integrity: sha512-/KRI2DMD7JGSYaREF0Ygl7AefJ/2ase4Gc5cBiKqT5l4tFjsSJfhFGcc5nSkgl0Sp9LkCQNzl/cqbVJYP2L3dw==}
@@ -5593,6 +5609,25 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  '@jsverse/transloco-utils@8.4.0(typescript@6.0.3)':
+    dependencies:
+      cosmiconfig: 8.3.6(typescript@6.0.3)
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - typescript
+
+  '@jsverse/transloco@8.4.0(@angular/core@22.1.0(@angular/compiler@22.1.0)(rxjs@7.8.2))(rxjs@7.8.2)(typescript@6.0.3)':
+    dependencies:
+      '@angular/core': 22.1.0(@angular/compiler@22.1.0)(rxjs@7.8.2)
+      '@jsverse/transloco-utils': 8.4.0(typescript@6.0.3)
+      '@jsverse/utils': 1.0.0-beta.5
+      rxjs: 7.8.2
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - typescript
+
+  '@jsverse/utils@1.0.0-beta.5': {}
+
   '@listr2/prompt-adapter-inquirer@4.2.4(@inquirer/prompts@8.5.2(@types/node@24.13.3))(@types/node@24.13.3)(listr2@10.2.2)':
     dependencies:
       '@inquirer/prompts': 8.5.2(@types/node@24.13.3)
@@ -7015,6 +7050,15 @@ snapshots:
       path-type: 4.0.0
     optionalDependencies:
       typescript: 5.9.3
+
+  cosmiconfig@8.3.6(typescript@6.0.3):
+    dependencies:
+      import-fresh: 3.3.1
+      js-yaml: 4.3.1
+      parse-json: 5.2.0
+      path-type: 4.0.0
+    optionalDependencies:
+      typescript: 6.0.3
 
   cross-env@10.1.0:
     dependencies:

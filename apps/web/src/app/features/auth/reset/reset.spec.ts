@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { AuthApi } from '../auth-api';
+import { i18nTestingModule } from '../../../../testing/i18n-testing';
 import { ResetPassword } from './reset';
 
 describe('ResetPassword', () => {
@@ -12,7 +13,7 @@ describe('ResetPassword', () => {
     queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
     authApi.resetPassword.mockReset();
     await TestBed.configureTestingModule({
-      imports: [ResetPassword],
+      imports: [ResetPassword, i18nTestingModule()],
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),

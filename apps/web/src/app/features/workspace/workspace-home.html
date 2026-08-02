@@ -1,0 +1,48 @@
+<main class="workspace-shell" aria-labelledby="workspace-title">
+  @if (workspace.isPending()) {
+    <section class="workspace-state" aria-live="polite">
+      {{ 'workspace.home.opening' | transloco }}
+    </section>
+  } @else if (workspace.isError()) {
+    <section class="workspace-state error" role="alert">
+      <h1 id="workspace-title">{{ 'workspace.home.errorTitle' | transloco }}</h1>
+      <p>{{ errorTranslationKey() | transloco }}</p>
+      <a href="/auth/workspaces" routerLink="/auth/workspaces">
+        {{ 'workspace.home.chooseAnother' | transloco }}
+      </a>
+    </section>
+  } @else if (workspace.data(); as session) {
+    <header class="workspace-heading">
+      <div>
+        <p class="eyebrow">{{ 'workspace.home.eyebrow' | transloco }}</p>
+        <h1 id="workspace-title">{{ session.organization.name }}</h1>
+        <p>
+          {{ roleTranslationKey(session.role) | transloco }}
+          {{ 'workspace.home.accessSuffix' | transloco }}
+        </p>
+      </div>
+      <a href="/auth/workspaces" routerLink="/auth/workspaces">
+        {{ 'workspace.home.switch' | transloco }}
+      </a>
+    </header>
+
+    <section class="workspace-state">
+      <h2>{{ 'workspace.home.gettingStarted' | transloco }}</h2>
+      <p>{{ 'workspace.home.description' | transloco }}</p>
+      <ul class="setup-list">
+        <li><span aria-hidden="true">✓</span> {{ 'workspace.home.demoProject' | transloco }}</li>
+        <li>
+          <span aria-hidden="true">✓</span> {{ 'workspace.home.starterStructure' | transloco }}
+        </li>
+        <li><span aria-hidden="true">✓</span> {{ 'workspace.home.statuses' | transloco }}</li>
+      </ul>
+      <button
+        class="primary-action"
+        type="button"
+        [routerLink]="['/', session.organization.slug, 'projects']"
+      >
+        {{ 'workspace.home.viewProjects' | transloco }}
+      </button>
+    </section>
+  }
+</main>

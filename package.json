@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck",
+    "check": "pnpm format:check && pnpm lint && pnpm i18n:check && pnpm typecheck",
     "dev": "pnpm --parallel --stream --filter @caselog/api --filter @caselog/web run dev",
     "db:migrate": "pnpm --filter @caselog/api db:migrate",
     "db:migrate:deploy": "pnpm --filter @caselog/api db:migrate:deploy",
@@ -19,6 +19,7 @@
     "db:studio": "pnpm --filter @caselog/api db:studio",
     "format": "biome format --write apps packages",
     "format:check": "biome format apps packages",
+    "i18n:check": "pnpm --filter @caselog/web i18n:check",
     "lint": "biome lint apps packages",
     "pretest": "pnpm db:migrate:deploy",
     "test": "pnpm -r --if-present test",

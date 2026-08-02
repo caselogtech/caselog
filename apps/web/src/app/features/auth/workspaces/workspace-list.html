@@ -1,0 +1,46 @@
+<main class="workspace-page" aria-labelledby="workspaces-title">
+  <header class="workspace-header">
+    <div>
+      <h1 id="workspaces-title">{{ 'workspace.list.title' | transloco }}</h1>
+      <p>{{ 'workspace.list.description' | transloco }}</p>
+    </div>
+    <a class="primary-link" href="/auth/workspace" routerLink="/auth/workspace">
+      {{ 'workspace.list.create' | transloco }}
+    </a>
+  </header>
+
+  @if (workspaces.isPending()) {
+    <section class="state-panel" aria-live="polite">
+      {{ 'workspace.list.loading' | transloco }}
+    </section>
+  } @else if (workspaces.isError()) {
+    <section class="state-panel error" role="alert">
+      <p>{{ errorTranslationKey() | transloco }}</p>
+      <button class="secondary-link" type="button" (click)="workspaces.refetch()">
+        {{ 'workspace.list.retry' | transloco }}
+      </button>
+    </section>
+  } @else if (workspaces.data()?.workspaces?.length === 0) {
+    <section class="empty-state">
+      <h2>{{ 'workspace.list.emptyTitle' | transloco }}</h2>
+      <p>{{ 'workspace.list.emptyDescription' | transloco }}</p>
+      <a class="primary-link" href="/auth/workspace" routerLink="/auth/workspace">
+        {{ 'workspace.list.getStarted' | transloco }}
+      </a>
+    </section>
+  } @else {
+    <ul class="workspace-list">
+      @for (workspace of workspaces.data()?.workspaces; track workspace.id) {
+        <li class="workspace-card">
+          <div>
+            <h2>{{ workspace.name }}</h2>
+            <p>{{ workspace.slug }} · {{ roleTranslationKey(workspace.role) | transloco }}</p>
+          </div>
+          <button class="secondary-link" type="button" [routerLink]="['/', workspace.slug]">
+            {{ 'workspace.list.open' | transloco }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</main>

@@ -1,17 +1,26 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
+  createWorkspaceResponseSchema,
   emailVerificationResponseSchema,
   messageResponseSchema,
+  organizationTokenResponseSchema,
   sessionResponseSchema,
+  workspaceListResponseSchema,
+  workspaceSlugAvailabilityResponseSchema,
+  type CreateWorkspaceRequest,
+  type CreateWorkspaceResponse,
   type EmailVerificationRequest,
   type EmailVerificationResponse,
   type ForgotPasswordRequest,
   type LoginRequest,
   type MessageResponse,
+  type OrganizationTokenResponse,
   type RegisterRequest,
   type ResetPasswordRequest,
   type SessionResponse,
+  type WorkspaceListResponse,
+  type WorkspaceSlugAvailabilityResponse,
 } from '@caselog/schemas';
 import { lastValueFrom } from 'rxjs';
 
@@ -66,5 +75,33 @@ export class AuthApi {
       this.http.post<unknown>('/api/v1/auth/password/reset', request),
     );
     return messageResponseSchema.parse(response);
+  }
+
+  async listWorkspaces(): Promise<WorkspaceListResponse> {
+    const response = await lastValueFrom(this.http.get<unknown>('/api/v1/auth/workspaces'));
+    return workspaceListResponseSchema.parse(response);
+  }
+
+  async workspaceSlugAvailability(slug: string): Promise<WorkspaceSlugAvailabilityResponse> {
+    const response = await lastValueFrom(
+      this.http.get<unknown>('/api/v1/auth/workspaces/slug-availability', {
+        params: { slug },
+      }),
+    );
+    return workspaceSlugAvailabilityResponseSchema.parse(response);
+  }
+
+  async createWorkspace(request: CreateWorkspaceRequest): Promise<CreateWorkspaceResponse> {
+    const response = await lastValueFrom(
+      this.http.post<unknown>('/api/v1/auth/workspaces', request),
+    );
+    return createWorkspaceResponseSchema.parse(response);
+  }
+
+  async organizationToken(slug: string): Promise<OrganizationTokenResponse> {
+    const response = await lastValueFrom(
+      this.http.post<unknown>(`/api/v1/auth/organizations/${encodeURIComponent(slug)}/token`, null),
+    );
+    return organizationTokenResponseSchema.parse(response);
   }
 }

@@ -2,14 +2,15 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { registerRequestSchema } from '@caselog/schemas';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation } from '@tanstack/angular-query-experimental';
 import { BrowserSession } from '../../../core/auth/browser-session';
-import { apiErrorMessage } from '../../../shared/api/api-error';
+import { apiErrorTranslationKey } from '../../../shared/api/api-error';
 import { AuthApi } from '../auth-api';
 
 @Component({
   selector: 'app-signup',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe],
   templateUrl: './signup.html',
   styleUrl: '../auth-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,7 +45,7 @@ export class Signup {
     this.signup.mutate(this.form.getRawValue());
   }
 
-  errorMessage(): string {
-    return apiErrorMessage(this.signup.error());
+  errorTranslationKey(): string {
+    return apiErrorTranslationKey(this.signup.error());
   }
 }

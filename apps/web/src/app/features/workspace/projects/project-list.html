@@ -1,0 +1,71 @@
+<main class="projects-page" aria-labelledby="projects-title">
+  <header class="projects-header">
+    <div>
+      <p class="eyebrow">{{ 'workspace.projects.eyebrow' | transloco }}</p>
+      <h1 id="projects-title">{{ 'workspace.projects.title' | transloco }}</h1>
+      <p>{{ 'workspace.projects.description' | transloco }}</p>
+    </div>
+    <button class="back-link" type="button" [routerLink]="['/', workspaceSlug]">
+      {{ 'workspace.projects.back' | transloco }}
+    </button>
+  </header>
+
+  @if (projects.isPending()) {
+    <section class="projects-state" aria-live="polite">
+      {{ 'workspace.projects.loading' | transloco }}
+    </section>
+  } @else if (projects.isError()) {
+    <section class="projects-state error" role="alert">
+      <p>{{ errorTranslationKey() | transloco }}</p>
+      <button type="button" (click)="projects.refetch()">
+        {{ 'workspace.projects.retry' | transloco }}
+      </button>
+    </section>
+  } @else if (items().length === 0) {
+    <section class="projects-state">
+      <h2>{{ 'workspace.projects.emptyTitle' | transloco }}</h2>
+      <p>{{ 'workspace.projects.emptyDescription' | transloco }}</p>
+    </section>
+  } @else {
+    <ul class="project-grid">
+      @for (project of items(); track project.id) {
+        <li class="project-card">
+          <div class="project-key">{{ project.key }}</div>
+          <h2>{{ project.name }}</h2>
+          <dl>
+            <div>
+              <dt>{{ 'workspace.projects.cases' | transloco }}</dt>
+              <dd>{{ project.caseCount }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'workspace.projects.activeRuns' | transloco }}</dt>
+              <dd>{{ project.activeRunCount }}</dd>
+            </div>
+          </dl>
+          <button
+            class="open-project"
+            type="button"
+            [routerLink]="['/', workspaceSlug, project.slug, 'cases']"
+          >
+            {{ 'workspace.projects.openProject' | transloco }}
+          </button>
+        </li>
+      }
+    </ul>
+
+    @if (projects.hasNextPage()) {
+      <button
+        class="load-more"
+        type="button"
+        [disabled]="projects.isFetchingNextPage()"
+        (click)="projects.fetchNextPage()"
+      >
+        {{
+          (projects.isFetchingNextPage()
+            ? 'workspace.projects.loadingMore'
+            : 'workspace.projects.loadMore') | transloco
+        }}
+      </button>
+    }
+  }
+</main>

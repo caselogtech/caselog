@@ -1,48 +1,57 @@
 <main class="auth-page">
   <section class="auth-card" aria-labelledby="verify-title">
     <div class="auth-heading">
-      <p class="eyebrow">Email verification</p>
+      <p class="eyebrow">{{ 'auth.verify.eyebrow' | transloco }}</p>
       <h1 id="verify-title">
         @if (token) {
-          Verify your email
+          {{ 'auth.verify.verifyTitle' | transloco }}
         } @else {
-          Check your inbox
+          {{ 'auth.verify.inboxTitle' | transloco }}
         }
       </h1>
     </div>
 
     @if (token && verification.isPending()) {
-      <p role="status">Verifying your email address…</p>
+      <p role="status">{{ 'auth.verify.pending' | transloco }}</p>
     } @else if (verification.isSuccess()) {
       <div class="success-message" role="status">
-        Your email is verified. You can continue to your workspaces.
+        {{ 'auth.verify.success' | transloco }}
       </div>
-      <a class="primary-link" href="/auth/workspaces" routerLink="/auth/workspaces">Continue</a>
+      <a class="primary-link" href="/auth/workspaces" routerLink="/auth/workspaces">
+        {{ 'auth.verify.continue' | transloco }}
+      </a>
     } @else if (verification.isError()) {
-      <div class="form-alert" role="alert">{{ errorMessage() }}</div>
-      <p>The link may have expired or already been used.</p>
+      <div class="form-alert" role="alert">{{ errorTranslationKey() | transloco }}</div>
+      <p>{{ 'auth.verify.expiredHelp' | transloco }}</p>
     } @else {
       <p>
-        We sent a verification link to
-        <strong>{{ browserSession.user()?.email ?? 'your email address' }}</strong>. The link is
-        valid for 24 hours.
+        {{
+          'auth.verify.sentTo'
+            | transloco
+              : {
+                  email:
+                    browserSession.user()?.email ?? ('auth.verify.emailFallback' | transloco),
+                }
+        }}
       </p>
     }
 
     @if (!verification.isSuccess() && browserSession.user()) {
       <button type="button" [disabled]="resend.isPending()" (click)="resend.mutate()">
-        {{ resend.isPending() ? 'Sending…' : 'Send a new link' }}
+        {{ (resend.isPending() ? 'auth.verify.resendPending' : 'auth.verify.resend') | transloco }}
       </button>
       @if (resend.isSuccess()) {
-        <p class="success-text" role="status">{{ resend.data().message }}</p>
+        <p class="success-text" role="status">{{ 'auth.verify.resendSuccess' | transloco }}</p>
       }
       @if (resend.isError()) {
-        <p class="field-error" role="alert">Could not send the email. Try again shortly.</p>
+        <p class="field-error" role="alert">{{ 'auth.verify.resendError' | transloco }}</p>
       }
     }
 
     <p class="auth-foot">
-      <a href="/auth/login" routerLink="/auth/login">Back to sign in</a>
+      <a href="/auth/login" routerLink="/auth/login">
+        {{ 'auth.common.backToSignIn' | transloco }}
+      </a>
     </p>
   </section>
 </main>
