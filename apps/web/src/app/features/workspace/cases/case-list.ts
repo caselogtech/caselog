@@ -3,7 +3,12 @@ import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { TestCaseTemplate } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { injectInfiniteQuery, injectQuery } from '@tanstack/angular-query-experimental';
+import {
+  injectInfiniteQuery,
+  injectMutation,
+  injectQuery,
+  QueryClient,
+} from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../shared/api/api-error';
 import { WorkspaceApi } from '../workspace-api';
@@ -28,10 +33,14 @@ export class CaseList {
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly workspaceApi = inject(WorkspaceApi);
   private readonly workspaceSession = inject(WorkspaceSession);
+  private readonly queryClient = inject(QueryClient);
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly search = signal(this.route.snapshot.queryParamMap.get('search')?.trim() ?? '');
   readonly sectionId = signal(this.route.snapshot.queryParamMap.get('section') ?? '');
+  readonly state = signal<'active' | 'archived'>(
+    this.route.snapshot.queryParamMap.get('state') === 'archived' ? 'archived' : 'active',
+  );
 
   readonly searchForm = this.formBuilder.group({
     search: [this.search()],
@@ -43,7 +52,14 @@ export class CaseList {
   }));
 
   readonly cases = injectInfiniteQuery(() => ({
-    queryKey: ['test-cases', this.workspaceSlug, this.projectSlug, this.search(), this.sectionId()],
+    queryKey: [
+      'test-cases',
+      this.workspaceSlug,
+      this.projectSlug,
+      this.search(),
+      this.sectionId(),
+      this.state(),
+    ],
     queryFn: ({ pageParam }) =>
       this.workspaceApi.listTestCases(
         this.workspaceSlug,
@@ -51,6 +67,7 @@ export class CaseList {
         pageParam ?? undefined,
         this.search() || undefined,
         this.sectionId() || undefined,
+        this.state(),
       ),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -59,6 +76,24 @@ export class CaseList {
   readonly items = computed(() => this.cases.data()?.pages.flatMap(({ items }) => items) ?? []);
   readonly project = computed(() => this.cases.data()?.pages[0]?.project ?? null);
   readonly canCreate = computed(() => this.workspaceSession.role() !== 'read_only');
+
+  readonly duplicateCase = injectMutation(() => ({
+    mutationFn: (caseId: string) =>
+      this.workspaceApi.duplicateTestCase(this.workspaceSlug, this.projectSlug, caseId),
+    onSuccess: () => this.invalidateCases(),
+  }));
+
+  readonly archiveCase = injectMutation(() => ({
+    mutationFn: (caseId: string) =>
+      this.workspaceApi.archiveTestCase(this.workspaceSlug, this.projectSlug, caseId),
+    onSuccess: () => this.invalidateCases(),
+  }));
+
+  readonly restoreCase = injectMutation(() => ({
+    mutationFn: (caseId: string) =>
+      this.workspaceApi.restoreArchivedTestCase(this.workspaceSlug, this.projectSlug, caseId),
+    onSuccess: () => this.invalidateCases(),
+  }));
 
   async applySearch(): Promise<void> {
     const search = this.searchForm.controls.search.value.trim();
@@ -86,11 +121,32 @@ export class CaseList {
     });
   }
 
+  async selectState(state: 'active' | 'archived'): Promise<void> {
+    this.state.set(state);
+    await this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { state: state === 'archived' ? state : null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   templateTranslationKey(template: TestCaseTemplate): string {
     return TEMPLATE_TRANSLATION_KEYS[template];
   }
 
   errorTranslationKey(): string {
-    return apiErrorTranslationKey(this.cases.error());
+    return apiErrorTranslationKey(
+      this.duplicateCase.error() ??
+        this.archiveCase.error() ??
+        this.restoreCase.error() ??
+        this.cases.error(),
+    );
+  }
+
+  private invalidateCases(): Promise<void> {
+    return this.queryClient.invalidateQueries({
+      queryKey: ['test-cases', this.workspaceSlug, this.projectSlug],
+    });
   }
 }

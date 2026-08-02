@@ -53,13 +53,22 @@ const structure: ProjectStructureResponse = {
 };
 
 describe('CaseList', () => {
-  const workspaceApi = { listTestCases: vi.fn(), projectStructure: vi.fn() };
+  const workspaceApi = {
+    listTestCases: vi.fn(),
+    projectStructure: vi.fn(),
+    duplicateTestCase: vi.fn(),
+    archiveTestCase: vi.fn(),
+    restoreArchivedTestCase: vi.fn(),
+  };
   let queryClient: QueryClient;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     workspaceApi.listTestCases.mockReset();
     workspaceApi.projectStructure.mockReset();
+    workspaceApi.duplicateTestCase.mockReset();
+    workspaceApi.archiveTestCase.mockReset();
+    workspaceApi.restoreArchivedTestCase.mockReset();
     workspaceApi.projectStructure.mockResolvedValue(structure);
     await TestBed.configureTestingModule({
       imports: [CaseList, i18nTestingModule()],
@@ -95,6 +104,7 @@ describe('CaseList', () => {
       undefined,
       undefined,
       undefined,
+      'active',
     );
     expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain(
       'Authentication Project',
@@ -121,6 +131,7 @@ describe('CaseList', () => {
         undefined,
         'invalid password',
         undefined,
+        'active',
       ),
     );
 
@@ -147,6 +158,7 @@ describe('CaseList', () => {
         undefined,
         undefined,
         SECTION_ID,
+        'active',
       ),
     );
 
@@ -170,5 +182,38 @@ describe('CaseList', () => {
       'No matching test cases',
     );
     expect(fixture.nativeElement.querySelector('.cases-state button')).not.toBeNull();
+  });
+
+  it('stores archived state in the URL and restores a case', async () => {
+    workspaceApi.listTestCases.mockResolvedValue(response);
+    workspaceApi.restoreArchivedTestCase.mockResolvedValue({
+      testCaseId: response.items[0]?.id,
+      state: 'active',
+    });
+    const fixture = TestBed.createComponent(CaseList);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.cases.isSuccess()).toBe(true));
+
+    await fixture.componentInstance.selectState('archived');
+    await vi.waitFor(() =>
+      expect(workspaceApi.listTestCases).toHaveBeenLastCalledWith(
+        'acme-quality',
+        'authentication',
+        undefined,
+        undefined,
+        undefined,
+        'archived',
+      ),
+    );
+    fixture.componentInstance.restoreCase.mutate(response.items[0]?.id ?? '');
+    await vi.waitFor(() => expect(workspaceApi.restoreArchivedTestCase).toHaveBeenCalledOnce());
+
+    expect(navigate).toHaveBeenCalledWith([], {
+      relativeTo: TestBed.inject(ActivatedRoute),
+      queryParams: { state: 'archived' },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   });
 });

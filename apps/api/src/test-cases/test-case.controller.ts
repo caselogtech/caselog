@@ -1,10 +1,24 @@
-import { Body, Controller, Get, Inject, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import type {
   CreateTestCaseResponse,
   OrganizationAccessPrincipal,
   ProjectStructureResponse,
   TestCaseDetailResponse,
   TestCaseListResponse,
+  TestCaseLifecycleResponse,
   TestCaseVersion,
   UpdateTestCaseResponse,
 } from '@caselog/schemas';
@@ -88,6 +102,31 @@ export class TestCaseController {
       params.versionId,
       request,
     );
+  }
+
+  @Delete(':caseId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  archive(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestCaseDetailParamsDto,
+  ): Promise<void> {
+    return this.testCases.archive(principal, params.projectSlug, params.caseId);
+  }
+
+  @Post(':caseId/restore')
+  restoreArchived(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestCaseDetailParamsDto,
+  ): Promise<TestCaseLifecycleResponse> {
+    return this.testCases.restoreArchived(principal, params.projectSlug, params.caseId);
+  }
+
+  @Post(':caseId/duplicate')
+  duplicate(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestCaseDetailParamsDto,
+  ): Promise<CreateTestCaseResponse> {
+    return this.testCases.duplicate(principal, params.projectSlug, params.caseId);
   }
 }
 

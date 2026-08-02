@@ -713,6 +713,74 @@ describe('authentication API', () => {
     ).toEqual(['4', '5']);
   });
 
+  it('duplicates, archives, lists, and restores a test case without losing its versions', async () => {
+    const duplicated = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/cases/${editableCaseId}/duplicate`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(duplicated.statusCode, duplicated.body).toBe(201);
+    expect(duplicated.json()).toMatchObject({
+      testCase: {
+        title: 'Reset a forgotten password (copy)',
+        template: 'steps',
+        automationId: null,
+        section: { id: authSectionId },
+      },
+      version: { version: 1 },
+    });
+    const duplicatedCaseId = duplicated.json().testCase.id as string;
+
+    const archived = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/cases/${duplicatedCaseId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archived.statusCode, archived.body).toBe(204);
+    const archivedAgain = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/cases/${duplicatedCaseId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archivedAgain.statusCode, archivedAgain.body).toBe(204);
+
+    const activeList = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/cases?search=forgotten%20password%20(copy)',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(activeList.statusCode, activeList.body).toBe(200);
+    expect(activeList.json().items).toEqual([]);
+
+    const archivedList = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/cases?state=archived&search=forgotten%20password%20(copy)',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archivedList.statusCode, archivedList.body).toBe(200);
+    expect(archivedList.json().items).toEqual([
+      expect.objectContaining({ id: duplicatedCaseId, title: 'Reset a forgotten password (copy)' }),
+    ]);
+
+    const restored = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/cases/${duplicatedCaseId}/restore`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(restored.statusCode, restored.body).toBe(201);
+    expect(restored.json()).toEqual({ testCaseId: duplicatedCaseId, state: 'active' });
+    const restoredAgain = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/cases/${duplicatedCaseId}/restore`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(restoredAgain.statusCode, restoredAgain.body).toBe(201);
+
+    await expect(
+      admin.testCaseVersion.count({ where: { organizationId, testCaseId: duplicatedCaseId } }),
+    ).resolves.toBe(1);
+  });
+
   it('denies case creation to read-only members', async () => {
     await admin.membership.updateMany({
       where: { organizationId, userId: authUserId },
@@ -758,6 +826,20 @@ describe('authentication API', () => {
       });
       expect(restore.statusCode, restore.body).toBe(403);
       expect(restore.json().error).toMatchObject({ code: 'insufficient_permissions' });
+
+      const duplicate = await app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/authentication/cases/${editableCaseId}/duplicate`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+      });
+      expect(duplicate.statusCode, duplicate.body).toBe(403);
+
+      const archive = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/projects/authentication/cases/${editableCaseId}`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+      });
+      expect(archive.statusCode, archive.body).toBe(403);
     } finally {
       await admin.membership.updateMany({
         where: { organizationId, userId: authUserId },

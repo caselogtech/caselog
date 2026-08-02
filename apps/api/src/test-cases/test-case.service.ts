@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   testCaseListResponseSchema,
+  testCaseLifecycleResponseSchema,
   createTestCaseResponseSchema,
   projectStructureResponseSchema,
   testCaseDetailResponseSchema,
@@ -12,6 +13,7 @@ import {
   type TestCaseDetailResponse,
   type TestCaseListQuery,
   type TestCaseListResponse,
+  type TestCaseLifecycleResponse,
   type TestCaseVersion,
   type UpdateTestCaseRequest,
   type UpdateTestCaseResponse,
@@ -41,6 +43,7 @@ export class TestCaseService {
       query.limit,
       query.search,
       query.sectionId,
+      query.state,
     );
     if (result.kind === 'project_not_found') {
       throw new ResourceNotFoundError('project');
@@ -177,5 +180,50 @@ export class TestCaseService {
       );
     }
     return updateTestCaseResponseSchema.parse(result.value);
+  }
+
+  async archive(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<void> {
+    if (principal.role === 'read_only') throw new AuthorizationDeniedError();
+    const result = await this.testCases.archive(principal.organizationId, projectSlug, caseId);
+    if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
+    if (result.kind === 'case_not_found') throw new ResourceNotFoundError('test_case');
+  }
+
+  async restoreArchived(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<TestCaseLifecycleResponse> {
+    if (principal.role === 'read_only') throw new AuthorizationDeniedError();
+    const result = await this.testCases.restoreArchived(
+      principal.organizationId,
+      projectSlug,
+      caseId,
+    );
+    if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
+    if (result.kind === 'case_not_found') throw new ResourceNotFoundError('test_case');
+    return testCaseLifecycleResponseSchema.parse(result.value);
+  }
+
+  async duplicate(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<CreateTestCaseResponse> {
+    if (principal.role === 'read_only') throw new AuthorizationDeniedError();
+    const result = await this.testCases.duplicate(
+      principal.organizationId,
+      principal.sub,
+      projectSlug,
+      caseId,
+    );
+    if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
+    if (result.kind === 'case_not_found') throw new ResourceNotFoundError('test_case');
+    if (result.kind === 'section_not_found') throw new ResourceNotFoundError('section');
+    return createTestCaseResponseSchema.parse(result.value);
   }
 }

@@ -8,7 +8,7 @@
       <p>{{ 'workspace.cases.description' | transloco }}</p>
     </div>
     <div class="header-actions">
-      @if (canCreate()) {
+      @if (canCreate() && state() === 'active') {
         <a
           class="create-link"
           href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/new"
@@ -83,6 +83,27 @@
         </form>
       </search>
 
+      <nav class="case-state-tabs" [attr.aria-label]="'workspace.cases.stateFilter' | transloco">
+        <button
+          type="button"
+          [class.active]="state() === 'active'"
+          (click)="selectState('active')"
+        >
+          {{ 'workspace.cases.active' | transloco }}
+        </button>
+        <button
+          type="button"
+          [class.active]="state() === 'archived'"
+          (click)="selectState('archived')"
+        >
+          {{ 'workspace.cases.archived' | transloco }}
+        </button>
+      </nav>
+
+      @if (duplicateCase.isError() || archiveCase.isError() || restoreCase.isError()) {
+        <div class="case-action-error" role="alert">{{ errorTranslationKey() | transloco }}</div>
+      }
+
       @if (cases.isPending()) {
     <section class="cases-state" aria-live="polite">
       {{ 'workspace.cases.loading' | transloco }}
@@ -98,13 +119,20 @@
     <section class="cases-state">
       <h2>
         {{
-          (search() ? 'workspace.cases.noMatchesTitle' : 'workspace.cases.emptyTitle') | transloco
+          (search()
+            ? 'workspace.cases.noMatchesTitle'
+            : state() === 'archived'
+              ? 'workspace.cases.noArchivedTitle'
+              : 'workspace.cases.emptyTitle') | transloco
         }}
       </h2>
       <p>
         {{
-          (search() ? 'workspace.cases.noMatchesDescription' : 'workspace.cases.emptyDescription')
-            | transloco
+          (search()
+            ? 'workspace.cases.noMatchesDescription'
+            : state() === 'archived'
+              ? 'workspace.cases.noArchivedDescription'
+              : 'workspace.cases.emptyDescription') | transloco
         }}
       </p>
       @if (search()) {
@@ -123,6 +151,9 @@
             <th scope="col">{{ 'workspace.cases.section' | transloco }}</th>
             <th scope="col">{{ 'workspace.cases.template' | transloco }}</th>
             <th scope="col">{{ 'workspace.cases.automation' | transloco }}</th>
+            @if (canCreate()) {
+              <th scope="col">{{ 'workspace.cases.actions' | transloco }}</th>
+            }
           </tr>
         </thead>
         <tbody>
@@ -130,13 +161,33 @@
             <tr>
               <td class="case-id">{{ project()?.key }}-{{ testCase.caseNumber }}</td>
               <td class="case-title">
-                <a
-                  href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/{{ testCase.id }}"
-                  [routerLink]="['/', workspaceSlug, projectSlug, 'cases', testCase.id]"
-                >
+                @if (state() === 'active') {
+                  <a
+                    href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/{{ testCase.id }}"
+                    [routerLink]="['/', workspaceSlug, projectSlug, 'cases', testCase.id]"
+                  >
+                    {{ testCase.title }}
+                  </a>
+                } @else {
                   {{ testCase.title }}
-                </a>
+                }
               </td>
+              @if (canCreate()) {
+                <td class="case-actions">
+                  @if (state() === 'active') {
+                    <button type="button" (click)="duplicateCase.mutate(testCase.id)">
+                      {{ 'workspace.cases.duplicate' | transloco }}
+                    </button>
+                    <button type="button" (click)="archiveCase.mutate(testCase.id)">
+                      {{ 'workspace.cases.archive' | transloco }}
+                    </button>
+                  } @else {
+                    <button type="button" (click)="restoreCase.mutate(testCase.id)">
+                      {{ 'workspace.cases.restore' | transloco }}
+                    </button>
+                  }
+                </td>
+              }
               <td>{{ testCase.section.name }}</td>
               <td>{{ templateTranslationKey(testCase.template) | transloco }}</td>
               <td>

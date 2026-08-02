@@ -6,6 +6,7 @@ import type {
   RestoreTestCaseVersionRequest,
   TestCaseDetailResponse,
   TestCaseListResponse,
+  TestCaseLifecycleResponse,
   TestCaseTemplate,
   TestCaseVersion,
   UpdateTestCaseRequest,
@@ -44,6 +45,8 @@ export type CreateTestCaseResult =
   | { kind: 'project_not_found' }
   | { kind: 'section_not_found' };
 
+export type DuplicateTestCaseResult = CreateTestCaseResult | { kind: 'case_not_found' };
+
 export type TestCaseDetailResult =
   | { kind: 'found'; value: TestCaseDetailResponse }
   | { kind: 'project_not_found' }
@@ -63,6 +66,11 @@ export type TestCaseVersionResult =
   | { kind: 'case_not_found' }
   | { kind: 'version_not_found' };
 
+export type TestCaseLifecycleResult =
+  | { kind: 'found'; value: TestCaseLifecycleResponse }
+  | { kind: 'project_not_found' }
+  | { kind: 'case_not_found' };
+
 @Injectable()
 export class TestCaseRepository {
   constructor(
@@ -76,6 +84,7 @@ export class TestCaseRepository {
     limit: number,
     search: string | undefined,
     sectionId: string | undefined,
+    state: 'active' | 'archived',
   ): Promise<TestCaseListResult> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
       const project = await transaction.project.findUnique({
@@ -90,7 +99,7 @@ export class TestCaseRepository {
         where: {
           projectId: project.id,
           sectionId,
-          deletedAt: null,
+          deletedAt: state === 'active' ? null : { not: null },
           currentVersionId: { not: null },
           currentVersion: search ? { title: { contains: search, mode: 'insensitive' } } : undefined,
         },
@@ -586,6 +595,147 @@ export class TestCaseRepository {
           },
           version,
         },
+      };
+    });
+  }
+
+  async archive(
+    organizationId: string,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<TestCaseLifecycleResult> {
+    return this.setArchivedState(organizationId, projectSlug, caseId, true);
+  }
+
+  async restoreArchived(
+    organizationId: string,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<TestCaseLifecycleResult> {
+    return this.setArchivedState(organizationId, projectSlug, caseId, false);
+  }
+
+  async duplicate(
+    organizationId: string,
+    userId: string,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<DuplicateTestCaseResult> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) return { kind: 'project_not_found' };
+
+      const source = await transaction.testCase.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: caseId },
+          projectId: project.id,
+          deletedAt: null,
+        },
+        select: {
+          suiteId: true,
+          sectionId: true,
+          section: { select: { name: true } },
+          currentVersion: {
+            select: {
+              title: true,
+              template: true,
+              preconditions: true,
+              expectedResult: true,
+              content: true,
+            },
+          },
+        },
+      });
+      if (!source?.currentVersion) return { kind: 'case_not_found' };
+
+      const numberedProject = await transaction.project.update({
+        where: { organizationId_id: { organizationId, id: project.id } },
+        data: { nextCaseNumber: { increment: 1 } },
+        select: { nextCaseNumber: true },
+      });
+      const title = `${source.currentVersion.title.slice(0, 493)} (copy)`;
+      const testCase = await transaction.testCase.create({
+        data: {
+          organizationId,
+          projectId: project.id,
+          suiteId: source.suiteId,
+          sectionId: source.sectionId,
+          caseNumber: numberedProject.nextCaseNumber - 1n,
+        },
+        select: { id: true, caseNumber: true },
+      });
+      const version = await transaction.testCaseVersion.create({
+        data: {
+          organizationId,
+          testCaseId: testCase.id,
+          version: 1,
+          title,
+          template: source.currentVersion.template,
+          preconditions: source.currentVersion.preconditions,
+          expectedResult: source.currentVersion.expectedResult,
+          content: testCaseContentSchema.parse(source.currentVersion.content),
+          createdById: userId,
+        },
+        select: { id: true, version: true },
+      });
+      const current = await transaction.testCase.update({
+        where: { organizationId_id: { organizationId, id: testCase.id } },
+        data: { currentVersionId: version.id },
+        select: { updatedAt: true },
+      });
+
+      return {
+        kind: 'created',
+        value: {
+          testCase: {
+            id: testCase.id,
+            caseNumber: testCase.caseNumber.toString(),
+            title,
+            template: TEMPLATE_MAP[source.currentVersion.template],
+            automationId: null,
+            section: { id: source.sectionId, name: source.section.name },
+            updatedAt: current.updatedAt.toISOString(),
+          },
+          version: { id: version.id, version: 1 },
+        },
+      };
+    });
+  }
+
+  private setArchivedState(
+    organizationId: string,
+    projectSlug: string,
+    caseId: string,
+    archived: boolean,
+  ): Promise<TestCaseLifecycleResult> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) return { kind: 'project_not_found' };
+
+      const testCase = await transaction.testCase.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: caseId },
+          projectId: project.id,
+        },
+        select: { id: true, deletedAt: true },
+      });
+      if (!testCase) return { kind: 'case_not_found' };
+
+      if (archived !== Boolean(testCase.deletedAt)) {
+        await transaction.testCase.update({
+          where: { organizationId_id: { organizationId, id: testCase.id } },
+          data: { deletedAt: archived ? new Date() : null },
+        });
+      }
+      return {
+        kind: 'found',
+        value: { testCaseId: testCase.id, state: archived ? 'archived' : 'active' },
       };
     });
   }

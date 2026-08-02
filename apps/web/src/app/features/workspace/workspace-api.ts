@@ -5,6 +5,7 @@ import {
   projectListResponseSchema,
   projectStructureResponseSchema,
   testCaseListResponseSchema,
+  testCaseLifecycleResponseSchema,
   testCaseDetailResponseSchema,
   testCaseVersionSchema,
   type CreateTestCaseRequest,
@@ -13,6 +14,7 @@ import {
   type ProjectListResponse,
   type ProjectStructureResponse,
   type TestCaseListResponse,
+  type TestCaseLifecycleResponse,
   type TestCaseDetailResponse,
   type TestCaseVersion,
   type UpdateTestCaseRequest,
@@ -77,6 +79,7 @@ export class WorkspaceApi {
     cursor?: string,
     search?: string,
     sectionId?: string,
+    state: 'active' | 'archived' = 'active',
     limit = 50,
   ): Promise<TestCaseListResponse> {
     await this.open(workspaceSlug);
@@ -87,6 +90,7 @@ export class WorkspaceApi {
           ...(cursor ? { cursor } : {}),
           ...(search ? { search } : {}),
           ...(sectionId ? { sectionId } : {}),
+          ...(state === 'archived' ? { state } : {}),
         },
       }),
     );
@@ -176,5 +180,44 @@ export class WorkspaceApi {
       ),
     );
     return updateTestCaseResponseSchema.parse(response);
+  }
+
+  async duplicateTestCase(
+    workspaceSlug: string,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<CreateTestCaseResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}/duplicate`,
+        null,
+      ),
+    );
+    return createTestCaseResponseSchema.parse(response);
+  }
+
+  async archiveTestCase(workspaceSlug: string, projectSlug: string, caseId: string): Promise<void> {
+    await this.open(workspaceSlug);
+    await lastValueFrom(
+      this.http.delete<void>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}`,
+      ),
+    );
+  }
+
+  async restoreArchivedTestCase(
+    workspaceSlug: string,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<TestCaseLifecycleResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}/restore`,
+        null,
+      ),
+    );
+    return testCaseLifecycleResponseSchema.parse(response);
   }
 }

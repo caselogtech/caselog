@@ -144,6 +144,39 @@
   max-width: 560px;
 }
 
+.case-state-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+
+.case-state-tabs button,
+.case-actions button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  font: inherit;
+  min-height: 36px;
+  padding: 7px 11px;
+}
+
+.case-state-tabs button.active {
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.case-action-error {
+  background: var(--error-surface);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-sm);
+  color: var(--error-text);
+  margin-bottom: 18px;
+  padding: 10px 12px;
+}
+
 .case-search label {
   display: block;
   font-size: 0.875rem;
@@ -225,6 +258,12 @@ tbody tr:last-child td {
 .automation-id {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.case-actions {
+  display: flex;
+  gap: 6px;
   white-space: nowrap;
 }
 

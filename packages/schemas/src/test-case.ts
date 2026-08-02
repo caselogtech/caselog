@@ -15,6 +15,7 @@ export const testCaseListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   search: z.string().trim().min(1).max(200).optional(),
   sectionId: z.uuid().optional(),
+  state: z.enum(['active', 'archived']).default('active'),
 });
 
 export const testCaseTemplateSchema = z.enum(['steps', 'text', 'exploratory', 'bdd']);
@@ -187,6 +188,11 @@ export const restoreTestCaseVersionRequestSchema = z.object({
   baseVersion: z.number().int().positive(),
 });
 
+export const testCaseLifecycleResponseSchema = z.object({
+  testCaseId: z.uuid(),
+  state: z.enum(['active', 'archived']),
+});
+
 export type TestCaseListParams = z.infer<typeof testCaseListParamsSchema>;
 export type TestCaseListQuery = z.infer<typeof testCaseListQuerySchema>;
 export type TestCaseTemplate = z.infer<typeof testCaseTemplateSchema>;
@@ -202,3 +208,4 @@ export type UpdateTestCaseRequest = z.infer<typeof updateTestCaseRequestSchema>;
 export type UpdateTestCaseResponse = z.infer<typeof updateTestCaseResponseSchema>;
 export type TestCaseVersionParams = z.infer<typeof testCaseVersionParamsSchema>;
 export type RestoreTestCaseVersionRequest = z.infer<typeof restoreTestCaseVersionRequestSchema>;
+export type TestCaseLifecycleResponse = z.infer<typeof testCaseLifecycleResponseSchema>;
