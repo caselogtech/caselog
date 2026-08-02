@@ -525,6 +525,204 @@ describe('authentication API', () => {
         }),
       ]),
     );
+
+    const targetSuite = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/structure/suites',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Recovery archive' },
+    });
+    expect(targetSuite.statusCode, targetSuite.body).toBe(201);
+    const targetSuiteId = targetSuite.json().id as string;
+
+    const reorderedSuite = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/structure/suites/${targetSuiteId}/move`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { position: 0 },
+    });
+    expect(reorderedSuite.statusCode, reorderedSuite.body).toBe(200);
+    expect(reorderedSuite.json()).toMatchObject({ id: targetSuiteId, position: 0 });
+    const reorderedStructure = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/structure',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(reorderedStructure.json().suites[0].id).toBe(targetSuiteId);
+
+    const grandchild = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/structure/suites/${suiteId}/sections`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Mail provider', parentId: child.json().id as string },
+    });
+    expect(grandchild.statusCode, grandchild.body).toBe(201);
+    const managedSection = await admin.section.findUniqueOrThrow({
+      where: {
+        organizationId_id: {
+          organizationId: organizationId ?? '',
+          id: child.json().id as string,
+        },
+      },
+      select: { projectId: true, suiteId: true },
+    });
+    const archivedCase = await admin.testCase.create({
+      data: {
+        organizationId: organizationId ?? '',
+        projectId: managedSection.projectId,
+        suiteId: managedSection.suiteId,
+        sectionId: child.json().id as string,
+        caseNumber: 999_999n,
+        deletedAt: new Date(),
+      },
+    });
+
+    const moved = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/structure/sections/${child.json().id as string}/move`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { suiteId: targetSuiteId, parentId: null, position: 0 },
+    });
+    expect(moved.statusCode, moved.body).toBe(200);
+    expect(moved.json()).toMatchObject({
+      id: child.json().id,
+      suiteId: targetSuiteId,
+      parentId: null,
+      depth: 0,
+      position: 0,
+    });
+
+    const movedSections = await admin.section.findMany({
+      where: { id: { in: [child.json().id as string, grandchild.json().id as string] } },
+      orderBy: { depth: 'asc' },
+      select: { id: true, suiteId: true, path: true, depth: true },
+    });
+    expect(movedSections).toEqual([
+      {
+        id: child.json().id,
+        suiteId: targetSuiteId,
+        path: `/${child.json().id as string}`,
+        depth: 0,
+      },
+      {
+        id: grandchild.json().id,
+        suiteId: targetSuiteId,
+        path: `/${child.json().id as string}/${grandchild.json().id as string}`,
+        depth: 1,
+      },
+    ]);
+    await expect(
+      admin.testCase.findUniqueOrThrow({
+        where: {
+          organizationId_id: { organizationId: organizationId ?? '', id: archivedCase.id },
+        },
+        select: { suiteId: true },
+      }),
+    ).resolves.toEqual({ suiteId: targetSuiteId });
+
+    const sibling = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/structure/suites/${targetSuiteId}/sections`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'SMS reset' },
+    });
+    expect(sibling.statusCode, sibling.body).toBe(201);
+    const reorderedSection = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/structure/sections/${sibling.json().id as string}/move`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { suiteId: targetSuiteId, parentId: null, position: 0 },
+    });
+    expect(reorderedSection.statusCode, reorderedSection.body).toBe(200);
+    const sectionOrder = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/structure',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    const reorderedTargetSuite = sectionOrder
+      .json()
+      .suites.find(({ id }: { id: string }) => id === targetSuiteId);
+    expect(reorderedTargetSuite.sections.map(({ name }: { name: string }) => name)).toEqual([
+      'SMS reset',
+      'Reset by email',
+      'Mail provider',
+    ]);
+
+    const cycle = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/structure/sections/${child.json().id as string}/move`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        suiteId: targetSuiteId,
+        parentId: grandchild.json().id as string,
+        position: 0,
+      },
+    });
+    expect(cycle.statusCode, cycle.body).toBe(409);
+    expect(cycle.json().error.code).toBe('section_cycle');
+
+    const nonEmptySection = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/structure/sections/${child.json().id as string}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(nonEmptySection.statusCode, nonEmptySection.body).toBe(409);
+    expect(nonEmptySection.json().error.code).toBe('section_not_empty');
+    const nonEmptySuite = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/structure/suites/${targetSuiteId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(nonEmptySuite.statusCode, nonEmptySuite.body).toBe(409);
+    expect(nonEmptySuite.json().error.code).toBe('suite_not_empty');
+
+    const deletedSibling = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/structure/sections/${sibling.json().id as string}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(deletedSibling.statusCode, deletedSibling.body).toBe(204);
+
+    const deletedGrandchild = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/structure/sections/${grandchild.json().id as string}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(deletedGrandchild.statusCode, deletedGrandchild.body).toBe(204);
+    const archivedCaseStillBlocksDeletion = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/structure/sections/${child.json().id as string}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archivedCaseStillBlocksDeletion.statusCode, archivedCaseStillBlocksDeletion.body).toBe(
+      409,
+    );
+    expect(archivedCaseStillBlocksDeletion.json().error.code).toBe('section_not_empty');
+    await admin.testCase.delete({
+      where: {
+        organizationId_id: { organizationId: organizationId ?? '', id: archivedCase.id },
+      },
+    });
+    const deletedMovedSection = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/structure/sections/${child.json().id as string}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(deletedMovedSection.statusCode, deletedMovedSection.body).toBe(204);
+    const deletedTargetSuite = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/structure/suites/${targetSuiteId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(deletedTargetSuite.statusCode, deletedTargetSuite.body).toBe(204);
+
+    const protectedSection = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/structure/sections/${authSectionId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(protectedSection.statusCode, protectedSection.body).toBe(409);
+    expect(protectedSection.json().error.code).toBe('section_not_empty');
   });
 
   it('creates a test case and its immutable first version atomically', async () => {
@@ -921,6 +1119,21 @@ describe('authentication API', () => {
         payload: { name: 'Forbidden suite' },
       });
       expect(createSuite.statusCode, createSuite.body).toBe(403);
+
+      const moveSection = await app.inject({
+        method: 'PUT',
+        url: `/api/v1/projects/authentication/structure/sections/${authSectionId}/move`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: { suiteId: randomUUID(), parentId: null, position: 0 },
+      });
+      expect(moveSection.statusCode, moveSection.body).toBe(403);
+
+      const deleteSection = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/projects/authentication/structure/sections/${authSectionId}`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+      });
+      expect(deleteSection.statusCode, deleteSection.body).toBe(403);
     } finally {
       await admin.membership.updateMany({
         where: { organizationId, userId: authUserId },
@@ -1013,6 +1226,12 @@ describe('authentication API', () => {
       payload: { name: 'Foreign suite' },
     });
     expect(crossTenantSuite.statusCode).toBe(404);
+    const crossTenantSectionDelete = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/structure/sections/${authSectionId}`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantSectionDelete.statusCode).toBe(404);
 
     const memberList = await app.inject({
       method: 'GET',

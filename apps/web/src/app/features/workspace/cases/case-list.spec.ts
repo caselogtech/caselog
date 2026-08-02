@@ -61,8 +61,12 @@ describe('CaseList', () => {
     restoreArchivedTestCase: vi.fn(),
     createSuite: vi.fn(),
     updateSuite: vi.fn(),
+    moveSuite: vi.fn(),
+    deleteSuite: vi.fn(),
     createSection: vi.fn(),
     updateSection: vi.fn(),
+    moveSection: vi.fn(),
+    deleteSection: vi.fn(),
   };
   let queryClient: QueryClient;
 
@@ -75,8 +79,12 @@ describe('CaseList', () => {
     workspaceApi.restoreArchivedTestCase.mockReset();
     workspaceApi.createSuite.mockReset();
     workspaceApi.updateSuite.mockReset();
+    workspaceApi.moveSuite.mockReset();
+    workspaceApi.deleteSuite.mockReset();
     workspaceApi.createSection.mockReset();
     workspaceApi.updateSection.mockReset();
+    workspaceApi.moveSection.mockReset();
+    workspaceApi.deleteSection.mockReset();
     workspaceApi.projectStructure.mockResolvedValue(structure);
     await TestBed.configureTestingModule({
       imports: [CaseList, i18nTestingModule()],
@@ -245,5 +253,44 @@ describe('CaseList', () => {
       'authentication',
       'Account security',
     );
+  });
+
+  it('reorders, moves, and safely deletes structure items', async () => {
+    workspaceApi.listTestCases.mockResolvedValue(response);
+    workspaceApi.moveSuite.mockResolvedValue({
+      id: structure.suites[0]?.id,
+      name: 'Authentication suite',
+      position: 1,
+    });
+    workspaceApi.moveSection.mockResolvedValue({
+      id: SECTION_ID,
+      suiteId: structure.suites[0]?.id,
+      parentId: null,
+      name: 'Sign in',
+      depth: 0,
+      position: 1,
+    });
+    workspaceApi.deleteSection.mockResolvedValue(undefined);
+    const fixture = TestBed.createComponent(CaseList);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.structure.isSuccess()).toBe(true));
+
+    fixture.componentInstance.moveSuite(structure.suites[0]?.id ?? '', 1);
+    await vi.waitFor(() => expect(workspaceApi.moveSuite).toHaveBeenCalledOnce());
+
+    fixture.componentInstance.beginMoveSection(SECTION_ID, structure.suites[0]?.id ?? '', 0);
+    fixture.componentInstance.moveForm.controls.position.setValue(1);
+    fixture.componentInstance.submitMoveSection();
+    await vi.waitFor(() => expect(workspaceApi.moveSection).toHaveBeenCalledOnce());
+    expect(workspaceApi.moveSection).toHaveBeenCalledWith(
+      'acme-quality',
+      'authentication',
+      SECTION_ID,
+      { suiteId: structure.suites[0]?.id, parentId: null, position: 1 },
+    );
+
+    fixture.componentInstance.requestDelete('section', SECTION_ID);
+    fixture.componentInstance.confirmDelete();
+    await vi.waitFor(() => expect(workspaceApi.deleteSection).toHaveBeenCalledOnce());
   });
 });

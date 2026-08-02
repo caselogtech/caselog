@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { TestCaseTemplate } from '@caselog/schemas';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
   injectInfiniteQuery,
@@ -43,6 +44,8 @@ export class CaseList {
   );
   readonly sectionEditor = signal<{ suiteId: string; parentId?: string } | null>(null);
   readonly renameTarget = signal<{ type: 'suite' | 'section'; id: string } | null>(null);
+  readonly moveTarget = signal<{ id: string } | null>(null);
+  readonly deleteTarget = signal<{ type: 'suite' | 'section'; id: string } | null>(null);
 
   readonly searchForm = this.formBuilder.group({
     search: [this.search()],
@@ -55,6 +58,14 @@ export class CaseList {
   });
   readonly renameForm = this.formBuilder.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
+  });
+  readonly moveForm = this.formBuilder.group({
+    suiteId: ['', Validators.required],
+    parentId: [''],
+    position: [0, [Validators.required, Validators.min(0)]],
+  });
+  private readonly moveSuiteId = toSignal(this.moveForm.controls.suiteId.valueChanges, {
+    initialValue: this.moveForm.controls.suiteId.value,
   });
 
   readonly structure = injectQuery(() => ({
@@ -87,6 +98,13 @@ export class CaseList {
   readonly items = computed(() => this.cases.data()?.pages.flatMap(({ items }) => items) ?? []);
   readonly project = computed(() => this.cases.data()?.pages[0]?.project ?? null);
   readonly canCreate = computed(() => this.workspaceSession.role() !== 'read_only');
+  readonly moveParentOptions = computed(
+    () =>
+      this.structure
+        .data()
+        ?.suites.find((suite) => suite.id === this.moveSuiteId())
+        ?.sections.filter((section) => section.id !== this.moveTarget()?.id) ?? [],
+  );
 
   readonly duplicateCase = injectMutation(() => ({
     mutationFn: (caseId: string) =>
@@ -143,6 +161,44 @@ export class CaseList {
           ),
     onSuccess: async () => {
       this.renameTarget.set(null);
+      await this.invalidateStructure();
+    },
+  }));
+
+  readonly moveSuiteItem = injectMutation(() => ({
+    mutationFn: (input: { id: string; position: number }) =>
+      this.workspaceApi.moveSuite(this.workspaceSlug, this.projectSlug, input.id, input.position),
+    onSuccess: () => this.invalidateStructure(),
+  }));
+
+  readonly moveSectionItem = injectMutation(() => ({
+    mutationFn: (input: {
+      id: string;
+      suiteId: string;
+      parentId: string | null;
+      position: number;
+    }) =>
+      this.workspaceApi.moveSection(this.workspaceSlug, this.projectSlug, input.id, {
+        suiteId: input.suiteId,
+        parentId: input.parentId,
+        position: input.position,
+      }),
+    onSuccess: async () => {
+      this.moveTarget.set(null);
+      await this.invalidateStructure();
+    },
+  }));
+
+  readonly deleteStructureItem = injectMutation(() => ({
+    mutationFn: (input: { type: 'suite' | 'section'; id: string }) =>
+      input.type === 'suite'
+        ? this.workspaceApi.deleteSuite(this.workspaceSlug, this.projectSlug, input.id)
+        : this.workspaceApi.deleteSection(this.workspaceSlug, this.projectSlug, input.id),
+    onSuccess: async (_result, input) => {
+      this.deleteTarget.set(null);
+      if (input.type === 'section' && this.sectionId() === input.id) {
+        await this.selectSection('');
+      }
       await this.invalidateStructure();
     },
   }));
@@ -225,6 +281,39 @@ export class CaseList {
     });
   }
 
+  moveSuite(id: string, position: number): void {
+    if (position >= 0) this.moveSuiteItem.mutate({ id, position });
+  }
+
+  beginMoveSection(id: string, suiteId: string, position: number): void {
+    this.moveTarget.set({ id });
+    this.moveForm.setValue({ suiteId, parentId: '', position });
+  }
+
+  submitMoveSection(): void {
+    const target = this.moveTarget();
+    if (!target || this.moveForm.invalid) {
+      this.moveForm.markAllAsTouched();
+      return;
+    }
+    const value = this.moveForm.getRawValue();
+    this.moveSectionItem.mutate({
+      id: target.id,
+      suiteId: value.suiteId,
+      parentId: value.parentId || null,
+      position: value.position,
+    });
+  }
+
+  requestDelete(type: 'suite' | 'section', id: string): void {
+    this.deleteTarget.set({ type, id });
+  }
+
+  confirmDelete(): void {
+    const target = this.deleteTarget();
+    if (target) this.deleteStructureItem.mutate(target);
+  }
+
   templateTranslationKey(template: TestCaseTemplate): string {
     return TEMPLATE_TRANSLATION_KEYS[template];
   }
@@ -237,6 +326,9 @@ export class CaseList {
         this.createSuite.error() ??
         this.createSection.error() ??
         this.renameStructureItem.error() ??
+        this.moveSuiteItem.error() ??
+        this.moveSectionItem.error() ??
+        this.deleteStructureItem.error() ??
         this.cases.error(),
     );
   }

@@ -256,6 +256,31 @@ export class WorkspaceApi {
     return suiteResponseSchema.parse(response);
   }
 
+  async moveSuite(
+    workspaceSlug: string,
+    projectSlug: string,
+    suiteId: string,
+    position: number,
+  ): Promise<SuiteResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.put<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites/${encodeURIComponent(suiteId)}/move`,
+        { position },
+      ),
+    );
+    return suiteResponseSchema.parse(response);
+  }
+
+  async deleteSuite(workspaceSlug: string, projectSlug: string, suiteId: string): Promise<void> {
+    await this.open(workspaceSlug);
+    await lastValueFrom(
+      this.http.delete<void>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites/${encodeURIComponent(suiteId)}`,
+      ),
+    );
+  }
+
   async createSection(
     workspaceSlug: string,
     projectSlug: string,
@@ -287,5 +312,34 @@ export class WorkspaceApi {
       ),
     );
     return sectionResponseSchema.parse(response);
+  }
+
+  async moveSection(
+    workspaceSlug: string,
+    projectSlug: string,
+    sectionId: string,
+    request: { suiteId: string; parentId: string | null; position: number },
+  ): Promise<SectionResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.put<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/sections/${encodeURIComponent(sectionId)}/move`,
+        request,
+      ),
+    );
+    return sectionResponseSchema.parse(response);
+  }
+
+  async deleteSection(
+    workspaceSlug: string,
+    projectSlug: string,
+    sectionId: string,
+  ): Promise<void> {
+    await this.open(workspaceSlug);
+    await lastValueFrom(
+      this.http.delete<void>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/sections/${encodeURIComponent(sectionId)}`,
+      ),
+    );
   }
 }

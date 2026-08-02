@@ -6,7 +6,10 @@
   "errors": {
     "case_version_conflict": "This test case changed while you were editing it. Reload the latest version and try again.",
     "section_name_taken": "A section with this name already exists here.",
+    "section_not_empty": "Move or delete this section's cases and child sections first.",
+    "section_cycle": "A section cannot be moved inside itself or one of its child sections.",
     "suite_name_taken": "A suite with this name already exists in this project.",
+    "suite_not_empty": "Move or delete this suite's sections and test cases first.",
     "default": "Something went wrong. Please try again.",
     "email_already_registered": "An account with this email already exists.",
     "email_verification_required": "Verify your email before creating a workspace.",

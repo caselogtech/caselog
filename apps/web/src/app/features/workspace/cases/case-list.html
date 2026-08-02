@@ -48,17 +48,44 @@
           </button>
         </div>
       } @else {
-        @for (suite of structure.data()?.suites ?? []; track suite.id) {
+        @for (
+          suite of structure.data()?.suites ?? [];
+          track suite.id;
+          let suiteIndex = $index;
+          let firstSuite = $first;
+          let lastSuite = $last
+        ) {
           <section class="suite-group">
             <div class="suite-heading">
               <h2>{{ suite.name }}</h2>
               @if (canCreate()) {
                 <div>
+                  <button
+                    type="button"
+                    [disabled]="firstSuite || moveSuiteItem.isPending()"
+                    [attr.aria-label]="'workspace.cases.moveSuiteUp' | transloco"
+                    [title]="'workspace.cases.moveSuiteUp' | transloco"
+                    (click)="moveSuite(suite.id, suiteIndex - 1)"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    [disabled]="lastSuite || moveSuiteItem.isPending()"
+                    [attr.aria-label]="'workspace.cases.moveSuiteDown' | transloco"
+                    [title]="'workspace.cases.moveSuiteDown' | transloco"
+                    (click)="moveSuite(suite.id, suiteIndex + 1)"
+                  >
+                    ↓
+                  </button>
                   <button type="button" (click)="beginRename('suite', suite.id, suite.name)">
                     {{ 'workspace.cases.rename' | transloco }}
                   </button>
                   <button type="button" (click)="beginSection(suite.id)">
                     {{ 'workspace.cases.addSection' | transloco }}
+                  </button>
+                  <button type="button" (click)="requestDelete('suite', suite.id)">
+                    {{ 'workspace.cases.delete' | transloco }}
                   </button>
                 </div>
               }
@@ -85,6 +112,15 @@
                     <button type="button" (click)="beginSection(suite.id, section.id)">
                       {{ 'workspace.cases.addChildSection' | transloco }}
                     </button>
+                    <button
+                      type="button"
+                      (click)="beginMoveSection(section.id, suite.id, section.position)"
+                    >
+                      {{ 'workspace.cases.move' | transloco }}
+                    </button>
+                    <button type="button" (click)="requestDelete('section', section.id)">
+                      {{ 'workspace.cases.delete' | transloco }}
+                    </button>
                   </div>
                 }
               </div>
@@ -93,7 +129,14 @@
         }
 
         @if (canCreate()) {
-          @if (createSuite.isError() || createSection.isError() || renameStructureItem.isError()) {
+          @if (
+            createSuite.isError() ||
+            createSection.isError() ||
+            renameStructureItem.isError() ||
+            moveSuiteItem.isError() ||
+            moveSectionItem.isError() ||
+            deleteStructureItem.isError()
+          ) {
             <p class="structure-state error" role="alert">{{ errorTranslationKey() | transloco }}</p>
           }
           @if (sectionEditor()) {
@@ -120,6 +163,50 @@
                 </button>
               </div>
             </form>
+          }
+
+          @if (moveTarget()) {
+            <form class="structure-form" [formGroup]="moveForm" (ngSubmit)="submitMoveSection()">
+              <label for="move-section-suite">{{ 'workspace.cases.targetSuite' | transloco }}</label>
+              <select
+                id="move-section-suite"
+                formControlName="suiteId"
+                (change)="moveForm.controls.parentId.setValue('')"
+              >
+                @for (suite of structure.data()?.suites ?? []; track suite.id) {
+                  <option [value]="suite.id">{{ suite.name }}</option>
+                }
+              </select>
+              <label for="move-section-parent">{{ 'workspace.cases.parentSection' | transloco }}</label>
+              <select id="move-section-parent" formControlName="parentId">
+                <option value="">{{ 'workspace.cases.rootLevel' | transloco }}</option>
+                @for (section of moveParentOptions(); track section.id) {
+                  <option [value]="section.id">{{ section.name }}</option>
+                }
+              </select>
+              <label for="move-section-position">{{ 'workspace.cases.position' | transloco }}</label>
+              <input id="move-section-position" type="number" min="0" formControlName="position" />
+              <div>
+                <button type="submit">{{ 'workspace.cases.move' | transloco }}</button>
+                <button type="button" (click)="moveTarget.set(null)">
+                  {{ 'workspace.cases.cancel' | transloco }}
+                </button>
+              </div>
+            </form>
+          }
+
+          @if (deleteTarget()) {
+            <div class="structure-form delete-confirmation" role="alert">
+              <p>{{ 'workspace.cases.deleteStructureConfirmation' | transloco }}</p>
+              <div>
+                <button type="button" (click)="confirmDelete()">
+                  {{ 'workspace.cases.confirmDelete' | transloco }}
+                </button>
+                <button type="button" (click)="deleteTarget.set(null)">
+                  {{ 'workspace.cases.cancel' | transloco }}
+                </button>
+              </div>
+            </div>
           }
 
           <form class="structure-form add-suite-form" [formGroup]="suiteForm" (ngSubmit)="submitSuite()">

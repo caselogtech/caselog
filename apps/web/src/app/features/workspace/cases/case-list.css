@@ -101,7 +101,9 @@
 .suite-heading > div,
 .section-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 3px;
+  justify-content: flex-end;
 }
 
 .suite-heading button,
@@ -112,6 +114,11 @@
   cursor: pointer;
   font-size: 0.6875rem;
   padding: 4px;
+}
+
+.suite-heading button:disabled {
+  cursor: default;
+  opacity: 0.35;
 }
 
 .section-row {
@@ -141,7 +148,8 @@
   margin-bottom: 5px;
 }
 
-.structure-form input {
+.structure-form input,
+.structure-form select {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -150,6 +158,16 @@
   min-height: 36px;
   padding: 7px 8px;
   width: 100%;
+}
+
+.structure-form select {
+  margin-bottom: 8px;
+}
+
+.delete-confirmation p {
+  color: var(--text-2);
+  font-size: 0.8125rem;
+  margin: 0 0 8px;
 }
 
 .structure-form > div {

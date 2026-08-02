@@ -5,6 +5,8 @@ import {
   suiteResponseSchema,
   type CreateSectionRequest,
   type CreateSuiteRequest,
+  type MoveSectionRequest,
+  type MoveSuiteRequest,
   type OrganizationAccessPrincipal,
   type ProjectStructureResponse,
   type SectionResponse,
@@ -76,6 +78,64 @@ export class ProjectStructureService {
     return sectionResponseSchema.parse(result.value);
   }
 
+  async moveSuite(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    suiteId: string,
+    request: MoveSuiteRequest,
+  ): Promise<SuiteResponse> {
+    this.assertWritable(principal);
+    const result = await this.structure.moveSuite(
+      principal.organizationId,
+      projectSlug,
+      suiteId,
+      request,
+    );
+    this.assertFound(result);
+    return suiteResponseSchema.parse(result.value);
+  }
+
+  async moveSection(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    sectionId: string,
+    request: MoveSectionRequest,
+  ): Promise<SectionResponse> {
+    this.assertWritable(principal);
+    const result = await this.structure.moveSection(
+      principal.organizationId,
+      projectSlug,
+      sectionId,
+      request,
+    );
+    this.assertFound(result);
+    return sectionResponseSchema.parse(result.value);
+  }
+
+  async deleteSuite(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    suiteId: string,
+  ): Promise<void> {
+    this.assertWritable(principal);
+    const result = await this.structure.deleteSuite(principal.organizationId, projectSlug, suiteId);
+    this.assertFound(result);
+  }
+
+  async deleteSection(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    sectionId: string,
+  ): Promise<void> {
+    this.assertWritable(principal);
+    const result = await this.structure.deleteSection(
+      principal.organizationId,
+      projectSlug,
+      sectionId,
+    );
+    this.assertFound(result);
+  }
+
   async updateSection(
     principal: OrganizationAccessPrincipal,
     projectSlug: string,
@@ -108,6 +168,18 @@ export class ProjectStructureService {
       throw new ResourceConflictError(
         `${result.resource}_name_taken`,
         `A ${result.resource} with this name already exists`,
+      );
+    }
+    if (result.kind === 'not_empty') {
+      throw new ResourceConflictError(
+        `${result.resource}_not_empty`,
+        `The ${result.resource} must be empty before it can be deleted`,
+      );
+    }
+    if (result.kind === 'section_cycle') {
+      throw new ResourceConflictError(
+        'section_cycle',
+        'A section cannot be moved inside its own subtree',
       );
     }
   }
