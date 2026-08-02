@@ -148,7 +148,12 @@
       "createdBy": "Created by {{name}}",
       "unknownAuthor": "Unknown author",
       "current": "Current",
-      "reload": "Reload latest version"
+      "reload": "Reload latest version",
+      "viewVersion": "View",
+      "historicalVersion": "Historical version {{version}}",
+      "restore": "Restore as new version",
+      "restoring": "Restoring…",
+      "closeVersion": "Close"
     }
   }
 }

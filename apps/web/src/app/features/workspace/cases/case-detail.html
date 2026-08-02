@@ -240,9 +240,57 @@
                       : ('workspace.cases.detail.unknownAuthor' | transloco)
                   }}
                 </small>
+                <button class="version-link" type="button" (click)="viewVersion(version.id)">
+                  {{ 'workspace.cases.detail.viewVersion' | transloco }}
+                </button>
               </li>
             }
           </ol>
+
+          @if (selectedVersionId()) {
+            <section class="version-preview">
+              @if (selectedVersion.isPending()) {
+                <p>{{ 'workspace.cases.detail.loading' | transloco }}</p>
+              } @else if (selectedVersion.isError() || restoreVersion.isError()) {
+                <div role="alert">{{ errorTranslationKey() | transloco }}</div>
+              } @else if (selectedVersion.data(); as version) {
+                <h3>
+                  {{
+                    'workspace.cases.detail.historicalVersion'
+                      | transloco: { version: version.version }
+                  }}
+                </h3>
+                <strong>{{ version.title }}</strong>
+                @if (version.template === 'steps') {
+                  <ol class="preview-steps">
+                    @for (step of selectedSteps(); track $index) {
+                      <li>{{ step.action }}</li>
+                    }
+                  </ol>
+                } @else {
+                  <p class="preserve-lines">{{ selectedText() }}</p>
+                }
+                <div class="preview-actions">
+                  <button type="button" (click)="closeVersion()">
+                    {{ 'workspace.cases.detail.closeVersion' | transloco }}
+                  </button>
+                  @if (canEdit() && version.id !== result.testCase.currentVersion.id) {
+                    <button
+                      type="button"
+                      [disabled]="restoreVersion.isPending()"
+                      (click)="restoreSelectedVersion()"
+                    >
+                      {{
+                        (restoreVersion.isPending()
+                          ? 'workspace.cases.detail.restoring'
+                          : 'workspace.cases.detail.restore') | transloco
+                      }}
+                    </button>
+                  }
+                </div>
+              }
+            </section>
+          }
         </aside>
       </div>
     }

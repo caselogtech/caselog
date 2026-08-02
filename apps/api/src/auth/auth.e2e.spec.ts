@@ -37,6 +37,7 @@ describe('authentication API', () => {
   let authSectionId: string;
   let authUserId: string;
   let editableCaseId: string;
+  let originalVersionId: string;
   let registrationCookie: string;
   let registrationResponse: Awaited<ReturnType<NestFastifyApplication['inject']>>;
 
@@ -483,6 +484,7 @@ describe('authentication API', () => {
       version: { version: 1 },
     });
     editableCaseId = response.json().testCase.id as string;
+    originalVersionId = response.json().version.id as string;
 
     const created = await admin.testCase.findUniqueOrThrow({
       where: {
@@ -626,6 +628,68 @@ describe('authentication API', () => {
     ).resolves.toBe(3);
   });
 
+  it('reads a historical version and restores it as a new immutable version', async () => {
+    const historical = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/cases/${editableCaseId}/versions/${originalVersionId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(historical.statusCode, historical.body).toBe(200);
+    expect(historical.json()).toMatchObject({
+      id: originalVersionId,
+      version: 1,
+      title: 'Reset a forgotten password',
+      template: 'steps',
+      content: {
+        steps: [{ action: 'Request a password reset', expected: 'A reset email is sent' }],
+      },
+    });
+
+    const restored = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/cases/${editableCaseId}/versions/${originalVersionId}/restore`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { baseVersion: 3 },
+    });
+    expect(restored.statusCode, restored.body).toBe(201);
+    expect(restored.json()).toMatchObject({
+      testCase: {
+        id: editableCaseId,
+        title: 'Reset a forgotten password',
+        template: 'steps',
+      },
+      version: { version: 4 },
+    });
+
+    const versions = await admin.testCaseVersion.findMany({
+      where: { organizationId, testCaseId: editableCaseId },
+      orderBy: { version: 'asc' },
+    });
+    expect(versions).toHaveLength(4);
+    expect(versions[0]).toMatchObject({
+      id: originalVersionId,
+      version: 1,
+      title: 'Reset a forgotten password',
+    });
+    expect(versions[3]).toMatchObject({
+      version: 4,
+      title: 'Reset a forgotten password',
+      template: 'STEPS',
+    });
+
+    const staleRestore = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/cases/${editableCaseId}/versions/${originalVersionId}/restore`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { baseVersion: 3 },
+    });
+    expect(staleRestore.statusCode, staleRestore.body).toBe(409);
+    expect(staleRestore.json().error).toMatchObject({
+      code: 'case_version_conflict',
+      details: { currentVersion: 4 },
+    });
+  });
+
   it('assigns unique case numbers to concurrent creates', async () => {
     const responses = await Promise.all(
       ['Document session timeout', 'Document account lockout'].map((title) =>
@@ -685,6 +749,15 @@ describe('authentication API', () => {
       });
       expect(update.statusCode, update.body).toBe(403);
       expect(update.json().error).toMatchObject({ code: 'insufficient_permissions' });
+
+      const restore = await app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/authentication/cases/${editableCaseId}/versions/${originalVersionId}/restore`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: { baseVersion: 4 },
+      });
+      expect(restore.statusCode, restore.body).toBe(403);
+      expect(restore.json().error).toMatchObject({ code: 'insufficient_permissions' });
     } finally {
       await admin.membership.updateMany({
         where: { organizationId, userId: authUserId },
@@ -764,6 +837,12 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantCaseDetail.statusCode).toBe(404);
+    const crossTenantVersion = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/cases/${editableCaseId}/versions/${originalVersionId}`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantVersion.statusCode).toBe(404);
 
     const memberList = await app.inject({
       method: 'GET',

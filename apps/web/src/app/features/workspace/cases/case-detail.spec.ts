@@ -81,6 +81,8 @@ describe('CaseDetail', () => {
     testCase: vi.fn(),
     projectStructure: vi.fn(),
     updateTestCase: vi.fn(),
+    testCaseVersion: vi.fn(),
+    restoreTestCaseVersion: vi.fn(),
   };
   let queryClient: QueryClient;
 
@@ -91,6 +93,8 @@ describe('CaseDetail', () => {
     workspaceApi.testCase.mockReset();
     workspaceApi.projectStructure.mockReset();
     workspaceApi.updateTestCase.mockReset();
+    workspaceApi.testCaseVersion.mockReset();
+    workspaceApi.restoreTestCaseVersion.mockReset();
     workspaceApi.testCase.mockResolvedValue(detail);
     workspaceApi.projectStructure.mockResolvedValue(structure);
     await TestBed.configureTestingModule({
@@ -172,6 +176,29 @@ describe('CaseDetail', () => {
           steps: [{ action: 'Submit valid credentials', expected: 'Login succeeds' }],
         },
       }),
+    );
+  });
+
+  it('loads a selected immutable version for inspection', async () => {
+    workspaceApi.testCaseVersion.mockResolvedValue(detail.testCase.currentVersion);
+    const fixture = TestBed.createComponent(CaseDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
+
+    fixture.componentInstance.viewVersion(detail.testCase.currentVersion.id);
+    await vi.waitFor(() =>
+      expect(fixture.componentInstance.selectedVersion.isSuccess()).toBe(true),
+    );
+    fixture.detectChanges();
+
+    expect(workspaceApi.testCaseVersion).toHaveBeenCalledWith(
+      'acme-quality',
+      'authentication',
+      caseId,
+      detail.testCase.currentVersion.id,
+    );
+    expect(fixture.nativeElement.querySelector('.version-preview')?.textContent).toContain(
+      'Submit valid credentials',
     );
   });
 });

@@ -8,12 +8,15 @@ import {
   type CreateTestCaseResponse,
   type OrganizationAccessPrincipal,
   type ProjectStructureResponse,
+  type RestoreTestCaseVersionRequest,
   type TestCaseDetailResponse,
   type TestCaseListQuery,
   type TestCaseListResponse,
+  type TestCaseVersion,
   type UpdateTestCaseRequest,
   type UpdateTestCaseResponse,
   updateTestCaseResponseSchema,
+  testCaseVersionSchema,
 } from '@caselog/schemas';
 import {
   AuthorizationDeniedError,
@@ -115,6 +118,56 @@ export class TestCaseService {
     }
     if (result.kind === 'section_not_found') {
       throw new ResourceNotFoundError('section');
+    }
+    if (result.kind === 'version_not_found') {
+      throw new ResourceNotFoundError('test_case_version');
+    }
+    if (result.kind === 'version_conflict') {
+      throw new ResourceConflictError(
+        'case_version_conflict',
+        'The test case has changed since it was loaded',
+        { currentVersion: result.currentVersion },
+      );
+    }
+    return updateTestCaseResponseSchema.parse(result.value);
+  }
+
+  async version(
+    organizationId: string,
+    projectSlug: string,
+    caseId: string,
+    versionId: string,
+  ): Promise<TestCaseVersion> {
+    const result = await this.testCases.version(organizationId, projectSlug, caseId, versionId);
+    if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
+    if (result.kind === 'case_not_found') throw new ResourceNotFoundError('test_case');
+    if (result.kind === 'version_not_found') {
+      throw new ResourceNotFoundError('test_case_version');
+    }
+    return testCaseVersionSchema.parse(result.value);
+  }
+
+  async restore(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    caseId: string,
+    versionId: string,
+    request: RestoreTestCaseVersionRequest,
+  ): Promise<UpdateTestCaseResponse> {
+    if (principal.role === 'read_only') throw new AuthorizationDeniedError();
+    const result = await this.testCases.restore(
+      principal.organizationId,
+      principal.sub,
+      projectSlug,
+      caseId,
+      versionId,
+      request,
+    );
+    if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
+    if (result.kind === 'case_not_found') throw new ResourceNotFoundError('test_case');
+    if (result.kind === 'section_not_found') throw new ResourceNotFoundError('section');
+    if (result.kind === 'version_not_found') {
+      throw new ResourceNotFoundError('test_case_version');
     }
     if (result.kind === 'version_conflict') {
       throw new ResourceConflictError(

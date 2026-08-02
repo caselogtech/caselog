@@ -44,6 +44,7 @@ export class CaseDetail {
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly caseId = this.route.snapshot.paramMap.get('caseId') ?? '';
   readonly editing = signal(false);
+  readonly selectedVersionId = signal('');
   readonly canEdit = computed(() => this.workspaceSession.role() !== 'read_only');
 
   readonly form = this.formBuilder.group({
@@ -71,11 +72,51 @@ export class CaseDetail {
 
   readonly current = computed(() => this.detail.data()?.testCase.currentVersion ?? null);
 
+  readonly selectedVersion = injectQuery(() => ({
+    queryKey: [
+      'test-case-version',
+      this.workspaceSlug,
+      this.projectSlug,
+      this.caseId,
+      this.selectedVersionId(),
+    ],
+    queryFn: () =>
+      this.workspaceApi.testCaseVersion(
+        this.workspaceSlug,
+        this.projectSlug,
+        this.caseId,
+        this.selectedVersionId(),
+      ),
+    enabled: Boolean(this.selectedVersionId()),
+  }));
+
   readonly updateCase = injectMutation(() => ({
     mutationFn: (request: UpdateTestCaseRequest) =>
       this.workspaceApi.updateTestCase(this.workspaceSlug, this.projectSlug, this.caseId, request),
     onSuccess: async () => {
       this.editing.set(false);
+      await Promise.all([
+        this.queryClient.invalidateQueries({
+          queryKey: ['test-case', this.workspaceSlug, this.projectSlug, this.caseId],
+        }),
+        this.queryClient.invalidateQueries({
+          queryKey: ['test-cases', this.workspaceSlug, this.projectSlug],
+        }),
+      ]);
+    },
+  }));
+
+  readonly restoreVersion = injectMutation(() => ({
+    mutationFn: (versionId: string) =>
+      this.workspaceApi.restoreTestCaseVersion(
+        this.workspaceSlug,
+        this.projectSlug,
+        this.caseId,
+        versionId,
+        this.current()?.version ?? 0,
+      ),
+    onSuccess: async () => {
+      this.selectedVersionId.set('');
       await Promise.all([
         this.queryClient.invalidateQueries({
           queryKey: ['test-case', this.workspaceSlug, this.projectSlug, this.caseId],
@@ -158,6 +199,23 @@ export class CaseDetail {
     void this.detail.refetch();
   }
 
+  viewVersion(versionId: string): void {
+    this.restoreVersion.reset();
+    this.selectedVersionId.set(versionId);
+  }
+
+  closeVersion(): void {
+    this.selectedVersionId.set('');
+    this.restoreVersion.reset();
+  }
+
+  restoreSelectedVersion(): void {
+    const version = this.selectedVersion.data();
+    if (version && version.id !== this.current()?.id && this.canEdit()) {
+      this.restoreVersion.mutate(version.id);
+    }
+  }
+
   currentSteps(): Array<{ action: string; expected?: string }> {
     const content = this.current()?.content;
     return content && 'steps' in content ? content.steps : [];
@@ -172,8 +230,27 @@ export class CaseDetail {
     return '';
   }
 
+  selectedSteps(): Array<{ action: string; expected?: string }> {
+    const content = this.selectedVersion.data()?.content;
+    return content && 'steps' in content ? content.steps : [];
+  }
+
+  selectedText(): string {
+    const content = this.selectedVersion.data()?.content;
+    if (!content) return '';
+    if ('text' in content) return content.text;
+    if ('charter' in content) return content.charter;
+    if ('gherkin' in content) return content.gherkin;
+    return '';
+  }
+
   errorTranslationKey(): string {
-    return apiErrorTranslationKey(this.updateCase.error() ?? this.detail.error());
+    return apiErrorTranslationKey(
+      this.updateCase.error() ??
+        this.restoreVersion.error() ??
+        this.selectedVersion.error() ??
+        this.detail.error(),
+    );
   }
 
   templateTranslationKey(template: TestCaseTemplate): string {

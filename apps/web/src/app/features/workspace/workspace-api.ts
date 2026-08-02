@@ -6,6 +6,7 @@ import {
   projectStructureResponseSchema,
   testCaseListResponseSchema,
   testCaseDetailResponseSchema,
+  testCaseVersionSchema,
   type CreateTestCaseRequest,
   type CreateTestCaseResponse,
   type OrganizationTokenResponse,
@@ -13,6 +14,7 @@ import {
   type ProjectStructureResponse,
   type TestCaseListResponse,
   type TestCaseDetailResponse,
+  type TestCaseVersion,
   type UpdateTestCaseRequest,
   type UpdateTestCaseResponse,
   updateTestCaseResponseSchema,
@@ -139,6 +141,38 @@ export class WorkspaceApi {
       this.http.put<unknown>(
         `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}`,
         request,
+      ),
+    );
+    return updateTestCaseResponseSchema.parse(response);
+  }
+
+  async testCaseVersion(
+    workspaceSlug: string,
+    projectSlug: string,
+    caseId: string,
+    versionId: string,
+  ): Promise<TestCaseVersion> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}/versions/${encodeURIComponent(versionId)}`,
+      ),
+    );
+    return testCaseVersionSchema.parse(response);
+  }
+
+  async restoreTestCaseVersion(
+    workspaceSlug: string,
+    projectSlug: string,
+    caseId: string,
+    versionId: string,
+    baseVersion: number,
+  ): Promise<UpdateTestCaseResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}/versions/${encodeURIComponent(versionId)}/restore`,
+        { baseVersion },
       ),
     );
     return updateTestCaseResponseSchema.parse(response);

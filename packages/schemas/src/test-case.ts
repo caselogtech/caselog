@@ -179,6 +179,14 @@ export const updateTestCaseResponseSchema = z.object({
   version: z.object({ id: z.uuid(), version: z.number().int().min(2) }),
 });
 
+export const testCaseVersionParamsSchema = testCaseDetailParamsSchema.extend({
+  versionId: z.uuid(),
+});
+
+export const restoreTestCaseVersionRequestSchema = z.object({
+  baseVersion: z.number().int().positive(),
+});
+
 export type TestCaseListParams = z.infer<typeof testCaseListParamsSchema>;
 export type TestCaseListQuery = z.infer<typeof testCaseListQuerySchema>;
 export type TestCaseTemplate = z.infer<typeof testCaseTemplateSchema>;
@@ -192,3 +200,5 @@ export type TestCaseVersion = z.infer<typeof testCaseVersionSchema>;
 export type TestCaseDetailResponse = z.infer<typeof testCaseDetailResponseSchema>;
 export type UpdateTestCaseRequest = z.infer<typeof updateTestCaseRequestSchema>;
 export type UpdateTestCaseResponse = z.infer<typeof updateTestCaseResponseSchema>;
+export type TestCaseVersionParams = z.infer<typeof testCaseVersionParamsSchema>;
+export type RestoreTestCaseVersionRequest = z.infer<typeof restoreTestCaseVersionRequestSchema>;

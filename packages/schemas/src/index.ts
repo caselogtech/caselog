@@ -69,6 +69,8 @@ export {
   testCaseSummarySchema,
   testCaseTemplateSchema,
   testCaseVersionSchema,
+  testCaseVersionParamsSchema,
+  restoreTestCaseVersionRequestSchema,
   updateTestCaseRequestSchema,
   updateTestCaseResponseSchema,
   type TestCaseListParams,
@@ -84,4 +86,6 @@ export {
   type TestCaseVersion,
   type UpdateTestCaseRequest,
   type UpdateTestCaseResponse,
+  type TestCaseVersionParams,
+  type RestoreTestCaseVersionRequest,
 } from './test-case.js';

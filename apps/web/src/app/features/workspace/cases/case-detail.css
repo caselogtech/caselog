@@ -111,6 +111,51 @@
   color: var(--text-2);
 }
 
+.version-link {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  margin-top: 8px;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.version-preview {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding-top: 16px;
+}
+
+.version-preview h3 {
+  font-size: 0.875rem;
+  margin: 0 0 10px;
+}
+
+.preview-steps {
+  padding-left: 20px;
+}
+
+.preview-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.preview-actions button {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  cursor: pointer;
+  font: inherit;
+  min-height: 36px;
+  padding: 7px 10px;
+}
+
 .case-steps li + li {
   margin-top: 14px;
 }

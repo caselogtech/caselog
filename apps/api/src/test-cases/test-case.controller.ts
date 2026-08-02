@@ -5,6 +5,7 @@ import type {
   ProjectStructureResponse,
   TestCaseDetailResponse,
   TestCaseListResponse,
+  TestCaseVersion,
   UpdateTestCaseResponse,
 } from '@caselog/schemas';
 import { OrganizationAuthGuard } from '../auth/organization-auth.guard';
@@ -12,10 +13,12 @@ import { CurrentOrganization } from '../auth/organization-principal.decorator';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
   CreateTestCaseRequestDto,
+  RestoreTestCaseVersionRequestDto,
   TestCaseDetailParamsDto,
   TestCaseListParamsDto,
   TestCaseListQueryDto,
   UpdateTestCaseRequestDto,
+  TestCaseVersionParamsDto,
 } from './test-case.dto';
 import { TestCaseService } from './test-case.service';
 
@@ -57,6 +60,34 @@ export class TestCaseController {
     @Body() request: UpdateTestCaseRequestDto,
   ): Promise<UpdateTestCaseResponse> {
     return this.testCases.update(principal, params.projectSlug, params.caseId, request);
+  }
+
+  @Get(':caseId/versions/:versionId')
+  version(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestCaseVersionParamsDto,
+  ): Promise<TestCaseVersion> {
+    return this.testCases.version(
+      principal.organizationId,
+      params.projectSlug,
+      params.caseId,
+      params.versionId,
+    );
+  }
+
+  @Post(':caseId/versions/:versionId/restore')
+  restore(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestCaseVersionParamsDto,
+    @Body() request: RestoreTestCaseVersionRequestDto,
+  ): Promise<UpdateTestCaseResponse> {
+    return this.testCases.restore(
+      principal,
+      params.projectSlug,
+      params.caseId,
+      params.versionId,
+      request,
+    );
   }
 }
 

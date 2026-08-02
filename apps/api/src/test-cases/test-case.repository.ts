@@ -3,9 +3,11 @@ import type {
   CreateTestCaseRequest,
   CreateTestCaseResponse,
   ProjectStructureResponse,
+  RestoreTestCaseVersionRequest,
   TestCaseDetailResponse,
   TestCaseListResponse,
   TestCaseTemplate,
+  TestCaseVersion,
   UpdateTestCaseRequest,
   UpdateTestCaseResponse,
 } from '@caselog/schemas';
@@ -52,7 +54,14 @@ export type UpdateTestCaseResult =
   | { kind: 'project_not_found' }
   | { kind: 'case_not_found' }
   | { kind: 'section_not_found' }
+  | { kind: 'version_not_found' }
   | { kind: 'version_conflict'; currentVersion: number };
+
+export type TestCaseVersionResult =
+  | { kind: 'found'; value: TestCaseVersion }
+  | { kind: 'project_not_found' }
+  | { kind: 'case_not_found' }
+  | { kind: 'version_not_found' };
 
 @Injectable()
 export class TestCaseRepository {
@@ -424,6 +433,155 @@ export class TestCaseRepository {
             template: request.template,
             automationId: current.automationId,
             section: { id: section.id, name: section.name },
+            updatedAt: current.updatedAt.toISOString(),
+          },
+          version,
+        },
+      };
+    });
+  }
+
+  async version(
+    organizationId: string,
+    projectSlug: string,
+    caseId: string,
+    versionId: string,
+  ): Promise<TestCaseVersionResult> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) return { kind: 'project_not_found' };
+
+      const testCase = await transaction.testCase.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: caseId },
+          projectId: project.id,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!testCase) return { kind: 'case_not_found' };
+
+      const version = await transaction.testCaseVersion.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: versionId },
+          testCaseId: testCase.id,
+        },
+        select: {
+          id: true,
+          version: true,
+          title: true,
+          template: true,
+          preconditions: true,
+          expectedResult: true,
+          content: true,
+          createdAt: true,
+          createdBy: { select: { id: true, displayName: true } },
+        },
+      });
+      if (!version) return { kind: 'version_not_found' };
+
+      return {
+        kind: 'found',
+        value: {
+          ...version,
+          template: TEMPLATE_MAP[version.template],
+          content: testCaseContentSchema.parse(version.content),
+          createdAt: version.createdAt.toISOString(),
+        },
+      };
+    });
+  }
+
+  async restore(
+    organizationId: string,
+    userId: string,
+    projectSlug: string,
+    caseId: string,
+    versionId: string,
+    request: RestoreTestCaseVersionRequest,
+  ): Promise<UpdateTestCaseResult> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) return { kind: 'project_not_found' };
+
+      const locked = await transaction.$queryRaw<Array<{ id: string }>>`
+        SELECT id
+        FROM test_cases
+        WHERE organization_id = ${organizationId}::uuid
+          AND project_id = ${project.id}::uuid
+          AND id = ${caseId}::uuid
+          AND deleted_at IS NULL
+        FOR UPDATE
+      `;
+      if (locked.length === 0) return { kind: 'case_not_found' };
+
+      const testCase = await transaction.testCase.findUnique({
+        where: { organizationId_id: { organizationId, id: caseId } },
+        select: {
+          id: true,
+          caseNumber: true,
+          automationId: true,
+          updatedAt: true,
+          section: { select: { id: true, name: true } },
+          currentVersion: { select: { version: true } },
+        },
+      });
+      if (!testCase?.currentVersion) return { kind: 'case_not_found' };
+      if (testCase.currentVersion.version !== request.baseVersion) {
+        return { kind: 'version_conflict', currentVersion: testCase.currentVersion.version };
+      }
+
+      const target = await transaction.testCaseVersion.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: versionId },
+          testCaseId: testCase.id,
+        },
+        select: {
+          title: true,
+          template: true,
+          preconditions: true,
+          expectedResult: true,
+          content: true,
+        },
+      });
+      if (!target) return { kind: 'version_not_found' };
+
+      const version = await transaction.testCaseVersion.create({
+        data: {
+          organizationId,
+          testCaseId: testCase.id,
+          version: request.baseVersion + 1,
+          title: target.title,
+          template: target.template,
+          preconditions: target.preconditions,
+          expectedResult: target.expectedResult,
+          content: testCaseContentSchema.parse(target.content),
+          createdById: userId,
+        },
+        select: { id: true, version: true },
+      });
+      const current = await transaction.testCase.update({
+        where: { organizationId_id: { organizationId, id: testCase.id } },
+        data: { currentVersionId: version.id },
+        select: { updatedAt: true },
+      });
+
+      return {
+        kind: 'updated',
+        value: {
+          testCase: {
+            id: testCase.id,
+            caseNumber: testCase.caseNumber.toString(),
+            title: target.title,
+            template: TEMPLATE_MAP[target.template],
+            automationId: testCase.automationId,
+            section: testCase.section,
             updatedAt: current.updatedAt.toISOString(),
           },
           version,
