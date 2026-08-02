@@ -36,6 +36,7 @@ describe('authentication API', () => {
   let organizationAccessToken: string;
   let authSectionId: string;
   let authUserId: string;
+  let editableCaseId: string;
   let registrationCookie: string;
   let registrationResponse: Awaited<ReturnType<NestFastifyApplication['inject']>>;
 
@@ -481,6 +482,7 @@ describe('authentication API', () => {
       },
       version: { version: 1 },
     });
+    editableCaseId = response.json().testCase.id as string;
 
     const created = await admin.testCase.findUniqueOrThrow({
       where: {
@@ -499,6 +501,129 @@ describe('authentication API', () => {
       template: 'STEPS',
       createdById: authUserId,
     });
+  });
+
+  it('returns a test case with its current content and version history', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/cases/${editableCaseId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json()).toMatchObject({
+      project: { key: 'AUTH', slug: 'authentication' },
+      testCase: {
+        id: editableCaseId,
+        caseNumber: '3',
+        automationId: 'auth.password-reset',
+        section: {
+          id: authSectionId,
+          name: 'Sign in',
+          suiteName: 'Authentication suite',
+        },
+        currentVersion: {
+          version: 1,
+          title: 'Reset a forgotten password',
+          template: 'steps',
+          content: {
+            steps: [{ action: 'Request a password reset', expected: 'A reset email is sent' }],
+          },
+          createdBy: { id: authUserId, displayName: 'Authentication Tester' },
+        },
+        versions: [{ version: 1, title: 'Reset a forgotten password' }],
+      },
+    });
+  });
+
+  it('updates a test case by creating a new immutable version', async () => {
+    const response = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/cases/${editableCaseId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        baseVersion: 1,
+        title: 'Reset a forgotten password by email',
+        sectionId: authSectionId,
+        template: 'text',
+        automationId: 'auth.password-reset',
+        preconditions: 'The account has a verified email address',
+        expectedResult: 'The password is changed',
+        content: { text: 'Request a reset email and follow its one-time link.' },
+      },
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json()).toMatchObject({
+      testCase: {
+        id: editableCaseId,
+        caseNumber: '3',
+        title: 'Reset a forgotten password by email',
+        template: 'text',
+      },
+      version: { version: 2 },
+    });
+
+    const versions = await admin.testCaseVersion.findMany({
+      where: { organizationId, testCaseId: editableCaseId },
+      orderBy: { version: 'asc' },
+    });
+    expect(versions).toHaveLength(2);
+    expect(versions[0]).toMatchObject({
+      version: 1,
+      title: 'Reset a forgotten password',
+      template: 'STEPS',
+    });
+    expect(versions[1]).toMatchObject({
+      version: 2,
+      title: 'Reset a forgotten password by email',
+      template: 'TEXT',
+    });
+
+    const detail = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/cases/${editableCaseId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(detail.statusCode, detail.body).toBe(200);
+    expect(detail.json().testCase.currentVersion).toMatchObject({
+      version: 2,
+      title: 'Reset a forgotten password by email',
+      template: 'text',
+      content: { text: 'Request a reset email and follow its one-time link.' },
+    });
+    expect(
+      detail.json().testCase.versions.map(({ version }: { version: number }) => version),
+    ).toEqual([2, 1]);
+  });
+
+  it('rejects one of two concurrent edits based on the same version', async () => {
+    const responses = await Promise.all(
+      ['First concurrent edit', 'Second concurrent edit'].map((title) =>
+        app.inject({
+          method: 'PUT',
+          url: `/api/v1/projects/authentication/cases/${editableCaseId}`,
+          headers: { authorization: `Bearer ${organizationAccessToken}` },
+          payload: {
+            baseVersion: 2,
+            title,
+            sectionId: authSectionId,
+            template: 'text',
+            content: { text: `${title} content` },
+          },
+        }),
+      ),
+    );
+
+    expect(responses.map(({ statusCode }) => statusCode).sort()).toEqual([200, 409]);
+    const conflict = responses.find(({ statusCode }) => statusCode === 409);
+    expect(conflict?.json().error).toMatchObject({
+      code: 'case_version_conflict',
+      details: { currentVersion: 3 },
+    });
+    await expect(
+      admin.testCaseVersion.count({ where: { organizationId, testCaseId: editableCaseId } }),
+    ).resolves.toBe(3);
   });
 
   it('assigns unique case numbers to concurrent creates', async () => {
@@ -545,6 +670,21 @@ describe('authentication API', () => {
 
       expect(response.statusCode, response.body).toBe(403);
       expect(response.json().error).toMatchObject({ code: 'insufficient_permissions' });
+
+      const update = await app.inject({
+        method: 'PUT',
+        url: `/api/v1/projects/authentication/cases/${editableCaseId}`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: {
+          baseVersion: 3,
+          title: 'Forbidden edit',
+          sectionId: authSectionId,
+          template: 'text',
+          content: { text: 'This edit must not be stored' },
+        },
+      });
+      expect(update.statusCode, update.body).toBe(403);
+      expect(update.json().error).toMatchObject({ code: 'insufficient_permissions' });
     } finally {
       await admin.membership.updateMany({
         where: { organizationId, userId: authUserId },
@@ -618,6 +758,12 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantCases.statusCode).toBe(404);
+    const crossTenantCaseDetail = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/cases/${editableCaseId}`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantCaseDetail.statusCode).toBe(404);
 
     const memberList = await app.inject({
       method: 'GET',

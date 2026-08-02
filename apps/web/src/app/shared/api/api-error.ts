@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { apiErrorSchema } from '@caselog/schemas';
 
 const TRANSLATED_ERROR_KEYS = new Set([
+  'errors.case_version_conflict',
   'errors.email_already_registered',
   'errors.email_verification_required',
   'errors.http_error',

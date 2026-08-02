@@ -3,9 +3,13 @@ import type {
   CreateTestCaseRequest,
   CreateTestCaseResponse,
   ProjectStructureResponse,
+  TestCaseDetailResponse,
   TestCaseListResponse,
   TestCaseTemplate,
+  UpdateTestCaseRequest,
+  UpdateTestCaseResponse,
 } from '@caselog/schemas';
+import { testCaseContentSchema } from '@caselog/schemas';
 import { TenantDatabaseService } from '../core/database/tenant-database.service';
 import { CaseTemplate } from '../generated/prisma/enums';
 
@@ -37,6 +41,18 @@ export type CreateTestCaseResult =
   | { kind: 'created'; value: CreateTestCaseResponse }
   | { kind: 'project_not_found' }
   | { kind: 'section_not_found' };
+
+export type TestCaseDetailResult =
+  | { kind: 'found'; value: TestCaseDetailResponse }
+  | { kind: 'project_not_found' }
+  | { kind: 'case_not_found' };
+
+export type UpdateTestCaseResult =
+  | { kind: 'updated'; value: UpdateTestCaseResponse }
+  | { kind: 'project_not_found' }
+  | { kind: 'case_not_found' }
+  | { kind: 'section_not_found' }
+  | { kind: 'version_conflict'; currentVersion: number };
 
 @Injectable()
 export class TestCaseRepository {
@@ -218,6 +234,199 @@ export class TestCaseRepository {
             updatedAt: current.updatedAt.toISOString(),
           },
           version: { id: version.id, version: 1 },
+        },
+      };
+    });
+  }
+
+  async detail(
+    organizationId: string,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<TestCaseDetailResult> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true, key: true, slug: true, name: true },
+      });
+      if (!project) {
+        return { kind: 'project_not_found' };
+      }
+
+      const testCase = await transaction.testCase.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: caseId },
+          projectId: project.id,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          caseNumber: true,
+          automationId: true,
+          createdAt: true,
+          updatedAt: true,
+          section: {
+            select: { id: true, name: true, suiteId: true, suite: { select: { name: true } } },
+          },
+          currentVersion: {
+            select: {
+              id: true,
+              version: true,
+              title: true,
+              template: true,
+              preconditions: true,
+              expectedResult: true,
+              content: true,
+              createdAt: true,
+              createdBy: { select: { id: true, displayName: true } },
+            },
+          },
+          versions: {
+            orderBy: { version: 'desc' },
+            select: {
+              id: true,
+              version: true,
+              title: true,
+              template: true,
+              preconditions: true,
+              expectedResult: true,
+              createdAt: true,
+              createdBy: { select: { id: true, displayName: true } },
+            },
+          },
+        },
+      });
+      if (!testCase?.currentVersion) {
+        return { kind: 'case_not_found' };
+      }
+
+      const { currentVersion, section, versions, caseNumber, createdAt, updatedAt, ...identity } =
+        testCase;
+      return {
+        kind: 'found',
+        value: {
+          project,
+          testCase: {
+            ...identity,
+            caseNumber: caseNumber.toString(),
+            section: {
+              id: section.id,
+              name: section.name,
+              suiteId: section.suiteId,
+              suiteName: section.suite.name,
+            },
+            currentVersion: {
+              ...currentVersion,
+              template: TEMPLATE_MAP[currentVersion.template],
+              content: testCaseContentSchema.parse(currentVersion.content),
+              createdAt: currentVersion.createdAt.toISOString(),
+            },
+            versions: versions.map((version) => ({
+              ...version,
+              template: TEMPLATE_MAP[version.template],
+              createdAt: version.createdAt.toISOString(),
+            })),
+            createdAt: createdAt.toISOString(),
+            updatedAt: updatedAt.toISOString(),
+          },
+        },
+      };
+    });
+  }
+
+  async update(
+    organizationId: string,
+    userId: string,
+    projectSlug: string,
+    caseId: string,
+    request: UpdateTestCaseRequest,
+  ): Promise<UpdateTestCaseResult> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) {
+        return { kind: 'project_not_found' };
+      }
+
+      const locked = await transaction.$queryRaw<Array<{ id: string }>>`
+        SELECT id
+        FROM test_cases
+        WHERE organization_id = ${organizationId}::uuid
+          AND project_id = ${project.id}::uuid
+          AND id = ${caseId}::uuid
+          AND deleted_at IS NULL
+        FOR UPDATE
+      `;
+      if (locked.length === 0) {
+        return { kind: 'case_not_found' };
+      }
+
+      const testCase = await transaction.testCase.findUnique({
+        where: { organizationId_id: { organizationId, id: caseId } },
+        select: { id: true, caseNumber: true, currentVersion: { select: { version: true } } },
+      });
+      if (!testCase?.currentVersion) {
+        return { kind: 'case_not_found' };
+      }
+      if (testCase.currentVersion.version !== request.baseVersion) {
+        return {
+          kind: 'version_conflict',
+          currentVersion: testCase.currentVersion.version,
+        };
+      }
+
+      const section = await transaction.section.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: request.sectionId },
+          projectId: project.id,
+          deletedAt: null,
+        },
+        select: { id: true, suiteId: true, name: true },
+      });
+      if (!section) {
+        return { kind: 'section_not_found' };
+      }
+
+      const version = await transaction.testCaseVersion.create({
+        data: {
+          organizationId,
+          testCaseId: testCase.id,
+          version: request.baseVersion + 1,
+          title: request.title,
+          template: CREATE_TEMPLATE_MAP[request.template],
+          preconditions: request.preconditions,
+          expectedResult: request.expectedResult,
+          content: request.content,
+          createdById: userId,
+        },
+        select: { id: true, version: true },
+      });
+      const current = await transaction.testCase.update({
+        where: { organizationId_id: { organizationId, id: testCase.id } },
+        data: {
+          suiteId: section.suiteId,
+          sectionId: section.id,
+          automationId: request.automationId ?? null,
+          currentVersionId: version.id,
+        },
+        select: { id: true, automationId: true, updatedAt: true },
+      });
+
+      return {
+        kind: 'updated',
+        value: {
+          testCase: {
+            id: current.id,
+            caseNumber: testCase.caseNumber.toString(),
+            title: request.title,
+            template: request.template,
+            automationId: current.automationId,
+            section: { id: section.id, name: section.name },
+            updatedAt: current.updatedAt.toISOString(),
+          },
+          version,
         },
       };
     });

@@ -129,7 +129,14 @@
           @for (testCase of items(); track testCase.id) {
             <tr>
               <td class="case-id">{{ project()?.key }}-{{ testCase.caseNumber }}</td>
-              <td class="case-title">{{ testCase.title }}</td>
+              <td class="case-title">
+                <a
+                  href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/{{ testCase.id }}"
+                  [routerLink]="['/', workspaceSlug, projectSlug, 'cases', testCase.id]"
+                >
+                  {{ testCase.title }}
+                </a>
+              </td>
               <td>{{ testCase.section.name }}</td>
               <td>{{ templateTranslationKey(testCase.template) | transloco }}</td>
               <td>

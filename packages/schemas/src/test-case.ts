@@ -91,31 +91,92 @@ const testCaseContentSchemas = {
   bdd: z.object({ gherkin: z.string().trim().min(1).max(50_000) }),
 } as const;
 
+export const testCaseContentSchema = z.union([
+  testCaseContentSchemas.steps,
+  testCaseContentSchemas.text,
+  testCaseContentSchemas.exploratory,
+  testCaseContentSchemas.bdd,
+]);
+
+function validateTemplateContent(
+  request: { template: TestCaseTemplate; content: unknown },
+  context: z.RefinementCtx,
+): void {
+  const result = testCaseContentSchemas[request.template].safeParse(request.content);
+  if (!result.success) {
+    context.addIssue({
+      code: 'custom',
+      path: ['content'],
+      message: `Content must match the ${request.template} template`,
+    });
+  }
+}
+
 export const createTestCaseRequestSchema = z
   .object({
     ...createCaseBase,
     template: testCaseTemplateSchema,
-    content: z.union([
-      testCaseContentSchemas.steps,
-      testCaseContentSchemas.text,
-      testCaseContentSchemas.exploratory,
-      testCaseContentSchemas.bdd,
-    ]),
+    content: testCaseContentSchema,
   })
-  .superRefine((request, context) => {
-    const result = testCaseContentSchemas[request.template].safeParse(request.content);
-    if (!result.success) {
-      context.addIssue({
-        code: 'custom',
-        path: ['content'],
-        message: `Content must match the ${request.template} template`,
-      });
-    }
-  });
+  .superRefine(validateTemplateContent);
 
 export const createTestCaseResponseSchema = z.object({
   testCase: testCaseSummarySchema,
   version: z.object({ id: z.uuid(), version: z.literal(1) }),
+});
+
+export const testCaseDetailParamsSchema = testCaseListParamsSchema.extend({
+  caseId: z.uuid(),
+});
+
+export const testCaseVersionSchema = z.object({
+  id: z.uuid(),
+  version: z.number().int().positive(),
+  title: z.string().min(1).max(500),
+  template: testCaseTemplateSchema,
+  preconditions: z.string().nullable(),
+  expectedResult: z.string().nullable(),
+  content: testCaseContentSchema,
+  createdAt: z.iso.datetime(),
+  createdBy: z
+    .object({
+      id: z.uuid(),
+      displayName: z.string().min(1).max(120),
+    })
+    .nullable(),
+});
+
+export const testCaseDetailResponseSchema = z.object({
+  project: testCaseListResponseSchema.shape.project,
+  testCase: z.object({
+    id: z.uuid(),
+    caseNumber: z.string().regex(/^[1-9]\d*$/),
+    automationId: z.string().nullable(),
+    section: z.object({
+      id: z.uuid(),
+      name: z.string().min(1).max(120),
+      suiteId: z.uuid(),
+      suiteName: z.string().min(1).max(120),
+    }),
+    currentVersion: testCaseVersionSchema,
+    versions: z.array(testCaseVersionSchema.omit({ content: true })).min(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+  }),
+});
+
+export const updateTestCaseRequestSchema = z
+  .object({
+    ...createCaseBase,
+    baseVersion: z.number().int().positive(),
+    template: testCaseTemplateSchema,
+    content: testCaseContentSchema,
+  })
+  .superRefine(validateTemplateContent);
+
+export const updateTestCaseResponseSchema = z.object({
+  testCase: testCaseSummarySchema,
+  version: z.object({ id: z.uuid(), version: z.number().int().min(2) }),
 });
 
 export type TestCaseListParams = z.infer<typeof testCaseListParamsSchema>;
@@ -126,3 +187,8 @@ export type TestCaseListResponse = z.infer<typeof testCaseListResponseSchema>;
 export type ProjectStructureResponse = z.infer<typeof projectStructureResponseSchema>;
 export type CreateTestCaseRequest = z.infer<typeof createTestCaseRequestSchema>;
 export type CreateTestCaseResponse = z.infer<typeof createTestCaseResponseSchema>;
+export type TestCaseDetailParams = z.infer<typeof testCaseDetailParamsSchema>;
+export type TestCaseVersion = z.infer<typeof testCaseVersionSchema>;
+export type TestCaseDetailResponse = z.infer<typeof testCaseDetailResponseSchema>;
+export type UpdateTestCaseRequest = z.infer<typeof updateTestCaseRequestSchema>;
+export type UpdateTestCaseResponse = z.infer<typeof updateTestCaseResponseSchema>;

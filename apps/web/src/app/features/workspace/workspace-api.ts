@@ -5,12 +5,17 @@ import {
   projectListResponseSchema,
   projectStructureResponseSchema,
   testCaseListResponseSchema,
+  testCaseDetailResponseSchema,
   type CreateTestCaseRequest,
   type CreateTestCaseResponse,
   type OrganizationTokenResponse,
   type ProjectListResponse,
   type ProjectStructureResponse,
   type TestCaseListResponse,
+  type TestCaseDetailResponse,
+  type UpdateTestCaseRequest,
+  type UpdateTestCaseResponse,
+  updateTestCaseResponseSchema,
 } from '@caselog/schemas';
 import { lastValueFrom } from 'rxjs';
 import { WorkspaceSession } from '../../core/auth/workspace-session';
@@ -107,5 +112,35 @@ export class WorkspaceApi {
       this.http.post<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/cases`, request),
     );
     return createTestCaseResponseSchema.parse(response);
+  }
+
+  async testCase(
+    workspaceSlug: string,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<TestCaseDetailResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}`,
+      ),
+    );
+    return testCaseDetailResponseSchema.parse(response);
+  }
+
+  async updateTestCase(
+    workspaceSlug: string,
+    projectSlug: string,
+    caseId: string,
+    request: UpdateTestCaseRequest,
+  ): Promise<UpdateTestCaseResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.put<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}`,
+        request,
+      ),
+    );
+    return updateTestCaseResponseSchema.parse(response);
   }
 }

@@ -57,6 +57,12 @@ export const routes: Routes = [
       import('./features/workspace/cases/case-create').then(({ CaseCreate }) => CaseCreate),
   },
   {
+    path: ':org/:project/cases/:caseId',
+    providers: workspaceTranslations,
+    loadComponent: () =>
+      import('./features/workspace/cases/case-detail').then(({ CaseDetail }) => CaseDetail),
+  },
+  {
     path: ':org/:project/cases',
     providers: workspaceTranslations,
     loadComponent: () =>

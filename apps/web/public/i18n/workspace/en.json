@@ -129,6 +129,26 @@
       "gherkinInvalid": "Enter a Gherkin scenario.",
       "submit": "Create test case",
       "pending": "Creating test case…"
+    },
+    "detail": {
+      "loading": "Loading test case…",
+      "back": "Back to test cases",
+      "version": "Version {{version}}",
+      "edit": "Edit test case",
+      "cancel": "Cancel",
+      "save": "Save new version",
+      "saving": "Saving version…",
+      "section": "Section",
+      "template": "Template",
+      "automation": "Automation ID",
+      "preconditions": "Preconditions",
+      "expectedResult": "Expected result",
+      "content": "Test content",
+      "history": "Version history",
+      "createdBy": "Created by {{name}}",
+      "unknownAuthor": "Unknown author",
+      "current": "Current",
+      "reload": "Reload latest version"
     }
   }
 }

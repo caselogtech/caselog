@@ -1,0 +1,147 @@
+.detail-actions,
+.edit-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.detail-actions button {
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--surface-1);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+.detail-layout {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.case-body,
+.version-panel {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.case-metadata {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.case-metadata dt {
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.case-metadata dd {
+  margin: 0;
+}
+
+.content-section {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+  padding-top: 20px;
+}
+
+.content-section h2,
+.version-panel h2 {
+  font-size: 1rem;
+  margin: 0 0 12px;
+}
+
+.preserve-lines {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.case-steps {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.version-panel ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.version-panel li {
+  border-top: 1px solid var(--border);
+  padding: 14px 0;
+}
+
+.version-panel li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.version-panel li > div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.version-panel span {
+  background: var(--surface-1);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.75rem;
+  padding: 3px 7px;
+}
+
+.version-panel p {
+  margin: 6px 0;
+}
+
+.version-panel small {
+  color: var(--text-2);
+}
+
+.case-steps li + li {
+  margin-top: 14px;
+}
+
+.case-steps p {
+  color: var(--text-2);
+  margin: 4px 0 0;
+}
+
+.edit-actions {
+  justify-content: flex-end;
+}
+
+.edit-actions .secondary-button {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+}
+
+.form-alert p {
+  margin: 0 0 10px;
+}
+
+@media (max-width: 760px) {
+  .detail-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .detail-layout,
+  .case-metadata {
+    grid-template-columns: 1fr;
+  }
+}

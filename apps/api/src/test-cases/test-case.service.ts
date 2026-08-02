@@ -3,14 +3,23 @@ import {
   testCaseListResponseSchema,
   createTestCaseResponseSchema,
   projectStructureResponseSchema,
+  testCaseDetailResponseSchema,
   type CreateTestCaseRequest,
   type CreateTestCaseResponse,
   type OrganizationAccessPrincipal,
   type ProjectStructureResponse,
+  type TestCaseDetailResponse,
   type TestCaseListQuery,
   type TestCaseListResponse,
+  type UpdateTestCaseRequest,
+  type UpdateTestCaseResponse,
+  updateTestCaseResponseSchema,
 } from '@caselog/schemas';
-import { AuthorizationDeniedError, ResourceNotFoundError } from '../common/errors/domain.error';
+import {
+  AuthorizationDeniedError,
+  ResourceConflictError,
+  ResourceNotFoundError,
+} from '../common/errors/domain.error';
 import { TestCaseRepository } from './test-case.repository';
 
 @Injectable()
@@ -65,5 +74,55 @@ export class TestCaseService {
       throw new ResourceNotFoundError('section');
     }
     return createTestCaseResponseSchema.parse(result.value);
+  }
+
+  async detail(
+    organizationId: string,
+    projectSlug: string,
+    caseId: string,
+  ): Promise<TestCaseDetailResponse> {
+    const result = await this.testCases.detail(organizationId, projectSlug, caseId);
+    if (result.kind === 'project_not_found') {
+      throw new ResourceNotFoundError('project');
+    }
+    if (result.kind === 'case_not_found') {
+      throw new ResourceNotFoundError('test_case');
+    }
+    return testCaseDetailResponseSchema.parse(result.value);
+  }
+
+  async update(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    caseId: string,
+    request: UpdateTestCaseRequest,
+  ): Promise<UpdateTestCaseResponse> {
+    if (principal.role === 'read_only') {
+      throw new AuthorizationDeniedError();
+    }
+    const result = await this.testCases.update(
+      principal.organizationId,
+      principal.sub,
+      projectSlug,
+      caseId,
+      request,
+    );
+    if (result.kind === 'project_not_found') {
+      throw new ResourceNotFoundError('project');
+    }
+    if (result.kind === 'case_not_found') {
+      throw new ResourceNotFoundError('test_case');
+    }
+    if (result.kind === 'section_not_found') {
+      throw new ResourceNotFoundError('section');
+    }
+    if (result.kind === 'version_conflict') {
+      throw new ResourceConflictError(
+        'case_version_conflict',
+        'The test case has changed since it was loaded',
+        { currentVersion: result.currentVersion },
+      );
+    }
+    return updateTestCaseResponseSchema.parse(result.value);
   }
 }

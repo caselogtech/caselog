@@ -1,0 +1,250 @@
+<main class="case-create-page" aria-labelledby="case-detail-title">
+  @if (detail.isPending()) {
+    <section class="page-state" aria-live="polite">
+      {{ 'workspace.cases.detail.loading' | transloco }}
+    </section>
+  } @else if (detail.isError()) {
+    <section class="page-state error" role="alert">
+      <p>{{ errorTranslationKey() | transloco }}</p>
+      <button type="button" (click)="detail.refetch()">
+        {{ 'workspace.cases.retry' | transloco }}
+      </button>
+    </section>
+  } @else if (detail.data(); as result) {
+    <header class="case-create-header">
+      <div>
+        <p class="eyebrow">{{ result.project.key }}-{{ result.testCase.caseNumber }}</p>
+        <h1 id="case-detail-title">{{ result.testCase.currentVersion.title }}</h1>
+        <p>
+          {{
+            'workspace.cases.detail.version'
+              | transloco: { version: result.testCase.currentVersion.version }
+          }}
+        </p>
+      </div>
+      <div class="detail-actions">
+        @if (canEdit() && !editing()) {
+          <button type="button" (click)="startEditing()">
+            {{ 'workspace.cases.detail.edit' | transloco }}
+          </button>
+        }
+        <a
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
+        >
+          {{ 'workspace.cases.detail.back' | transloco }}
+        </a>
+      </div>
+    </header>
+
+    @if (editing()) {
+      <form class="case-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        @if (updateCase.isError()) {
+          <div class="form-alert" role="alert">
+            <p>{{ errorTranslationKey() | transloco }}</p>
+            <button class="secondary-button" type="button" (click)="reload()">
+              {{ 'workspace.cases.detail.reload' | transloco }}
+            </button>
+          </div>
+        }
+
+        <div class="field full-width">
+          <label for="case-title">{{ 'workspace.cases.new.titleLabel' | transloco }}</label>
+          <input id="case-title" type="text" formControlName="title" autocomplete="off" />
+          @if (form.controls.title.touched && form.controls.title.invalid) {
+            <p class="field-error">{{ 'workspace.cases.new.titleInvalid' | transloco }}</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="case-section">{{ 'workspace.cases.new.sectionLabel' | transloco }}</label>
+          <select id="case-section" formControlName="sectionId">
+            @for (suite of structure.data()?.suites ?? []; track suite.id) {
+              <optgroup [label]="suite.name">
+                @for (section of suite.sections; track section.id) {
+                  <option [value]="section.id">{{ section.name }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="case-template">{{ 'workspace.cases.new.templateLabel' | transloco }}</label>
+          <select id="case-template" formControlName="template">
+            <option value="steps">{{ 'workspace.cases.templates.steps' | transloco }}</option>
+            <option value="text">{{ 'workspace.cases.templates.text' | transloco }}</option>
+            <option value="exploratory">
+              {{ 'workspace.cases.templates.exploratory' | transloco }}
+            </option>
+            <option value="bdd">{{ 'workspace.cases.templates.bdd' | transloco }}</option>
+          </select>
+        </div>
+
+        <div class="field full-width">
+          <label for="automation-id">{{ 'workspace.cases.new.automationLabel' | transloco }}</label>
+          <input id="automation-id" type="text" formControlName="automationId" autocomplete="off" />
+        </div>
+
+        <div class="field full-width">
+          <label for="preconditions">{{ 'workspace.cases.new.preconditionsLabel' | transloco }}</label>
+          <textarea id="preconditions" rows="3" formControlName="preconditions"></textarea>
+        </div>
+
+        @switch (form.controls.template.value) {
+          @case ('steps') {
+            <fieldset class="steps full-width" formArrayName="steps">
+              <legend>{{ 'workspace.cases.new.stepsTitle' | transloco }}</legend>
+              @for (step of form.controls.steps.controls; track step; let index = $index) {
+                <div class="step" [formGroupName]="index">
+                  <div class="field">
+                    <label>
+                      {{ 'workspace.cases.new.actionLabel' | transloco }}
+                      <textarea rows="3" formControlName="action"></textarea>
+                    </label>
+                  </div>
+                  <div class="field">
+                    <label>
+                      {{ 'workspace.cases.new.stepExpectedLabel' | transloco }}
+                      <textarea rows="3" formControlName="expected"></textarea>
+                    </label>
+                  </div>
+                  <button
+                    class="remove-step"
+                    type="button"
+                    [disabled]="form.controls.steps.length === 1"
+                    (click)="removeStep(index)"
+                  >
+                    {{ 'workspace.cases.new.removeStep' | transloco }}
+                  </button>
+                </div>
+              }
+              <button class="secondary-button" type="button" (click)="addStep()">
+                {{ 'workspace.cases.new.addStep' | transloco }}
+              </button>
+            </fieldset>
+          }
+          @case ('text') {
+            <div class="field full-width">
+              <label for="case-text">{{ 'workspace.cases.new.textLabel' | transloco }}</label>
+              <textarea id="case-text" rows="8" formControlName="text"></textarea>
+            </div>
+          }
+          @case ('exploratory') {
+            <div class="field full-width">
+              <label for="case-charter">{{ 'workspace.cases.new.charterLabel' | transloco }}</label>
+              <textarea id="case-charter" rows="8" formControlName="charter"></textarea>
+            </div>
+          }
+          @case ('bdd') {
+            <div class="field full-width">
+              <label for="case-gherkin">{{ 'workspace.cases.new.gherkinLabel' | transloco }}</label>
+              <textarea id="case-gherkin" rows="10" formControlName="gherkin"></textarea>
+            </div>
+          }
+        }
+
+        <div class="field full-width">
+          <label for="expected-result">
+            {{ 'workspace.cases.new.expectedResultLabel' | transloco }}
+          </label>
+          <textarea id="expected-result" rows="3" formControlName="expectedResult"></textarea>
+        </div>
+
+        <div class="form-actions full-width edit-actions">
+          <button class="secondary-button" type="button" (click)="cancelEditing()">
+            {{ 'workspace.cases.detail.cancel' | transloco }}
+          </button>
+          <button type="submit" [disabled]="updateCase.isPending()">
+            {{
+              (updateCase.isPending()
+                ? 'workspace.cases.detail.saving'
+                : 'workspace.cases.detail.save') | transloco
+            }}
+          </button>
+        </div>
+      </form>
+    } @else {
+      <div class="detail-layout">
+        <article class="case-body">
+          <dl class="case-metadata">
+            <div>
+              <dt>{{ 'workspace.cases.detail.section' | transloco }}</dt>
+              <dd>{{ result.testCase.section.suiteName }} / {{ result.testCase.section.name }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'workspace.cases.detail.template' | transloco }}</dt>
+              <dd>
+                {{ templateTranslationKey(result.testCase.currentVersion.template) | transloco }}
+              </dd>
+            </div>
+            <div>
+              <dt>{{ 'workspace.cases.detail.automation' | transloco }}</dt>
+              <dd>{{ result.testCase.automationId ?? ('workspace.cases.manual' | transloco) }}</dd>
+            </div>
+          </dl>
+
+          @if (result.testCase.currentVersion.preconditions) {
+            <section class="content-section">
+              <h2>{{ 'workspace.cases.detail.preconditions' | transloco }}</h2>
+              <p class="preserve-lines">{{ result.testCase.currentVersion.preconditions }}</p>
+            </section>
+          }
+
+          <section class="content-section">
+            <h2>{{ 'workspace.cases.detail.content' | transloco }}</h2>
+            @if (result.testCase.currentVersion.template === 'steps') {
+              <ol class="case-steps">
+                @for (step of currentSteps(); track $index) {
+                  <li>
+                    <strong>{{ step.action }}</strong>
+                    @if (step.expected) {
+                      <p>{{ step.expected }}</p>
+                    }
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p class="preserve-lines">{{ currentText() }}</p>
+            }
+          </section>
+
+          @if (result.testCase.currentVersion.expectedResult) {
+            <section class="content-section">
+              <h2>{{ 'workspace.cases.detail.expectedResult' | transloco }}</h2>
+              <p class="preserve-lines">{{ result.testCase.currentVersion.expectedResult }}</p>
+            </section>
+          }
+        </article>
+
+        <aside class="version-panel">
+          <h2>{{ 'workspace.cases.detail.history' | transloco }}</h2>
+          <ol>
+            @for (version of result.testCase.versions; track version.id) {
+              <li>
+                <div>
+                  <strong>
+                    {{ 'workspace.cases.detail.version' | transloco: { version: version.version } }}
+                  </strong>
+                  @if (version.id === result.testCase.currentVersion.id) {
+                    <span>{{ 'workspace.cases.detail.current' | transloco }}</span>
+                  }
+                </div>
+                <p>{{ version.title }}</p>
+                <small>
+                  {{ version.createdAt | date: 'medium' }} ·
+                  {{
+                    version.createdBy
+                      ? ('workspace.cases.detail.createdBy'
+                        | transloco: { name: version.createdBy.displayName })
+                      : ('workspace.cases.detail.unknownAuthor' | transloco)
+                  }}
+                </small>
+              </li>
+            }
+          </ol>
+        </aside>
+      </div>
+    }
+  }
+</main>

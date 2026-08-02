@@ -237,6 +237,10 @@ tbody tr:last-child td {
   min-width: 240px;
 }
 
+.case-title a {
+  color: var(--text-1);
+}
+
 .automation-id {
   overflow-wrap: anywhere;
   white-space: normal;

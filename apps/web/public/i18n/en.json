@@ -4,6 +4,7 @@
     "homeAriaLabel": "Caselog home"
   },
   "errors": {
+    "case_version_conflict": "This test case changed while you were editing it. Reload the latest version and try again.",
     "default": "Something went wrong. Please try again.",
     "email_already_registered": "An account with this email already exists.",
     "email_verification_required": "Verify your email before creating a workspace.",
