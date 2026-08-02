@@ -1,0 +1,38 @@
+{
+  "name": "@caselog/web",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "predev": "pnpm --filter @caselog/schemas build",
+    "dev": "ng serve",
+    "start": "ng serve",
+    "prebuild": "pnpm --filter @caselog/schemas build",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "pretest": "pnpm --filter @caselog/schemas build",
+    "test": "ng test --watch=false",
+    "pretypecheck": "pnpm --filter @caselog/schemas build",
+    "typecheck": "ng build --configuration development"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/common": "^22.1.0",
+    "@angular/compiler": "^22.1.0",
+    "@angular/core": "^22.1.0",
+    "@angular/forms": "^22.1.0",
+    "@angular/platform-browser": "^22.1.0",
+    "@angular/router": "^22.1.0",
+    "@caselog/schemas": "workspace:*",
+    "@tanstack/angular-query-experimental": "5.101.4",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.1.2",
+    "@angular/cli": "^22.1.2",
+    "@angular/compiler-cli": "^22.1.0",
+    "jsdom": "^28.0.0",
+    "typescript": "~6.0.3",
+    "vitest": "^4.0.8"
+  }
+}

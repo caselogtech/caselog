@@ -1,0 +1,31 @@
+{
+  "name": "caselog",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Open-source test management for manual and automated testing",
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=24.15.0 <25",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck",
+    "dev": "pnpm --parallel --stream --filter @caselog/api --filter @caselog/web run dev",
+    "db:migrate": "pnpm --filter @caselog/api db:migrate",
+    "db:migrate:deploy": "pnpm --filter @caselog/api db:migrate:deploy",
+    "db:seed": "pnpm --filter @caselog/api db:seed",
+    "db:studio": "pnpm --filter @caselog/api db:studio",
+    "format": "biome format --write apps packages",
+    "format:check": "biome format apps packages",
+    "lint": "biome lint apps packages",
+    "pretest": "pnpm db:migrate:deploy",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "typescript": "~5.9.3"
+  }
+}
