@@ -1,0 +1,488 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+  runtime      = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MembershipRole {
+  OWNER       @map("owner")
+  ADMIN       @map("admin")
+  LEAD        @map("lead")
+  TESTER      @map("tester")
+  CONTRIBUTOR @map("contributor")
+  READ_ONLY   @map("read_only")
+
+  @@map("membership_role")
+}
+
+enum CaseTemplate {
+  STEPS       @map("steps")
+  TEXT        @map("text")
+  EXPLORATORY @map("exploratory")
+  BDD         @map("bdd")
+
+  @@map("case_template")
+}
+
+enum RunStatus {
+  DRAFT     @map("draft")
+  ACTIVE    @map("active")
+  COMPLETED @map("completed")
+  ARCHIVED  @map("archived")
+
+  @@map("run_status")
+}
+
+enum CustomFieldType {
+  TEXT        @map("text")
+  SELECT      @map("select")
+  MULTISELECT @map("multiselect")
+  NUMBER      @map("number")
+  DATE        @map("date")
+  USER        @map("user")
+  URL         @map("url")
+  CHECKBOX    @map("checkbox")
+
+  @@map("custom_field_type")
+}
+
+enum CustomFieldEntityType {
+  CASE        @map("case")
+  RUN         @map("run")
+  RESULT      @map("result")
+  DEFECT_LINK @map("defect_link")
+  MILESTONE   @map("milestone")
+
+  @@map("custom_field_entity_type")
+}
+
+enum AttachmentTargetType {
+  CASE_VERSION @map("case_version")
+  RESULT       @map("result")
+
+  @@map("attachment_target_type")
+}
+
+enum AccountTokenPurpose {
+  EMAIL_VERIFICATION @map("email_verification")
+  PASSWORD_RESET     @map("password_reset")
+
+  @@map("account_token_purpose")
+}
+
+model Organization {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String    @db.VarChar(120)
+  slug      String    @unique(map: "uq_organizations_slug") @db.VarChar(30)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  memberships            Membership[]
+  projects               Project[]
+  suites                 Suite[]
+  sections               Section[]
+  testCases              TestCase[]
+  testCaseVersions       TestCaseVersion[]
+  resultStatuses         ResultStatus[]
+  testRuns               TestRun[]
+  testRunItems           TestRunItem[]
+  testResults            TestResult[]
+  attachments            Attachment[]
+  customFieldDefinitions CustomFieldDefinition[]
+  customFieldValues      CustomFieldValue[]
+  usageCounter           UsageCounter?
+
+  @@map("organizations")
+}
+
+model User {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String    @unique(map: "uq_users_email") @db.Citext
+  displayName     String    @map("display_name") @db.VarChar(120)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(3)
+
+  memberships        Membership[]
+  authoredVersions   TestCaseVersion[]   @relation("VersionAuthor")
+  assignedRunItems   TestRunItem[]       @relation("RunItemAssignee")
+  executedResults    TestResult[]        @relation("ResultExecutor")
+  passwordCredential PasswordCredential?
+  authSessions       AuthSession[]
+  accountTokens      AccountToken[]
+
+  @@map("users")
+}
+
+model AccountToken {
+  id         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String              @map("user_id") @db.Uuid
+  purpose    AccountTokenPurpose
+  tokenHash  String              @unique(map: "uq_account_tokens_token_hash") @map("token_hash") @db.Char(64)
+  expiresAt  DateTime            @map("expires_at") @db.Timestamptz(3)
+  consumedAt DateTime?           @map("consumed_at") @db.Timestamptz(3)
+  revokedAt  DateTime?           @map("revoked_at") @db.Timestamptz(3)
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt], map: "idx_account_tokens_user_purpose_created_at")
+  @@index([expiresAt], map: "idx_account_tokens_expires_at")
+  @@map("account_tokens")
+}
+
+model PasswordCredential {
+  userId       String   @id(map: "pk_password_credentials") @map("user_id") @db.Uuid
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_credentials")
+}
+
+model AuthSession {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  familyId         String    @map("family_id") @db.Uuid
+  refreshTokenHash String    @unique(map: "uq_auth_sessions_refresh_token_hash") @map("refresh_token_hash") @db.Char(64)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  lastUsedAt       DateTime? @map("last_used_at") @db.Timestamptz(3)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
+  revocationReason String?   @map("revocation_reason") @db.VarChar(50)
+  replacedById     String?   @unique(map: "uq_auth_sessions_replaced_by_id") @map("replaced_by_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacement AuthSession? @relation("SessionRotation", fields: [replacedById], references: [id], onDelete: SetNull)
+  previous    AuthSession? @relation("SessionRotation")
+
+  @@index([userId, revokedAt, expiresAt], map: "idx_auth_sessions_user_id_revoked_at_expires_at")
+  @@index([familyId, revokedAt], map: "idx_auth_sessions_family_id_revoked_at")
+  @@map("auth_sessions")
+}
+
+model Membership {
+  organizationId String         @map("organization_id") @db.Uuid
+  id             String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String         @map("user_id") @db.Uuid
+  role           MembershipRole
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([organizationId, id], map: "pk_memberships")
+  @@unique([organizationId, userId], map: "uq_memberships_organization_id_user_id")
+  @@index([organizationId, role], map: "idx_memberships_organization_id_role")
+  @@map("memberships")
+}
+
+model Project {
+  organizationId String    @map("organization_id") @db.Uuid
+  id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key            String    @db.VarChar(12)
+  slug           String    @db.VarChar(50)
+  name           String    @db.VarChar(120)
+  nextCaseNumber BigInt    @default(1) @map("next_case_number")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  suites                 Suite[]
+  sections               Section[]
+  testCases              TestCase[]
+  resultStatuses         ResultStatus[]
+  testRuns               TestRun[]
+  customFieldDefinitions CustomFieldDefinition[]
+
+  @@id([organizationId, id], map: "pk_projects")
+  @@unique([organizationId, key], map: "uq_projects_organization_id_key")
+  @@unique([organizationId, slug], map: "uq_projects_organization_id_slug")
+  @@index([organizationId, deletedAt], map: "idx_projects_organization_id_deleted_at")
+  @@map("projects")
+}
+
+model Suite {
+  organizationId String    @map("organization_id") @db.Uuid
+  id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String    @map("project_id") @db.Uuid
+  name           String    @db.VarChar(120)
+  position       Int       @default(0)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project      Project      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  sections     Section[]
+  testCases    TestCase[]
+
+  @@id([organizationId, id], map: "pk_suites")
+  @@unique([organizationId, projectId, name], map: "uq_suites_organization_id_project_id_name")
+  @@index([organizationId, projectId, position], map: "idx_suites_organization_id_project_id_position")
+  @@map("suites")
+}
+
+model Section {
+  organizationId String    @map("organization_id") @db.Uuid
+  id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String    @map("project_id") @db.Uuid
+  suiteId        String    @map("suite_id") @db.Uuid
+  parentId       String?   @map("parent_id") @db.Uuid
+  name           String    @db.VarChar(120)
+  path           String    @db.Text
+  depth          Int
+  position       Int       @default(0)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project      Project      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  suite        Suite        @relation(fields: [organizationId, suiteId], references: [organizationId, id], onDelete: Restrict)
+  parent       Section?     @relation("SectionTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: Restrict)
+  children     Section[]    @relation("SectionTree")
+  testCases    TestCase[]
+
+  @@id([organizationId, id], map: "pk_sections")
+  @@unique([organizationId, suiteId, path], map: "uq_sections_organization_id_suite_id_path")
+  @@index([organizationId, projectId, suiteId, parentId, position], map: "idx_sections_org_project_suite_parent_position")
+  @@map("sections")
+}
+
+model TestCase {
+  organizationId   String    @map("organization_id") @db.Uuid
+  id               String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId        String    @map("project_id") @db.Uuid
+  suiteId          String    @map("suite_id") @db.Uuid
+  sectionId        String    @map("section_id") @db.Uuid
+  caseNumber       BigInt    @map("case_number")
+  currentVersionId String?   @map("current_version_id") @db.Uuid
+  automationId     String?   @map("automation_id") @db.VarChar(500)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project        Project           @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  suite          Suite             @relation(fields: [organizationId, suiteId], references: [organizationId, id], onDelete: Restrict)
+  section        Section           @relation(fields: [organizationId, sectionId], references: [organizationId, id], onDelete: Restrict)
+  currentVersion TestCaseVersion?  @relation("CurrentVersion", fields: [organizationId, currentVersionId], references: [organizationId, id], onDelete: Restrict)
+  versions       TestCaseVersion[] @relation("CaseVersions")
+
+  @@id([organizationId, id], map: "pk_test_cases")
+  @@unique([organizationId, projectId, caseNumber], map: "uq_test_cases_organization_id_project_id_case_number")
+  @@unique([organizationId, currentVersionId], map: "uq_test_cases_organization_id_current_version_id")
+  @@index([organizationId, projectId, sectionId, deletedAt], map: "idx_test_cases_organization_id_project_id_section_id_deleted_at")
+  @@index([organizationId, projectId, automationId], map: "idx_test_cases_organization_id_project_id_automation_id")
+  @@map("test_cases")
+}
+
+model TestCaseVersion {
+  organizationId String       @map("organization_id") @db.Uuid
+  id             String       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  testCaseId     String       @map("test_case_id") @db.Uuid
+  version        Int
+  title          String       @db.VarChar(500)
+  template       CaseTemplate @default(STEPS)
+  preconditions  String?      @db.Text
+  expectedResult String?      @map("expected_result") @db.Text
+  content        Json
+  createdById    String?      @map("created_by_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  testCase     TestCase      @relation("CaseVersions", fields: [organizationId, testCaseId], references: [organizationId, id], onDelete: Restrict)
+  currentFor   TestCase?     @relation("CurrentVersion")
+  createdBy    User?         @relation("VersionAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  runItems     TestRunItem[]
+
+  @@id([organizationId, id], map: "pk_test_case_versions")
+  @@unique([organizationId, testCaseId, version], map: "uq_test_case_versions_organization_id_test_case_id_version")
+  @@index([organizationId, createdAt], map: "idx_test_case_versions_organization_id_created_at")
+  @@map("test_case_versions")
+}
+
+model ResultStatus {
+  organizationId  String    @map("organization_id") @db.Uuid
+  id              String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId       String    @map("project_id") @db.Uuid
+  key             String    @db.VarChar(50)
+  name            String    @db.VarChar(80)
+  color           String    @db.VarChar(7)
+  icon            String    @db.VarChar(50)
+  isFinal         Boolean   @default(false) @map("is_final")
+  countsAsFailure Boolean   @default(false) @map("counts_as_failure")
+  position        Int       @default(0)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project      Project       @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  runItems     TestRunItem[]
+  results      TestResult[]
+
+  @@id([organizationId, id], map: "pk_result_statuses")
+  @@unique([organizationId, projectId, key], map: "uq_result_statuses_organization_id_project_id_key")
+  @@index([organizationId, projectId, position], map: "idx_result_statuses_organization_id_project_id_position")
+  @@map("result_statuses")
+}
+
+model TestRun {
+  organizationId String    @map("organization_id") @db.Uuid
+  id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String    @map("project_id") @db.Uuid
+  name           String    @db.VarChar(200)
+  status         RunStatus @default(DRAFT)
+  build          String?   @db.VarChar(200)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  closedAt       DateTime? @map("closed_at") @db.Timestamptz(3)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project      Project       @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  items        TestRunItem[]
+
+  @@id([organizationId, id], map: "pk_test_runs")
+  @@index([organizationId, projectId, status, createdAt], map: "idx_test_runs_organization_id_project_id_status_created_at")
+  @@map("test_runs")
+}
+
+model TestRunItem {
+  organizationId String   @map("organization_id") @db.Uuid
+  id             String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  testRunId      String   @map("test_run_id") @db.Uuid
+  caseVersionId  String   @map("case_version_id") @db.Uuid
+  statusId       String   @map("status_id") @db.Uuid
+  assigneeId     String?  @map("assignee_id") @db.Uuid
+  position       Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  testRun      TestRun         @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Restrict)
+  caseVersion  TestCaseVersion @relation(fields: [organizationId, caseVersionId], references: [organizationId, id], onDelete: Restrict)
+  status       ResultStatus    @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
+  assignee     User?           @relation("RunItemAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  results      TestResult[]
+
+  @@id([organizationId, id], map: "pk_test_run_items")
+  @@unique([organizationId, testRunId, caseVersionId], map: "uq_test_run_items_organization_id_test_run_id_case_version_id")
+  @@index([organizationId, testRunId, position], map: "idx_test_run_items_organization_id_test_run_id_position")
+  @@index([organizationId, assigneeId, statusId], map: "idx_test_run_items_organization_id_assignee_id_status_id")
+  @@map("test_run_items")
+}
+
+model TestResult {
+  organizationId String   @map("organization_id") @db.Uuid
+  id             String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  testRunItemId  String   @map("test_run_item_id") @db.Uuid
+  statusId       String   @map("status_id") @db.Uuid
+  attempt        Int
+  comment        String?  @db.Text
+  elapsedMs      Int?     @map("elapsed_ms")
+  executedById   String?  @map("executed_by_id") @db.Uuid
+  executedAt     DateTime @default(now()) @map("executed_at") @db.Timestamptz(3)
+  build          String?  @db.VarChar(200)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  testRunItem  TestRunItem  @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Restrict)
+  status       ResultStatus @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
+  executedBy   User?        @relation("ResultExecutor", fields: [executedById], references: [id], onDelete: SetNull)
+
+  @@id([organizationId, id, executedAt], map: "pk_test_results")
+  @@index([organizationId, testRunItemId, executedAt], map: "idx_test_results_organization_id_test_run_item_id_executed_at")
+  @@index([organizationId, statusId, executedAt], map: "idx_test_results_organization_id_status_id_executed_at")
+  @@map("test_results")
+}
+
+model Attachment {
+  organizationId String               @map("organization_id") @db.Uuid
+  id             String               @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  targetType     AttachmentTargetType @map("target_type")
+  targetId       String               @map("target_id") @db.Uuid
+  storageKey     String               @map("storage_key") @db.VarChar(1024)
+  fileName       String               @map("file_name") @db.VarChar(255)
+  contentType    String               @map("content_type") @db.VarChar(255)
+  sizeBytes      BigInt               @map("size_bytes")
+  checksumSha256 String               @map("checksum_sha256") @db.Char(64)
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  deletedAt      DateTime?            @map("deleted_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@id([organizationId, id], map: "pk_attachments")
+  @@unique([organizationId, storageKey], map: "uq_attachments_organization_id_storage_key")
+  @@index([organizationId, targetType, targetId], map: "idx_attachments_organization_id_target_type_target_id")
+  @@index([organizationId, checksumSha256], map: "idx_attachments_organization_id_checksum_sha256")
+  @@map("attachments")
+}
+
+model CustomFieldDefinition {
+  organizationId String                @map("organization_id") @db.Uuid
+  id             String                @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String                @map("project_id") @db.Uuid
+  entityType     CustomFieldEntityType @map("entity_type")
+  key            String                @db.VarChar(50)
+  name           String                @db.VarChar(120)
+  fieldType      CustomFieldType       @map("field_type")
+  config         Json                  @default("{}")
+  isRequired     Boolean               @default(false) @map("is_required")
+  position       Int                   @default(0)
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime?             @map("deleted_at") @db.Timestamptz(3)
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project      Project            @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  values       CustomFieldValue[]
+
+  @@id([organizationId, id], map: "pk_custom_field_definitions")
+  @@unique([organizationId, projectId, entityType, key], map: "uq_custom_field_defs_org_project_entity_key")
+  @@index([organizationId, projectId, entityType, position], map: "idx_custom_field_defs_org_project_entity_position")
+  @@map("custom_field_definitions")
+}
+
+model CustomFieldValue {
+  organizationId String                @map("organization_id") @db.Uuid
+  id             String                @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  definitionId   String                @map("definition_id") @db.Uuid
+  entityType     CustomFieldEntityType @map("entity_type")
+  entityId       String                @map("entity_id") @db.Uuid
+  value          Json
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  definition   CustomFieldDefinition @relation(fields: [organizationId, definitionId], references: [organizationId, id], onDelete: Restrict)
+
+  @@id([organizationId, id], map: "pk_custom_field_values")
+  @@unique([organizationId, definitionId, entityId], map: "uq_custom_field_values_organization_id_definition_id_entity_id")
+  @@index([organizationId, entityType, entityId], map: "idx_custom_field_values_organization_id_entity_type_entity_id")
+  @@index([value(ops: JsonbPathOps)], type: Gin, map: "idx_custom_field_values_value")
+  @@map("custom_field_values")
+}
+
+model UsageCounter {
+  organizationId   String   @id(map: "pk_usage_counters") @map("organization_id") @db.Uuid
+  storageBytesUsed BigInt   @default(0) @map("storage_bytes_used")
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@map("usage_counters")
+}
