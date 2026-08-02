@@ -48,6 +48,22 @@ export {
 export { healthResponseSchema, type HealthResponse } from './health.js';
 export { organizationIdSchema, type OrganizationId } from './organization.js';
 export {
+  createTestRunRequestSchema,
+  createTestRunResponseSchema,
+  testRunListParamsSchema,
+  testRunListQuerySchema,
+  testRunListResponseSchema,
+  testRunStatusSchema,
+  testRunSummarySchema,
+  type CreateTestRunRequest,
+  type CreateTestRunResponse,
+  type TestRunListParams,
+  type TestRunListQuery,
+  type TestRunListResponse,
+  type TestRunStatus,
+  type TestRunSummary,
+} from './test-run.js';
+export {
   projectListQuerySchema,
   projectListResponseSchema,
   projectSummarySchema,

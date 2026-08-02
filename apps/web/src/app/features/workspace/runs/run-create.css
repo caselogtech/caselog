@@ -1,0 +1,89 @@
+.run-create-page {
+  margin: 0 auto;
+  max-width: 760px;
+  padding: 40px 20px 72px;
+}
+
+header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  color: var(--text-3);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+form,
+.state {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+form > label,
+legend {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+form > input {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  font: inherit;
+  margin-bottom: 18px;
+  min-height: 40px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin: 4px 0 16px;
+  padding: 12px;
+}
+
+.case-option {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto 1fr auto;
+  padding: 10px 4px;
+}
+
+.case-option small,
+.hint {
+  color: var(--text-2);
+}
+
+button,
+header a {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  cursor: pointer;
+  font: inherit;
+  padding: 8px 12px;
+  text-decoration: none;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.error {
+  color: var(--error-text);
+}

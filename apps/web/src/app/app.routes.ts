@@ -51,6 +51,18 @@ export const routes: Routes = [
       ),
   },
   {
+    path: ':org/:project/runs/new',
+    providers: workspaceTranslations,
+    loadComponent: () =>
+      import('./features/workspace/runs/run-create').then(({ RunCreate }) => RunCreate),
+  },
+  {
+    path: ':org/:project/runs',
+    providers: workspaceTranslations,
+    loadComponent: () =>
+      import('./features/workspace/runs/run-list').then(({ RunList }) => RunList),
+  },
+  {
     path: ':org/:project/cases/new',
     providers: workspaceTranslations,
     loadComponent: () =>

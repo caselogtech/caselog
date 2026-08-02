@@ -21,6 +21,8 @@
     "invalid_session": "Your session is invalid or has expired. Sign in again.",
     "not_found": "The requested resource was not found.",
     "rate_limited": "Too many requests. Please wait and try again.",
+    "run_case_unavailable": "One or more selected test cases are no longer available. Reload the list and select again.",
+    "run_status_unavailable": "This project is missing its Untested status. Restore that status before creating a run.",
     "validation_failed": "Check the entered information and try again.",
     "workspace_limit_reached": "This account has reached its workspace limit.",
     "workspace_slug_taken": "This workspace URL is unavailable."

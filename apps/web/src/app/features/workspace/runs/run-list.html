@@ -1,0 +1,78 @@
+<main class="runs-page" aria-labelledby="runs-title">
+  <header>
+    <div>
+      <p class="eyebrow">{{ 'workspace.runs.eyebrow' | transloco }}</p>
+      <h1 id="runs-title">{{ project()?.name ?? ('workspace.runs.title' | transloco) }}</h1>
+      <p>{{ 'workspace.runs.description' | transloco }}</p>
+    </div>
+    <nav>
+      @if (canCreate()) {
+        <a
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/new"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'runs', 'new']"
+        >
+          {{ 'workspace.runs.create' | transloco }}
+        </a>
+      }
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
+      >
+        {{ 'workspace.runs.cases' | transloco }}
+      </a>
+    </nav>
+  </header>
+
+  <nav class="filters" [attr.aria-label]="'workspace.runs.statusFilter' | transloco">
+    <button type="button" [class.active]="!status()" (click)="selectStatus()">
+      {{ 'workspace.runs.all' | transloco }}
+    </button>
+    @for (option of statuses; track option) {
+      <button
+        type="button"
+        [class.active]="status() === option"
+        (click)="selectStatus(option)"
+      >
+        {{ statusTranslationKey(option) | transloco }}
+      </button>
+    }
+  </nav>
+
+  @if (runs.isPending()) {
+    <section class="state">{{ 'workspace.runs.loading' | transloco }}</section>
+  } @else if (runs.isError()) {
+    <section class="state error" role="alert">
+      <p>{{ errorTranslationKey() | transloco }}</p>
+      <button type="button" (click)="runs.refetch()">{{ 'workspace.runs.retry' | transloco }}</button>
+    </section>
+  } @else if (items().length === 0) {
+    <section class="state">
+      <h2>{{ 'workspace.runs.emptyTitle' | transloco }}</h2>
+      <p>{{ 'workspace.runs.emptyDescription' | transloco }}</p>
+    </section>
+  } @else {
+    <div class="run-grid">
+      @for (run of items(); track run.id) {
+        <article>
+          <div class="run-title">
+            <h2>{{ run.name }}</h2>
+            <span>{{ statusTranslationKey(run.status) | transloco }}</span>
+          </div>
+          <p>{{ run.completedCount }} / {{ run.itemCount }} {{ 'workspace.runs.completed' | transloco }}</p>
+          <progress [value]="run.completedCount" [max]="run.itemCount"></progress>
+          @if (run.failedCount > 0) {
+            <p class="failures">{{ run.failedCount }} {{ 'workspace.runs.failed' | transloco }}</p>
+          }
+          @if (run.build) {
+            <p>{{ 'workspace.runs.build' | transloco }}: {{ run.build }}</p>
+          }
+        </article>
+      }
+    </div>
+    @if (runs.hasNextPage()) {
+      <button class="load-more" type="button" (click)="runs.fetchNextPage()">
+        {{ (runs.isFetchingNextPage() ? 'workspace.runs.loadingMore' : 'workspace.runs.loadMore') | transloco }}
+      </button>
+    }
+  }
+</main>

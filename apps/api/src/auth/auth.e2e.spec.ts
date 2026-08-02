@@ -103,6 +103,40 @@ describe('authentication API', () => {
         organizationId_slug: { organizationId: organization.id, slug: 'authentication' },
       },
     });
+    await admin.resultStatus.createMany({
+      data: [
+        {
+          organizationId: organization.id,
+          projectId: authProject.id,
+          key: 'untested',
+          name: 'Untested',
+          color: '#64748B',
+          icon: 'circle',
+          position: 0,
+        },
+        {
+          organizationId: organization.id,
+          projectId: authProject.id,
+          key: 'passed',
+          name: 'Passed',
+          color: '#16A34A',
+          icon: 'check',
+          isFinal: true,
+          position: 1,
+        },
+        {
+          organizationId: organization.id,
+          projectId: authProject.id,
+          key: 'failed',
+          name: 'Failed',
+          color: '#DC2626',
+          icon: 'x',
+          isFinal: true,
+          countsAsFailure: true,
+          position: 2,
+        },
+      ],
+    });
     const suite = await admin.suite.create({
       data: {
         organizationId: organization.id,
@@ -165,6 +199,9 @@ describe('authentication API', () => {
         ...additionalProvisionedOrganizationIds,
       ].filter((id): id is string => Boolean(id));
       if (organizationIds.length > 0) {
+        await admin.testResult.deleteMany({ where: { organizationId: { in: organizationIds } } });
+        await admin.testRunItem.deleteMany({ where: { organizationId: { in: organizationIds } } });
+        await admin.testRun.deleteMany({ where: { organizationId: { in: organizationIds } } });
         await admin.testCase.updateMany({
           where: { organizationId: { in: organizationIds } },
           data: { currentVersionId: null },
@@ -961,6 +998,80 @@ describe('authentication API', () => {
     });
   });
 
+  it('creates and lists an active run with immutable case-version snapshots', async () => {
+    const selectedCases = await admin.testCase.findMany({
+      where: { organizationId, project: { slug: 'authentication' }, deletedAt: null },
+      orderBy: { caseNumber: 'asc' },
+      take: 2,
+      select: { id: true, currentVersionId: true },
+    });
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/runs',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        name: 'Authentication regression',
+        build: '2026.08.02-rc1',
+        caseIds: selectedCases.map(({ id }) => id),
+      },
+    });
+    expect(response.statusCode, response.body).toBe(201);
+    expect(response.json()).toMatchObject({
+      run: {
+        name: 'Authentication regression',
+        status: 'active',
+        build: '2026.08.02-rc1',
+        itemCount: 2,
+        completedCount: 0,
+        failedCount: 0,
+      },
+    });
+    const runId = response.json().run.id as string;
+    const snapshotItems = await admin.testRunItem.findMany({
+      where: { organizationId, testRunId: runId },
+      orderBy: { position: 'asc' },
+      select: { caseVersionId: true, status: { select: { key: true } } },
+    });
+    expect(snapshotItems).toEqual(
+      selectedCases.map(({ currentVersionId }) => ({
+        caseVersionId: currentVersionId,
+        status: { key: 'untested' },
+      })),
+    );
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/runs?status=active&limit=1',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(list.statusCode, list.body).toBe(200);
+    expect(list.json()).toMatchObject({
+      project: { slug: 'authentication', key: 'AUTH' },
+      items: [expect.objectContaining({ id: runId, itemCount: 2 })],
+      nextCursor: null,
+    });
+
+    const duplicateSelection = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/runs',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        name: 'Invalid duplicate selection',
+        caseIds: [selectedCases[0]?.id, selectedCases[0]?.id],
+      },
+    });
+    expect(duplicateSelection.statusCode, duplicateSelection.body).toBe(400);
+
+    const unavailableCase = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/runs',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Invalid selection', caseIds: [randomUUID()] },
+    });
+    expect(unavailableCase.statusCode, unavailableCase.body).toBe(409);
+    expect(unavailableCase.json().error.code).toBe('run_case_unavailable');
+  });
+
   it('assigns unique case numbers to concurrent creates', async () => {
     const responses = await Promise.all(
       ['Document session timeout', 'Document account lockout'].map((title) =>
@@ -1134,6 +1245,14 @@ describe('authentication API', () => {
         headers: { authorization: `Bearer ${organizationAccessToken}` },
       });
       expect(deleteSection.statusCode, deleteSection.body).toBe(403);
+
+      const createRun = await app.inject({
+        method: 'POST',
+        url: '/api/v1/projects/authentication/runs',
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: { name: 'Forbidden run', caseIds: [editableCaseId] },
+      });
+      expect(createRun.statusCode, createRun.body).toBe(403);
     } finally {
       await admin.membership.updateMany({
         where: { organizationId, userId: authUserId },
@@ -1232,6 +1351,12 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantSectionDelete.statusCode).toBe(404);
+    const crossTenantRuns = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/runs',
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantRuns.statusCode).toBe(404);
 
     const memberList = await app.inject({
       method: 'GET',

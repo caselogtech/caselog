@@ -69,6 +69,7 @@
     "description": "Manual and automated cases in the current project.",
     "back": "Back to projects",
     "create": "Create test case",
+    "runs": "Test runs",
     "structure": "Project structure",
     "allCases": "All test cases",
     "loadingStructure": "Loading sections…",
@@ -183,6 +184,44 @@
       "restore": "Restore as new version",
       "restoring": "Restoring…",
       "closeVersion": "Close"
+    }
+  },
+  "runs": {
+    "eyebrow": "Test execution",
+    "title": "Test runs",
+    "description": "Plan and track immutable snapshots of test cases.",
+    "create": "Create run",
+    "cases": "Test cases",
+    "statusFilter": "Run status",
+    "all": "All",
+    "loading": "Loading test runs…",
+    "retry": "Try again",
+    "emptyTitle": "No test runs",
+    "emptyDescription": "Create a run to execute a fixed snapshot of selected test cases.",
+    "completed": "completed",
+    "failed": "failed",
+    "build": "Build",
+    "loadMore": "Load more",
+    "loadingMore": "Loading more…",
+    "statuses": {
+      "draft": "Draft",
+      "active": "Active",
+      "completed": "Completed",
+      "archived": "Archived"
+    },
+    "new": {
+      "title": "Create test run",
+      "description": "Select active cases. Their current versions will be frozen in this run.",
+      "back": "Back to runs",
+      "readOnly": "Your workspace role does not allow run creation.",
+      "loadingCases": "Loading test cases…",
+      "name": "Run name",
+      "build": "Build",
+      "selectCases": "Test cases",
+      "loadMoreCases": "Load more cases",
+      "selectAtLeastOne": "Select at least one test case.",
+      "submit": "Create run",
+      "creating": "Creating run…"
     }
   }
 }

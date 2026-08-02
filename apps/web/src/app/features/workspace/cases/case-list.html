@@ -8,6 +8,13 @@
       <p>{{ 'workspace.cases.description' | transloco }}</p>
     </div>
     <div class="header-actions">
+      <a
+        class="back-link"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/runs"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'runs']"
+      >
+        {{ 'workspace.cases.runs' | transloco }}
+      </a>
       @if (canCreate() && state() === 'active') {
         <a
           class="create-link"

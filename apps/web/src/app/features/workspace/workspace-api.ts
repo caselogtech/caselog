@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
   createTestCaseResponseSchema,
+  createTestRunResponseSchema,
   projectListResponseSchema,
   projectStructureResponseSchema,
   sectionResponseSchema,
@@ -10,8 +11,11 @@ import {
   testCaseLifecycleResponseSchema,
   testCaseDetailResponseSchema,
   testCaseVersionSchema,
+  testRunListResponseSchema,
   type CreateTestCaseRequest,
   type CreateTestCaseResponse,
+  type CreateTestRunRequest,
+  type CreateTestRunResponse,
   type OrganizationTokenResponse,
   type ProjectListResponse,
   type ProjectStructureResponse,
@@ -21,6 +25,8 @@ import {
   type TestCaseLifecycleResponse,
   type TestCaseDetailResponse,
   type TestCaseVersion,
+  type TestRunListResponse,
+  type TestRunStatus,
   type UpdateTestCaseRequest,
   type UpdateTestCaseResponse,
   updateTestCaseResponseSchema,
@@ -110,6 +116,34 @@ export class WorkspaceApi {
       this.http.get<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/structure`),
     );
     return projectStructureResponseSchema.parse(response);
+  }
+
+  async listTestRuns(
+    workspaceSlug: string,
+    projectSlug: string,
+    cursor?: string,
+    status?: TestRunStatus,
+    limit = 25,
+  ): Promise<TestRunListResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/runs`, {
+        params: { limit, ...(cursor ? { cursor } : {}), ...(status ? { status } : {}) },
+      }),
+    );
+    return testRunListResponseSchema.parse(response);
+  }
+
+  async createTestRun(
+    workspaceSlug: string,
+    projectSlug: string,
+    request: CreateTestRunRequest,
+  ): Promise<CreateTestRunResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/runs`, request),
+    );
+    return createTestRunResponseSchema.parse(response);
   }
 
   async createTestCase(

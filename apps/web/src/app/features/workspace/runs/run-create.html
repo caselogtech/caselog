@@ -1,0 +1,60 @@
+<main class="run-create-page" aria-labelledby="run-create-title">
+  <header>
+    <div>
+      <p class="eyebrow">{{ 'workspace.runs.eyebrow' | transloco }}</p>
+      <h1 id="run-create-title">{{ 'workspace.runs.new.title' | transloco }}</h1>
+      <p>{{ 'workspace.runs.new.description' | transloco }}</p>
+    </div>
+    <a
+      href="/{{ workspaceSlug }}/{{ projectSlug }}/runs"
+      [routerLink]="['/', workspaceSlug, projectSlug, 'runs']"
+    >
+      {{ 'workspace.runs.new.back' | transloco }}
+    </a>
+  </header>
+
+  @if (!canCreate()) {
+    <section class="state"><h2>{{ 'workspace.runs.new.readOnly' | transloco }}</h2></section>
+  } @else if (cases.isPending()) {
+    <section class="state">{{ 'workspace.runs.new.loadingCases' | transloco }}</section>
+  } @else if (cases.isError()) {
+    <section class="state error" role="alert">{{ errorTranslationKey() | transloco }}</section>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label for="run-name">{{ 'workspace.runs.new.name' | transloco }}</label>
+      <input id="run-name" type="text" formControlName="name" />
+      <label for="run-build">{{ 'workspace.runs.new.build' | transloco }}</label>
+      <input id="run-build" type="text" formControlName="build" />
+
+      <fieldset>
+        <legend>{{ 'workspace.runs.new.selectCases' | transloco }}</legend>
+        @for (testCase of items(); track testCase.id) {
+          <label class="case-option">
+            <input
+              type="checkbox"
+              [checked]="selectedIds().has(testCase.id)"
+              (change)="toggleCase(testCase.id, $any($event.target).checked)"
+            />
+            <span>{{ testCase.title }}</span>
+            <small>{{ testCase.section.name }}</small>
+          </label>
+        }
+        @if (cases.hasNextPage()) {
+          <button type="button" (click)="cases.fetchNextPage()">
+            {{ 'workspace.runs.new.loadMoreCases' | transloco }}
+          </button>
+        }
+      </fieldset>
+
+      @if (selectedIds().size === 0) {
+        <p class="hint">{{ 'workspace.runs.new.selectAtLeastOne' | transloco }}</p>
+      }
+      @if (createRun.isError()) {
+        <p class="error" role="alert">{{ errorTranslationKey() | transloco }}</p>
+      }
+      <button type="submit" [disabled]="createRun.isPending()">
+        {{ (createRun.isPending() ? 'workspace.runs.new.creating' : 'workspace.runs.new.submit') | transloco }}
+      </button>
+    </form>
+  }
+</main>

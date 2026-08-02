@@ -9,6 +9,7 @@ import { HealthModule } from './core/health/health.module';
 import { MailModule } from './core/mail/mail.module';
 import { ProjectModule } from './projects/project.module';
 import { TestCaseModule } from './test-cases/test-case.module';
+import { TestRunModule } from './test-runs/test-run.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { TestCaseModule } from './test-cases/test-case.module';
     AuthModule,
     ProjectModule,
     TestCaseModule,
+    TestRunModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
