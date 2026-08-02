@@ -27,6 +27,18 @@ export class InvalidAccountTokenError extends DomainError {
   }
 }
 
+export class EmailVerificationRequiredError extends DomainError {
+  constructor() {
+    super('email_verification_required', 'Verify your email before creating a workspace');
+  }
+}
+
+export class AuthorizationDeniedError extends DomainError {
+  constructor() {
+    super('insufficient_permissions', 'You do not have permission to perform this action');
+  }
+}
+
 export class ResourceConflictError extends DomainError {
   constructor(code: string, message: string, details: Record<string, unknown> = {}) {
     super(code, message, details);

@@ -7,6 +7,8 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { DatabaseModule } from './core/database/database.module';
 import { HealthModule } from './core/health/health.module';
 import { MailModule } from './core/mail/mail.module';
+import { ProjectModule } from './projects/project.module';
+import { TestCaseModule } from './test-cases/test-case.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { MailModule } from './core/mail/mail.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     HealthModule,
     AuthModule,
+    ProjectModule,
+    TestCaseModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },

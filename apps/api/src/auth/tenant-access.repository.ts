@@ -58,4 +58,28 @@ export class TenantAccessRepository {
       role: ROLE_MAP[membership.role],
     };
   }
+
+  async validatePrincipal(
+    principal: OrganizationAccessPrincipal,
+  ): Promise<OrganizationAccessPrincipal | undefined> {
+    const membership = await this.tenantDatabase.run(principal.organizationId, (transaction) =>
+      transaction.membership.findUnique({
+        where: {
+          organizationId_id: {
+            organizationId: principal.organizationId,
+            id: principal.membershipId,
+          },
+          userId: principal.sub,
+          deletedAt: null,
+        },
+        select: { role: true },
+      }),
+    );
+
+    if (!membership) {
+      return undefined;
+    }
+
+    return { ...principal, role: ROLE_MAP[membership.role] };
+  }
 }

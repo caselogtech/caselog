@@ -28,8 +28,14 @@ describe('authentication API', () => {
   let email: string;
   let outsiderEmail: string;
   let organizationId: string | undefined;
+  let provisionedOrganizationId: string | undefined;
+  const additionalProvisionedOrganizationIds: string[] = [];
   let organizationSlug: string;
   let accessToken: string;
+  let outsiderAccessToken: string;
+  let organizationAccessToken: string;
+  let authSectionId: string;
+  let authUserId: string;
   let registrationCookie: string;
   let registrationResponse: Awaited<ReturnType<NestFastifyApplication['inject']>>;
 
@@ -70,16 +76,116 @@ describe('authentication API', () => {
     });
     organizationId = organization.id;
     const user = await admin.user.findUniqueOrThrow({ where: { email } });
+    authUserId = user.id;
     await admin.membership.create({
       data: { organizationId: organization.id, userId: user.id, role: 'OWNER' },
+    });
+    await admin.project.createMany({
+      data: [
+        {
+          organizationId: organization.id,
+          key: 'AUTH',
+          slug: 'authentication',
+          name: 'Authentication Project',
+        },
+        {
+          organizationId: organization.id,
+          key: 'SECOND',
+          slug: 'second',
+          name: 'Second Project',
+        },
+      ],
+    });
+    const authProject = await admin.project.findUniqueOrThrow({
+      where: {
+        organizationId_slug: { organizationId: organization.id, slug: 'authentication' },
+      },
+    });
+    const suite = await admin.suite.create({
+      data: {
+        organizationId: organization.id,
+        projectId: authProject.id,
+        name: 'Authentication suite',
+      },
+    });
+    const section = await admin.section.create({
+      data: {
+        organizationId: organization.id,
+        projectId: authProject.id,
+        suiteId: suite.id,
+        name: 'Sign in',
+        path: `/${randomUUID()}`,
+        depth: 0,
+      },
+    });
+    authSectionId = section.id;
+    for (const [index, title] of [
+      'Sign in with valid credentials',
+      'Reject an invalid password',
+    ].entries()) {
+      const testCase = await admin.testCase.create({
+        data: {
+          organizationId: organization.id,
+          projectId: authProject.id,
+          suiteId: suite.id,
+          sectionId: section.id,
+          caseNumber: BigInt(index + 1),
+          automationId: index === 0 ? 'auth.valid-login' : null,
+        },
+      });
+      const version = await admin.testCaseVersion.create({
+        data: {
+          organizationId: organization.id,
+          testCaseId: testCase.id,
+          version: 1,
+          title,
+          template: 'STEPS',
+          content: { steps: [] },
+          createdById: user.id,
+        },
+      });
+      await admin.testCase.update({
+        where: { organizationId_id: { organizationId: organization.id, id: testCase.id } },
+        data: { currentVersionId: version.id },
+      });
+    }
+    await admin.project.update({
+      where: { organizationId_id: { organizationId: organization.id, id: authProject.id } },
+      data: { nextCaseNumber: 3n },
     });
   });
 
   afterAll(async () => {
     if (admin) {
-      if (organizationId) {
-        await admin.membership.deleteMany({ where: { organizationId } });
-        await admin.organization.delete({ where: { id: organizationId } });
+      const organizationIds = [
+        organizationId,
+        provisionedOrganizationId,
+        ...additionalProvisionedOrganizationIds,
+      ].filter((id): id is string => Boolean(id));
+      if (organizationIds.length > 0) {
+        await admin.testCase.updateMany({
+          where: { organizationId: { in: organizationIds } },
+          data: { currentVersionId: null },
+        });
+        await admin.testCaseVersion.deleteMany({
+          where: { organizationId: { in: organizationIds } },
+        });
+        await admin.testCase.deleteMany({
+          where: { organizationId: { in: organizationIds } },
+        });
+        await admin.section.deleteMany({ where: { organizationId: { in: organizationIds } } });
+        await admin.suite.deleteMany({ where: { organizationId: { in: organizationIds } } });
+        await admin.resultStatus.deleteMany({
+          where: { organizationId: { in: organizationIds } },
+        });
+        await admin.project.deleteMany({ where: { organizationId: { in: organizationIds } } });
+        await admin.usageCounter.deleteMany({
+          where: { organizationId: { in: organizationIds } },
+        });
+        await admin.membership.deleteMany({
+          where: { organizationId: { in: organizationIds } },
+        });
+        await admin.organization.deleteMany({ where: { id: { in: organizationIds } } });
       }
       await admin.user.deleteMany({ where: { email: { in: [email, outsiderEmail] } } });
       await admin.$disconnect();
@@ -200,6 +306,7 @@ describe('authentication API', () => {
       organization: { id: organizationId, slug: organizationSlug },
       role: 'owner',
     });
+    organizationAccessToken = memberResponse.json().accessToken as string;
 
     const outsiderRegistration = await app.inject({
       method: 'POST',
@@ -212,6 +319,7 @@ describe('authentication API', () => {
       },
     });
     const outsider = sessionResponseSchema.parse(outsiderRegistration.json());
+    outsiderAccessToken = outsider.accessToken;
     const deniedResponse = await app.inject({
       method: 'POST',
       url: `/api/v1/auth/organizations/${organizationSlug}/token`,
@@ -226,6 +334,336 @@ describe('authentication API', () => {
         details: { resource: 'organization' },
       },
     });
+  });
+
+  it('requires an organization token and lists only its tenant projects', async () => {
+    const sessionTokenResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(sessionTokenResponse.statusCode).toBe(401);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects?limit=1',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json()).toMatchObject({
+      items: [expect.objectContaining({ activeRunCount: 0 })],
+      nextCursor: expect.any(String),
+    });
+    const secondPage = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects?limit=1&cursor=${response.json().nextCursor as string}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(secondPage.statusCode, secondPage.body).toBe(200);
+    expect(secondPage.json().nextCursor).toBeNull();
+    const projectItems = [...response.json().items, ...secondPage.json().items] as Array<{
+      key: string;
+      caseCount: number;
+    }>;
+    expect(projectItems.map(({ key }) => key).sort()).toEqual(['AUTH', 'SECOND']);
+    expect(projectItems.find(({ key }) => key === 'AUTH')?.caseCount).toBe(2);
+    expect(projectItems.find(({ key }) => key === 'SECOND')?.caseCount).toBe(0);
+
+    const invalidLimit = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects?limit=101',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(invalidLimit.statusCode).toBe(400);
+    expect(invalidLimit.json().error.code).toBe('validation_failed');
+  });
+
+  it('lists current test case versions with pagination and tenant-safe project resolution', async () => {
+    const firstPage = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/cases?limit=1',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(firstPage.statusCode, firstPage.body).toBe(200);
+    expect(firstPage.json().project).toMatchObject({
+      key: 'AUTH',
+      slug: 'authentication',
+      name: 'Authentication Project',
+    });
+    expect(firstPage.json().items).toHaveLength(1);
+    expect(firstPage.json().items[0]).toMatchObject({
+      template: 'steps',
+      section: { name: 'Sign in' },
+    });
+    expect(firstPage.json().items[0].caseNumber).toMatch(/^[12]$/);
+    expect(firstPage.json().nextCursor).toEqual(expect.any(String));
+
+    const secondPage = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/cases?limit=1&cursor=${firstPage.json().nextCursor as string}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(secondPage.statusCode, secondPage.body).toBe(200);
+    expect(secondPage.json().nextCursor).toBeNull();
+    expect(
+      [...firstPage.json().items, ...secondPage.json().items]
+        .map(({ title }: { title: string }) => title)
+        .sort(),
+    ).toEqual(['Reject an invalid password', 'Sign in with valid credentials']);
+
+    const search = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/cases?search=invalid',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(search.statusCode, search.body).toBe(200);
+    expect(search.json().items).toEqual([
+      expect.objectContaining({ title: 'Reject an invalid password' }),
+    ]);
+
+    const missingProject = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/foreign-project/cases',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(missingProject.statusCode).toBe(404);
+    expect(missingProject.json().error).toMatchObject({
+      code: 'not_found',
+      details: { resource: 'project' },
+    });
+  });
+
+  it('returns the project suite and section structure', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/structure',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json()).toMatchObject({
+      project: { key: 'AUTH', slug: 'authentication', name: 'Authentication Project' },
+      suites: [
+        {
+          name: 'Authentication suite',
+          sections: [{ id: authSectionId, name: 'Sign in', depth: 0 }],
+        },
+      ],
+    });
+  });
+
+  it('creates a test case and its immutable first version atomically', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/cases',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        title: 'Reset a forgotten password',
+        sectionId: authSectionId,
+        template: 'steps',
+        automationId: 'auth.password-reset',
+        preconditions: 'The account has a verified email address',
+        expectedResult: 'The password can be changed',
+        content: {
+          steps: [{ action: 'Request a password reset', expected: 'A reset email is sent' }],
+        },
+      },
+    });
+
+    expect(response.statusCode, response.body).toBe(201);
+    expect(response.json()).toMatchObject({
+      testCase: {
+        caseNumber: '3',
+        title: 'Reset a forgotten password',
+        template: 'steps',
+        automationId: 'auth.password-reset',
+        section: { id: authSectionId, name: 'Sign in' },
+      },
+      version: { version: 1 },
+    });
+
+    const created = await admin.testCase.findUniqueOrThrow({
+      where: {
+        organizationId_id: {
+          organizationId: organizationId as string,
+          id: response.json().testCase.id as string,
+        },
+      },
+      include: { currentVersion: true, versions: true },
+    });
+    expect(created.currentVersionId).toBe(response.json().version.id);
+    expect(created.versions).toHaveLength(1);
+    expect(created.currentVersion).toMatchObject({
+      version: 1,
+      title: 'Reset a forgotten password',
+      template: 'STEPS',
+      createdById: authUserId,
+    });
+  });
+
+  it('assigns unique case numbers to concurrent creates', async () => {
+    const responses = await Promise.all(
+      ['Document session timeout', 'Document account lockout'].map((title) =>
+        app.inject({
+          method: 'POST',
+          url: '/api/v1/projects/authentication/cases',
+          headers: { authorization: `Bearer ${organizationAccessToken}` },
+          payload: {
+            title,
+            sectionId: authSectionId,
+            template: 'text',
+            content: { text: `${title} behavior` },
+          },
+        }),
+      ),
+    );
+
+    expect(responses.map(({ statusCode }) => statusCode)).toEqual([201, 201]);
+    expect(
+      responses.map((response) => response.json().testCase.caseNumber as string).sort(),
+    ).toEqual(['4', '5']);
+  });
+
+  it('denies case creation to read-only members', async () => {
+    await admin.membership.updateMany({
+      where: { organizationId, userId: authUserId },
+      data: { role: 'READ_ONLY' },
+    });
+
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/v1/projects/authentication/cases',
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: {
+          title: 'Forbidden case',
+          sectionId: authSectionId,
+          template: 'text',
+          content: { text: 'This case must not be created' },
+        },
+      });
+
+      expect(response.statusCode, response.body).toBe(403);
+      expect(response.json().error).toMatchObject({ code: 'insufficient_permissions' });
+    } finally {
+      await admin.membership.updateMany({
+        where: { organizationId, userId: authUserId },
+        data: { role: 'OWNER' },
+      });
+    }
+  });
+
+  it('provisions a workspace atomically and lists it only for its member', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const slug = `workspace-${suffix}`;
+    const reservedSlug = await app.inject({
+      method: 'GET',
+      url: '/api/v1/auth/workspaces/slug-availability?slug=admin',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(reservedSlug.statusCode, reservedSlug.body).toBe(200);
+    expect(reservedSlug.json()).toEqual({ available: false });
+
+    const availableSlug = await app.inject({
+      method: 'GET',
+      url: `/api/v1/auth/workspaces/slug-availability?slug=${slug}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(availableSlug.statusCode).toBe(200);
+    expect(availableSlug.json()).toEqual({ available: true });
+
+    const unverifiedCreate = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/workspaces',
+      headers: { authorization: `Bearer ${outsiderAccessToken}` },
+      payload: { name: 'Unverified Workspace', slug: `unverified-${suffix}` },
+    });
+    expect(unverifiedCreate.statusCode).toBe(403);
+    expect(unverifiedCreate.json().error.code).toBe('email_verification_required');
+
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/workspaces',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { name: 'Provisioned QA', slug },
+    });
+    expect(created.statusCode, created.body).toBe(201);
+    expect(created.json()).toMatchObject({
+      workspace: { name: 'Provisioned QA', slug, role: 'owner' },
+      demoProject: { key: 'DEMO', name: 'Demo Project', slug: 'demo' },
+    });
+    provisionedOrganizationId = created.json().workspace.id as string;
+
+    await expect(
+      admin.resultStatus.count({ where: { organizationId: provisionedOrganizationId } }),
+    ).resolves.toBe(6);
+
+    const provisionedToken = await app.inject({
+      method: 'POST',
+      url: `/api/v1/auth/organizations/${slug}/token`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    const provisionedProjects = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects',
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(provisionedProjects.statusCode, provisionedProjects.body).toBe(200);
+    expect(provisionedProjects.json().items).toEqual([
+      expect.objectContaining({ key: 'DEMO', slug: 'demo', name: 'Demo Project' }),
+    ]);
+    const crossTenantCases = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/cases',
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantCases.statusCode).toBe(404);
+
+    const memberList = await app.inject({
+      method: 'GET',
+      url: '/api/v1/auth/workspaces',
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(memberList.statusCode, memberList.body).toBe(200);
+    expect(memberList.json().workspaces).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: provisionedOrganizationId, slug })]),
+    );
+
+    const outsiderList = await app.inject({
+      method: 'GET',
+      url: '/api/v1/auth/workspaces',
+      headers: { authorization: `Bearer ${outsiderAccessToken}` },
+    });
+    expect(outsiderList.statusCode, outsiderList.body).toBe(200);
+    expect(outsiderList.json().workspaces).toEqual([]);
+
+    const duplicate = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/workspaces',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { name: 'Duplicate', slug },
+    });
+    expect(duplicate.statusCode).toBe(409);
+    expect(duplicate.json().error.code).toBe('workspace_slug_taken');
+
+    const concurrentSlug = `concurrent-${suffix}`;
+    const concurrentRequests = await Promise.all([
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/workspaces',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { name: 'Concurrent Workspace', slug: concurrentSlug },
+      }),
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/workspaces',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { name: 'Concurrent Workspace', slug: concurrentSlug },
+      }),
+    ]);
+    expect(concurrentRequests.map(({ statusCode }) => statusCode).sort()).toEqual([201, 409]);
+    const concurrentCreated = concurrentRequests.find(({ statusCode }) => statusCode === 201);
+    additionalProvisionedOrganizationIds.push(concurrentCreated?.json().workspace.id as string);
   });
 
   it('rotates refresh tokens and revokes the family when an old token is reused', async () => {

@@ -1,10 +1,12 @@
 import {
+  createWorkspaceRequestSchema,
   emailVerificationRequestSchema,
   forgotPasswordRequestSchema,
   loginRequestSchema,
   organizationSlugParamSchema,
   registerRequestSchema,
   resetPasswordRequestSchema,
+  workspaceSlugAvailabilityQuerySchema,
 } from '@caselog/schemas';
 import { createZodDto } from 'nestjs-zod';
 
@@ -19,3 +21,9 @@ export class EmailVerificationRequestDto extends createZodDto(emailVerificationR
 export class ForgotPasswordRequestDto extends createZodDto(forgotPasswordRequestSchema) {}
 
 export class ResetPasswordRequestDto extends createZodDto(resetPasswordRequestSchema) {}
+
+export class CreateWorkspaceRequestDto extends createZodDto(createWorkspaceRequestSchema) {}
+
+export class WorkspaceSlugAvailabilityQueryDto extends createZodDto(
+  workspaceSlugAvailabilityQuerySchema,
+) {}

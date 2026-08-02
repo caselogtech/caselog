@@ -11,7 +11,9 @@ import { ZodValidationException } from 'nestjs-zod';
 import type { ZodError } from 'zod';
 import {
   AuthenticationFailedError,
+  AuthorizationDeniedError,
   DomainError,
+  EmailVerificationRequiredError,
   InvalidSessionError,
   ResourceConflictError,
   ResourceNotFoundError,
@@ -80,6 +82,12 @@ export class ApiExceptionFilter implements ExceptionFilter {
     }
     if (error instanceof ResourceConflictError) {
       return HttpStatus.CONFLICT;
+    }
+    if (
+      error instanceof EmailVerificationRequiredError ||
+      error instanceof AuthorizationDeniedError
+    ) {
+      return HttpStatus.FORBIDDEN;
     }
     if (error instanceof ResourceNotFoundError) {
       return HttpStatus.NOT_FOUND;

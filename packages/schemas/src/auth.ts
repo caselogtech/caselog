@@ -94,6 +94,56 @@ export const organizationSlugParamSchema = z.object({
   slug: organizationSlugSchema,
 });
 
+export const workspaceSlugCandidateSchema = z
+  .string()
+  .min(3)
+  .max(30)
+  .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/);
+
+export const workspaceRoleSchema = z.enum([
+  'owner',
+  'admin',
+  'lead',
+  'tester',
+  'contributor',
+  'read_only',
+]);
+
+export const workspaceSummarySchema = z.object({
+  id: z.uuid(),
+  name: z.string().min(1).max(120),
+  slug: organizationSlugSchema,
+  membershipId: z.uuid(),
+  role: workspaceRoleSchema,
+});
+
+export const workspaceListResponseSchema = z.object({
+  workspaces: z.array(workspaceSummarySchema),
+});
+
+export const createWorkspaceRequestSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  slug: organizationSlugSchema,
+});
+
+export const createWorkspaceResponseSchema = z.object({
+  workspace: workspaceSummarySchema,
+  demoProject: z.object({
+    id: z.uuid(),
+    key: z.string(),
+    name: z.string(),
+    slug: z.string(),
+  }),
+});
+
+export const workspaceSlugAvailabilityQuerySchema = z.object({
+  slug: workspaceSlugCandidateSchema,
+});
+
+export const workspaceSlugAvailabilityResponseSchema = z.object({
+  available: z.boolean(),
+});
+
 const opaqueAccountTokenSchema = z.string().min(32).max(256);
 
 export const emailVerificationRequestSchema = z.object({
@@ -130,3 +180,11 @@ export type ForgotPasswordRequest = z.infer<typeof forgotPasswordRequestSchema>;
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 export type MessageResponse = z.infer<typeof messageResponseSchema>;
 export type EmailVerificationResponse = z.infer<typeof emailVerificationResponseSchema>;
+export type WorkspaceSummary = z.infer<typeof workspaceSummarySchema>;
+export type WorkspaceListResponse = z.infer<typeof workspaceListResponseSchema>;
+export type CreateWorkspaceRequest = z.infer<typeof createWorkspaceRequestSchema>;
+export type CreateWorkspaceResponse = z.infer<typeof createWorkspaceResponseSchema>;
+export type WorkspaceSlugAvailabilityQuery = z.infer<typeof workspaceSlugAvailabilityQuerySchema>;
+export type WorkspaceSlugAvailabilityResponse = z.infer<
+  typeof workspaceSlugAvailabilityResponseSchema
+>;
