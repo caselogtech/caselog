@@ -1,0 +1,48 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="verify-title">
+    <div class="auth-heading">
+      <p class="eyebrow">Email verification</p>
+      <h1 id="verify-title">
+        @if (token) {
+          Verify your email
+        } @else {
+          Check your inbox
+        }
+      </h1>
+    </div>
+
+    @if (token && verification.isPending()) {
+      <p role="status">Verifying your email address…</p>
+    } @else if (verification.isSuccess()) {
+      <div class="success-message" role="status">
+        Your email is verified. You can continue to your workspaces.
+      </div>
+      <a class="primary-link" href="/auth/workspaces" routerLink="/auth/workspaces">Continue</a>
+    } @else if (verification.isError()) {
+      <div class="form-alert" role="alert">{{ errorMessage() }}</div>
+      <p>The link may have expired or already been used.</p>
+    } @else {
+      <p>
+        We sent a verification link to
+        <strong>{{ browserSession.user()?.email ?? 'your email address' }}</strong>. The link is
+        valid for 24 hours.
+      </p>
+    }
+
+    @if (!verification.isSuccess() && browserSession.user()) {
+      <button type="button" [disabled]="resend.isPending()" (click)="resend.mutate()">
+        {{ resend.isPending() ? 'Sending…' : 'Send a new link' }}
+      </button>
+      @if (resend.isSuccess()) {
+        <p class="success-text" role="status">{{ resend.data().message }}</p>
+      }
+      @if (resend.isError()) {
+        <p class="field-error" role="alert">Could not send the email. Try again shortly.</p>
+      }
+    }
+
+    <p class="auth-foot">
+      <a href="/auth/login" routerLink="/auth/login">Back to sign in</a>
+    </p>
+  </section>
+</main>

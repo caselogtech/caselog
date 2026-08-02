@@ -1,0 +1,47 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="reset-title">
+    <div class="auth-heading">
+      <p class="eyebrow">Account recovery</p>
+      <h1 id="reset-title">Choose a new password</h1>
+      <p>Use 12–128 characters.</p>
+    </div>
+
+    @if (!token) {
+      <div class="form-alert" role="alert">This reset link is incomplete.</div>
+    } @else if (reset.isSuccess()) {
+      <div class="success-message" role="status">{{ reset.data().message }}</div>
+      <a class="primary-link" href="/auth/login" routerLink="/auth/login">Sign in</a>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        @if (reset.isError()) {
+          <div class="form-alert" role="alert">{{ errorMessage() }}</div>
+        }
+
+        <label for="password">New password</label>
+        <input id="password" type="password" formControlName="password" autocomplete="new-password" />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <p class="field-error">Password must contain at least 12 characters.</p>
+        }
+
+        <label for="confirm-password">Confirm password</label>
+        <input
+          id="confirm-password"
+          type="password"
+          formControlName="confirmPassword"
+          autocomplete="new-password"
+        />
+        @if (form.controls.confirmPassword.touched && form.hasError('passwordsMismatch')) {
+          <p class="field-error">Passwords do not match.</p>
+        }
+
+        <button type="submit" [disabled]="reset.isPending()">
+          {{ reset.isPending() ? 'Saving…' : 'Save new password' }}
+        </button>
+      </form>
+    }
+
+    <p class="auth-foot">
+      <a href="/auth/login" routerLink="/auth/login">Back to sign in</a>
+    </p>
+  </section>
+</main>

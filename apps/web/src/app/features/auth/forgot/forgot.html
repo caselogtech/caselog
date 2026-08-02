@@ -1,0 +1,31 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="forgot-title">
+    <div class="auth-heading">
+      <p class="eyebrow">Account recovery</p>
+      <h1 id="forgot-title">Reset your password</h1>
+      <p>Enter your email and we’ll send a link if an account exists.</p>
+    </div>
+
+    @if (forgot.isSuccess()) {
+      <div class="success-message" role="status">{{ forgot.data().message }}</div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        @if (forgot.isError()) {
+          <div class="form-alert" role="alert">{{ errorMessage() }}</div>
+        }
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" autocomplete="email" />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <p class="field-error">Enter a valid email address.</p>
+        }
+        <button type="submit" [disabled]="forgot.isPending()">
+          {{ forgot.isPending() ? 'Sending…' : 'Send reset link' }}
+        </button>
+      </form>
+    }
+
+    <p class="auth-foot">
+      <a href="/auth/login" routerLink="/auth/login">Back to sign in</a>
+    </p>
+  </section>
+</main>
