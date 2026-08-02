@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MIGRATION_DATABASE_URL: postgresql://caselog:caselog@localhost:5432/caselog?schema=public
+      DATABASE_URL: postgresql://caselog:caselog@localhost:5432/caselog?schema=public&options=-c%20role%3Dcaselog_app
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: caselog
+          POSTGRES_PASSWORD: caselog
+          POSTGRES_USER: caselog
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U caselog -d caselog"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm test
+      - run: pnpm build
