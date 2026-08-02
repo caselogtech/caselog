@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { TestCaseTemplate } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -41,9 +41,20 @@ export class CaseList {
   readonly state = signal<'active' | 'archived'>(
     this.route.snapshot.queryParamMap.get('state') === 'archived' ? 'archived' : 'active',
   );
+  readonly sectionEditor = signal<{ suiteId: string; parentId?: string } | null>(null);
+  readonly renameTarget = signal<{ type: 'suite' | 'section'; id: string } | null>(null);
 
   readonly searchForm = this.formBuilder.group({
     search: [this.search()],
+  });
+  readonly suiteForm = this.formBuilder.group({
+    name: ['', [Validators.required, Validators.maxLength(120)]],
+  });
+  readonly sectionForm = this.formBuilder.group({
+    name: ['', [Validators.required, Validators.maxLength(120)]],
+  });
+  readonly renameForm = this.formBuilder.group({
+    name: ['', [Validators.required, Validators.maxLength(120)]],
   });
 
   readonly structure = injectQuery(() => ({
@@ -95,6 +106,47 @@ export class CaseList {
     onSuccess: () => this.invalidateCases(),
   }));
 
+  readonly createSuite = injectMutation(() => ({
+    mutationFn: (name: string) =>
+      this.workspaceApi.createSuite(this.workspaceSlug, this.projectSlug, name),
+    onSuccess: async () => {
+      this.suiteForm.reset();
+      await this.invalidateStructure();
+    },
+  }));
+
+  readonly createSection = injectMutation(() => ({
+    mutationFn: (input: { suiteId: string; parentId?: string; name: string }) =>
+      this.workspaceApi.createSection(
+        this.workspaceSlug,
+        this.projectSlug,
+        input.suiteId,
+        input.name,
+        input.parentId,
+      ),
+    onSuccess: async () => {
+      this.sectionForm.reset();
+      this.sectionEditor.set(null);
+      await this.invalidateStructure();
+    },
+  }));
+
+  readonly renameStructureItem = injectMutation(() => ({
+    mutationFn: (input: { type: 'suite' | 'section'; id: string; name: string }) =>
+      input.type === 'suite'
+        ? this.workspaceApi.updateSuite(this.workspaceSlug, this.projectSlug, input.id, input.name)
+        : this.workspaceApi.updateSection(
+            this.workspaceSlug,
+            this.projectSlug,
+            input.id,
+            input.name,
+          ),
+    onSuccess: async () => {
+      this.renameTarget.set(null);
+      await this.invalidateStructure();
+    },
+  }));
+
   async applySearch(): Promise<void> {
     const search = this.searchForm.controls.search.value.trim();
     this.search.set(search);
@@ -131,6 +183,48 @@ export class CaseList {
     });
   }
 
+  submitSuite(): void {
+    if (this.suiteForm.invalid) {
+      this.suiteForm.markAllAsTouched();
+      return;
+    }
+    this.createSuite.mutate(this.suiteForm.controls.name.value.trim());
+  }
+
+  beginSection(suiteId: string, parentId?: string): void {
+    this.sectionForm.reset();
+    this.sectionEditor.set({ suiteId, parentId });
+  }
+
+  submitSection(): void {
+    const target = this.sectionEditor();
+    if (!target || this.sectionForm.invalid) {
+      this.sectionForm.markAllAsTouched();
+      return;
+    }
+    this.createSection.mutate({
+      ...target,
+      name: this.sectionForm.controls.name.value.trim(),
+    });
+  }
+
+  beginRename(type: 'suite' | 'section', id: string, name: string): void {
+    this.renameForm.controls.name.setValue(name);
+    this.renameTarget.set({ type, id });
+  }
+
+  submitRename(): void {
+    const target = this.renameTarget();
+    if (!target || this.renameForm.invalid) {
+      this.renameForm.markAllAsTouched();
+      return;
+    }
+    this.renameStructureItem.mutate({
+      ...target,
+      name: this.renameForm.controls.name.value.trim(),
+    });
+  }
+
   templateTranslationKey(template: TestCaseTemplate): string {
     return TEMPLATE_TRANSLATION_KEYS[template];
   }
@@ -140,6 +234,9 @@ export class CaseList {
       this.duplicateCase.error() ??
         this.archiveCase.error() ??
         this.restoreCase.error() ??
+        this.createSuite.error() ??
+        this.createSection.error() ??
+        this.renameStructureItem.error() ??
         this.cases.error(),
     );
   }
@@ -147,6 +244,12 @@ export class CaseList {
   private invalidateCases(): Promise<void> {
     return this.queryClient.invalidateQueries({
       queryKey: ['test-cases', this.workspaceSlug, this.projectSlug],
+    });
+  }
+
+  private invalidateStructure(): Promise<void> {
+    return this.queryClient.invalidateQueries({
+      queryKey: ['project-structure', this.workspaceSlug, this.projectSlug],
     });
   }
 }

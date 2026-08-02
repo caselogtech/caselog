@@ -4,6 +4,8 @@ import {
   createTestCaseResponseSchema,
   projectListResponseSchema,
   projectStructureResponseSchema,
+  sectionResponseSchema,
+  suiteResponseSchema,
   testCaseListResponseSchema,
   testCaseLifecycleResponseSchema,
   testCaseDetailResponseSchema,
@@ -13,6 +15,8 @@ import {
   type OrganizationTokenResponse,
   type ProjectListResponse,
   type ProjectStructureResponse,
+  type SectionResponse,
+  type SuiteResponse,
   type TestCaseListResponse,
   type TestCaseLifecycleResponse,
   type TestCaseDetailResponse,
@@ -219,5 +223,69 @@ export class WorkspaceApi {
       ),
     );
     return testCaseLifecycleResponseSchema.parse(response);
+  }
+
+  async createSuite(
+    workspaceSlug: string,
+    projectSlug: string,
+    name: string,
+  ): Promise<SuiteResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites`,
+        { name },
+      ),
+    );
+    return suiteResponseSchema.parse(response);
+  }
+
+  async updateSuite(
+    workspaceSlug: string,
+    projectSlug: string,
+    suiteId: string,
+    name: string,
+  ): Promise<SuiteResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.put<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites/${encodeURIComponent(suiteId)}`,
+        { name },
+      ),
+    );
+    return suiteResponseSchema.parse(response);
+  }
+
+  async createSection(
+    workspaceSlug: string,
+    projectSlug: string,
+    suiteId: string,
+    name: string,
+    parentId?: string,
+  ): Promise<SectionResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites/${encodeURIComponent(suiteId)}/sections`,
+        { name, ...(parentId ? { parentId } : {}) },
+      ),
+    );
+    return sectionResponseSchema.parse(response);
+  }
+
+  async updateSection(
+    workspaceSlug: string,
+    projectSlug: string,
+    sectionId: string,
+    name: string,
+  ): Promise<SectionResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.put<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/sections/${encodeURIComponent(sectionId)}`,
+        { name },
+      ),
+    );
+    return sectionResponseSchema.parse(response);
   }
 }

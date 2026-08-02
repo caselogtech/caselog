@@ -50,19 +50,83 @@
       } @else {
         @for (suite of structure.data()?.suites ?? []; track suite.id) {
           <section class="suite-group">
-            <h2>{{ suite.name }}</h2>
+            <div class="suite-heading">
+              <h2>{{ suite.name }}</h2>
+              @if (canCreate()) {
+                <div>
+                  <button type="button" (click)="beginRename('suite', suite.id, suite.name)">
+                    {{ 'workspace.cases.rename' | transloco }}
+                  </button>
+                  <button type="button" (click)="beginSection(suite.id)">
+                    {{ 'workspace.cases.addSection' | transloco }}
+                  </button>
+                </div>
+              }
+            </div>
             @for (section of suite.sections; track section.id) {
-              <button
-                type="button"
-                class="section-option"
-                [class.active]="sectionId() === section.id"
-                [style.padding-left.px]="12 + section.depth * 16"
-                (click)="selectSection(section.id)"
-              >
-                {{ section.name }}
-              </button>
+              <div class="section-row">
+                <button
+                  type="button"
+                  class="section-option"
+                  [class.active]="sectionId() === section.id"
+                  [style.padding-left.px]="12 + section.depth * 16"
+                  (click)="selectSection(section.id)"
+                >
+                  {{ section.name }}
+                </button>
+                @if (canCreate()) {
+                  <div class="section-actions">
+                    <button
+                      type="button"
+                      (click)="beginRename('section', section.id, section.name)"
+                    >
+                      {{ 'workspace.cases.rename' | transloco }}
+                    </button>
+                    <button type="button" (click)="beginSection(suite.id, section.id)">
+                      {{ 'workspace.cases.addChildSection' | transloco }}
+                    </button>
+                  </div>
+                }
+              </div>
             }
           </section>
+        }
+
+        @if (canCreate()) {
+          @if (createSuite.isError() || createSection.isError() || renameStructureItem.isError()) {
+            <p class="structure-state error" role="alert">{{ errorTranslationKey() | transloco }}</p>
+          }
+          @if (sectionEditor()) {
+            <form class="structure-form" [formGroup]="sectionForm" (ngSubmit)="submitSection()">
+              <label for="new-section-name">{{ 'workspace.cases.sectionName' | transloco }}</label>
+              <input id="new-section-name" type="text" formControlName="name" />
+              <div>
+                <button type="submit">{{ 'workspace.cases.add' | transloco }}</button>
+                <button type="button" (click)="sectionEditor.set(null)">
+                  {{ 'workspace.cases.cancel' | transloco }}
+                </button>
+              </div>
+            </form>
+          }
+
+          @if (renameTarget()) {
+            <form class="structure-form" [formGroup]="renameForm" (ngSubmit)="submitRename()">
+              <label for="rename-structure">{{ 'workspace.cases.newName' | transloco }}</label>
+              <input id="rename-structure" type="text" formControlName="name" />
+              <div>
+                <button type="submit">{{ 'workspace.cases.saveName' | transloco }}</button>
+                <button type="button" (click)="renameTarget.set(null)">
+                  {{ 'workspace.cases.cancel' | transloco }}
+                </button>
+              </div>
+            </form>
+          }
+
+          <form class="structure-form add-suite-form" [formGroup]="suiteForm" (ngSubmit)="submitSuite()">
+            <label for="new-suite-name">{{ 'workspace.cases.suiteName' | transloco }}</label>
+            <input id="new-suite-name" type="text" formControlName="name" />
+            <button type="submit">{{ 'workspace.cases.addSuite' | transloco }}</button>
+          </form>
         }
       }
     </aside>

@@ -64,6 +64,32 @@ export const projectStructureResponseSchema = z.object({
   ),
 });
 
+export const structureItemNameSchema = z.string().trim().min(1).max(120);
+
+export const createSuiteRequestSchema = z.object({ name: structureItemNameSchema });
+export const updateSuiteRequestSchema = createSuiteRequestSchema;
+export const suiteParamsSchema = testCaseListParamsSchema.extend({ suiteId: z.uuid() });
+export const suiteResponseSchema = z.object({
+  id: z.uuid(),
+  name: structureItemNameSchema,
+  position: z.number().int(),
+});
+
+export const createSectionRequestSchema = z.object({
+  name: structureItemNameSchema,
+  parentId: z.uuid().nullable().optional(),
+});
+export const updateSectionRequestSchema = z.object({ name: structureItemNameSchema });
+export const sectionParamsSchema = testCaseListParamsSchema.extend({ sectionId: z.uuid() });
+export const createSectionParamsSchema = suiteParamsSchema;
+export const sectionResponseSchema = z.object({
+  id: z.uuid(),
+  parentId: z.uuid().nullable(),
+  name: structureItemNameSchema,
+  depth: z.number().int().nonnegative(),
+  position: z.number().int(),
+});
+
 const createCaseBase = {
   title: z.string().trim().min(1).max(500),
   sectionId: z.uuid(),
@@ -199,6 +225,15 @@ export type TestCaseTemplate = z.infer<typeof testCaseTemplateSchema>;
 export type TestCaseSummary = z.infer<typeof testCaseSummarySchema>;
 export type TestCaseListResponse = z.infer<typeof testCaseListResponseSchema>;
 export type ProjectStructureResponse = z.infer<typeof projectStructureResponseSchema>;
+export type CreateSuiteRequest = z.infer<typeof createSuiteRequestSchema>;
+export type UpdateSuiteRequest = z.infer<typeof updateSuiteRequestSchema>;
+export type SuiteParams = z.infer<typeof suiteParamsSchema>;
+export type SuiteResponse = z.infer<typeof suiteResponseSchema>;
+export type CreateSectionRequest = z.infer<typeof createSectionRequestSchema>;
+export type UpdateSectionRequest = z.infer<typeof updateSectionRequestSchema>;
+export type SectionParams = z.infer<typeof sectionParamsSchema>;
+export type CreateSectionParams = z.infer<typeof createSectionParamsSchema>;
+export type SectionResponse = z.infer<typeof sectionResponseSchema>;
 export type CreateTestCaseRequest = z.infer<typeof createTestCaseRequestSchema>;
 export type CreateTestCaseResponse = z.infer<typeof createTestCaseResponseSchema>;
 export type TestCaseDetailParams = z.infer<typeof testCaseDetailParamsSchema>;

@@ -454,6 +454,79 @@ describe('authentication API', () => {
     });
   });
 
+  it('creates and renames suites and nested sections atomically', async () => {
+    const suiteRequests = await Promise.all([
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/projects/authentication/structure/suites',
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: { name: 'Account security' },
+      }),
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/projects/authentication/structure/suites',
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: { name: 'Account security' },
+      }),
+    ]);
+    expect(suiteRequests.map(({ statusCode }) => statusCode).sort()).toEqual([201, 409]);
+    const createdSuite = suiteRequests.find(({ statusCode }) => statusCode === 201);
+    const suiteId = createdSuite?.json().id as string;
+
+    const renamedSuite = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/structure/suites/${suiteId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Account protection' },
+    });
+    expect(renamedSuite.statusCode, renamedSuite.body).toBe(200);
+    expect(renamedSuite.json()).toMatchObject({ id: suiteId, name: 'Account protection' });
+
+    const parent = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/structure/suites/${suiteId}/sections`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Password recovery' },
+    });
+    expect(parent.statusCode, parent.body).toBe(201);
+    expect(parent.json()).toMatchObject({ parentId: null, depth: 0, position: 0 });
+
+    const child = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/structure/suites/${suiteId}/sections`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Email reset', parentId: parent.json().id as string },
+    });
+    expect(child.statusCode, child.body).toBe(201);
+    expect(child.json()).toMatchObject({ parentId: parent.json().id, depth: 1, position: 0 });
+
+    const renamedSection = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/authentication/structure/sections/${child.json().id as string}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Reset by email' },
+    });
+    expect(renamedSection.statusCode, renamedSection.body).toBe(200);
+    expect(renamedSection.json()).toMatchObject({ name: 'Reset by email', depth: 1 });
+
+    const structure = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/structure',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(structure.json().suites).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: suiteId,
+          name: 'Account protection',
+          sections: expect.arrayContaining([
+            expect.objectContaining({ name: 'Reset by email', depth: 1 }),
+          ]),
+        }),
+      ]),
+    );
+  });
+
   it('creates a test case and its immutable first version atomically', async () => {
     const response = await app.inject({
       method: 'POST',
@@ -840,6 +913,14 @@ describe('authentication API', () => {
         headers: { authorization: `Bearer ${organizationAccessToken}` },
       });
       expect(archive.statusCode, archive.body).toBe(403);
+
+      const createSuite = await app.inject({
+        method: 'POST',
+        url: '/api/v1/projects/authentication/structure/suites',
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: { name: 'Forbidden suite' },
+      });
+      expect(createSuite.statusCode, createSuite.body).toBe(403);
     } finally {
       await admin.membership.updateMany({
         where: { organizationId, userId: authUserId },
@@ -925,6 +1006,13 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantVersion.statusCode).toBe(404);
+    const crossTenantSuite = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/structure/suites',
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+      payload: { name: 'Foreign suite' },
+    });
+    expect(crossTenantSuite.statusCode).toBe(404);
 
     const memberList = await app.inject({
       method: 'GET',

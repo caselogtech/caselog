@@ -91,6 +91,90 @@
   text-transform: uppercase;
 }
 
+.suite-heading {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.suite-heading > div,
+.section-actions {
+  display: flex;
+  gap: 3px;
+}
+
+.suite-heading button,
+.section-actions button {
+  background: transparent;
+  border: 0;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 0.6875rem;
+  padding: 4px;
+}
+
+.section-row {
+  align-items: center;
+  display: flex;
+}
+
+.section-actions {
+  opacity: 0;
+}
+
+.section-row:hover .section-actions,
+.section-row:focus-within .section-actions {
+  opacity: 1;
+}
+
+.structure-form {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding: 10px 4px 2px;
+}
+
+.structure-form label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.structure-form input {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  font: inherit;
+  min-height: 36px;
+  padding: 7px 8px;
+  width: 100%;
+}
+
+.structure-form > div {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.structure-form button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  margin-top: 6px;
+  min-height: 32px;
+  padding: 5px 8px;
+}
+
+.structure-form > div button {
+  margin-top: 0;
+}
+
 .section-option {
   background: transparent;
   border: 0;
@@ -103,6 +187,11 @@
   padding: 8px 12px;
   text-align: left;
   width: 100%;
+}
+
+.section-row .section-option {
+  flex: 1;
+  min-width: 0;
 }
 
 .section-option:hover,

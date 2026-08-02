@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import type {
   CreateTestCaseRequest,
   CreateTestCaseResponse,
-  ProjectStructureResponse,
   RestoreTestCaseVersionRequest,
   TestCaseDetailResponse,
   TestCaseListResponse,
@@ -34,10 +33,6 @@ type TestCasePage = Omit<TestCaseListResponse, 'project'>;
 
 export type TestCaseListResult =
   | { kind: 'found'; project: TestCaseListResponse['project']; page: TestCasePage }
-  | { kind: 'project_not_found' };
-
-export type ProjectStructureResult =
-  | { kind: 'found'; value: ProjectStructureResponse }
   | { kind: 'project_not_found' };
 
 export type CreateTestCaseResult =
@@ -139,40 +134,6 @@ export class TestCaseRepository {
           nextCursor: hasNextPage ? (page.at(-1)?.id ?? null) : null,
         },
       };
-    });
-  }
-
-  async structure(organizationId: string, projectSlug: string): Promise<ProjectStructureResult> {
-    return this.tenantDatabase.run(organizationId, async (transaction) => {
-      const project = await transaction.project.findUnique({
-        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
-        select: { id: true, key: true, slug: true, name: true },
-      });
-      if (!project) {
-        return { kind: 'project_not_found' };
-      }
-
-      const suites = await transaction.suite.findMany({
-        where: { projectId: project.id, deletedAt: null },
-        orderBy: [{ position: 'asc' }, { id: 'asc' }],
-        select: {
-          id: true,
-          name: true,
-          position: true,
-          sections: {
-            where: { deletedAt: null },
-            orderBy: [{ path: 'asc' }, { position: 'asc' }, { id: 'asc' }],
-            select: {
-              id: true,
-              parentId: true,
-              name: true,
-              depth: true,
-              position: true,
-            },
-          },
-        },
-      });
-      return { kind: 'found', value: { project, suites } };
     });
   }
 

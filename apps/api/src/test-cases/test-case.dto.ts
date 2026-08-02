@@ -1,5 +1,12 @@
 import {
   createTestCaseRequestSchema,
+  createSuiteRequestSchema,
+  updateSuiteRequestSchema,
+  suiteParamsSchema,
+  createSectionRequestSchema,
+  updateSectionRequestSchema,
+  sectionParamsSchema,
+  createSectionParamsSchema,
   testCaseDetailParamsSchema,
   testCaseVersionParamsSchema,
   testCaseListParamsSchema,
@@ -24,3 +31,11 @@ export class TestCaseVersionParamsDto extends createZodDto(testCaseVersionParams
 export class RestoreTestCaseVersionRequestDto extends createZodDto(
   restoreTestCaseVersionRequestSchema,
 ) {}
+
+export class CreateSuiteRequestDto extends createZodDto(createSuiteRequestSchema) {}
+export class UpdateSuiteRequestDto extends createZodDto(updateSuiteRequestSchema) {}
+export class SuiteParamsDto extends createZodDto(suiteParamsSchema) {}
+export class CreateSectionRequestDto extends createZodDto(createSectionRequestSchema) {}
+export class UpdateSectionRequestDto extends createZodDto(updateSectionRequestSchema) {}
+export class SectionParamsDto extends createZodDto(sectionParamsSchema) {}
+export class CreateSectionParamsDto extends createZodDto(createSectionParamsSchema) {}

@@ -3,6 +3,8 @@ import { apiErrorSchema } from '@caselog/schemas';
 
 const TRANSLATED_ERROR_KEYS = new Set([
   'errors.case_version_conflict',
+  'errors.section_name_taken',
+  'errors.suite_name_taken',
   'errors.email_already_registered',
   'errors.email_verification_required',
   'errors.http_error',

@@ -59,6 +59,10 @@ describe('CaseList', () => {
     duplicateTestCase: vi.fn(),
     archiveTestCase: vi.fn(),
     restoreArchivedTestCase: vi.fn(),
+    createSuite: vi.fn(),
+    updateSuite: vi.fn(),
+    createSection: vi.fn(),
+    updateSection: vi.fn(),
   };
   let queryClient: QueryClient;
 
@@ -69,6 +73,10 @@ describe('CaseList', () => {
     workspaceApi.duplicateTestCase.mockReset();
     workspaceApi.archiveTestCase.mockReset();
     workspaceApi.restoreArchivedTestCase.mockReset();
+    workspaceApi.createSuite.mockReset();
+    workspaceApi.updateSuite.mockReset();
+    workspaceApi.createSection.mockReset();
+    workspaceApi.updateSection.mockReset();
     workspaceApi.projectStructure.mockResolvedValue(structure);
     await TestBed.configureTestingModule({
       imports: [CaseList, i18nTestingModule()],
@@ -215,5 +223,27 @@ describe('CaseList', () => {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+  });
+
+  it('creates a suite and refreshes the project structure', async () => {
+    workspaceApi.listTestCases.mockResolvedValue(response);
+    workspaceApi.createSuite.mockResolvedValue({
+      id: '67e2afe7-bd67-4039-a332-e4e4bddb9ac6',
+      name: 'Account security',
+      position: 1,
+    });
+    const fixture = TestBed.createComponent(CaseList);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.structure.isSuccess()).toBe(true));
+
+    fixture.componentInstance.suiteForm.controls.name.setValue('Account security');
+    fixture.componentInstance.submitSuite();
+
+    await vi.waitFor(() => expect(workspaceApi.createSuite).toHaveBeenCalledOnce());
+    expect(workspaceApi.createSuite).toHaveBeenCalledWith(
+      'acme-quality',
+      'authentication',
+      'Account security',
+    );
   });
 });

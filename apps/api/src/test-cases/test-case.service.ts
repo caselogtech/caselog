@@ -3,12 +3,10 @@ import {
   testCaseListResponseSchema,
   testCaseLifecycleResponseSchema,
   createTestCaseResponseSchema,
-  projectStructureResponseSchema,
   testCaseDetailResponseSchema,
   type CreateTestCaseRequest,
   type CreateTestCaseResponse,
   type OrganizationAccessPrincipal,
-  type ProjectStructureResponse,
   type RestoreTestCaseVersionRequest,
   type TestCaseDetailResponse,
   type TestCaseListQuery,
@@ -49,14 +47,6 @@ export class TestCaseService {
       throw new ResourceNotFoundError('project');
     }
     return testCaseListResponseSchema.parse({ project: result.project, ...result.page });
-  }
-
-  async structure(organizationId: string, projectSlug: string): Promise<ProjectStructureResponse> {
-    const result = await this.testCases.structure(organizationId, projectSlug);
-    if (result.kind === 'project_not_found') {
-      throw new ResourceNotFoundError('project');
-    }
-    return projectStructureResponseSchema.parse(result.value);
   }
 
   async create(

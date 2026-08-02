@@ -15,7 +15,6 @@ import {
 import type {
   CreateTestCaseResponse,
   OrganizationAccessPrincipal,
-  ProjectStructureResponse,
   TestCaseDetailResponse,
   TestCaseListResponse,
   TestCaseLifecycleResponse,
@@ -127,19 +126,5 @@ export class TestCaseController {
     @Param() params: TestCaseDetailParamsDto,
   ): Promise<CreateTestCaseResponse> {
     return this.testCases.duplicate(principal, params.projectSlug, params.caseId);
-  }
-}
-
-@Controller('projects/:projectSlug/structure')
-@UseGuards(OrganizationAuthGuard)
-export class ProjectStructureController {
-  constructor(@Inject(TestCaseService) private readonly testCases: TestCaseService) {}
-
-  @Get()
-  get(
-    @CurrentOrganization() principal: OrganizationAccessPrincipal,
-    @Param() params: TestCaseListParamsDto,
-  ): Promise<ProjectStructureResponse> {
-    return this.testCases.structure(principal.organizationId, params.projectSlug);
   }
 }
