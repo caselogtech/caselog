@@ -16,6 +16,8 @@ import {
   testRunListResponseSchema,
   testRunDetailResponseSchema,
   testRunLifecycleResponseSchema,
+  testResultDetailResponseSchema,
+  testResultHistoryResponseSchema,
   type CreateTestCaseRequest,
   type CreateTestCaseResponse,
   type CreateTestRunRequest,
@@ -35,6 +37,8 @@ import {
   type TestRunListResponse,
   type TestRunDetailResponse,
   type TestRunLifecycleResponse,
+  type TestResultDetailResponse,
+  type TestResultHistoryResponse,
   type TestRunStatus,
   type UpdateTestCaseRequest,
   type UpdateTestCaseResponse,
@@ -220,6 +224,40 @@ export class WorkspaceApi {
       ),
     );
     return createTestResultResponseSchema.parse(response);
+  }
+
+  async testResultHistory(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    cursor?: string,
+    limit = 25,
+  ): Promise<TestResultHistoryResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/runs/${encodeURIComponent(runId)}/items/${encodeURIComponent(itemId)}/results`,
+        { params: { limit, ...(cursor ? { cursor } : {}) } },
+      ),
+    );
+    return testResultHistoryResponseSchema.parse(response);
+  }
+
+  async testResult(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    resultId: string,
+  ): Promise<TestResultDetailResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/runs/${encodeURIComponent(runId)}/items/${encodeURIComponent(itemId)}/results/${encodeURIComponent(resultId)}`,
+      ),
+    );
+    return testResultDetailResponseSchema.parse(response);
   }
 
   private async changeTestRunState(

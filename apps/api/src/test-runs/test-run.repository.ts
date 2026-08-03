@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   testRunItemResponseSchema,
+  testResultResponseSchema,
   type AssignTestRunItemRequest,
   type AssignTestRunItemResponse,
   type CreateTestResultRequest,
@@ -13,6 +14,9 @@ import {
   type TestRunListResponse,
   type TestRunStatus,
   type TestRunSummary,
+  type TestResultDetailResponse,
+  type TestResultHistoryQuery,
+  type TestResultHistoryResponse,
 } from '@caselog/schemas';
 import {
   TenantDatabaseService,
@@ -36,6 +40,8 @@ type RunResult<T> =
   | { kind: 'item_not_found' }
   | { kind: 'member_not_found' }
   | { kind: 'status_not_found' }
+  | { kind: 'result_not_found' }
+  | { kind: 'invalid_step_results' }
   | { kind: 'run_closed' }
   | { kind: 'invalid_run_state' };
 
@@ -49,6 +55,25 @@ type RunRecord = {
 };
 
 type RunCounts = { itemCount: number; completedCount: number; failedCount: number };
+
+type ResultRecord = {
+  id: string;
+  attempt: number;
+  comment: string | null;
+  elapsedMs: number | null;
+  executedAt: Date;
+  executedBy: RunMemberRecord | null;
+  status: ResultStatusResponse;
+  stepResults: Array<{
+    id: string;
+    position: number;
+    comment: string | null;
+    elapsedMs: number | null;
+    status: ResultStatusResponse;
+  }>;
+};
+
+type RunMemberRecord = { id: string; displayName: string };
 
 @Injectable()
 export class TestRunRepository {
@@ -362,9 +387,19 @@ export class TestRunRepository {
           AND id = ${itemId}::uuid FOR UPDATE
       `;
       if (lockedItem.length === 0) return { kind: 'item_not_found' };
-      const status = await transaction.resultStatus.findUnique({
+      const item = await transaction.testRunItem.findUniqueOrThrow({
+        where: { organizationId_id: { organizationId, id: itemId } },
+        select: { caseVersion: { select: { template: true, content: true } } },
+      });
+      const requestedStatusIds = [
+        ...new Set([
+          request.statusId,
+          ...(request.stepResults?.map(({ statusId }) => statusId) ?? []),
+        ]),
+      ];
+      const statuses = await transaction.resultStatus.findMany({
         where: {
-          organizationId_id: { organizationId, id: request.statusId },
+          id: { in: requestedStatusIds },
           projectId: context.value.projectId,
           deletedAt: null,
         },
@@ -377,7 +412,20 @@ export class TestRunRepository {
           countsAsFailure: true,
         },
       });
+      if (statuses.length !== requestedStatusIds.length) return { kind: 'status_not_found' };
+      const statusById = new Map(statuses.map((status) => [status.id, status]));
+      const status = statusById.get(request.statusId);
       if (!status) return { kind: 'status_not_found' };
+      const content = item.caseVersion.content as { steps?: unknown[] };
+      const stepCount = item.caseVersion.template === 'STEPS' ? (content.steps?.length ?? 0) : 0;
+      if (
+        request.stepResults?.some(({ position }) => position >= stepCount) ||
+        (request.stepResults &&
+          request.stepResults.length > 0 &&
+          item.caseVersion.template !== 'STEPS')
+      ) {
+        return { kind: 'invalid_step_results' };
+      }
       const aggregate = await transaction.testResult.aggregate({
         where: { testRunItemId: itemId },
         _max: { attempt: true },
@@ -406,6 +454,39 @@ export class TestRunRepository {
         where: { organizationId_id: { organizationId, id: itemId } },
         data: { statusId: status.id },
       });
+      if (request.stepResults && request.stepResults.length > 0) {
+        await transaction.testStepResult.createMany({
+          data: request.stepResults.map((step) => ({
+            organizationId,
+            testResultId: result.id,
+            resultExecutedAt: result.executedAt,
+            statusId: step.statusId,
+            position: step.position,
+            comment: step.comment,
+            elapsedMs: step.elapsedMs,
+          })),
+        });
+      }
+      const stepResults = await transaction.testStepResult.findMany({
+        where: { testResultId: result.id, resultExecutedAt: result.executedAt },
+        orderBy: { position: 'asc' },
+        select: {
+          id: true,
+          position: true,
+          comment: true,
+          elapsedMs: true,
+          status: {
+            select: {
+              id: true,
+              key: true,
+              name: true,
+              color: true,
+              isFinal: true,
+              countsAsFailure: true,
+            },
+          },
+        },
+      });
       return {
         kind: 'found',
         value: {
@@ -413,7 +494,152 @@ export class TestRunRepository {
             ...result,
             status: this.toStatus(status),
             executedAt: result.executedAt.toISOString(),
+            stepResults: stepResults.map(({ status: stepStatus, ...step }) => ({
+              ...step,
+              status: this.toStatus(stepStatus),
+            })),
           },
+        },
+      };
+    });
+  }
+
+  async resultHistory(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    query: TestResultHistoryQuery,
+  ): Promise<RunResult<TestResultHistoryResponse>> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) return { kind: 'project_not_found' };
+      const run = await transaction.testRun.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: runId },
+          projectId: project.id,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!run) return { kind: 'run_not_found' };
+      const item = await transaction.testRunItem.findUnique({
+        where: { organizationId_id: { organizationId, id: itemId }, testRunId: run.id },
+        select: { id: true, caseVersion: { select: { title: true } } },
+      });
+      if (!item) return { kind: 'item_not_found' };
+      const cursor = query.cursor
+        ? await transaction.testResult.findFirst({
+            where: { id: query.cursor, testRunItemId: item.id },
+            select: { id: true, executedAt: true },
+          })
+        : null;
+      if (query.cursor && !cursor) return { kind: 'result_not_found' };
+      const results = await transaction.testResult.findMany({
+        where: {
+          testRunItemId: item.id,
+          ...(cursor
+            ? {
+                OR: [
+                  { executedAt: { lt: cursor.executedAt } },
+                  { executedAt: cursor.executedAt, id: { lt: cursor.id } },
+                ],
+              }
+            : {}),
+        },
+        take: query.limit + 1,
+        orderBy: [{ executedAt: 'desc' }, { id: 'desc' }],
+        select: this.resultSelection(),
+      });
+      const hasNextPage = results.length > query.limit;
+      const page = hasNextPage ? results.slice(0, query.limit) : results;
+      return {
+        kind: 'found',
+        value: {
+          item: { id: item.id, title: item.caseVersion.title },
+          results: page.map((result) => this.toResult(result)),
+          nextCursor: hasNextPage ? (page.at(-1)?.id ?? null) : null,
+        },
+      };
+    });
+  }
+
+  async resultDetail(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    resultId: string,
+  ): Promise<RunResult<TestResultDetailResponse>> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) return { kind: 'project_not_found' };
+      const run = await transaction.testRun.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: runId },
+          projectId: project.id,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!run) return { kind: 'run_not_found' };
+      const item = await transaction.testRunItem.findUnique({
+        where: { organizationId_id: { organizationId, id: itemId }, testRunId: run.id },
+        select: {
+          id: true,
+          position: true,
+          caseVersion: {
+            select: {
+              id: true,
+              version: true,
+              title: true,
+              template: true,
+              preconditions: true,
+              expectedResult: true,
+              content: true,
+            },
+          },
+          status: {
+            select: {
+              id: true,
+              key: true,
+              name: true,
+              color: true,
+              isFinal: true,
+              countsAsFailure: true,
+            },
+          },
+          assignee: { select: { id: true, displayName: true } },
+          _count: { select: { results: true } },
+        },
+      });
+      if (!item) return { kind: 'item_not_found' };
+      const result = await transaction.testResult.findFirst({
+        where: { id: resultId, testRunItemId: item.id },
+        select: this.resultSelection(),
+      });
+      if (!result) return { kind: 'result_not_found' };
+      return {
+        kind: 'found',
+        value: {
+          item: testRunItemResponseSchema.parse({
+            id: item.id,
+            position: item.position,
+            caseVersion: {
+              ...item.caseVersion,
+              template: item.caseVersion.template.toLowerCase(),
+            },
+            status: this.toStatus(item.status),
+            assignee: item.assignee,
+            attemptCount: item._count.results,
+          }),
+          result: this.toResult(result),
         },
       };
     });
@@ -539,6 +765,58 @@ export class TestRunRepository {
       counts.set(group.testRunId, current);
     }
     return counts;
+  }
+
+  private resultSelection() {
+    return {
+      id: true,
+      attempt: true,
+      comment: true,
+      elapsedMs: true,
+      executedAt: true,
+      executedBy: { select: { id: true, displayName: true } },
+      status: {
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          color: true,
+          isFinal: true,
+          countsAsFailure: true,
+        },
+      },
+      stepResults: {
+        orderBy: { position: 'asc' as const },
+        select: {
+          id: true,
+          position: true,
+          comment: true,
+          elapsedMs: true,
+          status: {
+            select: {
+              id: true,
+              key: true,
+              name: true,
+              color: true,
+              isFinal: true,
+              countsAsFailure: true,
+            },
+          },
+        },
+      },
+    } as const;
+  }
+
+  private toResult(result: ResultRecord) {
+    return testResultResponseSchema.parse({
+      ...result,
+      status: this.toStatus(result.status),
+      executedAt: result.executedAt.toISOString(),
+      stepResults: result.stepResults.map(({ status, ...step }) => ({
+        ...step,
+        status: this.toStatus(status),
+      })),
+    });
   }
 
   private toSummary(run: RunRecord, counts?: RunCounts): TestRunSummary {

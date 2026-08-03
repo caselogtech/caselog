@@ -93,6 +93,7 @@ model Organization {
   testRuns               TestRun[]
   testRunItems           TestRunItem[]
   testResults            TestResult[]
+  testStepResults        TestStepResult[]
   attachments            Attachment[]
   customFieldDefinitions CustomFieldDefinition[]
   customFieldValues      CustomFieldValue[]
@@ -330,10 +331,11 @@ model ResultStatus {
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  project      Project       @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project      Project          @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
   runItems     TestRunItem[]
   results      TestResult[]
+  stepResults  TestStepResult[]
 
   @@id([organizationId, id], map: "pk_result_statuses")
   @@unique([organizationId, projectId, key], map: "uq_result_statuses_organization_id_project_id_key")
@@ -399,15 +401,36 @@ model TestResult {
   executedAt     DateTime @default(now()) @map("executed_at") @db.Timestamptz(3)
   build          String?  @db.VarChar(200)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  testRunItem  TestRunItem  @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Restrict)
-  status       ResultStatus @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
-  executedBy   User?        @relation("ResultExecutor", fields: [executedById], references: [id], onDelete: SetNull)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  testRunItem  TestRunItem      @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Restrict)
+  status       ResultStatus     @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
+  executedBy   User?            @relation("ResultExecutor", fields: [executedById], references: [id], onDelete: SetNull)
+  stepResults  TestStepResult[]
 
   @@id([organizationId, id, executedAt], map: "pk_test_results")
   @@index([organizationId, testRunItemId, executedAt], map: "idx_test_results_organization_id_test_run_item_id_executed_at")
   @@index([organizationId, statusId, executedAt], map: "idx_test_results_organization_id_status_id_executed_at")
   @@map("test_results")
+}
+
+model TestStepResult {
+  organizationId   String   @map("organization_id") @db.Uuid
+  id               String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  testResultId     String   @map("test_result_id") @db.Uuid
+  resultExecutedAt DateTime @map("result_executed_at") @db.Timestamptz(3)
+  statusId         String   @map("status_id") @db.Uuid
+  position         Int
+  comment          String?  @db.Text
+  elapsedMs        Int?     @map("elapsed_ms")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  testResult   TestResult   @relation(fields: [organizationId, testResultId, resultExecutedAt], references: [organizationId, id, executedAt], onDelete: Cascade)
+  status       ResultStatus @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
+
+  @@id([organizationId, id], map: "pk_test_step_results")
+  @@unique([organizationId, testResultId, resultExecutedAt, position], map: "uq_test_step_results_result_position")
+  @@index([organizationId, statusId], map: "idx_test_step_results_organization_id_status_id")
+  @@map("test_step_results")
 }
 
 model Attachment {

@@ -1,0 +1,78 @@
+<main class="result-page" aria-labelledby="result-title">
+  @if (detail.isPending()) {
+    <section class="state">{{ 'workspace.runs.result.loading' | transloco }}</section>
+  } @else if (detail.isError()) {
+    <section class="state error" role="alert">
+      <p>{{ errorTranslationKey() | transloco }}</p>
+      <button type="button" (click)="detail.refetch()">{{ 'workspace.runs.retry' | transloco }}</button>
+    </section>
+  } @else if (detail.data(); as data) {
+    <header>
+      <div>
+        <p class="eyebrow">{{ 'workspace.runs.result.eyebrow' | transloco: { attempt: data.result.attempt } }}</p>
+        <h1 id="result-title">{{ data.item.caseVersion.title }}</h1>
+        <p>{{ 'workspace.runs.detail.version' | transloco: { version: data.item.caseVersion.version } }}</p>
+      </div>
+      <div class="header-actions">
+        <a
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}/items/{{ itemId }}/results"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId, 'items', itemId, 'results']"
+        >{{ 'workspace.runs.result.backToHistory' | transloco }}</a>
+        <a
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}?item={{ itemId }}"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId]"
+          [queryParams]="{ item: itemId }"
+        >{{ 'workspace.runs.result.retest' | transloco }}</a>
+      </div>
+    </header>
+
+    <section class="summary">
+      <span class="status-badge" [style.border-color]="data.result.status.color">{{ data.result.status.name }}</span>
+      <dl>
+        <div>
+          <dt>{{ 'workspace.runs.history.executedAt' | transloco }}</dt>
+          <dd>{{ data.result.executedAt | date: 'medium' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'workspace.runs.history.executor' | transloco }}</dt>
+          <dd>{{ data.result.executedBy?.displayName ?? ('workspace.runs.history.unknownExecutor' | transloco) }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'workspace.runs.history.elapsed' | transloco }}</dt>
+          <dd>{{ formatElapsed(data.result.elapsedMs) }}</dd>
+        </div>
+      </dl>
+      @if (data.result.comment) {<p class="comment">{{ data.result.comment }}</p>}
+    </section>
+
+    <article>
+      @if (data.item.caseVersion.preconditions) {
+        <section><h2>{{ 'workspace.runs.detail.preconditions' | transloco }}</h2><p>{{ data.item.caseVersion.preconditions }}</p></section>
+      }
+      @if (steps(data.item).length > 0) {
+        <ol class="steps">
+          @for (step of steps(data.item); track $index) {
+            <li>
+              <p>{{ step.action }}</p>
+              @if (step.expected) {<small>{{ step.expected }}</small>}
+              @if (stepResult($index, data.result.stepResults); as outcome) {
+                <div class="step-outcome">
+                  <span class="status-badge" [style.border-color]="outcome.status.color">{{ outcome.status.name }}</span>
+                  @if (outcome.elapsedMs !== null) {<span>{{ formatElapsed(outcome.elapsedMs) }}</span>}
+                  @if (outcome.comment) {<p>{{ outcome.comment }}</p>}
+                </div>
+              } @else {
+                <small class="not-recorded">{{ 'workspace.runs.result.notRecorded' | transloco }}</small>
+              }
+            </li>
+          }
+        </ol>
+      } @else {
+        <pre>{{ textContent(data.item) }}</pre>
+      }
+      @if (data.item.caseVersion.expectedResult) {
+        <section><h2>{{ 'workspace.runs.detail.expectedResult' | transloco }}</h2><p>{{ data.item.caseVersion.expectedResult }}</p></section>
+      }
+    </article>
+  }
+</main>

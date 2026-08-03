@@ -7,6 +7,8 @@ import {
   testRunDetailParamsSchema,
   testRunDetailQuerySchema,
   testRunItemParamsSchema,
+  testResultHistoryQuerySchema,
+  testResultParamsSchema,
 } from '@caselog/schemas';
 import { createZodDto } from 'nestjs-zod';
 
@@ -18,3 +20,5 @@ export class TestRunItemParamsDto extends createZodDto(testRunItemParamsSchema) 
 export class TestRunDetailQueryDto extends createZodDto(testRunDetailQuerySchema) {}
 export class AssignTestRunItemRequestDto extends createZodDto(assignTestRunItemRequestSchema) {}
 export class CreateTestResultRequestDto extends createZodDto(createTestResultRequestSchema) {}
+export class TestResultHistoryQueryDto extends createZodDto(testResultHistoryQuerySchema) {}
+export class TestResultParamsDto extends createZodDto(testResultParamsSchema) {}

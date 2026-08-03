@@ -7,6 +7,7 @@ header,
 .header-actions,
 .case-heading,
 .result-actions,
+.step-statuses,
 .close-confirmation {
   align-items: center;
   display: flex;
@@ -112,6 +113,22 @@ article {
 .shortcut-hint,
 .frozen {
   color: var(--text-2);
+}
+.step-statuses {
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.step-statuses button {
+  padding: 5px 8px;
+}
+.step-statuses button.selected {
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px currentColor;
+  font-weight: 600;
+}
+.history-link {
+  display: inline-block;
+  margin: 12px 0 4px;
 }
 pre {
   background: var(--surface-1);

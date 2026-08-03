@@ -35,7 +35,8 @@ export class RunDetail {
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly runId = this.route.snapshot.paramMap.get('runId') ?? '';
-  readonly selectedItemId = signal('');
+  readonly selectedItemId = signal(this.route.snapshot.queryParamMap.get('item') ?? '');
+  readonly stepStatuses = signal<Record<number, string>>({});
   readonly closeConfirmation = signal(false);
   readonly resultForm = this.formBuilder.group({
     comment: ['', Validators.maxLength(50_000)],
@@ -102,17 +103,32 @@ export class RunDetail {
           statusId,
           comment: value.comment.trim() || undefined,
           elapsedMs: value.elapsedSeconds > 0 ? value.elapsedSeconds * 1_000 : undefined,
+          stepResults: Object.entries(this.stepStatuses()).map(([position, stepStatusId]) => ({
+            position: Number(position),
+            statusId: stepStatusId,
+          })),
         },
       );
     },
     onSuccess: async () => {
       this.resultForm.reset();
+      this.stepStatuses.set({});
       await this.invalidateRun();
     },
   }));
 
   selectItem(itemId: string): void {
     this.selectedItemId.set(itemId);
+    this.stepStatuses.set({});
+    this.resultForm.reset();
+  }
+
+  chooseStepStatus(position: number, statusId: string): void {
+    this.stepStatuses.update((statuses) => ({ ...statuses, [position]: statusId }));
+  }
+
+  isStepStatusSelected(position: number, statusId: string): boolean {
+    return this.stepStatuses()[position] === statusId;
   }
 
   assign(itemId: string, assigneeId: string): void {

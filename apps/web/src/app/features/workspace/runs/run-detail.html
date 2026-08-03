@@ -84,7 +84,25 @@
           @if (steps(item).length > 0) {
             <ol class="steps">
               @for (step of steps(item); track $index) {
-                <li><p>{{ step.action }}</p>@if (step.expected) {<small>{{ step.expected }}</small>}</li>
+                <li>
+                  <p>{{ step.action }}</p>
+                  @if (step.expected) {<small>{{ step.expected }}</small>}
+                  @if (canExecute()) {
+                    <div class="step-statuses" [attr.aria-label]="'workspace.runs.detail.stepStatus' | transloco: { position: $index + 1 }">
+                      @for (status of data.statuses; track status.id) {
+                        @if (status.key !== 'untested') {
+                          <button
+                            type="button"
+                            [class.selected]="isStepStatusSelected($index, status.id)"
+                            [style.border-color]="status.color"
+                            [attr.aria-pressed]="isStepStatusSelected($index, status.id)"
+                            (click)="chooseStepStatus($index, status.id)"
+                          >{{ status.name }}</button>
+                        }
+                      }
+                    </div>
+                  }
+                </li>
               }
             </ol>
           } @else {
@@ -92,6 +110,14 @@
           }
           @if (item.caseVersion.expectedResult) {
             <section><h3>{{ 'workspace.runs.detail.expectedResult' | transloco }}</h3><p>{{ item.caseVersion.expectedResult }}</p></section>
+          }
+
+          @if (item.attemptCount > 0) {
+            <a
+              class="history-link"
+              href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}/items/{{ item.id }}/results"
+              [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId, 'items', item.id, 'results']"
+            >{{ 'workspace.runs.detail.viewHistory' | transloco: { count: item.attemptCount } }}</a>
           }
 
           @if (canExecute()) {

@@ -57,6 +57,18 @@ export const routes: Routes = [
       import('./features/workspace/runs/run-create').then(({ RunCreate }) => RunCreate),
   },
   {
+    path: ':org/:project/runs/:runId/items/:itemId/results/:resultId',
+    providers: workspaceTranslations,
+    loadComponent: () =>
+      import('./features/workspace/runs/result-detail').then(({ ResultDetail }) => ResultDetail),
+  },
+  {
+    path: ':org/:project/runs/:runId/items/:itemId/results',
+    providers: workspaceTranslations,
+    loadComponent: () =>
+      import('./features/workspace/runs/result-history').then(({ ResultHistory }) => ResultHistory),
+  },
+  {
     path: ':org/:project/runs/:runId',
     providers: workspaceTranslations,
     loadComponent: () =>

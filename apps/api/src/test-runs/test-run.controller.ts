@@ -7,6 +7,8 @@ import type {
   TestRunListResponse,
   TestRunDetailResponse,
   TestRunLifecycleResponse,
+  TestResultDetailResponse,
+  TestResultHistoryResponse,
 } from '@caselog/schemas';
 import { OrganizationAuthGuard } from '../auth/organization-auth.guard';
 import { CurrentOrganization } from '../auth/organization-principal.decorator';
@@ -20,6 +22,8 @@ import {
   TestRunItemParamsDto,
   TestRunListParamsDto,
   TestRunListQueryDto,
+  TestResultHistoryQueryDto,
+  TestResultParamsDto,
 } from './test-run.dto';
 import { TestRunService } from './test-run.service';
 
@@ -92,6 +96,35 @@ export class TestRunController {
       params.runId,
       params.itemId,
       request,
+    );
+  }
+
+  @Get(':runId/items/:itemId/results')
+  resultHistory(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunItemParamsDto,
+    @Query() query: TestResultHistoryQueryDto,
+  ): Promise<TestResultHistoryResponse> {
+    return this.runs.resultHistory(
+      principal.organizationId,
+      params.projectSlug,
+      params.runId,
+      params.itemId,
+      query,
+    );
+  }
+
+  @Get(':runId/items/:itemId/results/:resultId')
+  resultDetail(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestResultParamsDto,
+  ): Promise<TestResultDetailResponse> {
+    return this.runs.resultDetail(
+      principal.organizationId,
+      params.projectSlug,
+      params.runId,
+      params.itemId,
+      params.resultId,
     );
   }
 }

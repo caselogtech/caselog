@@ -88,6 +88,7 @@ describe('RunDetail', () => {
         elapsedMs: 2_000,
         executedBy: null,
         executedAt: '2026-08-02T12:01:00.000Z',
+        stepResults: [],
       },
     });
     await TestBed.configureTestingModule({
@@ -105,6 +106,7 @@ describe('RunDetail', () => {
                 project: 'authentication',
                 runId: RUN_ID,
               }),
+              queryParamMap: convertToParamMap({}),
             },
           },
         },
@@ -122,6 +124,7 @@ describe('RunDetail', () => {
     expect(fixture.nativeElement.textContent).toContain('Enter valid credentials');
 
     fixture.componentInstance.resultForm.setValue({ comment: ' Works ', elapsedSeconds: 2 });
+    fixture.componentInstance.chooseStepStatus(0, PASSED_ID);
     fixture.componentInstance.record(PASSED_ID);
     await vi.waitFor(() => expect(workspaceApi.recordTestResult).toHaveBeenCalledOnce());
     expect(workspaceApi.recordTestResult).toHaveBeenCalledWith(
@@ -129,7 +132,12 @@ describe('RunDetail', () => {
       'authentication',
       RUN_ID,
       ITEM_ID,
-      { statusId: PASSED_ID, comment: 'Works', elapsedMs: 2_000 },
+      {
+        statusId: PASSED_ID,
+        comment: 'Works',
+        elapsedMs: 2_000,
+        stepResults: [{ position: 0, statusId: PASSED_ID }],
+      },
     );
   });
 });

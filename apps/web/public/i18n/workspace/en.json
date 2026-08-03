@@ -238,10 +238,33 @@
       "unassigned": "Unassigned",
       "preconditions": "Preconditions",
       "expectedResult": "Expected result",
+      "stepStatus": "Result for step {{position}}",
+      "viewHistory": "View {{count}} recorded attempts",
       "comment": "Result comment",
       "elapsedSeconds": "Elapsed seconds",
       "shortcuts": "Keyboard: P passed · F failed · B blocked · Enter next case",
       "frozen": "This run is not active. Its execution data is read-only."
+    },
+    "history": {
+      "loading": "Loading result history…",
+      "eyebrow": "Result history",
+      "description": "Every execution is stored as a separate immutable attempt.",
+      "back": "Back to run",
+      "retest": "Record another attempt",
+      "empty": "No attempts have been recorded for this test case.",
+      "attempt": "Attempt {{attempt}}",
+      "executedAt": "Executed",
+      "executor": "Executor",
+      "unknownExecutor": "Unknown executor",
+      "elapsed": "Elapsed",
+      "steps": "Step outcomes"
+    },
+    "result": {
+      "loading": "Loading result…",
+      "eyebrow": "Attempt {{attempt}}",
+      "backToHistory": "All attempts",
+      "retest": "Record another attempt",
+      "notRecorded": "No result recorded for this step"
     }
   }
 }

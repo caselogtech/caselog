@@ -5,6 +5,8 @@ import {
   createTestResultResponseSchema,
   testRunDetailResponseSchema,
   testRunLifecycleResponseSchema,
+  testResultDetailResponseSchema,
+  testResultHistoryResponseSchema,
   testRunListResponseSchema,
   type CreateTestRunRequest,
   type CreateTestRunResponse,
@@ -18,6 +20,9 @@ import {
   type TestRunDetailQuery,
   type TestRunDetailResponse,
   type TestRunLifecycleResponse,
+  type TestResultDetailResponse,
+  type TestResultHistoryQuery,
+  type TestResultHistoryResponse,
 } from '@caselog/schemas';
 import {
   AuthorizationDeniedError,
@@ -123,6 +128,36 @@ export class TestRunService {
     return createTestResultResponseSchema.parse(result.value);
   }
 
+  async resultHistory(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    query: TestResultHistoryQuery,
+  ): Promise<TestResultHistoryResponse> {
+    const result = await this.runs.resultHistory(organizationId, projectSlug, runId, itemId, query);
+    this.assertFound(result);
+    return testResultHistoryResponseSchema.parse(result.value);
+  }
+
+  async resultDetail(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    resultId: string,
+  ): Promise<TestResultDetailResponse> {
+    const result = await this.runs.resultDetail(
+      organizationId,
+      projectSlug,
+      runId,
+      itemId,
+      resultId,
+    );
+    this.assertFound(result);
+    return testResultDetailResponseSchema.parse(result.value);
+  }
+
   private assertManage(principal: OrganizationAccessPrincipal): void {
     if (!['owner', 'admin', 'lead'].includes(principal.role)) {
       throw new AuthorizationDeniedError();
@@ -147,6 +182,13 @@ export class TestRunService {
     if (result.kind === 'item_not_found') throw new ResourceNotFoundError('test_run_item');
     if (result.kind === 'member_not_found') throw new ResourceNotFoundError('member');
     if (result.kind === 'status_not_found') throw new ResourceNotFoundError('result_status');
+    if (result.kind === 'result_not_found') throw new ResourceNotFoundError('test_result');
+    if (result.kind === 'invalid_step_results') {
+      throw new ResourceConflictError(
+        'invalid_step_results',
+        'Step results do not match the immutable test case snapshot',
+      );
+    }
     if (result.kind === 'run_closed') {
       throw new ResourceConflictError('run_closed', 'The test run is closed for changes');
     }

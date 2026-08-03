@@ -40,6 +40,7 @@ describe('authentication API', () => {
   let originalVersionId: string;
   let createdRunId: string;
   let createdRunItemId: string;
+  let createdResultId: string;
   let registrationCookie: string;
   let registrationResponse: Awaited<ReturnType<NestFastifyApplication['inject']>>;
 
@@ -1116,15 +1117,75 @@ describe('authentication API', () => {
           method: 'POST',
           url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results`,
           headers: { authorization: `Bearer ${organizationAccessToken}` },
-          payload: { statusId: id, comment: `Attempt ${index + 1}`, elapsedMs: 1_000 + index },
+          payload: {
+            statusId: id,
+            comment: `Attempt ${index + 1}`,
+            elapsedMs: 1_000 + index,
+            stepResults: [
+              {
+                position: 0,
+                statusId: id,
+                comment: `Step attempt ${index + 1}`,
+                elapsedMs: 500 + index,
+              },
+            ],
+          },
         }),
       ),
     );
     expect(results.map(({ statusCode }) => statusCode)).toEqual([201, 201]);
     expect(results.map((result) => result.json().result.attempt).sort()).toEqual([1, 2]);
+    expect(results.every((result) => result.json().result.stepResults.length === 1)).toBe(true);
     await expect(
       admin.testResult.count({ where: { organizationId, testRunItemId: createdRunItemId } }),
     ).resolves.toBe(2);
+    await expect(admin.testStepResult.count({ where: { organizationId } })).resolves.toBe(2);
+
+    const invalidStepResult = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        statusId: statuses[0]?.id,
+        stepResults: [{ position: 1, statusId: statuses[0]?.id }],
+      },
+    });
+    expect(invalidStepResult.statusCode, invalidStepResult.body).toBe(409);
+    expect(invalidStepResult.json().error.code).toBe('invalid_step_results');
+
+    const history = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results?limit=1`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(history.statusCode, history.body).toBe(200);
+    expect(history.json()).toMatchObject({
+      item: { id: createdRunItemId },
+      results: [
+        expect.objectContaining({ stepResults: [expect.objectContaining({ position: 0 })] }),
+      ],
+      nextCursor: expect.any(String),
+    });
+    const resultId = history.json().results[0].id as string;
+    createdResultId = resultId;
+    const resultDetail = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results/${resultId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(resultDetail.statusCode, resultDetail.body).toBe(200);
+    expect(resultDetail.json()).toMatchObject({
+      item: { id: createdRunItemId, caseVersion: { title: 'Sign in with valid credentials' } },
+      result: { id: resultId, stepResults: [expect.objectContaining({ position: 0 })] },
+    });
+    const olderHistory = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results?limit=1&cursor=${history.json().nextCursor as string}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(olderHistory.statusCode, olderHistory.body).toBe(200);
+    expect(olderHistory.json().results).toHaveLength(1);
+    expect(olderHistory.json().nextCursor).toBeNull();
 
     const detailAfterResults = await app.inject({
       method: 'GET',
@@ -1519,6 +1580,18 @@ describe('authentication API', () => {
       payload: { statusId: randomUUID() },
     });
     expect(crossTenantResult.statusCode).toBe(404);
+    const crossTenantResultHistory = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/results`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantResultHistory.statusCode).toBe(404);
+    const crossTenantResultDetail = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/results/${createdResultId}`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantResultDetail.statusCode).toBe(404);
 
     const memberList = await app.inject({
       method: 'GET',

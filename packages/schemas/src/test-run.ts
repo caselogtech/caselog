@@ -108,22 +108,67 @@ export const assignTestRunItemResponseSchema = z.object({
   assignee: runMemberResponseSchema.nullable(),
 });
 
-export const createTestResultRequestSchema = z.object({
+export const createStepResultRequestSchema = z.object({
+  position: z.number().int().nonnegative().max(199),
   statusId: z.uuid(),
-  comment: z.string().trim().max(50_000).optional(),
+  comment: z.string().trim().max(10_000).optional(),
   elapsedMs: z.number().int().nonnegative().max(86_400_000).optional(),
 });
 
-export const createTestResultResponseSchema = z.object({
-  result: z.object({
-    id: z.uuid(),
-    attempt: z.number().int().positive(),
-    status: resultStatusResponseSchema,
-    comment: z.string().nullable(),
-    elapsedMs: z.number().int().nonnegative().nullable(),
-    executedBy: runMemberResponseSchema.nullable(),
-    executedAt: z.iso.datetime(),
-  }),
+export const createTestResultRequestSchema = z
+  .object({
+    statusId: z.uuid(),
+    comment: z.string().trim().max(50_000).optional(),
+    elapsedMs: z.number().int().nonnegative().max(86_400_000).optional(),
+    stepResults: z.array(createStepResultRequestSchema).max(200).optional(),
+  })
+  .superRefine(({ stepResults }, context) => {
+    if (
+      stepResults &&
+      new Set(stepResults.map(({ position }) => position)).size !== stepResults.length
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['stepResults'],
+        message: 'Step positions must be unique',
+      });
+    }
+  });
+
+export const stepResultResponseSchema = z.object({
+  id: z.uuid(),
+  position: z.number().int().nonnegative(),
+  status: resultStatusResponseSchema,
+  comment: z.string().nullable(),
+  elapsedMs: z.number().int().nonnegative().nullable(),
+});
+
+export const testResultResponseSchema = z.object({
+  id: z.uuid(),
+  attempt: z.number().int().positive(),
+  status: resultStatusResponseSchema,
+  comment: z.string().nullable(),
+  elapsedMs: z.number().int().nonnegative().nullable(),
+  executedBy: runMemberResponseSchema.nullable(),
+  executedAt: z.iso.datetime(),
+  stepResults: z.array(stepResultResponseSchema),
+});
+
+export const createTestResultResponseSchema = z.object({ result: testResultResponseSchema });
+
+export const testResultHistoryQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+});
+export const testResultParamsSchema = testRunItemParamsSchema.extend({ resultId: z.uuid() });
+export const testResultHistoryResponseSchema = z.object({
+  item: z.object({ id: z.uuid(), title: z.string().min(1).max(500) }),
+  results: z.array(testResultResponseSchema),
+  nextCursor: z.uuid().nullable(),
+});
+export const testResultDetailResponseSchema = z.object({
+  item: testRunItemResponseSchema,
+  result: testResultResponseSchema,
 });
 
 export const testRunLifecycleResponseSchema = z.object({ run: testRunSummarySchema });
@@ -146,4 +191,11 @@ export type AssignTestRunItemRequest = z.infer<typeof assignTestRunItemRequestSc
 export type AssignTestRunItemResponse = z.infer<typeof assignTestRunItemResponseSchema>;
 export type CreateTestResultRequest = z.infer<typeof createTestResultRequestSchema>;
 export type CreateTestResultResponse = z.infer<typeof createTestResultResponseSchema>;
+export type CreateStepResultRequest = z.infer<typeof createStepResultRequestSchema>;
+export type StepResultResponse = z.infer<typeof stepResultResponseSchema>;
+export type TestResultResponse = z.infer<typeof testResultResponseSchema>;
+export type TestResultHistoryQuery = z.infer<typeof testResultHistoryQuerySchema>;
+export type TestResultParams = z.infer<typeof testResultParamsSchema>;
+export type TestResultHistoryResponse = z.infer<typeof testResultHistoryResponseSchema>;
+export type TestResultDetailResponse = z.infer<typeof testResultDetailResponseSchema>;
 export type TestRunLifecycleResponse = z.infer<typeof testRunLifecycleResponseSchema>;
