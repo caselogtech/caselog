@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { sessionResponseSchema } from '@caselog/schemas';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -7,6 +7,7 @@ import { AppModule } from '../app.module';
 import { configureApplication } from '../configure-application';
 import type { PrismaClient } from '../generated/prisma/client';
 import { createPrismaClient } from '../core/database/prisma-client';
+import { STORAGE_PROVIDER, type StorageProvider } from '../core/storage/storage.provider';
 import { hashAccountToken } from './account-token';
 
 const PASSWORD = 'correct horse battery staple';
@@ -202,6 +203,26 @@ describe('authentication API', () => {
         ...additionalProvisionedOrganizationIds,
       ].filter((id): id is string => Boolean(id));
       if (organizationIds.length > 0) {
+        const [attachments, uploads] = await Promise.all([
+          admin.attachment.findMany({
+            where: { organizationId: { in: organizationIds } },
+            select: { storageKey: true },
+          }),
+          admin.uploadSession.findMany({
+            where: { organizationId: { in: organizationIds } },
+            select: { storageKey: true },
+          }),
+        ]);
+        const storage = app.get<StorageProvider>(STORAGE_PROVIDER);
+        await Promise.allSettled(
+          [...attachments, ...uploads].map(({ storageKey }) => storage.delete(storageKey)),
+        );
+        await admin.attachment.deleteMany({
+          where: { organizationId: { in: organizationIds } },
+        });
+        await admin.uploadSession.deleteMany({
+          where: { organizationId: { in: organizationIds } },
+        });
         await admin.testResult.deleteMany({ where: { organizationId: { in: organizationIds } } });
         await admin.testRunItem.deleteMany({ where: { organizationId: { in: organizationIds } } });
         await admin.testRun.deleteMany({ where: { organizationId: { in: organizationIds } } });
@@ -1094,15 +1115,17 @@ describe('authentication API', () => {
     expect(startedAgain.statusCode, startedAgain.body).toBe(201);
     expect(startedAgain.json().run.status).toBe('active');
 
+    const attachmentBody = Buffer.from('caselog result evidence');
+    const attachmentChecksum = createHash('sha256').update(attachmentBody).digest('hex');
     const uploadSession = await app.inject({
       method: 'POST',
       url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/uploads`,
       headers: { authorization: `Bearer ${organizationAccessToken}` },
       payload: {
-        fileName: 'authentication-result.png',
-        contentType: 'image/png',
-        sizeBytes: 1_024,
-        checksumSha256: 'a'.repeat(64),
+        fileName: 'authentication-result.txt',
+        contentType: 'text/plain',
+        sizeBytes: attachmentBody.byteLength,
+        checksumSha256: attachmentChecksum,
         stepPosition: 0,
       },
     });
@@ -1113,8 +1136,8 @@ describe('authentication API', () => {
         method: 'PUT',
         url: expect.stringContaining('http'),
         headers: {
-          'content-type': 'image/png',
-          'x-amz-meta-checksumsha256': 'a'.repeat(64),
+          'content-type': 'text/plain',
+          'x-amz-meta-checksumsha256': attachmentChecksum,
         },
         expiresAt: expect.any(String),
       },
@@ -1134,6 +1157,12 @@ describe('authentication API', () => {
       stepPosition: 0,
       completedAt: null,
     });
+    const uploaded = await fetch(uploadSession.json().upload.url as string, {
+      method: 'PUT',
+      headers: uploadSession.json().upload.headers as Record<string, string>,
+      body: attachmentBody,
+    });
+    expect(uploaded.status, await uploaded.text()).toBe(200);
     const invalidUploadStep = await app.inject({
       method: 'POST',
       url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/uploads`,
@@ -1166,6 +1195,29 @@ describe('authentication API', () => {
       orderBy: { key: 'asc' },
       select: { id: true },
     });
+    const incompleteUpload = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/uploads`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        fileName: 'missing.txt',
+        contentType: 'text/plain',
+        sizeBytes: 10,
+        checksumSha256: 'e'.repeat(64),
+      },
+    });
+    expect(incompleteUpload.statusCode, incompleteUpload.body).toBe(201);
+    const incompleteResult = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        statusId: statuses[0]?.id,
+        uploadIds: [incompleteUpload.json().upload.id],
+      },
+    });
+    expect(incompleteResult.statusCode, incompleteResult.body).toBe(409);
+    expect(incompleteResult.json().error.code).toBe('upload_incomplete');
     const results = await Promise.all(
       statuses.map(({ id }, index) =>
         app.inject({
@@ -1184,6 +1236,7 @@ describe('authentication API', () => {
                 elapsedMs: 500 + index,
               },
             ],
+            uploadIds: index === 0 ? [uploadSession.json().upload.id] : undefined,
           },
         }),
       ),
@@ -1191,6 +1244,52 @@ describe('authentication API', () => {
     expect(results.map(({ statusCode }) => statusCode)).toEqual([201, 201]);
     expect(results.map((result) => result.json().result.attempt).sort()).toEqual([1, 2]);
     expect(results.every((result) => result.json().result.stepResults.length === 1)).toBe(true);
+    const resultWithAttachment = results.find(
+      (result) => result.json().result.attachments.length === 1,
+    );
+    expect(resultWithAttachment?.json().result.attachments).toEqual([
+      expect.objectContaining({
+        fileName: 'authentication-result.txt',
+        contentType: 'text/plain',
+        sizeBytes: attachmentBody.byteLength,
+        checksumSha256: attachmentChecksum,
+        stepPosition: 0,
+      }),
+    ]);
+    const attachmentResultId = resultWithAttachment?.json().result.id as string;
+    const attachmentDetail = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results/${attachmentResultId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(attachmentDetail.statusCode, attachmentDetail.body).toBe(200);
+    expect(attachmentDetail.json().result.attachments).toHaveLength(1);
+    await expect(
+      admin.uploadSession.findUnique({
+        where: {
+          organizationId_id: {
+            organizationId: organizationId as string,
+            id: uploadSession.json().upload.id as string,
+          },
+        },
+      }),
+    ).resolves.toMatchObject({ completedAt: expect.any(Date) });
+    await expect(
+      admin.attachment.findFirst({
+        where: { organizationId, targetId: attachmentResultId },
+      }),
+    ).resolves.toMatchObject({
+      storageKey: expect.stringContaining('/attachments/'),
+      checksumSha256: attachmentChecksum,
+    });
+    const reusedUpload = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { statusId: statuses[0]?.id, uploadIds: [uploadSession.json().upload.id] },
+    });
+    expect(reusedUpload.statusCode, reusedUpload.body).toBe(409);
+    expect(reusedUpload.json().error.code).toBe('invalid_upload');
     await expect(
       admin.testResult.count({ where: { organizationId, testRunItemId: createdRunItemId } }),
     ).resolves.toBe(2);

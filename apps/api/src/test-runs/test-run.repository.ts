@@ -7,6 +7,7 @@ import {
   type CreateTestResultRequest,
   type CreateTestResultResponse,
   type CreateTestRunRequest,
+  type ResultAttachmentResponse,
   type ResultStatusResponse,
   type TestRunDetailQuery,
   type TestRunDetailResponse,
@@ -18,11 +19,12 @@ import {
   type TestResultHistoryQuery,
   type TestResultHistoryResponse,
 } from '@caselog/schemas';
+import type { PreparedResultAttachment } from '../attachments/attachment.service';
 import {
   TenantDatabaseService,
   type TenantTransaction,
 } from '../core/database/tenant-database.service';
-import { RunStatus } from '../generated/prisma/enums';
+import { AttachmentTargetType, RunStatus } from '../generated/prisma/enums';
 
 const RUN_STATUS: Record<TestRunStatus, RunStatus> = {
   draft: RunStatus.DRAFT,
@@ -42,6 +44,7 @@ type RunResult<T> =
   | { kind: 'status_not_found' }
   | { kind: 'result_not_found' }
   | { kind: 'invalid_step_results' }
+  | { kind: 'invalid_upload' }
   | { kind: 'run_closed' }
   | { kind: 'invalid_run_state' };
 
@@ -72,6 +75,8 @@ type ResultRecord = {
     status: ResultStatusResponse;
   }>;
 };
+
+type AttachmentRecord = ResultAttachmentResponse;
 
 type RunMemberRecord = { id: string; displayName: string };
 
@@ -376,6 +381,7 @@ export class TestRunRepository {
     runId: string,
     itemId: string,
     request: CreateTestResultRequest,
+    preparedAttachments: PreparedResultAttachment[],
   ): Promise<RunResult<CreateTestResultResponse>> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
       const context = await this.lockRun(transaction, organizationId, projectSlug, runId, 'shared');
@@ -426,6 +432,20 @@ export class TestRunRepository {
       ) {
         return { kind: 'invalid_step_results' };
       }
+      for (const uploadId of preparedAttachments.map(({ uploadId }) => uploadId).sort()) {
+        const lockedUpload = await transaction.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM upload_sessions
+          WHERE organization_id = ${organizationId}::uuid
+            AND id = ${uploadId}::uuid
+            AND test_run_id = ${runId}::uuid
+            AND test_run_item_id = ${itemId}::uuid
+            AND created_by_id = ${userId}::uuid
+            AND completed_at IS NULL
+            AND expires_at > CURRENT_TIMESTAMP
+          FOR UPDATE
+        `;
+        if (lockedUpload.length === 0) return { kind: 'invalid_upload' };
+      }
       const aggregate = await transaction.testResult.aggregate({
         where: { testRunItemId: itemId },
         _max: { attempt: true },
@@ -467,6 +487,32 @@ export class TestRunRepository {
           })),
         });
       }
+      if (preparedAttachments.length > 0) {
+        await transaction.attachment.createMany({
+          data: preparedAttachments.map((attachment) => ({
+            organizationId,
+            id: attachment.id,
+            targetType: AttachmentTargetType.RESULT,
+            targetId: result.id,
+            storageKey: attachment.storageKey,
+            fileName: attachment.fileName,
+            contentType: attachment.contentType,
+            sizeBytes: BigInt(attachment.sizeBytes),
+            checksumSha256: attachment.checksumSha256,
+            stepPosition: attachment.stepPosition,
+          })),
+        });
+        const completed = await transaction.uploadSession.updateMany({
+          where: {
+            id: { in: preparedAttachments.map(({ uploadId }) => uploadId) },
+            completedAt: null,
+          },
+          data: { completedAt: new Date() },
+        });
+        if (completed.count !== preparedAttachments.length) {
+          throw new Error('Upload sessions changed while recording a result');
+        }
+      }
       const stepResults = await transaction.testStepResult.findMany({
         where: { testResultId: result.id, resultExecutedAt: result.executedAt },
         orderBy: { position: 'asc' },
@@ -487,6 +533,7 @@ export class TestRunRepository {
           },
         },
       });
+      const attachments = await this.resultAttachments(transaction, [result.id]);
       return {
         kind: 'found',
         value: {
@@ -498,6 +545,7 @@ export class TestRunRepository {
               ...step,
               status: this.toStatus(stepStatus),
             })),
+            attachments: attachments.get(result.id) ?? [],
           },
         },
       };
@@ -556,11 +604,15 @@ export class TestRunRepository {
       });
       const hasNextPage = results.length > query.limit;
       const page = hasNextPage ? results.slice(0, query.limit) : results;
+      const attachments = await this.resultAttachments(
+        transaction,
+        page.map(({ id }) => id),
+      );
       return {
         kind: 'found',
         value: {
           item: { id: item.id, title: item.caseVersion.title },
-          results: page.map((result) => this.toResult(result)),
+          results: page.map((result) => this.toResult(result, attachments.get(result.id))),
           nextCursor: hasNextPage ? (page.at(-1)?.id ?? null) : null,
         },
       };
@@ -625,6 +677,7 @@ export class TestRunRepository {
         select: this.resultSelection(),
       });
       if (!result) return { kind: 'result_not_found' };
+      const attachments = await this.resultAttachments(transaction, [result.id]);
       return {
         kind: 'found',
         value: {
@@ -639,7 +692,7 @@ export class TestRunRepository {
             assignee: item.assignee,
             attemptCount: item._count.results,
           }),
-          result: this.toResult(result),
+          result: this.toResult(result, attachments.get(result.id)),
         },
       };
     });
@@ -807,7 +860,38 @@ export class TestRunRepository {
     } as const;
   }
 
-  private toResult(result: ResultRecord) {
+  private async resultAttachments(
+    transaction: TenantTransaction,
+    resultIds: string[],
+  ): Promise<Map<string, AttachmentRecord[]>> {
+    const byResult = new Map<string, AttachmentRecord[]>();
+    if (resultIds.length === 0) return byResult;
+    const attachments = await transaction.attachment.findMany({
+      where: {
+        targetType: AttachmentTargetType.RESULT,
+        targetId: { in: resultIds },
+        deletedAt: null,
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        targetId: true,
+        fileName: true,
+        contentType: true,
+        sizeBytes: true,
+        checksumSha256: true,
+        stepPosition: true,
+      },
+    });
+    for (const { targetId, sizeBytes, ...attachment } of attachments) {
+      const current = byResult.get(targetId) ?? [];
+      current.push({ ...attachment, sizeBytes: Number(sizeBytes) });
+      byResult.set(targetId, current);
+    }
+    return byResult;
+  }
+
+  private toResult(result: ResultRecord, attachments: AttachmentRecord[] = []) {
     return testResultResponseSchema.parse({
       ...result,
       status: this.toStatus(result.status),
@@ -816,6 +900,7 @@ export class TestRunRepository {
         ...step,
         status: this.toStatus(status),
       })),
+      attachments,
     });
   }
 

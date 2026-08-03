@@ -26,8 +26,10 @@
     "invalid_run_state": "This run cannot make that lifecycle transition.",
     "invalid_step_results": "The step results no longer match this run's frozen case version.",
     "invalid_upload_target": "This upload target no longer exists in the frozen test case version.",
+    "invalid_upload": "One or more uploads expired or cannot be used for this result.",
     "run_status_unavailable": "This project is missing its Untested status. Restore that status before creating a run.",
     "upload_limit_reached": "Too many files are waiting to upload. Finish or remove existing uploads first.",
+    "upload_incomplete": "A file did not finish uploading or failed integrity checks. Upload it again.",
     "validation_failed": "Check the entered information and try again.",
     "workspace_limit_reached": "This account has reached its workspace limit.",
     "workspace_slug_taken": "This workspace URL is unavailable."

@@ -19,7 +19,8 @@ export type StoredObject = {
 
 export interface StorageProvider {
   createUploadUrl(input: CreateUploadUrlInput): Promise<UploadUrl>;
-  stat(storageKey: string): Promise<StoredObject>;
+  stat(storageKey: string): Promise<StoredObject | null>;
+  copy(sourceStorageKey: string, destinationStorageKey: string): Promise<void>;
   delete(storageKey: string): Promise<void>;
 }
 

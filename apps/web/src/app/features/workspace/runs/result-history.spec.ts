@@ -28,6 +28,7 @@ const response: TestResultHistoryResponse = {
       executedBy: { id: '882c64fe-a728-40a0-91a9-96c74f585895', displayName: 'Ada' },
       executedAt: '2026-08-02T12:01:00.000Z',
       stepResults: [],
+      attachments: [],
     },
   ],
   nextCursor: null,

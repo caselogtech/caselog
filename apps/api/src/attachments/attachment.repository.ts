@@ -21,11 +21,61 @@ export type CreateUploadResult =
   | { kind: 'invalid_step_position' }
   | { kind: 'upload_limit_reached' };
 
+export type PendingUploadSession = {
+  id: string;
+  storageKey: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  checksumSha256: string;
+  stepPosition: number | null;
+};
+
 @Injectable()
 export class AttachmentRepository {
   constructor(
     @Inject(TenantDatabaseService) private readonly tenantDatabase: TenantDatabaseService,
   ) {}
+
+  async findPendingUploadSessions(
+    organizationId: string,
+    userId: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    uploadIds: string[],
+  ): Promise<PendingUploadSession[] | null> {
+    if (uploadIds.length === 0) return [];
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const uploads = await transaction.uploadSession.findMany({
+        where: {
+          id: { in: uploadIds },
+          createdById: userId,
+          testRunId: runId,
+          testRunItemId: itemId,
+          completedAt: null,
+          expiresAt: { gt: new Date() },
+          project: { slug: projectSlug, deletedAt: null },
+        },
+        select: {
+          id: true,
+          storageKey: true,
+          fileName: true,
+          contentType: true,
+          sizeBytes: true,
+          checksumSha256: true,
+          stepPosition: true,
+        },
+      });
+      if (uploads.length !== uploadIds.length) return null;
+      const uploadById = new Map(uploads.map((upload) => [upload.id, upload]));
+      return uploadIds.map((id) => {
+        const upload = uploadById.get(id);
+        if (!upload) throw new Error('Pending upload disappeared during lookup');
+        return { ...upload, sizeBytes: Number(upload.sizeBytes) };
+      });
+    });
+  }
 
   async createUploadSession(
     organizationId: string,

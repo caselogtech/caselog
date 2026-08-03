@@ -121,8 +121,9 @@ export const createTestResultRequestSchema = z
     comment: z.string().trim().max(50_000).optional(),
     elapsedMs: z.number().int().nonnegative().max(86_400_000).optional(),
     stepResults: z.array(createStepResultRequestSchema).max(200).optional(),
+    uploadIds: z.array(z.uuid()).max(20).optional(),
   })
-  .superRefine(({ stepResults }, context) => {
+  .superRefine(({ stepResults, uploadIds }, context) => {
     if (
       stepResults &&
       new Set(stepResults.map(({ position }) => position)).size !== stepResults.length
@@ -131,6 +132,13 @@ export const createTestResultRequestSchema = z
         code: 'custom',
         path: ['stepResults'],
         message: 'Step positions must be unique',
+      });
+    }
+    if (uploadIds && new Set(uploadIds).size !== uploadIds.length) {
+      context.addIssue({
+        code: 'custom',
+        path: ['uploadIds'],
+        message: 'Upload IDs must be unique',
       });
     }
   });
@@ -143,6 +151,15 @@ export const stepResultResponseSchema = z.object({
   elapsedMs: z.number().int().nonnegative().nullable(),
 });
 
+export const resultAttachmentResponseSchema = z.object({
+  id: z.uuid(),
+  fileName: z.string().min(1).max(255),
+  contentType: z.string().min(1).max(255),
+  sizeBytes: z.number().int().positive(),
+  checksumSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  stepPosition: z.number().int().nonnegative().nullable(),
+});
+
 export const testResultResponseSchema = z.object({
   id: z.uuid(),
   attempt: z.number().int().positive(),
@@ -152,6 +169,7 @@ export const testResultResponseSchema = z.object({
   executedBy: runMemberResponseSchema.nullable(),
   executedAt: z.iso.datetime(),
   stepResults: z.array(stepResultResponseSchema),
+  attachments: z.array(resultAttachmentResponseSchema),
 });
 
 export const createTestResultResponseSchema = z.object({ result: testResultResponseSchema });
@@ -193,6 +211,7 @@ export type CreateTestResultRequest = z.infer<typeof createTestResultRequestSche
 export type CreateTestResultResponse = z.infer<typeof createTestResultResponseSchema>;
 export type CreateStepResultRequest = z.infer<typeof createStepResultRequestSchema>;
 export type StepResultResponse = z.infer<typeof stepResultResponseSchema>;
+export type ResultAttachmentResponse = z.infer<typeof resultAttachmentResponseSchema>;
 export type TestResultResponse = z.infer<typeof testResultResponseSchema>;
 export type TestResultHistoryQuery = z.infer<typeof testResultHistoryQuerySchema>;
 export type TestResultParams = z.infer<typeof testResultParamsSchema>;

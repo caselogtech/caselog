@@ -1,5 +1,6 @@
 import {
   CreateBucketCommand,
+  CopyObjectCommand,
   DeleteObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
@@ -45,31 +46,59 @@ export class S3StorageProvider implements StorageProvider, OnModuleInit {
       Key: input.storageKey,
       ContentType: input.contentType,
       ContentLength: input.sizeBytes,
+      ChecksumSHA256: Buffer.from(input.checksumSha256, 'hex').toString('base64'),
       Metadata: { checksumSha256: input.checksumSha256 },
     });
     return {
       url: await getSignedUrl(this.client, command, {
         expiresIn: this.config.uploadUrlTtlSeconds,
         signableHeaders: new Set(['content-type']),
-        unhoistableHeaders: new Set(['x-amz-meta-checksumsha256']),
+        unhoistableHeaders: new Set(['x-amz-checksum-sha256', 'x-amz-meta-checksumsha256']),
       }),
       headers: {
         'content-type': input.contentType,
+        'x-amz-checksum-sha256': Buffer.from(input.checksumSha256, 'hex').toString('base64'),
         'x-amz-meta-checksumsha256': input.checksumSha256,
       },
       expiresAt,
     };
   }
 
-  async stat(storageKey: string): Promise<StoredObject> {
-    const object = await this.client.send(
-      new HeadObjectCommand({ Bucket: this.config.bucket, Key: storageKey }),
+  async stat(storageKey: string): Promise<StoredObject | null> {
+    try {
+      const object = await this.client.send(
+        new HeadObjectCommand({
+          Bucket: this.config.bucket,
+          Key: storageKey,
+          ChecksumMode: 'ENABLED',
+        }),
+      );
+      return {
+        contentType: object.ContentType ?? null,
+        sizeBytes: object.ContentLength ?? 0,
+        checksumSha256: object.ChecksumSHA256
+          ? Buffer.from(object.ChecksumSHA256, 'base64').toString('hex')
+          : (object.Metadata?.checksumsha256 ?? null),
+      };
+    } catch (error) {
+      if (this.isMissingObject(error)) return null;
+      throw error;
+    }
+  }
+
+  async copy(sourceStorageKey: string, destinationStorageKey: string): Promise<void> {
+    const copySource = encodeURIComponent(`${this.config.bucket}/${sourceStorageKey}`).replace(
+      /%2F/g,
+      '/',
     );
-    return {
-      contentType: object.ContentType ?? null,
-      sizeBytes: object.ContentLength ?? 0,
-      checksumSha256: object.Metadata?.checksumsha256 ?? null,
-    };
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.config.bucket,
+        Key: destinationStorageKey,
+        CopySource: copySource,
+        ChecksumAlgorithm: 'SHA256',
+      }),
+    );
   }
 
   async delete(storageKey: string): Promise<void> {
@@ -84,6 +113,16 @@ export class S3StorageProvider implements StorageProvider, OnModuleInit {
     return (
       value.name === 'NotFound' ||
       value.name === 'NoSuchBucket' ||
+      value.$metadata?.httpStatusCode === 404
+    );
+  }
+
+  private isMissingObject(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const value = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+    return (
+      value.name === 'NotFound' ||
+      value.name === 'NoSuchKey' ||
       value.$metadata?.httpStatusCode === 404
     );
   }

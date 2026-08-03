@@ -24,6 +24,7 @@ import {
   type TestResultHistoryQuery,
   type TestResultHistoryResponse,
 } from '@caselog/schemas';
+import { AttachmentService } from '../attachments/attachment.service';
 import {
   AuthorizationDeniedError,
   ResourceConflictError,
@@ -33,7 +34,10 @@ import { TestRunRepository, type RunResult } from './test-run.repository';
 
 @Injectable()
 export class TestRunService {
-  constructor(@Inject(TestRunRepository) private readonly runs: TestRunRepository) {}
+  constructor(
+    @Inject(TestRunRepository) private readonly runs: TestRunRepository,
+    @Inject(AttachmentService) private readonly attachments: AttachmentService,
+  ) {}
 
   async list(
     organizationId: string,
@@ -116,14 +120,33 @@ export class TestRunService {
     request: CreateTestResultRequest,
   ): Promise<CreateTestResultResponse> {
     if (principal.role === 'read_only') throw new AuthorizationDeniedError();
-    const result = await this.runs.recordResult(
-      principal.organizationId,
-      principal.sub,
+    const preparedAttachments = await this.attachments.prepareResultAttachments(
+      principal,
       projectSlug,
       runId,
       itemId,
-      request,
+      request.uploadIds ?? [],
     );
+    let result: Awaited<ReturnType<TestRunRepository['recordResult']>>;
+    try {
+      result = await this.runs.recordResult(
+        principal.organizationId,
+        principal.sub,
+        projectSlug,
+        runId,
+        itemId,
+        request,
+        preparedAttachments,
+      );
+    } catch (error) {
+      await this.attachments.discardPreparedAttachments(preparedAttachments);
+      throw error;
+    }
+    if (result.kind !== 'found') {
+      await this.attachments.discardPreparedAttachments(preparedAttachments);
+    } else {
+      await this.attachments.discardCompletedUploadObjects(preparedAttachments);
+    }
     this.assertFound(result);
     return createTestResultResponseSchema.parse(result.value);
   }
@@ -187,6 +210,12 @@ export class TestRunService {
       throw new ResourceConflictError(
         'invalid_step_results',
         'Step results do not match the immutable test case snapshot',
+      );
+    }
+    if (result.kind === 'invalid_upload') {
+      throw new ResourceConflictError(
+        'invalid_upload',
+        'One or more uploads are no longer available for this result',
       );
     }
     if (result.kind === 'run_closed') {

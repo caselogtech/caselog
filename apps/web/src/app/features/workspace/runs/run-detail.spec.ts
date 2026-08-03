@@ -100,6 +100,7 @@ describe('RunDetail', () => {
         executedBy: null,
         executedAt: '2026-08-02T12:01:00.000Z',
         stepResults: [],
+        attachments: [],
       },
     });
     await TestBed.configureTestingModule({

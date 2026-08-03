@@ -33,5 +33,14 @@ describe('S3StorageProvider integration', () => {
       sizeBytes: body.byteLength,
       checksumSha256,
     });
+
+    const copiedStorageKey = `${storageKey}-copy`;
+    await storage.copy(storageKey, copiedStorageKey);
+    await expect(storage.stat(copiedStorageKey)).resolves.toEqual({
+      contentType: 'text/plain',
+      sizeBytes: body.byteLength,
+      checksumSha256,
+    });
+    await storage.delete(copiedStorageKey);
   });
 });

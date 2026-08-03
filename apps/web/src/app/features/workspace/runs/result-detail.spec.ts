@@ -51,6 +51,7 @@ const response: TestResultDetailResponse = {
         elapsedMs: 1_000,
       },
     ],
+    attachments: [],
   },
 };
 
