@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  bulkTestResultsResponseSchema,
   createTestRunResponseSchema,
   idempotencyKeySchema,
   assignTestRunItemResponseSchema,
@@ -14,6 +15,8 @@ import {
   type CreateTestRunResponse,
   type AssignTestRunItemRequest,
   type AssignTestRunItemResponse,
+  type BulkTestResultsRequest,
+  type BulkTestResultsResponse,
   type CreateTestResultRequest,
   type CreateTestResultResponse,
   type OrganizationAccessPrincipal,
@@ -59,13 +62,12 @@ export class TestRunService {
     request: CreateTestRunRequest,
   ): Promise<CreateTestRunResponse> {
     if (principal.role === 'read_only') throw new AuthorizationDeniedError();
-    const parsedKey = idempotencyKeySchema.safeParse(idempotencyKey);
-    if (!parsedKey.success) throw new ZodValidationException(parsedKey.error);
+    const parsedKey = this.parseIdempotencyKey(idempotencyKey);
     const requestHash = createHash('sha256').update(JSON.stringify(request)).digest('hex');
     const result = await this.runs.create(
       principal.organizationId,
       projectSlug,
-      parsedKey.data,
+      parsedKey,
       requestHash,
       request,
     );
@@ -146,6 +148,29 @@ export class TestRunService {
     return assignTestRunItemResponseSchema.parse(result.value);
   }
 
+  async bulkRecordResults(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    runId: string,
+    idempotencyKey: string | undefined,
+    request: BulkTestResultsRequest,
+  ): Promise<BulkTestResultsResponse> {
+    if (principal.role === 'read_only') throw new AuthorizationDeniedError();
+    const key = this.parseIdempotencyKey(idempotencyKey);
+    const requestHash = createHash('sha256').update(JSON.stringify(request)).digest('hex');
+    const result = await this.runs.bulkRecordResults(
+      principal.organizationId,
+      principal.sub,
+      projectSlug,
+      runId,
+      key,
+      requestHash,
+      request,
+    );
+    this.assertFound(result);
+    return bulkTestResultsResponseSchema.parse(result.value);
+  }
+
   async recordResult(
     principal: OrganizationAccessPrincipal,
     projectSlug: string,
@@ -219,6 +244,12 @@ export class TestRunService {
     if (!['owner', 'admin', 'lead'].includes(principal.role)) {
       throw new AuthorizationDeniedError();
     }
+  }
+
+  private parseIdempotencyKey(value: string | undefined): string {
+    const parsed = idempotencyKeySchema.safeParse(value);
+    if (!parsed.success) throw new ZodValidationException(parsed.error);
+    return parsed.data;
   }
 
   private assertFound<T>(result: RunResult<T>): asserts result is { kind: 'found'; value: T } {

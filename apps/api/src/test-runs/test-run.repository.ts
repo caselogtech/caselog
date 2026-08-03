@@ -1,9 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   testRunItemResponseSchema,
   testResultResponseSchema,
   type AssignTestRunItemRequest,
   type AssignTestRunItemResponse,
+  type BulkTestResultsRequest,
+  type BulkTestResultsResponse,
   type CreateTestResultRequest,
   type CreateTestResultResponse,
   type CreateTestRunRequest,
@@ -24,6 +27,7 @@ import {
   TenantDatabaseService,
   type TenantTransaction,
 } from '../core/database/tenant-database.service';
+import { Prisma } from '../generated/prisma/client';
 import { AttachmentTargetType, RunStatus } from '../generated/prisma/enums';
 
 const RUN_STATUS: Record<TestRunStatus, RunStatus> = {
@@ -80,6 +84,11 @@ type ResultRecord = {
 type AttachmentRecord = ResultAttachmentResponse;
 
 type RunMemberRecord = { id: string; displayName: string };
+
+type IdempotencyClaim<T> =
+  | { kind: 'claimed' }
+  | { kind: 'replay'; value: T }
+  | { kind: 'conflict' };
 
 @Injectable()
 export class TestRunRepository {
@@ -154,27 +163,15 @@ export class TestRunRepository {
       const projectId = lockedProject[0]?.id;
       if (!projectId) return { kind: 'project_not_found' };
       const scope = `project:${projectId}:test-runs:create`;
-      const claimed = await transaction.$queryRaw<Array<{ key: string }>>`
-        INSERT INTO idempotency_records (organization_id, scope, key, request_hash)
-        VALUES (${organizationId}::uuid, ${scope}, ${idempotencyKey}, ${requestHash})
-        ON CONFLICT (organization_id, scope, key) DO UPDATE
-        SET request_hash = EXCLUDED.request_hash,
-            response = NULL,
-            created_at = CURRENT_TIMESTAMP,
-            expires_at = CURRENT_TIMESTAMP + INTERVAL '7 days'
-        WHERE idempotency_records.expires_at <= CURRENT_TIMESTAMP
-        RETURNING key
-      `;
-      if (claimed.length === 0) {
-        const previous = await transaction.idempotencyRecord.findUniqueOrThrow({
-          where: {
-            organizationId_scope_key: { organizationId, scope, key: idempotencyKey },
-          },
-          select: { requestHash: true, response: true },
-        });
-        if (previous.requestHash !== requestHash) return { kind: 'idempotency_conflict' };
-        return { kind: 'found', value: previous.response as TestRunSummary };
-      }
+      const existing = await this.findIdempotency<TestRunSummary>(
+        transaction,
+        organizationId,
+        scope,
+        idempotencyKey,
+        requestHash,
+      );
+      if (existing?.kind === 'conflict') return { kind: 'idempotency_conflict' };
+      if (existing?.kind === 'replay') return { kind: 'found', value: existing.value };
       const cases = await transaction.testCase.findMany({
         where: {
           projectId,
@@ -197,6 +194,15 @@ export class TestRunRepository {
         select: { id: true },
       });
       if (!untested) return { kind: 'untested_status_not_found' };
+      const claim = await this.claimIdempotency<TestRunSummary>(
+        transaction,
+        organizationId,
+        scope,
+        idempotencyKey,
+        requestHash,
+      );
+      if (claim.kind === 'conflict') return { kind: 'idempotency_conflict' };
+      if (claim.kind === 'replay') return { kind: 'found', value: claim.value };
       const versionByCase = new Map(
         cases.map((testCase) => [testCase.id, testCase.currentVersionId]),
       );
@@ -229,10 +235,13 @@ export class TestRunRepository {
         completedCount: 0,
         failedCount: 0,
       });
-      await transaction.idempotencyRecord.update({
-        where: { organizationId_scope_key: { organizationId, scope, key: idempotencyKey } },
-        data: { response: summary },
-      });
+      await this.storeIdempotencyResponse(
+        transaction,
+        organizationId,
+        scope,
+        idempotencyKey,
+        summary,
+      );
       return { kind: 'found', value: summary };
     });
   }
@@ -599,6 +608,137 @@ export class TestRunRepository {
     });
   }
 
+  async bulkRecordResults(
+    organizationId: string,
+    userId: string,
+    projectSlug: string,
+    runId: string,
+    idempotencyKey: string,
+    requestHash: string,
+    request: BulkTestResultsRequest,
+  ): Promise<RunResult<BulkTestResultsResponse>> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const context = await this.lockRun(transaction, organizationId, projectSlug, runId, 'shared');
+      if (context.kind !== 'found') return context;
+
+      const scope = `test-run:${runId}:results:bulk`;
+      const existing = await this.findIdempotency<BulkTestResultsResponse>(
+        transaction,
+        organizationId,
+        scope,
+        idempotencyKey,
+        requestHash,
+      );
+      if (existing?.kind === 'conflict') return { kind: 'idempotency_conflict' };
+      if (existing?.kind === 'replay') return { kind: 'found', value: existing.value };
+      if (context.value.run.status !== RunStatus.ACTIVE) return { kind: 'run_closed' };
+
+      const itemIds = request.results.map(({ itemId }) => itemId).sort();
+      const lockedItems = await transaction.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM test_run_items
+        WHERE organization_id = ${organizationId}::uuid
+          AND test_run_id = ${runId}::uuid
+          AND id IN (${Prisma.join(itemIds.map((id) => Prisma.sql`${id}::uuid`))})
+        ORDER BY id
+        FOR UPDATE
+      `;
+      if (lockedItems.length !== itemIds.length) return { kind: 'item_not_found' };
+
+      const requestedStatusIds = [...new Set(request.results.map(({ statusId }) => statusId))];
+      const statuses = await transaction.resultStatus.findMany({
+        where: {
+          id: { in: requestedStatusIds },
+          projectId: context.value.projectId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          color: true,
+          isFinal: true,
+          countsAsFailure: true,
+        },
+      });
+      if (statuses.length !== requestedStatusIds.length) return { kind: 'status_not_found' };
+      const statusById = new Map(statuses.map((status) => [status.id, status]));
+
+      const claim = await this.claimIdempotency<BulkTestResultsResponse>(
+        transaction,
+        organizationId,
+        scope,
+        idempotencyKey,
+        requestHash,
+      );
+      if (claim.kind === 'conflict') return { kind: 'idempotency_conflict' };
+      if (claim.kind === 'replay') return { kind: 'found', value: claim.value };
+
+      const attemptGroups = await transaction.testResult.groupBy({
+        by: ['testRunItemId'],
+        where: { testRunItemId: { in: itemIds } },
+        _max: { attempt: true },
+      });
+      const previousAttemptByItem = new Map(
+        attemptGroups.map(({ testRunItemId, _max }) => [testRunItemId, _max.attempt ?? 0]),
+      );
+      const executedAt = new Date();
+      const results = request.results.map((requestResult) => ({
+        ...requestResult,
+        resultId: randomUUID(),
+        attempt: (previousAttemptByItem.get(requestResult.itemId) ?? 0) + 1,
+      }));
+
+      await transaction.testResult.createMany({
+        data: results.map((result) => ({
+          organizationId,
+          id: result.resultId,
+          testRunItemId: result.itemId,
+          statusId: result.statusId,
+          attempt: result.attempt,
+          comment: result.comment,
+          elapsedMs: result.elapsedMs,
+          executedById: userId,
+          executedAt,
+          build: context.value.run.build,
+        })),
+      });
+
+      const statusUpdates = Prisma.join(
+        results.map(({ itemId, statusId }) => Prisma.sql`(${itemId}::uuid, ${statusId}::uuid)`),
+      );
+      await transaction.$executeRaw`
+        UPDATE test_run_items AS item
+        SET status_id = changes.status_id,
+            updated_at = CURRENT_TIMESTAMP
+        FROM (VALUES ${statusUpdates}) AS changes(id, status_id)
+        WHERE item.organization_id = ${organizationId}::uuid
+          AND item.test_run_id = ${runId}::uuid
+          AND item.id = changes.id
+      `;
+
+      const responseResults = results.map(({ itemId, resultId, attempt, statusId }) => {
+        const status = statusById.get(statusId);
+        if (!status) throw new Error('Validated result status is unavailable');
+        return {
+          itemId,
+          resultId,
+          attempt,
+          status: this.toStatus(status),
+          executedAt: executedAt.toISOString(),
+        };
+      });
+      const response: BulkTestResultsResponse = { results: responseResults };
+      await this.storeIdempotencyResponse(
+        transaction,
+        organizationId,
+        scope,
+        idempotencyKey,
+        response,
+      );
+      return { kind: 'found', value: response };
+    });
+  }
+
   async resultHistory(
     organizationId: string,
     projectSlug: string,
@@ -850,6 +990,70 @@ export class TestRunRepository {
       },
     });
     return { kind: 'found', value: { projectId: project.id, run } };
+  }
+
+  private async claimIdempotency<T>(
+    transaction: TenantTransaction,
+    organizationId: string,
+    scope: string,
+    key: string,
+    requestHash: string,
+  ): Promise<IdempotencyClaim<T>> {
+    const claimed = await transaction.$queryRaw<Array<{ key: string }>>`
+      INSERT INTO idempotency_records (organization_id, scope, key, request_hash)
+      VALUES (${organizationId}::uuid, ${scope}, ${key}, ${requestHash})
+      ON CONFLICT (organization_id, scope, key) DO UPDATE
+      SET request_hash = EXCLUDED.request_hash,
+          response = NULL,
+          created_at = CURRENT_TIMESTAMP,
+          expires_at = CURRENT_TIMESTAMP + INTERVAL '7 days'
+      WHERE idempotency_records.expires_at <= CURRENT_TIMESTAMP
+      RETURNING key
+    `;
+    if (claimed.length > 0) return { kind: 'claimed' };
+
+    const previous = await transaction.idempotencyRecord.findUniqueOrThrow({
+      where: { organizationId_scope_key: { organizationId, scope, key } },
+      select: { requestHash: true, response: true },
+    });
+    if (previous.requestHash !== requestHash) return { kind: 'conflict' };
+    if (previous.response === null) {
+      throw new Error('Completed idempotency record does not contain a response');
+    }
+    return { kind: 'replay', value: previous.response as T };
+  }
+
+  private async findIdempotency<T>(
+    transaction: TenantTransaction,
+    organizationId: string,
+    scope: string,
+    key: string,
+    requestHash: string,
+  ): Promise<Exclude<IdempotencyClaim<T>, { kind: 'claimed' }> | null> {
+    const previous = await transaction.idempotencyRecord.findUnique({
+      where: { organizationId_scope_key: { organizationId, scope, key } },
+      select: { requestHash: true, response: true, expiresAt: true },
+    });
+    if (!previous || previous.expiresAt <= new Date()) return null;
+    if (previous.requestHash !== requestHash) return { kind: 'conflict' };
+    if (previous.response === null) {
+      throw new Error('Completed idempotency record does not contain a response');
+    }
+    return { kind: 'replay', value: previous.response as T };
+  }
+
+  private async storeIdempotencyResponse<T>(
+    transaction: TenantTransaction,
+    organizationId: string,
+    scope: string,
+    key: string,
+    response: T,
+  ): Promise<void> {
+    const jsonResponse = JSON.parse(JSON.stringify(response)) as Prisma.InputJsonValue;
+    await transaction.idempotencyRecord.update({
+      where: { organizationId_scope_key: { organizationId, scope, key } },
+      data: { response: jsonResponse },
+    });
   }
 
   private async countItems(

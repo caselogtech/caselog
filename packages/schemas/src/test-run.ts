@@ -9,9 +9,10 @@ import {
 export const testRunStatusSchema = z.enum(['draft', 'active', 'completed', 'archived']);
 export const createTestRunStatusSchema = z.enum(['draft', 'active']);
 export const idempotencyKeySchema = z.string().trim().min(1).max(200);
-export const createTestRunHeadersSchema = z.object({
+export const idempotencyHeadersSchema = z.object({
   'idempotency-key': idempotencyKeySchema,
 });
+export const createTestRunHeadersSchema = idempotencyHeadersSchema;
 
 export const testRunListParamsSchema = testCaseListParamsSchema;
 
@@ -180,6 +181,41 @@ export const testResultResponseSchema = z.object({
 
 export const createTestResultResponseSchema = z.object({ result: testResultResponseSchema });
 
+export const bulkTestResultItemRequestSchema = z.object({
+  itemId: z.uuid(),
+  statusId: z.uuid(),
+  comment: z.string().trim().max(50_000).optional(),
+  elapsedMs: z.number().int().nonnegative().max(86_400_000).optional(),
+});
+
+export const bulkTestResultsRequestSchema = z
+  .object({ results: z.array(bulkTestResultItemRequestSchema).min(1).max(1_000) })
+  .superRefine(({ results }, context) => {
+    const seen = new Set<string>();
+    for (const [index, result] of results.entries()) {
+      if (seen.has(result.itemId)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['results', index, 'itemId'],
+          message: 'Run items must be unique within a bulk request',
+        });
+      }
+      seen.add(result.itemId);
+    }
+  });
+
+export const bulkTestResultItemResponseSchema = z.object({
+  itemId: z.uuid(),
+  resultId: z.uuid(),
+  attempt: z.number().int().positive(),
+  status: resultStatusResponseSchema,
+  executedAt: z.iso.datetime(),
+});
+
+export const bulkTestResultsResponseSchema = z.object({
+  results: z.array(bulkTestResultItemResponseSchema),
+});
+
 export const testResultHistoryQuerySchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -205,6 +241,7 @@ export type TestRunListResponse = z.infer<typeof testRunListResponseSchema>;
 export type CreateTestRunRequest = z.input<typeof createTestRunRequestSchema>;
 export type CreateTestRunStatus = z.infer<typeof createTestRunStatusSchema>;
 export type CreateTestRunHeaders = z.infer<typeof createTestRunHeadersSchema>;
+export type IdempotencyHeaders = z.infer<typeof idempotencyHeadersSchema>;
 export type CreateTestRunResponse = z.infer<typeof createTestRunResponseSchema>;
 export type TestRunDetailParams = z.infer<typeof testRunDetailParamsSchema>;
 export type TestRunItemParams = z.infer<typeof testRunItemParamsSchema>;
@@ -217,6 +254,10 @@ export type AssignTestRunItemRequest = z.infer<typeof assignTestRunItemRequestSc
 export type AssignTestRunItemResponse = z.infer<typeof assignTestRunItemResponseSchema>;
 export type CreateTestResultRequest = z.infer<typeof createTestResultRequestSchema>;
 export type CreateTestResultResponse = z.infer<typeof createTestResultResponseSchema>;
+export type BulkTestResultItemRequest = z.infer<typeof bulkTestResultItemRequestSchema>;
+export type BulkTestResultsRequest = z.infer<typeof bulkTestResultsRequestSchema>;
+export type BulkTestResultItemResponse = z.infer<typeof bulkTestResultItemResponseSchema>;
+export type BulkTestResultsResponse = z.infer<typeof bulkTestResultsResponseSchema>;
 export type CreateStepResultRequest = z.infer<typeof createStepResultRequestSchema>;
 export type StepResultResponse = z.infer<typeof stepResultResponseSchema>;
 export type ResultAttachmentResponse = z.infer<typeof resultAttachmentResponseSchema>;

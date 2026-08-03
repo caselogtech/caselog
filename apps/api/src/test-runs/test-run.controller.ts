@@ -14,6 +14,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type {
+  BulkTestResultsResponse,
   CreateTestRunResponse,
   AssignTestRunItemResponse,
   CreateTestResultResponse,
@@ -29,9 +30,11 @@ import { CurrentOrganization } from '../auth/organization-principal.decorator';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
   AssignTestRunItemRequestDto,
+  BulkTestResultsRequestDto,
   CreateTestResultRequestDto,
   CreateTestRunRequestDto,
   CreateTestRunHeadersDto,
+  IdempotencyHeadersDto,
   TestRunDetailParamsDto,
   TestRunDetailQueryDto,
   TestRunItemParamsDto,
@@ -66,6 +69,22 @@ export class TestRunController {
     return this.runs.create(
       principal,
       params.projectSlug,
+      headers['idempotency-key'] as string | undefined,
+      request,
+    );
+  }
+
+  @Post(':runId/results/bulk')
+  bulkRecordResults(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunDetailParamsDto,
+    @Headers() headers: IdempotencyHeadersDto,
+    @Body() request: BulkTestResultsRequestDto,
+  ): Promise<BulkTestResultsResponse> {
+    return this.runs.bulkRecordResults(
+      principal,
+      params.projectSlug,
+      params.runId,
       headers['idempotency-key'] as string | undefined,
       request,
     );

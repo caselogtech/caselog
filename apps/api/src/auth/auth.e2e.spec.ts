@@ -1681,6 +1681,159 @@ describe('authentication API', () => {
       nextCursor: null,
     });
 
+    const bulkItem = await admin.testRunItem.findFirstOrThrow({
+      where: { organizationId, testRunId: runId, id: { not: createdRunItemId } },
+      select: { id: true },
+    });
+    const bulkUrl = `/api/v1/projects/authentication/runs/${runId}/results/bulk`;
+    const missingBulkKey = await app.inject({
+      method: 'POST',
+      url: bulkUrl,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { results: [{ itemId: bulkItem.id, statusId: statuses[0]?.id }] },
+    });
+    expect(missingBulkKey.statusCode, missingBulkKey.body).toBe(400);
+    expect(missingBulkKey.json().error.code).toBe('validation_failed');
+
+    const duplicateBulkItem = await app.inject({
+      method: 'POST',
+      url: bulkUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': randomUUID(),
+      },
+      payload: {
+        results: [
+          { itemId: bulkItem.id, statusId: statuses[0]?.id },
+          { itemId: bulkItem.id, statusId: statuses[1]?.id },
+        ],
+      },
+    });
+    expect(duplicateBulkItem.statusCode, duplicateBulkItem.body).toBe(400);
+
+    const atomicFailureKey = randomUUID();
+    const atomicFailure = await app.inject({
+      method: 'POST',
+      url: bulkUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': atomicFailureKey,
+      },
+      payload: {
+        results: [
+          { itemId: bulkItem.id, statusId: statuses[0]?.id },
+          { itemId: randomUUID(), statusId: statuses[1]?.id },
+        ],
+      },
+    });
+    expect(atomicFailure.statusCode, atomicFailure.body).toBe(404);
+    expect(atomicFailure.json().error.details.resource).toBe('test_run_item');
+    await expect(
+      admin.testResult.count({ where: { organizationId, testRunItemId: bulkItem.id } }),
+    ).resolves.toBe(0);
+
+    const missingBulkStatus = await app.inject({
+      method: 'POST',
+      url: bulkUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': randomUUID(),
+      },
+      payload: { results: [{ itemId: bulkItem.id, statusId: randomUUID() }] },
+    });
+    expect(missingBulkStatus.statusCode, missingBulkStatus.body).toBe(404);
+    expect(missingBulkStatus.json().error.details.resource).toBe('result_status');
+
+    const bulkIdempotencyKey = atomicFailureKey;
+    const bulkRequest = () =>
+      app.inject({
+        method: 'POST',
+        url: bulkUrl,
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'idempotency-key': bulkIdempotencyKey,
+        },
+        payload: {
+          results: [
+            {
+              itemId: bulkItem.id,
+              statusId: statuses[0]?.id,
+              comment: 'CI attempt 1',
+              elapsedMs: 2_500,
+            },
+          ],
+        },
+      });
+    const [bulk, bulkReplay] = await Promise.all([bulkRequest(), bulkRequest()]);
+    expect(bulk.statusCode, bulk.body).toBe(201);
+    expect(bulk.json().results).toEqual([
+      expect.objectContaining({
+        itemId: bulkItem.id,
+        resultId: expect.any(String),
+        attempt: 1,
+        executedAt: expect.any(String),
+      }),
+    ]);
+    expect(bulkReplay.statusCode, bulkReplay.body).toBe(201);
+    expect(bulkReplay.json()).toEqual(bulk.json());
+    await expect(
+      admin.testResult.count({ where: { organizationId, testRunItemId: bulkItem.id } }),
+    ).resolves.toBe(1);
+    await expect(
+      admin.testResult.findFirst({
+        where: { organizationId, id: bulk.json().results[0].resultId as string },
+        select: {
+          comment: true,
+          elapsedMs: true,
+          executedById: true,
+          build: true,
+        },
+      }),
+    ).resolves.toEqual({
+      comment: 'CI attempt 1',
+      elapsedMs: 2_500,
+      executedById: authUserId,
+      build: '2026.08.02-rc1',
+    });
+    await expect(
+      admin.testRunItem.findUniqueOrThrow({
+        where: { organizationId_id: { organizationId: organizationId ?? '', id: bulkItem.id } },
+        select: { statusId: true },
+      }),
+    ).resolves.toEqual({ statusId: statuses[0]?.id });
+
+    const reusedBulkKey = await app.inject({
+      method: 'POST',
+      url: bulkUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': bulkIdempotencyKey,
+      },
+      payload: { results: [{ itemId: bulkItem.id, statusId: statuses[1]?.id }] },
+    });
+    expect(reusedBulkKey.statusCode, reusedBulkKey.body).toBe(409);
+    expect(reusedBulkKey.json().error.code).toBe('idempotency_key_reused');
+
+    const secondBulkAttempt = await app.inject({
+      method: 'POST',
+      url: bulkUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': randomUUID(),
+      },
+      payload: {
+        results: [
+          { itemId: bulkItem.id, statusId: statuses[1]?.id },
+          { itemId: createdRunItemId, statusId: statuses[0]?.id },
+        ],
+      },
+    });
+    expect(secondBulkAttempt.statusCode, secondBulkAttempt.body).toBe(201);
+    expect(secondBulkAttempt.json().results).toEqual([
+      expect.objectContaining({ itemId: bulkItem.id, attempt: 2 }),
+      expect.objectContaining({ itemId: createdRunItemId, attempt: 3 }),
+    ]);
+
     const duplicateSelection = await app.inject({
       method: 'POST',
       url: '/api/v1/projects/authentication/runs',
@@ -1731,6 +1884,20 @@ describe('authentication API', () => {
     });
     expect(resultAfterClose.statusCode, resultAfterClose.body).toBe(409);
     expect(resultAfterClose.json().error.code).toBe('run_closed');
+    const replayAfterClose = await bulkRequest();
+    expect(replayAfterClose.statusCode, replayAfterClose.body).toBe(201);
+    expect(replayAfterClose.json()).toEqual(bulk.json());
+    const bulkAfterClose = await app.inject({
+      method: 'POST',
+      url: bulkUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': randomUUID(),
+      },
+      payload: { results: [{ itemId: bulkItem.id, statusId: statuses[0]?.id }] },
+    });
+    expect(bulkAfterClose.statusCode, bulkAfterClose.body).toBe(409);
+    expect(bulkAfterClose.json().error.code).toBe('run_closed');
     const assignmentAfterClose = await app.inject({
       method: 'PUT',
       url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/assignee`,
@@ -2016,6 +2183,18 @@ describe('authentication API', () => {
         payload: { statusId: randomUUID() },
       });
       expect(recordResult.statusCode, recordResult.body).toBe(403);
+      const bulkResults = await app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/authentication/runs/${createdRunId}/results/bulk`,
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'idempotency-key': randomUUID(),
+        },
+        payload: {
+          results: [{ itemId: createdRunItemId, statusId: randomUUID() }],
+        },
+      });
+      expect(bulkResults.statusCode, bulkResults.body).toBe(403);
       const createUpload = await app.inject({
         method: 'POST',
         url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/uploads`,
@@ -2179,6 +2358,18 @@ describe('authentication API', () => {
       payload: { statusId: randomUUID() },
     });
     expect(crossTenantResult.statusCode).toBe(404);
+    const crossTenantBulkResults = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}/results/bulk`,
+      headers: {
+        authorization: `Bearer ${provisionedToken.json().accessToken as string}`,
+        'idempotency-key': randomUUID(),
+      },
+      payload: {
+        results: [{ itemId: createdRunItemId, statusId: randomUUID() }],
+      },
+    });
+    expect(crossTenantBulkResults.statusCode).toBe(404);
     const crossTenantResultHistory = await app.inject({
       method: 'GET',
       url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/results`,
