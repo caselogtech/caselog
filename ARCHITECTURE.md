@@ -37,27 +37,70 @@ Dependencies flow in one direction. A lower layer must not import a higher layer
 
 ## 2. Module boundary
 
-A module owns its behavior and internal implementation. A typical module looks like
-this:
+A module owns its behavior and internal implementation. **Every backend feature
+module uses the same directory structure from the moment it is created.** Module
+size is not a reason to keep files in the module root or to introduce a different
+layout.
 
 ```text
-test-runs/
-  test-run.module.ts
-  test-run.controller.ts
-  test-run.service.ts
-  test-run.repository.ts
-  test-result.repository.ts
-  junit-parser.ts
-  *.spec.ts
+<feature>/
+  <feature>.module.ts
+  public-api.ts
+  presentation/
+    controllers/
+    dto/
+    guards/
+    decorators/
+  application/
+    services/
+    ports/
+  domain/
+    models/
+    policies/
+  infrastructure/
+    repositories/
+    adapters/
+    strategies/
+  tests/
+    unit/
+    integration/
+    e2e/
 ```
 
-File names describe responsibilities rather than technical patterns. A large
+Only the Nest module composition root and an optional `public-api.ts` are allowed as
+production files directly in the module root. `public-api.ts` explicitly re-exports
+the services, ports, transport primitives, types, or stable domain contracts that
+other modules may import. Configuration specific to a feature belongs to
+`infrastructure/`; shared application configuration belongs to `core/config`.
+
+The structure describes stable architectural responsibilities:
+
+- `presentation/` contains HTTP and framework entry points: controllers, request and
+  response DTOs, guards, and transport-specific decorators.
+- `application/` contains use cases, orchestration services, and ports required by
+  those use cases.
+- `domain/` contains business models, policies, state transitions, and pure business
+  rules. It must not depend on NestJS, Prisma, HTTP, or infrastructure adapters.
+- `infrastructure/` contains repositories, persistence mapping, external-system
+  adapters, authentication strategies, and feature-specific configuration.
+- `tests/` mirrors the production responsibility being tested and separates unit,
+  PostgreSQL-backed integration, and end-to-end tests.
+
+Directories that currently have no files are not committed as empty placeholders,
+but any future file must be placed in its defined directory. A module must never
+switch to a flat layout because it is small. Additional subdirectories may group a
+real capability or aggregate, but they must remain inside the appropriate layer and
+must not replace the standard top-level structure.
+
+File names describe responsibilities rather than vague technical patterns. A
 repository may be split by aggregate or persistence workflow, but not into arbitrary
 `helpers` files.
 
 ### Public module API
 
-- A Nest module exports only application services or explicitly named public ports.
+- A Nest module exports only providers required by another module.
+- Cross-module TypeScript imports resolve through the owning module's `public-api.ts`;
+  importing another module's layered directories is forbidden.
 - A feature module must not import another feature's controllers, repositories,
   persistence types, or internal helpers.
 - Feature modules communicate through exported services.
@@ -67,10 +110,12 @@ repository may be split by aggregate or persistence workflow, but not into arbit
 ### Allowed import direction
 
 ```text
-feature controller → feature service → feature repository
-feature            → core / common / @caselog/schemas
-feature A           → exported service or public port of feature B
-core / common       ✕ feature
+presentation → application → domain
+                  ↘ infrastructure → domain
+feature       → core / common / @caselog/schemas
+feature A     → exported service or public port of feature B
+domain        ✕ presentation / application / infrastructure
+core / common ✕ feature
 feature A internals ✕ feature B internals
 ```
 
@@ -81,7 +126,10 @@ unrelated helpers.
 
 ## 3. Backend layer responsibilities
 
-### Controller
+### Presentation
+
+Controllers live in `presentation/controllers/`. DTOs, guards, and decorators live
+in their corresponding `presentation/` directories.
 
 - Accepts the HTTP request and extracts transport context.
 - Validates the payload with a shared Zod schema.
@@ -90,6 +138,9 @@ unrelated helpers.
 - Contains no business decisions, Prisma queries, or tenant authorization logic.
 
 ### Application service / use case
+
+Application services live in `application/services/`. Interfaces for external or
+replaceable dependencies required by a use case live in `application/ports/`.
 
 - Orchestrates a business operation.
 - Enforces permissions and domain state.
@@ -101,6 +152,9 @@ A service does not need to be large. If a rule can be expressed as a pure functi
 the service calls that function instead of accumulating private methods.
 
 ### Repository
+
+Repositories live in `infrastructure/repositories/`. They implement application
+ports when an abstraction is required.
 
 - Encapsulates Prisma and the data storage model.
 - Always requires `organizationId` for tenant-owned data.
@@ -129,11 +183,17 @@ made by the application or domain layer before the SQL is executed.
 
 ### Domain and pure logic
 
+Domain code lives in `domain/`, grouped into `models/`, `policies/`, or another
+responsibility-specific domain directory.
+
 Parsing, matching, status mapping, calculations, and state transitions should be
 implemented as small, typed pure functions when they do not require I/O or dependency
 injection. Do not create a class solely for the sake of OOP.
 
 ### Ports and adapters
+
+Ports live in `application/ports/`; their infrastructure implementations live in
+`infrastructure/adapters/`.
 
 S3, email, Jira, Monday, and other external systems are hidden behind narrow ports.
 An infrastructure adapter implements a port and is connected through dependency
@@ -171,21 +231,34 @@ reverse requires an ADR.
 
 ## 6. Frontend
 
-The Angular application is also organized feature-first:
+The Angular application is also organized feature-first. **Every frontend feature
+uses the same directory structure from the moment it is created:**
 
 ```text
 app/
   core/                 # auth, interceptors, application-wide providers
   shared/               # reusable UI and API primitives
   features/
-    auth/
-    workspace/
-      cases/
-      projects/
-      runs/
+    <feature>/
+      <feature>.routes.ts
+      public-api.ts
+      pages/
+      components/
+      data-access/
+      state/
+      models/
+      tests/
 ```
 
 - Use standalone components.
+- The feature root contains route composition and, when another feature consumes an
+  explicitly supported contract, `public-api.ts`. All implementation files belong
+  to the standard directories.
+- Cross-feature imports resolve through `public-api.ts`; direct imports from another
+  feature's `pages`, `components`, `data-access`, `state`, or `models` are forbidden.
+- `pages/` contains route-level components and `components/` contains feature UI.
+- `data-access/` owns server communication, `state/` owns feature state, and
+  `models/` owns frontend-only types and mapping.
 - A feature must not import another feature's internals.
 - `core` and `shared` must not import features.
 - Route configuration composes features at the application level.
@@ -211,8 +284,11 @@ Signals that a file should be split include:
 The last item triggers a review, not an automatic failure. One cohesive 350-line
 repository is better than five abstractions without independent responsibilities.
 
-Tests live next to production files as `*.spec.ts`. Separate test directories are
-appropriate for end-to-end or integration suites and shared test infrastructure.
+Backend tests live under the owning module's `tests/unit`, `tests/integration`, or
+`tests/e2e` directory. Frontend tests live under the owning feature's `tests`
+directory. Test file paths should mirror the production responsibility they cover.
+Cross-module system tests and shared test infrastructure live in the application-level
+`test/` directory.
 
 ## 8. Architecture review checklist
 
@@ -225,7 +301,8 @@ Before merging, the author and reviewer verify:
 5. Is the business decision in a service or pure function rather than a controller or
    persistence mapping?
 6. Is the new class, interface, or dependency genuinely necessary?
-7. Does this change require an ADR?
+7. Does every new file follow the mandatory module directory structure?
+8. Does this change require an ADR?
 
 Rules that can be checked automatically should gradually become lint rules,
 architecture tests, and CI checks. A documented boundary remains mandatory before an
