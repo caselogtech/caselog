@@ -1210,10 +1210,22 @@ describe('authentication API', () => {
       select: { id: true, currentVersionId: true },
     });
 
-    const draft = await app.inject({
+    const missingIdempotencyKey = await app.inject({
       method: 'POST',
       url: '/api/v1/projects/authentication/runs',
       headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Missing request key', caseIds: [selectedCases[0]?.id] },
+    });
+    expect(missingIdempotencyKey.statusCode, missingIdempotencyKey.body).toBe(400);
+    expect(missingIdempotencyKey.json().error.code).toBe('validation_failed');
+
+    const draft = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/runs',
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': randomUUID(),
+      },
       payload: {
         name: 'Authentication draft',
         status: 'draft',
@@ -1264,7 +1276,10 @@ describe('authentication API', () => {
     const invalidInitialStatus = await app.inject({
       method: 'POST',
       url: '/api/v1/projects/authentication/runs',
-      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': randomUUID(),
+      },
       payload: {
         name: 'Invalid completed run',
         status: 'completed',
@@ -1274,16 +1289,22 @@ describe('authentication API', () => {
     expect(invalidInitialStatus.statusCode, invalidInitialStatus.body).toBe(400);
     expect(invalidInitialStatus.json().error.code).toBe('validation_failed');
 
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/v1/projects/authentication/runs',
-      headers: { authorization: `Bearer ${organizationAccessToken}` },
-      payload: {
-        name: 'Authentication regression',
-        build: '2026.08.02-rc1',
-        caseIds: selectedCases.map(({ id }) => id),
-      },
-    });
+    const createRunIdempotencyKey = randomUUID();
+    const createRunRequest = () =>
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/projects/authentication/runs',
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'idempotency-key': createRunIdempotencyKey,
+        },
+        payload: {
+          name: 'Authentication regression',
+          build: '2026.08.02-rc1',
+          caseIds: selectedCases.map(({ id }) => id),
+        },
+      });
+    const [response, replayed] = await Promise.all([createRunRequest(), createRunRequest()]);
     expect(response.statusCode, response.body).toBe(201);
     expect(response.json()).toMatchObject({
       run: {
@@ -1295,6 +1316,22 @@ describe('authentication API', () => {
         failedCount: 0,
       },
     });
+    expect(replayed.statusCode, replayed.body).toBe(201);
+    expect(replayed.json()).toEqual(response.json());
+    const reusedKey = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/runs',
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': createRunIdempotencyKey,
+      },
+      payload: {
+        name: 'Different regression',
+        caseIds: selectedCases.map(({ id }) => id),
+      },
+    });
+    expect(reusedKey.statusCode, reusedKey.body).toBe(409);
+    expect(reusedKey.json().error.code).toBe('idempotency_key_reused');
     const runId = response.json().run.id as string;
     createdRunId = runId;
     const archiveWithOpenRun = await app.inject({
@@ -1647,7 +1684,10 @@ describe('authentication API', () => {
     const duplicateSelection = await app.inject({
       method: 'POST',
       url: '/api/v1/projects/authentication/runs',
-      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': randomUUID(),
+      },
       payload: {
         name: 'Invalid duplicate selection',
         caseIds: [selectedCases[0]?.id, selectedCases[0]?.id],
@@ -1658,7 +1698,10 @@ describe('authentication API', () => {
     const unavailableCase = await app.inject({
       method: 'POST',
       url: '/api/v1/projects/authentication/runs',
-      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': randomUUID(),
+      },
       payload: { name: 'Invalid selection', caseIds: [randomUUID()] },
     });
     expect(unavailableCase.statusCode, unavailableCase.body).toBe(409);
@@ -1941,7 +1984,10 @@ describe('authentication API', () => {
       const createRun = await app.inject({
         method: 'POST',
         url: '/api/v1/projects/authentication/runs',
-        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'idempotency-key': randomUUID(),
+        },
         payload: { name: 'Forbidden run', caseIds: [editableCaseId] },
       });
       expect(createRun.statusCode, createRun.body).toBe(403);
@@ -2098,6 +2144,16 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantRuns.statusCode).toBe(404);
+    const crossTenantRunCreate = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/runs',
+      headers: {
+        authorization: `Bearer ${provisionedToken.json().accessToken as string}`,
+        'idempotency-key': randomUUID(),
+      },
+      payload: { name: 'Foreign run', caseIds: [editableCaseId] },
+    });
+    expect(crossTenantRunCreate.statusCode).toBe(404);
     const crossTenantRunDetail = await app.inject({
       method: 'GET',
       url: `/api/v1/projects/authentication/runs/${createdRunId}`,

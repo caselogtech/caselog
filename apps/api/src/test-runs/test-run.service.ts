@@ -1,6 +1,8 @@
+import { createHash } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   createTestRunResponseSchema,
+  idempotencyKeySchema,
   assignTestRunItemResponseSchema,
   createTestResultResponseSchema,
   testRunDetailResponseSchema,
@@ -25,6 +27,7 @@ import {
   type TestResultHistoryResponse,
 } from '@caselog/schemas';
 import { AttachmentService } from '../attachments/attachment.service';
+import { ZodValidationException } from 'nestjs-zod';
 import {
   AuthorizationDeniedError,
   ResourceConflictError,
@@ -52,10 +55,20 @@ export class TestRunService {
   async create(
     principal: OrganizationAccessPrincipal,
     projectSlug: string,
+    idempotencyKey: string | undefined,
     request: CreateTestRunRequest,
   ): Promise<CreateTestRunResponse> {
     if (principal.role === 'read_only') throw new AuthorizationDeniedError();
-    const result = await this.runs.create(principal.organizationId, projectSlug, request);
+    const parsedKey = idempotencyKeySchema.safeParse(idempotencyKey);
+    if (!parsedKey.success) throw new ZodValidationException(parsedKey.error);
+    const requestHash = createHash('sha256').update(JSON.stringify(request)).digest('hex');
+    const result = await this.runs.create(
+      principal.organizationId,
+      projectSlug,
+      parsedKey.data,
+      requestHash,
+      request,
+    );
     this.assertFound(result);
     return createTestRunResponseSchema.parse({ run: result.value });
   }
@@ -246,6 +259,12 @@ export class TestRunService {
       throw new ResourceConflictError(
         'invalid_run_state',
         'The test run cannot transition from its current state',
+      );
+    }
+    if (result.kind === 'idempotency_conflict') {
+      throw new ResourceConflictError(
+        'idempotency_key_reused',
+        'This idempotency key was already used for a different request',
       );
     }
   }

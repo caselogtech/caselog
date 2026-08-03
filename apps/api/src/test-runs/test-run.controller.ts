@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Headers,
   Inject,
   Param,
   Post,
@@ -30,6 +31,7 @@ import {
   AssignTestRunItemRequestDto,
   CreateTestResultRequestDto,
   CreateTestRunRequestDto,
+  CreateTestRunHeadersDto,
   TestRunDetailParamsDto,
   TestRunDetailQueryDto,
   TestRunItemParamsDto,
@@ -58,9 +60,15 @@ export class TestRunController {
   create(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunListParamsDto,
+    @Headers() headers: CreateTestRunHeadersDto,
     @Body() request: CreateTestRunRequestDto,
   ): Promise<CreateTestRunResponse> {
-    return this.runs.create(principal, params.projectSlug, request);
+    return this.runs.create(
+      principal,
+      params.projectSlug,
+      headers['idempotency-key'] as string | undefined,
+      request,
+    );
   }
 
   @Get(':runId')

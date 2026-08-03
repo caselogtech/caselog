@@ -46,7 +46,8 @@ type RunResult<T> =
   | { kind: 'invalid_step_results' }
   | { kind: 'invalid_upload' }
   | { kind: 'run_closed' }
-  | { kind: 'invalid_run_state' };
+  | { kind: 'invalid_run_state' }
+  | { kind: 'idempotency_conflict' };
 
 type RunRecord = {
   id: string;
@@ -138,6 +139,8 @@ export class TestRunRepository {
   async create(
     organizationId: string,
     projectSlug: string,
+    idempotencyKey: string,
+    requestHash: string,
     request: CreateTestRunRequest,
   ): Promise<RunResult<TestRunSummary>> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
@@ -150,6 +153,28 @@ export class TestRunRepository {
       `;
       const projectId = lockedProject[0]?.id;
       if (!projectId) return { kind: 'project_not_found' };
+      const scope = `project:${projectId}:test-runs:create`;
+      const claimed = await transaction.$queryRaw<Array<{ key: string }>>`
+        INSERT INTO idempotency_records (organization_id, scope, key, request_hash)
+        VALUES (${organizationId}::uuid, ${scope}, ${idempotencyKey}, ${requestHash})
+        ON CONFLICT (organization_id, scope, key) DO UPDATE
+        SET request_hash = EXCLUDED.request_hash,
+            response = NULL,
+            created_at = CURRENT_TIMESTAMP,
+            expires_at = CURRENT_TIMESTAMP + INTERVAL '7 days'
+        WHERE idempotency_records.expires_at <= CURRENT_TIMESTAMP
+        RETURNING key
+      `;
+      if (claimed.length === 0) {
+        const previous = await transaction.idempotencyRecord.findUniqueOrThrow({
+          where: {
+            organizationId_scope_key: { organizationId, scope, key: idempotencyKey },
+          },
+          select: { requestHash: true, response: true },
+        });
+        if (previous.requestHash !== requestHash) return { kind: 'idempotency_conflict' };
+        return { kind: 'found', value: previous.response as TestRunSummary };
+      }
       const cases = await transaction.testCase.findMany({
         where: {
           projectId,
@@ -199,14 +224,16 @@ export class TestRunRepository {
           closedAt: true,
         },
       });
-      return {
-        kind: 'found',
-        value: this.toSummary(run, {
-          itemCount: request.caseIds.length,
-          completedCount: 0,
-          failedCount: 0,
-        }),
-      };
+      const summary = this.toSummary(run, {
+        itemCount: request.caseIds.length,
+        completedCount: 0,
+        failedCount: 0,
+      });
+      await transaction.idempotencyRecord.update({
+        where: { organizationId_scope_key: { organizationId, scope, key: idempotencyKey } },
+        data: { response: summary },
+      });
+      return { kind: 'found', value: summary };
     });
   }
 

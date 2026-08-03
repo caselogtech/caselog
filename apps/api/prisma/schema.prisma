@@ -99,8 +99,25 @@ model Organization {
   customFieldDefinitions CustomFieldDefinition[]
   customFieldValues      CustomFieldValue[]
   usageCounter           UsageCounter?
+  idempotencyRecords     IdempotencyRecord[]
 
   @@map("organizations")
+}
+
+model IdempotencyRecord {
+  organizationId String   @map("organization_id") @db.Uuid
+  scope          String   @db.VarChar(200)
+  key            String   @db.VarChar(200)
+  requestHash    String   @map("request_hash") @db.Char(64)
+  response       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt      DateTime @default(dbgenerated("CURRENT_TIMESTAMP + INTERVAL '7 days'")) @map("expires_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, scope, key], map: "pk_idempotency_records")
+  @@index([organizationId, expiresAt], map: "idx_idempotency_records_organization_id_expires_at")
+  @@map("idempotency_records")
 }
 
 model User {

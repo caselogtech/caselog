@@ -2,6 +2,7 @@ import {
   assignTestRunItemRequestSchema,
   createTestResultRequestSchema,
   createTestRunRequestSchema,
+  createTestRunHeadersSchema,
   testRunListParamsSchema,
   testRunListQuerySchema,
   testRunDetailParamsSchema,
@@ -15,6 +16,7 @@ import { createZodDto } from 'nestjs-zod';
 export class TestRunListParamsDto extends createZodDto(testRunListParamsSchema) {}
 export class TestRunListQueryDto extends createZodDto(testRunListQuerySchema) {}
 export class CreateTestRunRequestDto extends createZodDto(createTestRunRequestSchema) {}
+export class CreateTestRunHeadersDto extends createZodDto(createTestRunHeadersSchema) {}
 export class TestRunDetailParamsDto extends createZodDto(testRunDetailParamsSchema) {}
 export class TestRunItemParamsDto extends createZodDto(testRunItemParamsSchema) {}
 export class TestRunDetailQueryDto extends createZodDto(testRunDetailQuerySchema) {}

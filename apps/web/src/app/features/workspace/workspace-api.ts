@@ -154,7 +154,9 @@ export class WorkspaceApi {
   ): Promise<CreateTestRunResponse> {
     await this.open(workspaceSlug);
     const response = await lastValueFrom(
-      this.http.post<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/runs`, request),
+      this.http.post<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/runs`, request, {
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
+      }),
     );
     return createTestRunResponseSchema.parse(response);
   }

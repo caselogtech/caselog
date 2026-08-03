@@ -8,6 +8,10 @@ import {
 
 export const testRunStatusSchema = z.enum(['draft', 'active', 'completed', 'archived']);
 export const createTestRunStatusSchema = z.enum(['draft', 'active']);
+export const idempotencyKeySchema = z.string().trim().min(1).max(200);
+export const createTestRunHeadersSchema = z.object({
+  'idempotency-key': idempotencyKeySchema,
+});
 
 export const testRunListParamsSchema = testCaseListParamsSchema;
 
@@ -200,6 +204,7 @@ export type TestRunSummary = z.infer<typeof testRunSummarySchema>;
 export type TestRunListResponse = z.infer<typeof testRunListResponseSchema>;
 export type CreateTestRunRequest = z.input<typeof createTestRunRequestSchema>;
 export type CreateTestRunStatus = z.infer<typeof createTestRunStatusSchema>;
+export type CreateTestRunHeaders = z.infer<typeof createTestRunHeadersSchema>;
 export type CreateTestRunResponse = z.infer<typeof createTestRunResponseSchema>;
 export type TestRunDetailParams = z.infer<typeof testRunDetailParamsSchema>;
 export type TestRunItemParams = z.infer<typeof testRunItemParamsSchema>;

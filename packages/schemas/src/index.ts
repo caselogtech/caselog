@@ -63,8 +63,10 @@ export { healthResponseSchema, type HealthResponse } from './health.js';
 export { organizationIdSchema, type OrganizationId } from './organization.js';
 export {
   createTestRunRequestSchema,
+  createTestRunHeadersSchema,
   createTestRunResponseSchema,
   createTestRunStatusSchema,
+  idempotencyKeySchema,
   assignTestRunItemRequestSchema,
   assignTestRunItemResponseSchema,
   createTestResultRequestSchema,
@@ -91,6 +93,7 @@ export {
   testRunStatusSchema,
   testRunSummarySchema,
   type CreateTestRunRequest,
+  type CreateTestRunHeaders,
   type CreateTestRunResponse,
   type CreateTestRunStatus,
   type AssignTestRunItemRequest,
