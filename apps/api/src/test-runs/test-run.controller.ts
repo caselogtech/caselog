@@ -30,6 +30,7 @@ import type {
 import type { FastifyRequest } from 'fastify';
 import { OrganizationAuthGuard } from '../auth/organization-auth.guard';
 import { CurrentOrganization } from '../auth/organization-principal.decorator';
+import { RequireApiTokenScopes } from '../auth/api-token-scope.decorator';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
   AssignTestRunItemRequestDto,
@@ -78,6 +79,7 @@ export class TestRunController {
   }
 
   @Post(':runId/results/bulk')
+  @RequireApiTokenScopes('results:write')
   bulkRecordResults(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunDetailParamsDto,
@@ -94,6 +96,7 @@ export class TestRunController {
   }
 
   @Post(':runId/results/junit')
+  @RequireApiTokenScopes('results:write')
   ingestJUnitResults(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunDetailParamsDto,
@@ -112,6 +115,7 @@ export class TestRunController {
   }
 
   @Get(':runId')
+  @RequireApiTokenScopes('runs:read')
   detail(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunDetailParamsDto,
@@ -178,6 +182,7 @@ export class TestRunController {
   }
 
   @Get(':runId/items/:itemId/results')
+  @RequireApiTokenScopes('runs:read')
   resultHistory(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunItemParamsDto,
@@ -193,6 +198,7 @@ export class TestRunController {
   }
 
   @Get(':runId/items/:itemId/results/:resultId')
+  @RequireApiTokenScopes('runs:read')
   resultDetail(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestResultParamsDto,

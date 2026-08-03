@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { OrganizationAccessPrincipal } from '@caselog/schemas';
+import type { OrganizationAccessPrincipal, OrganizationSessionPrincipal } from '@caselog/schemas';
 import { PrismaService } from '../core/database/prisma.service';
 import { TenantDatabaseService } from '../core/database/tenant-database.service';
 import type { MembershipRole } from '../generated/prisma/enums';
@@ -60,8 +60,8 @@ export class TenantAccessRepository {
   }
 
   async validatePrincipal(
-    principal: OrganizationAccessPrincipal,
-  ): Promise<OrganizationAccessPrincipal | undefined> {
+    principal: OrganizationSessionPrincipal,
+  ): Promise<OrganizationSessionPrincipal | undefined> {
     const membership = await this.tenantDatabase.run(principal.organizationId, (transaction) =>
       transaction.membership.findUnique({
         where: {

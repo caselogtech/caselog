@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AccountTokenRepository } from './account-token.repository';
+import { ApiTokenController } from './api-token.controller';
+import { ApiTokenRepository } from './api-token.repository';
+import { ApiTokenService } from './api-token.service';
 import { AuthController } from './auth.controller';
 import { AUTH_CONFIG, createAuthConfig } from './auth.config';
 import { AuthService } from './auth.service';
@@ -19,10 +22,12 @@ import { WorkspaceService } from './workspace.service';
 
 @Module({
   imports: [JwtModule.register({}), PassportModule.register({ session: false })],
-  controllers: [AuthController, WorkspaceController],
+  controllers: [ApiTokenController, AuthController, WorkspaceController],
   providers: [
     { provide: AUTH_CONFIG, useFactory: createAuthConfig },
     AccountTokenRepository,
+    ApiTokenRepository,
+    ApiTokenService,
     AuthService,
     AuthTokenService,
     IdentityRepository,
@@ -35,6 +40,6 @@ import { WorkspaceService } from './workspace.service';
     WorkspaceRepository,
     WorkspaceService,
   ],
-  exports: [OrganizationAuthGuard],
+  exports: [ApiTokenService, OrganizationAuthGuard],
 })
 export class AuthModule {}

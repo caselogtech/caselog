@@ -75,6 +75,13 @@ enum AccountTokenPurpose {
   @@map("account_token_purpose")
 }
 
+enum ApiTokenScope {
+  RESULTS_WRITE @map("results:write")
+  RUNS_READ     @map("runs:read")
+
+  @@map("api_token_scope")
+}
+
 model Organization {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String    @db.VarChar(120)
@@ -100,6 +107,7 @@ model Organization {
   customFieldValues      CustomFieldValue[]
   usageCounter           UsageCounter?
   idempotencyRecords     IdempotencyRecord[]
+  apiTokens              ApiToken[]
 
   @@map("organizations")
 }
@@ -137,8 +145,31 @@ model User {
   authSessions       AuthSession[]
   accountTokens      AccountToken[]
   createdUploads     UploadSession[]     @relation("UploadCreator")
+  apiTokens          ApiToken[]          @relation("ApiTokenCreator")
 
   @@map("users")
+}
+
+model ApiToken {
+  organizationId String          @map("organization_id") @db.Uuid
+  id             String          @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdById    String          @map("created_by_id") @db.Uuid
+  name           String          @db.VarChar(100)
+  tokenPrefix    String          @map("token_prefix") @db.VarChar(12)
+  tokenHash      String          @unique(map: "uq_api_tokens_token_hash") @map("token_hash") @db.Char(64)
+  scopes         ApiTokenScope[]
+  expiresAt      DateTime        @map("expires_at") @db.Timestamptz(3)
+  lastUsedAt     DateTime?       @map("last_used_at") @db.Timestamptz(3)
+  revokedAt      DateTime?       @map("revoked_at") @db.Timestamptz(3)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("ApiTokenCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@id([organizationId, id], map: "pk_api_tokens")
+  @@index([organizationId, revokedAt, expiresAt], map: "idx_api_tokens_organization_id_active")
+  @@index([organizationId, createdAt], map: "idx_api_tokens_organization_id_created_at")
+  @@map("api_tokens")
 }
 
 model AccountToken {

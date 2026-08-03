@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import {
-  organizationAccessPrincipalSchema,
-  type OrganizationAccessPrincipal,
+  organizationSessionPrincipalSchema,
+  type OrganizationSessionPrincipal,
 } from '@caselog/schemas';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { InvalidSessionError } from '../common/errors/domain.error';
@@ -27,8 +27,8 @@ export class OrganizationJwtStrategy extends PassportStrategy(Strategy, 'organiz
     });
   }
 
-  async validate(payload: unknown): Promise<OrganizationAccessPrincipal> {
-    const parsed = organizationAccessPrincipalSchema.safeParse(payload);
+  async validate(payload: unknown): Promise<OrganizationSessionPrincipal> {
+    const parsed = organizationSessionPrincipalSchema.safeParse(payload);
     if (!parsed.success) {
       throw new InvalidSessionError();
     }

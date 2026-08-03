@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
-  organizationAccessPrincipalSchema,
+  organizationSessionPrincipalSchema,
   organizationTokenResponseSchema,
   sessionPrincipalSchema,
   sessionResponseSchema,
@@ -46,7 +46,7 @@ export class AuthTokenService {
     session: { sub: string; sid: string },
     access: OrganizationAccess,
   ): Promise<OrganizationTokenResponse> {
-    const principal = organizationAccessPrincipalSchema.parse({
+    const principal = organizationSessionPrincipalSchema.parse({
       sub: session.sub,
       sid: session.sid,
       tokenType: 'organization',

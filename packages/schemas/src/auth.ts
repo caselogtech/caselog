@@ -72,12 +72,29 @@ export const sessionPrincipalSchema = z.object({
   tokenType: z.literal('session'),
 });
 
-export const organizationAccessPrincipalSchema = sessionPrincipalSchema.extend({
+export const organizationSessionPrincipalSchema = sessionPrincipalSchema.extend({
   tokenType: z.literal('organization'),
   organizationId: z.uuid(),
   membershipId: z.uuid(),
   role: z.enum(['owner', 'admin', 'lead', 'tester', 'contributor', 'read_only']),
 });
+
+export const apiTokenScopeSchema = z.enum(['results:write', 'runs:read']);
+
+export const apiTokenPrincipalSchema = z.object({
+  sub: z.uuid(),
+  tokenType: z.literal('api_token'),
+  apiTokenId: z.uuid(),
+  organizationId: z.uuid(),
+  membershipId: z.uuid(),
+  role: organizationSessionPrincipalSchema.shape.role,
+  scopes: z.array(apiTokenScopeSchema),
+});
+
+export const organizationAccessPrincipalSchema = z.union([
+  organizationSessionPrincipalSchema,
+  apiTokenPrincipalSchema,
+]);
 
 export const organizationTokenResponseSchema = z.object({
   accessToken: z.string().min(1),
@@ -87,8 +104,38 @@ export const organizationTokenResponseSchema = z.object({
     name: z.string(),
     slug: organizationSlugSchema,
   }),
-  role: organizationAccessPrincipalSchema.shape.role,
+  role: organizationSessionPrincipalSchema.shape.role,
 });
+
+export const apiTokenSummarySchema = z.object({
+  id: z.uuid(),
+  name: z.string().min(1).max(100),
+  tokenPrefix: z.string().regex(/^clg_[A-Za-z0-9_-]{8}$/),
+  scopes: z.array(apiTokenScopeSchema),
+  expiresAt: z.iso.datetime(),
+  lastUsedAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+  createdBy: z.object({ id: z.uuid(), displayName: z.string().min(1).max(120) }),
+});
+
+export const createApiTokenRequestSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  scopes: z
+    .array(apiTokenScopeSchema)
+    .min(1)
+    .refine((scopes) => new Set(scopes).size === scopes.length, {
+      message: 'API token scopes must be unique',
+    }),
+  expiresAt: z.iso.datetime(),
+});
+
+export const createApiTokenResponseSchema = z.object({
+  token: z.string().regex(/^clg_[A-Za-z0-9_-]{8}_[A-Za-z0-9_-]{43}$/),
+  apiToken: apiTokenSummarySchema,
+});
+
+export const apiTokenListResponseSchema = z.object({ apiTokens: z.array(apiTokenSummarySchema) });
+export const apiTokenParamsSchema = z.object({ tokenId: z.uuid() });
 
 export const organizationSlugParamSchema = z.object({
   slug: organizationSlugSchema,
@@ -173,6 +220,14 @@ export type AuthUser = z.infer<typeof authUserSchema>;
 export type SessionResponse = z.infer<typeof sessionResponseSchema>;
 export type SessionPrincipal = z.infer<typeof sessionPrincipalSchema>;
 export type OrganizationAccessPrincipal = z.infer<typeof organizationAccessPrincipalSchema>;
+export type OrganizationSessionPrincipal = z.infer<typeof organizationSessionPrincipalSchema>;
+export type ApiTokenPrincipal = z.infer<typeof apiTokenPrincipalSchema>;
+export type ApiTokenScope = z.infer<typeof apiTokenScopeSchema>;
+export type ApiTokenSummary = z.infer<typeof apiTokenSummarySchema>;
+export type CreateApiTokenRequest = z.infer<typeof createApiTokenRequestSchema>;
+export type CreateApiTokenResponse = z.infer<typeof createApiTokenResponseSchema>;
+export type ApiTokenListResponse = z.infer<typeof apiTokenListResponseSchema>;
+export type ApiTokenParams = z.infer<typeof apiTokenParamsSchema>;
 export type OrganizationTokenResponse = z.infer<typeof organizationTokenResponseSchema>;
 export type OrganizationSlugParam = z.infer<typeof organizationSlugParamSchema>;
 export type EmailVerificationRequest = z.infer<typeof emailVerificationRequestSchema>;
