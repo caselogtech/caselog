@@ -12,10 +12,6 @@
     "target": "ES2022",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
-    "paths": {
-      "@caselog/schemas": ["../../packages/schemas/src/index.ts"]
-    },
     "incremental": true
   }
 }
