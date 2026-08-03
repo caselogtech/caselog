@@ -1,23 +1,23 @@
-# Caselog — архітектура
+# Caselog Architecture
 
-> Нормативний документ. Він визначає межі модулів і напрямок залежностей.
-> Детальні правила коду, тестування та рев'ю описані в `docs/DEVELOPMENT.md`, а
-> дорогі для зміни рішення — у `docs/adr/`.
+> Normative document. It defines module boundaries and dependency direction.
+> Detailed coding, testing, and review rules live in `docs/DEVELOPMENT.md`. Decisions
+> that are expensive to reverse are documented in `docs/adr/`.
 
-## 1. Архітектурний стиль
+## 1. Architectural style
 
-Caselog — **модульний моноліт** із feature-first структурою.
+Caselog is a **feature-first modular monolith**.
 
-- Один deployable backend і одна база даних.
-- Бізнес-можливості ізольовані в модулях: `auth`, `projects`, `test-cases`,
-  `test-runs`, `attachments` тощо.
-- Усередині backend-модуля використовується шарова структура.
-- Для зовнішніх систем використовуються ports and adapters.
-- Multi-tenancy є системним інваріантом, а не опціональною перевіркою.
+- The backend is one deployable application backed by one database.
+- Business capabilities are isolated in modules such as `auth`, `projects`,
+  `test-cases`, `test-runs`, and `attachments`.
+- Each backend module follows a layered structure internally.
+- External systems are integrated through ports and adapters.
+- Multi-tenancy is a system invariant, not an optional check.
 
-Це прагматична архітектура: ми не впроваджуємо мікросервіси, strict Clean
-Architecture або rich DDD заради форми. Новий abstraction layer повинен захищати
-реальну межу чи прибирати реальне дублювання.
+This is a pragmatic architecture. We do not introduce microservices, strict Clean
+Architecture, or rich DDD for their own sake. A new abstraction layer must protect
+a real boundary or remove real duplication.
 
 ```text
 HTTP
@@ -33,11 +33,12 @@ TenantDatabaseService / Prisma
 PostgreSQL + RLS
 ```
 
-Напрямок залежностей у цій схемі односторонній. Нижній шар не імпортує верхній.
+Dependencies flow in one direction. A lower layer must not import a higher layer.
 
-## 2. Межа модуля
+## 2. Module boundary
 
-Модуль володіє своєю поведінкою та внутрішньою реалізацією. Типова структура:
+A module owns its behavior and internal implementation. A typical module looks like
+this:
 
 ```text
 test-runs/
@@ -50,20 +51,20 @@ test-runs/
   *.spec.ts
 ```
 
-Назви файлів відображають їхню відповідальність, а не технічний шаблон. Великий
-repository можна розділити за агрегатом або окремим persistence workflow, але не
-на довільні `helpers`.
+File names describe responsibilities rather than technical patterns. A large
+repository may be split by aggregate or persistence workflow, but not into arbitrary
+`helpers` files.
 
-### Public API модуля
+### Public module API
 
-- Nest-модуль експортує лише application services або явно названі public ports.
-- Інший feature-модуль не імпортує чужі controllers, repositories, persistence
-  types чи internal helpers.
-- Взаємодія між feature-модулями відбувається через експортований service.
-- Спільний API-контракт належить `packages/schemas`, а не одному з consumers.
-- Циклічна залежність означає неправильну межу. `forwardRef()` не є виправленням.
+- A Nest module exports only application services or explicitly named public ports.
+- A feature module must not import another feature's controllers, repositories,
+  persistence types, or internal helpers.
+- Feature modules communicate through exported services.
+- Shared API contracts belong to `packages/schemas`, not to one consumer.
+- A cyclic dependency means the boundary is wrong. `forwardRef()` is not a fix.
 
-### Дозволений напрямок імпортів
+### Allowed import direction
 
 ```text
 feature controller → feature service → feature repository
@@ -73,107 +74,108 @@ core / common       ✕ feature
 feature A internals ✕ feature B internals
 ```
 
-`core` містить технічні можливості застосунку: database, mail, storage,
-configuration, health. `common` містить невеликі стабільні примітиви, які не
-належать конкретній feature. Вони не повинні перетворюватися на каталог випадкових
-helpers.
+`core` contains application infrastructure such as database, mail, storage,
+configuration, and health checks. `common` contains small, stable primitives that do
+not belong to a specific feature. Neither directory may become a collection of
+unrelated helpers.
 
-## 3. Відповідальність backend-шарів
+## 3. Backend layer responsibilities
 
 ### Controller
 
-- Приймає HTTP-запит і дістає transport context.
-- Валідує payload через спільну Zod-схему.
-- Викликає один application service/use case.
-- Повертає DTO або запускає transport-specific response, наприклад download.
-- Не містить бізнес-рішень, Prisma-запитів або tenant authorization logic.
+- Accepts the HTTP request and extracts transport context.
+- Validates the payload with a shared Zod schema.
+- Calls an application service or use case.
+- Returns a DTO or performs a transport-specific action such as a download.
+- Contains no business decisions, Prisma queries, or tenant authorization logic.
 
 ### Application service / use case
 
-- Оркеструє бізнес-операцію.
-- Перевіряє права та стан домену.
-- Координує repositories і зовнішні ports.
-- Кидає доменні помилки й не знає про HTTP status codes.
-- Не викликає Prisma напряму.
+- Orchestrates a business operation.
+- Enforces permissions and domain state.
+- Coordinates repositories and external ports.
+- Throws domain errors and does not know about HTTP status codes.
+- Never calls Prisma directly.
 
-Service не зобов'язаний бути великим. Якщо правило можна виразити чистою функцією,
-service викликає її замість накопичення приватних методів.
+A service does not need to be large. If a rule can be expressed as a pure function,
+the service calls that function instead of accumulating private methods.
 
 ### Repository
 
-- Інкапсулює Prisma та форму збереження даних.
-- Завжди приймає `organizationId` для tenant-owned даних.
-- Відкриває tenant-scoped transaction через `TenantDatabaseService`.
-- Може виконувати атомарний persistence workflow: read-modify-write, bulk insert,
-  upsert або блокування рядків.
-- Не знає про HTTP, guards, JWT чи UI.
-- Не приймає бізнес-рішення, які можна обчислити без бази даних.
+- Encapsulates Prisma and the data storage model.
+- Always requires `organizationId` for tenant-owned data.
+- Opens tenant-scoped transactions through `TenantDatabaseService`.
+- May perform an atomic persistence workflow such as read-modify-write, bulk insert,
+  upsert, or row locking.
+- Does not know about HTTP, guards, JWT, or UI.
+- Does not make business decisions that can be calculated without the database.
 
-За замовчуванням repository володіє транзакцією своєї атомарної операції. Якщо один
-use case має бути атомарним між кількома repositories, створюється явний
-module-level Unit of Work. Сирий Prisma transaction client не передається в
-controller і не стає загальною залежністю service layer.
+By default, a repository owns the transaction for its atomic operation. If one use
+case must be atomic across multiple repositories, introduce an explicit module-level
+Unit of Work. A raw Prisma transaction client must not be passed to a controller or
+become a general service-layer dependency.
 
-#### Prisma і raw SQL
+#### Prisma and raw SQL
 
-Prisma є default для звичайного CRUD. Parameterized raw SQL дозволений у repository
-або `*.persistence.ts`, коли потрібні row locks, bulk operations, RLS context,
-PostgreSQL-specific можливості чи виміряна оптимізація. `$queryRawUnsafe` і
-`$executeRawUnsafe` заборонені. Tenant-owned SQL явно фільтрує `organization_id`
-навіть за наявності RLS, має typed result та integration test із PostgreSQL.
+Prisma is the default for ordinary CRUD. Parameterized raw SQL is allowed in a
+repository or `*.persistence.ts` when the operation requires row locks, bulk
+operations, RLS context, PostgreSQL-specific capabilities, or a measured
+optimization. `$queryRawUnsafe` and `$executeRawUnsafe` are forbidden. SQL for
+tenant-owned data explicitly filters by `organization_id` even when RLS is enabled,
+has a typed result, and is covered by an integration test against PostgreSQL.
 
-SQL відповідає за читання, блокування й persistence. Бізнес-рішення до виконання
-SQL приймає application/domain layer.
+SQL is responsible for reading, locking, and persistence. Business decisions are
+made by the application or domain layer before the SQL is executed.
 
-### Domain/pure logic
+### Domain and pure logic
 
-Парсинг, matching, status mapping, розрахунки та state transitions реалізуються як
-невеликі typed pure functions, якщо їм не потрібні I/O або DI. Клас не створюється
-лише заради OOP.
+Parsing, matching, status mapping, calculations, and state transitions should be
+implemented as small, typed pure functions when they do not require I/O or dependency
+injection. Do not create a class solely for the sake of OOP.
 
 ### Ports and adapters
 
-S3, email, Jira, Monday та інші зовнішні системи ховаються за вузькими ports.
-Infrastructure adapter реалізує port і підключається через DI. Інтерфейс для
-кожного внутрішнього класу не потрібен; abstraction вводиться на реальній зовнішній
-або змінній межі.
+S3, email, Jira, Monday, and other external systems are hidden behind narrow ports.
+An infrastructure adapter implements a port and is connected through dependency
+injection. Internal classes do not require interfaces by default; introduce an
+abstraction at a real external or replaceable boundary.
 
 ## 4. Multi-tenancy
 
-Tenant isolation діє на кожному шляху до даних:
+Tenant isolation applies to every path to tenant-owned data:
 
-1. Org-scoped principal містить immutable `organizationId`.
-2. Кожна tenant-owned таблиця має `organization_id`.
-3. Repository вимагає `organizationId` у своєму public method.
-4. `TenantDatabaseService` встановлює transaction-local
-   `caselog.organization_id`.
-5. PostgreSQL RLS обмежує видимі рядки.
-6. Cross-tenant API test очікує `404` для чужого ресурсу.
+1. An org-scoped principal contains an immutable `organizationId`.
+2. Every tenant-owned table contains `organization_id`.
+3. A repository requires `organizationId` in its public methods.
+4. `TenantDatabaseService` sets transaction-local `caselog.organization_id`.
+5. PostgreSQL RLS restricts visible rows.
+6. A cross-tenant API test expects `404` for a resource owned by another tenant.
 
-Прямий доступ до tenant-owned Prisma models поза repository заборонений. Глобальні
-таблиці та bootstrap-запити є явними винятками, а не способом обійти tenant scope.
-Повне рішення описане в ADR 0002 і ADR 0006.
+Direct access to tenant-owned Prisma models outside repositories is forbidden. Global
+tables and bootstrap queries are explicit exceptions, not ways to bypass tenant
+scope. ADR 0002 and ADR 0006 describe the complete decision.
 
-## 5. API та contracts
+## 5. API and contracts
 
-- REST API має префікс `/api/v1`.
-- Zod-схеми в `packages/schemas` є спільним контрактом API і web-клієнта.
-- DTO не віддає Prisma entities напряму.
-- Усе, що вміє UI, має бути доступне через публічний API.
-- Колекції використовують cursor pagination.
-- CI/import workflows отримують bulk endpoints.
-- Retryable create/write operations мають визначену idempotency semantics.
+- The REST API uses the `/api/v1` prefix.
+- Zod schemas in `packages/schemas` are the shared contract between the API and web
+  client.
+- DTOs do not expose Prisma entities directly.
+- Everything available through the UI must also be available through the public API.
+- Collections use cursor pagination.
+- CI and import workflows use bulk endpoints.
+- Retryable create and write operations define idempotency semantics.
 
-Зміна public contract, data model або іншого дорогого для відкату рішення потребує
-ADR.
+A change to the public contract, data model, or another decision that is expensive to
+reverse requires an ADR.
 
 ## 6. Frontend
 
-Angular-застосунок також організований feature-first:
+The Angular application is also organized feature-first:
 
 ```text
 app/
-  core/                 # auth, interceptors, app-wide providers
+  core/                 # auth, interceptors, application-wide providers
   shared/               # reusable UI and API primitives
   features/
     auth/
@@ -183,48 +185,48 @@ app/
       runs/
 ```
 
-- Використовуються standalone components.
-- Feature не імпортує internals іншої feature.
-- `core` і `shared` не імпортують features.
-- Route configuration композиціонує features на рівні застосунку.
-- Компонент відповідає за presentation та UI events, але не виконує HTTP напряму.
-- Feature API/service відповідає за server communication.
-- Signals зберігають UI state; RxJS використовується для справжніх async streams.
-- Спільний компонент переноситься в `shared` лише після появи стабільного спільного
-  призначення, а не наперед.
+- Use standalone components.
+- A feature must not import another feature's internals.
+- `core` and `shared` must not import features.
+- Route configuration composes features at the application level.
+- A component owns presentation and UI events but does not perform HTTP requests
+  directly.
+- A feature API or service owns server communication.
+- Signals hold UI state; RxJS is used for genuine asynchronous streams.
+- Move a component to `shared` only after it has a stable shared purpose, not in
+  anticipation of possible reuse.
 
-## 7. Розмір і розбиття коду
+## 7. Code size and decomposition
 
-Код розбивається за responsibility і reason to change, не за формальною кількістю
-рядків.
+Split code by responsibility and reason to change, not by an arbitrary line count.
 
-Сигнали для розбиття:
+Signals that a file should be split include:
 
-- файл змішує transport, orchestration, persistence і pure logic;
-- назва файлу перестала точно описувати його вміст;
-- незалежні частини змінюються з різних причин;
-- тести потребують надто великого setup для невеликого правила;
-- файл наближається до 300–400 рядків або метод до 50–60 рядків.
+- it mixes transport, orchestration, persistence, and pure logic;
+- its name no longer describes its contents accurately;
+- independent parts change for different reasons;
+- testing a small rule requires excessive setup;
+- the file approaches 300–400 lines or a method approaches 50–60 lines.
 
-Останній пункт є приводом для рев'ю, а не автоматичною помилкою. Краще один зв'язний
-repository на 350 рядків, ніж п'ять абстракцій без власної відповідальності.
+The last item triggers a review, not an automatic failure. One cohesive 350-line
+repository is better than five abstractions without independent responsibilities.
 
-Тести розміщуються поруч із production-файлом як `*.spec.ts`. Окремі каталоги
-доречні для наскрізних integration/e2e suites або спільної test infrastructure.
+Tests live next to production files as `*.spec.ts`. Separate test directories are
+appropriate for end-to-end or integration suites and shared test infrastructure.
 
-## 8. Архітектурна перевірка зміни
+## 8. Architecture review checklist
 
-Перед merge автор і reviewer перевіряють:
+Before merging, the author and reviewer verify:
 
-1. Який модуль володіє новою поведінкою?
-2. Чи залежності йдуть тільки вниз по шарах?
-3. Чи не імпортує feature internals іншого модуля?
-4. Де перевіряється `organizationId` і який cross-tenant test це доводить?
-5. Бізнес-рішення знаходиться в service/pure function, а не в controller або
+1. Which module owns the new behavior?
+2. Do dependencies flow only downward through the layers?
+3. Does any feature import another module's internals?
+4. Where is `organizationId` enforced, and which cross-tenant test proves it?
+5. Is the business decision in a service or pure function rather than a controller or
    persistence mapping?
-6. Чи справді потрібен новий class/interface/dependency?
-7. Чи потрібен ADR?
+6. Is the new class, interface, or dependency genuinely necessary?
+7. Does this change require an ADR?
 
-Правила, які можливо перевірити автоматично, поступово закріплюються lint rules,
-architecture tests і CI. Документована межа залишається обов'язковою навіть до
-появи автоматичної перевірки.
+Rules that can be checked automatically should gradually become lint rules,
+architecture tests, and CI checks. A documented boundary remains mandatory before an
+automated check exists.
