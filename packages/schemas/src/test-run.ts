@@ -181,18 +181,41 @@ export const testResultResponseSchema = z.object({
 
 export const createTestResultResponseSchema = z.object({ result: testResultResponseSchema });
 
-export const bulkTestResultItemRequestSchema = z.object({
-  itemId: z.uuid(),
-  statusId: z.uuid(),
-  comment: z.string().trim().max(50_000).optional(),
-  elapsedMs: z.number().int().nonnegative().max(86_400_000).optional(),
-});
+export const bulkTestResultItemRequestSchema = z
+  .object({
+    itemId: z.uuid().optional(),
+    automationId: z.string().trim().min(1).max(500).optional(),
+    caseNumber: z
+      .string()
+      .regex(/^[1-9]\d*$/)
+      .optional(),
+    statusId: z.uuid(),
+    comment: z.string().trim().max(50_000).optional(),
+    elapsedMs: z.number().int().nonnegative().max(86_400_000).optional(),
+  })
+  .superRefine(({ itemId, automationId, caseNumber }, context) => {
+    if (!itemId && !automationId && !caseNumber) {
+      context.addIssue({
+        code: 'custom',
+        path: ['itemId'],
+        message: 'A run item ID, automation ID, or case number is required',
+      });
+    }
+    if (itemId && (automationId || caseNumber)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['itemId'],
+        message: 'A run item ID cannot be combined with external identifiers',
+      });
+    }
+  });
 
 export const bulkTestResultsRequestSchema = z
   .object({ results: z.array(bulkTestResultItemRequestSchema).min(1).max(1_000) })
   .superRefine(({ results }, context) => {
     const seen = new Set<string>();
     for (const [index, result] of results.entries()) {
+      if (!result.itemId) continue;
       if (seen.has(result.itemId)) {
         context.addIssue({
           code: 'custom',
@@ -212,8 +235,19 @@ export const bulkTestResultItemResponseSchema = z.object({
   executedAt: z.iso.datetime(),
 });
 
+export const unmatchedBulkTestResultSchema = z.object({
+  index: z.number().int().nonnegative(),
+  automationId: z.string().nullable(),
+  caseNumber: z
+    .string()
+    .regex(/^[1-9]\d*$/)
+    .nullable(),
+  reason: z.enum(['not_found', 'ambiguous']),
+});
+
 export const bulkTestResultsResponseSchema = z.object({
   results: z.array(bulkTestResultItemResponseSchema),
+  unmatched: z.array(unmatchedBulkTestResultSchema),
 });
 
 export const testResultHistoryQuerySchema = z.object({
@@ -257,6 +291,7 @@ export type CreateTestResultResponse = z.infer<typeof createTestResultResponseSc
 export type BulkTestResultItemRequest = z.infer<typeof bulkTestResultItemRequestSchema>;
 export type BulkTestResultsRequest = z.infer<typeof bulkTestResultsRequestSchema>;
 export type BulkTestResultItemResponse = z.infer<typeof bulkTestResultItemResponseSchema>;
+export type UnmatchedBulkTestResult = z.infer<typeof unmatchedBulkTestResultSchema>;
 export type BulkTestResultsResponse = z.infer<typeof bulkTestResultsResponseSchema>;
 export type CreateStepResultRequest = z.infer<typeof createStepResultRequestSchema>;
 export type StepResultResponse = z.infer<typeof stepResultResponseSchema>;

@@ -51,6 +51,7 @@ type RunResult<T> =
   | { kind: 'invalid_upload' }
   | { kind: 'run_closed' }
   | { kind: 'invalid_run_state' }
+  | { kind: 'duplicate_matched_item' }
   | { kind: 'idempotency_conflict' };
 
 type RunRecord = {
@@ -633,8 +634,72 @@ export class TestRunRepository {
       if (existing?.kind === 'replay') return { kind: 'found', value: existing.value };
       if (context.value.run.status !== RunStatus.ACTIVE) return { kind: 'run_closed' };
 
-      const itemIds = request.results.map(({ itemId }) => itemId).sort();
-      const lockedItems = await transaction.$queryRaw<Array<{ id: string }>>`
+      const runItems = await transaction.testRunItem.findMany({
+        where: { organizationId, testRunId: runId },
+        select: {
+          id: true,
+          caseVersion: {
+            select: {
+              testCase: { select: { automationId: true, caseNumber: true } },
+            },
+          },
+        },
+      });
+      const itemById = new Map(runItems.map((item) => [item.id, item]));
+      const itemsByAutomationId = new Map<string, typeof runItems>();
+      const itemsByCaseNumber = new Map<string, typeof runItems>();
+      for (const item of runItems) {
+        const { automationId, caseNumber } = item.caseVersion.testCase;
+        if (automationId) {
+          const matches = itemsByAutomationId.get(automationId) ?? [];
+          matches.push(item);
+          itemsByAutomationId.set(automationId, matches);
+        }
+        const normalizedCaseNumber = caseNumber.toString();
+        const matches = itemsByCaseNumber.get(normalizedCaseNumber) ?? [];
+        matches.push(item);
+        itemsByCaseNumber.set(normalizedCaseNumber, matches);
+      }
+
+      const matchedResults: Array<(typeof request.results)[number] & { itemId: string }> = [];
+      const unmatched: BulkTestResultsResponse['unmatched'] = [];
+      for (const [index, requestResult] of request.results.entries()) {
+        if (requestResult.itemId) {
+          if (!itemById.has(requestResult.itemId)) return { kind: 'item_not_found' };
+          matchedResults.push({ ...requestResult, itemId: requestResult.itemId });
+          continue;
+        }
+
+        let matches = requestResult.automationId
+          ? (itemsByAutomationId.get(requestResult.automationId) ?? [])
+          : [];
+        if (matches.length > 1 && requestResult.caseNumber) {
+          matches = matches.filter(
+            (item) => item.caseVersion.testCase.caseNumber.toString() === requestResult.caseNumber,
+          );
+        } else if (matches.length === 0 && requestResult.caseNumber) {
+          matches = itemsByCaseNumber.get(requestResult.caseNumber) ?? [];
+        }
+
+        if (matches.length === 1 && matches[0]) {
+          matchedResults.push({ ...requestResult, itemId: matches[0].id });
+          continue;
+        }
+        unmatched.push({
+          index,
+          automationId: requestResult.automationId ?? null,
+          caseNumber: requestResult.caseNumber ?? null,
+          reason: matches.length === 0 ? 'not_found' : 'ambiguous',
+        });
+      }
+
+      const resolvedItemIds = matchedResults.map(({ itemId }) => itemId);
+      if (new Set(resolvedItemIds).size !== resolvedItemIds.length) {
+        return { kind: 'duplicate_matched_item' };
+      }
+      const itemIds = [...resolvedItemIds].sort();
+      if (itemIds.length > 0) {
+        const lockedItems = await transaction.$queryRaw<Array<{ id: string }>>`
         SELECT id FROM test_run_items
         WHERE organization_id = ${organizationId}::uuid
           AND test_run_id = ${runId}::uuid
@@ -642,7 +707,8 @@ export class TestRunRepository {
         ORDER BY id
         FOR UPDATE
       `;
-      if (lockedItems.length !== itemIds.length) return { kind: 'item_not_found' };
+        if (lockedItems.length !== itemIds.length) return { kind: 'item_not_found' };
+      }
 
       const requestedStatusIds = [...new Set(request.results.map(({ statusId }) => statusId))];
       const statuses = await transaction.resultStatus.findMany({
@@ -673,6 +739,18 @@ export class TestRunRepository {
       if (claim.kind === 'conflict') return { kind: 'idempotency_conflict' };
       if (claim.kind === 'replay') return { kind: 'found', value: claim.value };
 
+      if (matchedResults.length === 0) {
+        const response: BulkTestResultsResponse = { results: [], unmatched };
+        await this.storeIdempotencyResponse(
+          transaction,
+          organizationId,
+          scope,
+          idempotencyKey,
+          response,
+        );
+        return { kind: 'found', value: response };
+      }
+
       const attemptGroups = await transaction.testResult.groupBy({
         by: ['testRunItemId'],
         where: { testRunItemId: { in: itemIds } },
@@ -682,7 +760,7 @@ export class TestRunRepository {
         attemptGroups.map(({ testRunItemId, _max }) => [testRunItemId, _max.attempt ?? 0]),
       );
       const executedAt = new Date();
-      const results = request.results.map((requestResult) => ({
+      const results = matchedResults.map((requestResult) => ({
         ...requestResult,
         resultId: randomUUID(),
         attempt: (previousAttemptByItem.get(requestResult.itemId) ?? 0) + 1,
@@ -727,7 +805,7 @@ export class TestRunRepository {
           executedAt: executedAt.toISOString(),
         };
       });
-      const response: BulkTestResultsResponse = { results: responseResults };
+      const response: BulkTestResultsResponse = { results: responseResults, unmatched };
       await this.storeIdempotencyResponse(
         transaction,
         organizationId,

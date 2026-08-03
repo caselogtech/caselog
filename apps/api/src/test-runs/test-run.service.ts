@@ -292,6 +292,12 @@ export class TestRunService {
         'The test run cannot transition from its current state',
       );
     }
+    if (result.kind === 'duplicate_matched_item') {
+      throw new ResourceConflictError(
+        'bulk_result_duplicate_item',
+        'Multiple bulk results matched the same test run item',
+      );
+    }
     if (result.kind === 'idempotency_conflict') {
       throw new ResourceConflictError(
         'idempotency_key_reused',

@@ -1683,7 +1683,14 @@ describe('authentication API', () => {
 
     const bulkItem = await admin.testRunItem.findFirstOrThrow({
       where: { organizationId, testRunId: runId, id: { not: createdRunItemId } },
-      select: { id: true },
+      select: {
+        id: true,
+        caseVersion: {
+          select: {
+            testCase: { select: { id: true, caseNumber: true } },
+          },
+        },
+      },
     });
     const bulkUrl = `/api/v1/projects/authentication/runs/${runId}/results/bulk`;
     const missingBulkKey = await app.inject({
@@ -1774,6 +1781,7 @@ describe('authentication API', () => {
         executedAt: expect.any(String),
       }),
     ]);
+    expect(bulk.json().unmatched).toEqual([]);
     expect(bulkReplay.statusCode, bulkReplay.body).toBe(201);
     expect(bulkReplay.json()).toEqual(bulk.json());
     await expect(
@@ -1833,6 +1841,135 @@ describe('authentication API', () => {
       expect.objectContaining({ itemId: bulkItem.id, attempt: 2 }),
       expect.objectContaining({ itemId: createdRunItemId, attempt: 3 }),
     ]);
+
+    const matchedWithOrphanKey = randomUUID();
+    const matchedWithOrphanRequest = () =>
+      app.inject({
+        method: 'POST',
+        url: bulkUrl,
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'idempotency-key': matchedWithOrphanKey,
+        },
+        payload: {
+          results: [
+            {
+              caseNumber: bulkItem.caseVersion.testCase.caseNumber.toString(),
+              statusId: statuses[0]?.id,
+            },
+            { automationId: 'auth.missing-test', statusId: statuses[1]?.id },
+            { automationId: 'auth.valid-login', statusId: statuses[1]?.id },
+          ],
+        },
+      });
+    const matchedWithOrphan = await matchedWithOrphanRequest();
+    expect(matchedWithOrphan.statusCode, matchedWithOrphan.body).toBe(201);
+    expect(matchedWithOrphan.json()).toEqual({
+      results: [
+        expect.objectContaining({ itemId: bulkItem.id, attempt: 3 }),
+        expect.objectContaining({ itemId: createdRunItemId, attempt: 4 }),
+      ],
+      unmatched: [
+        {
+          index: 1,
+          automationId: 'auth.missing-test',
+          caseNumber: null,
+          reason: 'not_found',
+        },
+      ],
+    });
+    const matchedWithOrphanReplay = await matchedWithOrphanRequest();
+    expect(matchedWithOrphanReplay.statusCode, matchedWithOrphanReplay.body).toBe(201);
+    expect(matchedWithOrphanReplay.json()).toEqual(matchedWithOrphan.json());
+
+    await admin.testCase.update({
+      where: {
+        organizationId_id: {
+          organizationId: organizationId ?? '',
+          id: bulkItem.caseVersion.testCase.id,
+        },
+      },
+      data: { automationId: 'auth.valid-login' },
+    });
+    try {
+      const ambiguousMatch = await app.inject({
+        method: 'POST',
+        url: bulkUrl,
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'idempotency-key': randomUUID(),
+        },
+        payload: {
+          results: [{ automationId: 'auth.valid-login', statusId: statuses[0]?.id }],
+        },
+      });
+      expect(ambiguousMatch.statusCode, ambiguousMatch.body).toBe(201);
+      expect(ambiguousMatch.json()).toEqual({
+        results: [],
+        unmatched: [
+          {
+            index: 0,
+            automationId: 'auth.valid-login',
+            caseNumber: null,
+            reason: 'ambiguous',
+          },
+        ],
+      });
+
+      const duplicateMatchedItem = await app.inject({
+        method: 'POST',
+        url: bulkUrl,
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'idempotency-key': randomUUID(),
+        },
+        payload: {
+          results: [
+            { itemId: bulkItem.id, statusId: statuses[0]?.id },
+            {
+              automationId: 'auth.valid-login',
+              caseNumber: bulkItem.caseVersion.testCase.caseNumber.toString(),
+              statusId: statuses[1]?.id,
+            },
+          ],
+        },
+      });
+      expect(duplicateMatchedItem.statusCode, duplicateMatchedItem.body).toBe(409);
+      expect(duplicateMatchedItem.json().error.code).toBe('bulk_result_duplicate_item');
+
+      const disambiguatedMatch = await app.inject({
+        method: 'POST',
+        url: bulkUrl,
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'idempotency-key': randomUUID(),
+        },
+        payload: {
+          results: [
+            {
+              automationId: 'auth.valid-login',
+              caseNumber: bulkItem.caseVersion.testCase.caseNumber.toString(),
+              statusId: statuses[1]?.id,
+            },
+          ],
+        },
+      });
+      expect(disambiguatedMatch.statusCode, disambiguatedMatch.body).toBe(201);
+      expect(disambiguatedMatch.json()).toEqual({
+        results: [expect.objectContaining({ itemId: bulkItem.id, attempt: 4 })],
+        unmatched: [],
+      });
+    } finally {
+      await admin.testCase.update({
+        where: {
+          organizationId_id: {
+            organizationId: organizationId ?? '',
+            id: bulkItem.caseVersion.testCase.id,
+          },
+        },
+        data: { automationId: null },
+      });
+    }
 
     const duplicateSelection = await app.inject({
       method: 'POST',
