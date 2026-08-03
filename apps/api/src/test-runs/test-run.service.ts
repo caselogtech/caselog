@@ -42,12 +42,18 @@ import {
   UnsupportedMediaTypeError,
 } from '../common/errors/domain.error';
 import { JUnitParseError, parseJUnitResults, type ParsedJUnitResult } from './junit-parser';
+import { JUnitIngestRepository } from './junit-ingest.repository';
+import { TestResultQueryRepository } from './test-result-query.repository';
+import { TestResultRepository } from './test-result.repository';
 import { TestRunRepository, type RunResult } from './test-run.repository';
 
 @Injectable()
 export class TestRunService {
   constructor(
     @Inject(TestRunRepository) private readonly runs: TestRunRepository,
+    @Inject(TestResultRepository) private readonly results: TestResultRepository,
+    @Inject(TestResultQueryRepository) private readonly resultQueries: TestResultQueryRepository,
+    @Inject(JUnitIngestRepository) private readonly junitResults: JUnitIngestRepository,
     @Inject(AttachmentService) private readonly attachments: AttachmentService,
   ) {}
 
@@ -164,7 +170,7 @@ export class TestRunService {
     if (principal.role === 'read_only') throw new AuthorizationDeniedError();
     const key = this.parseIdempotencyKey(idempotencyKey);
     const requestHash = createHash('sha256').update(JSON.stringify(request)).digest('hex');
-    const result = await this.runs.bulkRecordResults(
+    const result = await this.results.bulkRecord(
       principal.organizationId,
       principal.sub,
       projectSlug,
@@ -207,7 +213,7 @@ export class TestRunService {
       throw error;
     }
 
-    const result = await this.runs.ingestJUnitResults(
+    const result = await this.junitResults.ingest(
       principal.organizationId,
       principal.sub,
       projectSlug,
@@ -235,9 +241,9 @@ export class TestRunService {
       itemId,
       request.uploadIds ?? [],
     );
-    let result: Awaited<ReturnType<TestRunRepository['recordResult']>>;
+    let result: Awaited<ReturnType<TestResultRepository['record']>>;
     try {
-      result = await this.runs.recordResult(
+      result = await this.results.record(
         principal.organizationId,
         principal.sub,
         projectSlug,
@@ -266,7 +272,13 @@ export class TestRunService {
     itemId: string,
     query: TestResultHistoryQuery,
   ): Promise<TestResultHistoryResponse> {
-    const result = await this.runs.resultHistory(organizationId, projectSlug, runId, itemId, query);
+    const result = await this.resultQueries.history(
+      organizationId,
+      projectSlug,
+      runId,
+      itemId,
+      query,
+    );
     this.assertFound(result);
     return testResultHistoryResponseSchema.parse(result.value);
   }
@@ -278,7 +290,7 @@ export class TestRunService {
     itemId: string,
     resultId: string,
   ): Promise<TestResultDetailResponse> {
-    const result = await this.runs.resultDetail(
+    const result = await this.resultQueries.detail(
       organizationId,
       projectSlug,
       runId,
