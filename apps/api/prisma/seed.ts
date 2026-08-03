@@ -1,5 +1,9 @@
 import { CaseTemplate, MembershipRole } from '../src/generated/prisma/enums';
+import { PasswordService } from '../src/auth/password.service';
 import { createPrismaClient } from '../src/core/database/prisma-client';
+
+const DEMO_PASSWORD = 'CaselogDemo123!';
+const DEMO_VERIFIED_AT = new Date('2026-01-01T00:00:00.000Z');
 
 const IDS = {
   organization: '00000000-0000-4000-8000-000000000001',
@@ -100,6 +104,7 @@ async function seed(): Promise<void> {
   }
 
   const prisma = createPrismaClient(connectionString);
+  const passwordService = new PasswordService();
 
   try {
     const organization = await prisma.organization.upsert({
@@ -110,8 +115,19 @@ async function seed(): Promise<void> {
 
     const user = await prisma.user.upsert({
       where: { email: 'demo@caselog.local' },
-      update: { displayName: 'Demo Owner' },
-      create: { id: IDS.user, email: 'demo@caselog.local', displayName: 'Demo Owner' },
+      update: { displayName: 'Demo Owner', emailVerifiedAt: DEMO_VERIFIED_AT },
+      create: {
+        id: IDS.user,
+        email: 'demo@caselog.local',
+        displayName: 'Demo Owner',
+        emailVerifiedAt: DEMO_VERIFIED_AT,
+      },
+    });
+    const passwordHash = await passwordService.hash(DEMO_PASSWORD);
+    await prisma.passwordCredential.upsert({
+      where: { userId: user.id },
+      update: { passwordHash },
+      create: { userId: user.id, passwordHash },
     });
 
     await prisma.membership.upsert({
