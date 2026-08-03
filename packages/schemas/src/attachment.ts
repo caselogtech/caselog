@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { testRunItemParamsSchema } from './test-run.js';
+import { testResultParamsSchema, testRunItemParamsSchema } from './test-run.js';
 
 export const attachmentContentTypeSchema = z.enum([
   'image/png',
@@ -28,6 +28,10 @@ export const createUploadSessionRequestSchema = z.object({
 
 export const createUploadSessionParamsSchema = testRunItemParamsSchema;
 
+export const attachmentDownloadParamsSchema = testResultParamsSchema.extend({
+  attachmentId: z.uuid(),
+});
+
 export const createUploadSessionResponseSchema = z.object({
   upload: z.object({
     id: z.uuid(),
@@ -38,7 +42,16 @@ export const createUploadSessionResponseSchema = z.object({
   }),
 });
 
+export const attachmentDownloadResponseSchema = z.object({
+  download: z.object({
+    url: z.url(),
+    expiresAt: z.iso.datetime(),
+  }),
+});
+
 export type AttachmentContentType = z.infer<typeof attachmentContentTypeSchema>;
 export type CreateUploadSessionRequest = z.infer<typeof createUploadSessionRequestSchema>;
 export type CreateUploadSessionParams = z.infer<typeof createUploadSessionParamsSchema>;
 export type CreateUploadSessionResponse = z.infer<typeof createUploadSessionResponseSchema>;
+export type AttachmentDownloadParams = z.infer<typeof attachmentDownloadParamsSchema>;
+export type AttachmentDownloadResponse = z.infer<typeof attachmentDownloadResponseSchema>;

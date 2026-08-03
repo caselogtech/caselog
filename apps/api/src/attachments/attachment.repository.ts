@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { CreateUploadSessionRequest } from '@caselog/schemas';
 import { TenantDatabaseService } from '../core/database/tenant-database.service';
-import { RunStatus } from '../generated/prisma/enums';
+import { AttachmentTargetType, RunStatus } from '../generated/prisma/enums';
 
 const MAX_PENDING_UPLOADS_PER_USER = 20;
 const MAX_PENDING_STORAGE_BYTES = 500n * 1_024n * 1_024n;
@@ -31,11 +31,58 @@ export type PendingUploadSession = {
   stepPosition: number | null;
 };
 
+export type DownloadableAttachment = { storageKey: string; fileName: string };
+
 @Injectable()
 export class AttachmentRepository {
   constructor(
     @Inject(TenantDatabaseService) private readonly tenantDatabase: TenantDatabaseService,
   ) {}
+
+  async findResultAttachment(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    resultId: string,
+    attachmentId: string,
+  ): Promise<DownloadableAttachment | null> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) return null;
+      const run = await transaction.testRun.findUnique({
+        where: {
+          organizationId_id: { organizationId, id: runId },
+          projectId: project.id,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!run) return null;
+      const item = await transaction.testRunItem.findUnique({
+        where: { organizationId_id: { organizationId, id: itemId }, testRunId: run.id },
+        select: { id: true },
+      });
+      if (!item) return null;
+      const result = await transaction.testResult.findFirst({
+        where: { id: resultId, testRunItemId: item.id },
+        select: { id: true },
+      });
+      if (!result) return null;
+      return transaction.attachment.findFirst({
+        where: {
+          id: attachmentId,
+          targetType: AttachmentTargetType.RESULT,
+          targetId: result.id,
+          deletedAt: null,
+        },
+        select: { storageKey: true, fileName: true },
+      });
+    });
+  }
 
   async findPendingUploadSessions(
     organizationId: string,

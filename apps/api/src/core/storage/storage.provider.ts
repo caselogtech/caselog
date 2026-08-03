@@ -11,6 +11,11 @@ export type UploadUrl = {
   expiresAt: Date;
 };
 
+export type DownloadUrl = {
+  url: string;
+  expiresAt: Date;
+};
+
 export type StoredObject = {
   contentType: string | null;
   sizeBytes: number;
@@ -19,6 +24,7 @@ export type StoredObject = {
 
 export interface StorageProvider {
   createUploadUrl(input: CreateUploadUrlInput): Promise<UploadUrl>;
+  createDownloadUrl(storageKey: string, fileName: string): Promise<DownloadUrl>;
   stat(storageKey: string): Promise<StoredObject | null>;
   copy(sourceStorageKey: string, destinationStorageKey: string): Promise<void>;
   delete(storageKey: string): Promise<void>;

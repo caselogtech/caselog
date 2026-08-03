@@ -42,6 +42,8 @@ describe('authentication API', () => {
   let createdRunId: string;
   let createdRunItemId: string;
   let createdResultId: string;
+  let createdAttachmentResultId: string;
+  let createdAttachmentId: string;
   let registrationCookie: string;
   let registrationResponse: Awaited<ReturnType<NestFastifyApplication['inject']>>;
 
@@ -1257,6 +1259,8 @@ describe('authentication API', () => {
       }),
     ]);
     const attachmentResultId = resultWithAttachment?.json().result.id as string;
+    createdAttachmentResultId = attachmentResultId;
+    createdAttachmentId = resultWithAttachment?.json().result.attachments[0].id as string;
     const attachmentDetail = await app.inject({
       method: 'GET',
       url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results/${attachmentResultId}`,
@@ -1264,6 +1268,19 @@ describe('authentication API', () => {
     });
     expect(attachmentDetail.statusCode, attachmentDetail.body).toBe(200);
     expect(attachmentDetail.json().result.attachments).toHaveLength(1);
+    const attachmentDownload = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results/${attachmentResultId}/attachments/${createdAttachmentId}/download`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(attachmentDownload.statusCode, attachmentDownload.body).toBe(201);
+    expect(attachmentDownload.json()).toMatchObject({
+      download: { url: expect.stringContaining('http'), expiresAt: expect.any(String) },
+    });
+    const downloadedAttachment = await fetch(attachmentDownload.json().download.url as string);
+    const downloadedAttachmentBody = await downloadedAttachment.text();
+    expect(downloadedAttachment.status, downloadedAttachmentBody).toBe(200);
+    expect(downloadedAttachmentBody).toBe(attachmentBody.toString());
     await expect(
       admin.uploadSession.findUnique({
         where: {
@@ -1770,6 +1787,12 @@ describe('authentication API', () => {
       },
     });
     expect(crossTenantUpload.statusCode).toBe(404);
+    const crossTenantDownload = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/results/${createdAttachmentResultId}/attachments/${createdAttachmentId}/download`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantDownload.statusCode).toBe(404);
 
     const memberList = await app.inject({
       method: 'GET',

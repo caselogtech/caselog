@@ -41,6 +41,12 @@ describe('S3StorageProvider integration', () => {
       sizeBytes: body.byteLength,
       checksumSha256,
     });
+    const download = await storage.createDownloadUrl(copiedStorageKey, 'evidence report.txt');
+    const downloaded = await fetch(download.url);
+    const downloadedBody = await downloaded.text();
+    expect(downloaded.status, downloadedBody).toBe(200);
+    expect(downloadedBody).toBe(body.toString());
+    expect(downloaded.headers.get('content-disposition')).toContain('evidence%20report.txt');
     await storage.delete(copiedStorageKey);
   });
 });

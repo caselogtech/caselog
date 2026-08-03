@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  attachmentDownloadResponseSchema,
   createUploadSessionResponseSchema,
+  type AttachmentDownloadResponse,
   type CreateUploadSessionRequest,
   type CreateUploadSessionResponse,
   type OrganizationAccessPrincipal,
@@ -67,6 +69,32 @@ export class AttachmentService {
         headers: upload.headers,
         expiresAt: upload.expiresAt.toISOString(),
       },
+    });
+  }
+
+  async createResultAttachmentDownload(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    resultId: string,
+    attachmentId: string,
+  ): Promise<AttachmentDownloadResponse> {
+    const attachment = await this.attachments.findResultAttachment(
+      organizationId,
+      projectSlug,
+      runId,
+      itemId,
+      resultId,
+      attachmentId,
+    );
+    if (!attachment) throw new ResourceNotFoundError('attachment');
+    const download = await this.storage.createDownloadUrl(
+      attachment.storageKey,
+      attachment.fileName,
+    );
+    return attachmentDownloadResponseSchema.parse({
+      download: { url: download.url, expiresAt: download.expiresAt.toISOString() },
     });
   }
 

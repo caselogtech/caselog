@@ -1,10 +1,14 @@
 export { apiErrorSchema, type ApiError } from './api-error.js';
 export {
+  attachmentDownloadParamsSchema,
+  attachmentDownloadResponseSchema,
   attachmentContentTypeSchema,
   createUploadSessionParamsSchema,
   createUploadSessionRequestSchema,
   createUploadSessionResponseSchema,
   type AttachmentContentType,
+  type AttachmentDownloadParams,
+  type AttachmentDownloadResponse,
   type CreateUploadSessionParams,
   type CreateUploadSessionRequest,
   type CreateUploadSessionResponse,

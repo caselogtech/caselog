@@ -10,6 +10,7 @@ const storageEnvironmentSchema = z.object({
   S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('false'),
   S3_AUTO_CREATE_BUCKET: z.enum(['true', 'false']).optional(),
   S3_UPLOAD_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(3_600).default(900),
+  S3_DOWNLOAD_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(3_600).default(300),
 });
 
 export type StorageConfig = {
@@ -21,6 +22,7 @@ export type StorageConfig = {
   forcePathStyle: boolean;
   autoCreateBucket: boolean;
   uploadUrlTtlSeconds: number;
+  downloadUrlTtlSeconds: number;
 };
 
 export const STORAGE_CONFIG = Symbol('STORAGE_CONFIG');
@@ -38,5 +40,6 @@ export function createStorageConfig(): StorageConfig {
       environment.S3_AUTO_CREATE_BUCKET === 'true' ||
       (environment.S3_AUTO_CREATE_BUCKET === undefined && environment.NODE_ENV !== 'production'),
     uploadUrlTtlSeconds: environment.S3_UPLOAD_URL_TTL_SECONDS,
+    downloadUrlTtlSeconds: environment.S3_DOWNLOAD_URL_TTL_SECONDS,
   };
 }

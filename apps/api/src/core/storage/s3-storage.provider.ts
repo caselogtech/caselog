@@ -2,6 +2,7 @@ import {
   CreateBucketCommand,
   CopyObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
   PutObjectCommand,
@@ -12,6 +13,7 @@ import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { STORAGE_CONFIG, type StorageConfig } from './storage.config';
 import type {
   CreateUploadUrlInput,
+  DownloadUrl,
   StorageProvider,
   StoredObject,
   UploadUrl,
@@ -60,6 +62,22 @@ export class S3StorageProvider implements StorageProvider, OnModuleInit {
         'x-amz-checksum-sha256': Buffer.from(input.checksumSha256, 'hex').toString('base64'),
         'x-amz-meta-checksumsha256': input.checksumSha256,
       },
+      expiresAt,
+    };
+  }
+
+  async createDownloadUrl(storageKey: string, fileName: string): Promise<DownloadUrl> {
+    const expiresAt = new Date(Date.now() + this.config.downloadUrlTtlSeconds * 1_000);
+    const disposition = `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`;
+    const command = new GetObjectCommand({
+      Bucket: this.config.bucket,
+      Key: storageKey,
+      ResponseContentDisposition: disposition,
+    });
+    return {
+      url: await getSignedUrl(this.client, command, {
+        expiresIn: this.config.downloadUrlTtlSeconds,
+      }),
       expiresAt,
     };
   }
