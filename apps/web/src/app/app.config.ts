@@ -14,7 +14,7 @@ import { routes } from './app.routes';
 import { BrowserSession } from './core/auth/browser-session';
 import { TranslocoHttpLoader } from './core/i18n/transloco-loader';
 import { sessionAuthInterceptor } from './core/auth/session-auth.interceptor';
-import { AuthApi } from './features/auth/auth-api';
+import { AuthApi } from './features/auth/public-api';
 
 function restoreSession(): Promise<void> {
   const authApi = inject(AuthApi);

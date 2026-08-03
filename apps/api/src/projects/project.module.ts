@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
-import { ProjectController } from './project.controller';
-import { ProjectRepository } from './project.repository';
-import { ProjectService } from './project.service';
+import { ProjectController } from './presentation/controllers/project.controller';
+import { ProjectRepository } from './infrastructure/repositories/project.repository';
+import { ProjectService } from './application/services/project.service';
 
 @Module({
   imports: [AuthModule],

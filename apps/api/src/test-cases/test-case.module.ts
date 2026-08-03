@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
-import { ProjectStructureController } from './project-structure.controller';
-import { ProjectStructureRepository } from './project-structure.repository';
-import { ProjectStructureService } from './project-structure.service';
-import { TestCaseController } from './test-case.controller';
-import { TestCaseRepository } from './test-case.repository';
-import { TestCaseService } from './test-case.service';
+import { ProjectStructureController } from './presentation/controllers/project-structure.controller';
+import { ProjectStructureRepository } from './infrastructure/repositories/project-structure.repository';
+import { ProjectStructureService } from './application/services/project-structure.service';
+import { TestCaseController } from './presentation/controllers/test-case.controller';
+import { TestCaseRepository } from './infrastructure/repositories/test-case.repository';
+import { TestCaseService } from './application/services/test-case.service';
 
 @Module({
   imports: [AuthModule],

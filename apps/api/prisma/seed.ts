@@ -1,6 +1,6 @@
 import { CaseTemplate, MembershipRole } from '../src/generated/prisma/enums';
-import { PasswordService } from '../src/auth/password.service';
-import { createPrismaClient } from '../src/core/database/prisma-client';
+import { PasswordService } from '../src/auth/application/services/password.service';
+import { createPrismaClient } from '../src/core/database/infrastructure/prisma/prisma-client';
 
 const DEMO_PASSWORD = 'CaselogDemo123!';
 const DEMO_VERIFIED_AT = new Date('2026-01-01T00:00:00.000Z');
