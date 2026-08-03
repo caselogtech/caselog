@@ -4,6 +4,12 @@ Open-source test management for manual and automated testing.
 
 The repository is under active development.
 
+## Architecture
+
+Caselog is a feature-first modular monolith. Module boundaries, dependency
+direction, backend layers, tenant isolation, and frontend structure are defined in
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Local development
 
 Requirements: Node.js from `.nvmrc`, pnpm 10, Docker with Compose.
@@ -29,6 +35,11 @@ pnpm check
 pnpm test
 pnpm build
 ```
+
+## CLI
+
+The publishable `@caselog/cli` package provides streaming, idempotent JUnit uploads
+for CI pipelines. See [apps/cli/README.md](apps/cli/README.md) for usage.
 
 ## License
 

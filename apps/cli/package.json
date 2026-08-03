@@ -1,0 +1,27 @@
+{
+  "name": "@caselog/cli",
+  "version": "0.0.0",
+  "description": "Caselog command-line client for CI result uploads",
+  "license": "MIT",
+  "bin": {
+    "caselog": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.8"
+  },
+  "engines": {
+    "node": ">=24.15.0 <25"
+  }
+}
