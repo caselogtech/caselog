@@ -25,7 +25,9 @@
     "run_closed": "This run is closed. Results and assignments can no longer be changed.",
     "invalid_run_state": "This run cannot make that lifecycle transition.",
     "invalid_step_results": "The step results no longer match this run's frozen case version.",
+    "invalid_upload_target": "This upload target no longer exists in the frozen test case version.",
     "run_status_unavailable": "This project is missing its Untested status. Restore that status before creating a run.",
+    "upload_limit_reached": "Too many files are waiting to upload. Finish or remove existing uploads first.",
     "validation_failed": "Check the entered information and try again.",
     "workspace_limit_reached": "This account has reached its workspace limit.",
     "workspace_slug_taken": "This workspace URL is unavailable."

@@ -1,5 +1,15 @@
 export { apiErrorSchema, type ApiError } from './api-error.js';
 export {
+  attachmentContentTypeSchema,
+  createUploadSessionParamsSchema,
+  createUploadSessionRequestSchema,
+  createUploadSessionResponseSchema,
+  type AttachmentContentType,
+  type CreateUploadSessionParams,
+  type CreateUploadSessionRequest,
+  type CreateUploadSessionResponse,
+} from './attachment.js';
+export {
   authUserSchema,
   createWorkspaceRequestSchema,
   createWorkspaceResponseSchema,

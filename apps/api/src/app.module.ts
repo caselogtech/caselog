@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { AttachmentModule } from './attachments/attachment.module';
 import { AuthModule } from './auth/auth.module';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { DatabaseModule } from './core/database/database.module';
 import { HealthModule } from './core/health/health.module';
 import { MailModule } from './core/mail/mail.module';
+import { StorageModule } from './core/storage/storage.module';
 import { ProjectModule } from './projects/project.module';
 import { TestCaseModule } from './test-cases/test-case.module';
 import { TestRunModule } from './test-runs/test-run.module';
@@ -14,7 +16,9 @@ import { TestRunModule } from './test-runs/test-run.module';
 @Module({
   imports: [
     DatabaseModule,
+    AttachmentModule,
     MailModule,
+    StorageModule,
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     HealthModule,
     AuthModule,

@@ -94,6 +94,7 @@ model Organization {
   testRunItems           TestRunItem[]
   testResults            TestResult[]
   testStepResults        TestStepResult[]
+  uploadSessions         UploadSession[]
   attachments            Attachment[]
   customFieldDefinitions CustomFieldDefinition[]
   customFieldValues      CustomFieldValue[]
@@ -118,6 +119,7 @@ model User {
   passwordCredential PasswordCredential?
   authSessions       AuthSession[]
   accountTokens      AccountToken[]
+  createdUploads     UploadSession[]     @relation("UploadCreator")
 
   @@map("users")
 }
@@ -206,6 +208,7 @@ model Project {
   testCases              TestCase[]
   resultStatuses         ResultStatus[]
   testRuns               TestRun[]
+  uploadSessions         UploadSession[]
   customFieldDefinitions CustomFieldDefinition[]
 
   @@id([organizationId, id], map: "pk_projects")
@@ -355,9 +358,10 @@ model TestRun {
   closedAt       DateTime? @map("closed_at") @db.Timestamptz(3)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  project      Project       @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
-  items        TestRunItem[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project        Project         @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  items          TestRunItem[]
+  uploadSessions UploadSession[]
 
   @@id([organizationId, id], map: "pk_test_runs")
   @@index([organizationId, projectId, status, createdAt], map: "idx_test_runs_organization_id_project_id_status_created_at")
@@ -375,12 +379,13 @@ model TestRunItem {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  testRun      TestRun         @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Restrict)
-  caseVersion  TestCaseVersion @relation(fields: [organizationId, caseVersionId], references: [organizationId, id], onDelete: Restrict)
-  status       ResultStatus    @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
-  assignee     User?           @relation("RunItemAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  results      TestResult[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  testRun        TestRun         @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Restrict)
+  caseVersion    TestCaseVersion @relation(fields: [organizationId, caseVersionId], references: [organizationId, id], onDelete: Restrict)
+  status         ResultStatus    @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
+  assignee       User?           @relation("RunItemAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  results        TestResult[]
+  uploadSessions UploadSession[]
 
   @@id([organizationId, id], map: "pk_test_run_items")
   @@unique([organizationId, testRunId, caseVersionId], map: "uq_test_run_items_organization_id_test_run_id_case_version_id")
@@ -443,6 +448,7 @@ model Attachment {
   contentType    String               @map("content_type") @db.VarChar(255)
   sizeBytes      BigInt               @map("size_bytes")
   checksumSha256 String               @map("checksum_sha256") @db.Char(64)
+  stepPosition   Int?                 @map("step_position")
   createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   deletedAt      DateTime?            @map("deleted_at") @db.Timestamptz(3)
 
@@ -453,6 +459,36 @@ model Attachment {
   @@index([organizationId, targetType, targetId], map: "idx_attachments_organization_id_target_type_target_id")
   @@index([organizationId, checksumSha256], map: "idx_attachments_organization_id_checksum_sha256")
   @@map("attachments")
+}
+
+model UploadSession {
+  organizationId String    @map("organization_id") @db.Uuid
+  id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String    @map("project_id") @db.Uuid
+  testRunId      String    @map("test_run_id") @db.Uuid
+  testRunItemId  String    @map("test_run_item_id") @db.Uuid
+  createdById    String    @map("created_by_id") @db.Uuid
+  storageKey     String    @map("storage_key") @db.VarChar(1024)
+  fileName       String    @map("file_name") @db.VarChar(255)
+  contentType    String    @map("content_type") @db.VarChar(255)
+  sizeBytes      BigInt    @map("size_bytes")
+  checksumSha256 String    @map("checksum_sha256") @db.Char(64)
+  stepPosition   Int?      @map("step_position")
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(3)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project      Project      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  testRun      TestRun      @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Cascade)
+  testRunItem  TestRunItem  @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Cascade)
+  createdBy    User         @relation("UploadCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@id([organizationId, id], map: "pk_upload_sessions")
+  @@unique([organizationId, storageKey], map: "uq_upload_sessions_organization_id_storage_key")
+  @@index([organizationId, testRunItemId, completedAt, expiresAt], map: "idx_upload_sessions_org_item_completed_expires")
+  @@index([organizationId, expiresAt], map: "idx_upload_sessions_organization_id_expires_at")
+  @@map("upload_sessions")
 }
 
 model CustomFieldDefinition {

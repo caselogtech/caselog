@@ -1094,6 +1094,61 @@ describe('authentication API', () => {
     expect(startedAgain.statusCode, startedAgain.body).toBe(201);
     expect(startedAgain.json().run.status).toBe('active');
 
+    const uploadSession = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/uploads`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        fileName: 'authentication-result.png',
+        contentType: 'image/png',
+        sizeBytes: 1_024,
+        checksumSha256: 'a'.repeat(64),
+        stepPosition: 0,
+      },
+    });
+    expect(uploadSession.statusCode, uploadSession.body).toBe(201);
+    expect(uploadSession.json()).toMatchObject({
+      upload: {
+        id: expect.any(String),
+        method: 'PUT',
+        url: expect.stringContaining('http'),
+        headers: {
+          'content-type': 'image/png',
+          'x-amz-meta-checksumsha256': 'a'.repeat(64),
+        },
+        expiresAt: expect.any(String),
+      },
+    });
+    await expect(
+      admin.uploadSession.findUnique({
+        where: {
+          organizationId_id: {
+            organizationId: organizationId as string,
+            id: uploadSession.json().upload.id as string,
+          },
+        },
+      }),
+    ).resolves.toMatchObject({
+      testRunItemId: createdRunItemId,
+      createdById: authUserId,
+      stepPosition: 0,
+      completedAt: null,
+    });
+    const invalidUploadStep = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/uploads`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        fileName: 'invalid.png',
+        contentType: 'image/png',
+        sizeBytes: 10,
+        checksumSha256: 'b'.repeat(64),
+        stepPosition: 1,
+      },
+    });
+    expect(invalidUploadStep.statusCode, invalidUploadStep.body).toBe(409);
+    expect(invalidUploadStep.json().error.code).toBe('invalid_upload_target');
+
     const missingStatus = await app.inject({
       method: 'POST',
       url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/results`,
@@ -1463,6 +1518,18 @@ describe('authentication API', () => {
         payload: { statusId: randomUUID() },
       });
       expect(recordResult.statusCode, recordResult.body).toBe(403);
+      const createUpload = await app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/uploads`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: {
+          fileName: 'forbidden.png',
+          contentType: 'image/png',
+          sizeBytes: 10,
+          checksumSha256: 'c'.repeat(64),
+        },
+      });
+      expect(createUpload.statusCode, createUpload.body).toBe(403);
     } finally {
       await admin.membership.updateMany({
         where: { organizationId, userId: authUserId },
@@ -1592,6 +1659,18 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantResultDetail.statusCode).toBe(404);
+    const crossTenantUpload = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/uploads`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+      payload: {
+        fileName: 'foreign.png',
+        contentType: 'image/png',
+        sizeBytes: 10,
+        checksumSha256: 'd'.repeat(64),
+      },
+    });
+    expect(crossTenantUpload.statusCode).toBe(404);
 
     const memberList = await app.inject({
       method: 'GET',
