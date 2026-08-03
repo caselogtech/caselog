@@ -3,12 +3,22 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import type { TestRunDetailResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../testing/i18n-testing';
+import { BrowserSession } from '../../../core/auth/browser-session';
 import { WorkspaceApi } from '../workspace-api';
+import { RunDraftStore, type RunDraftContext } from './run-draft-store';
 import { RunDetail } from './run-detail';
 
 const RUN_ID = 'b101eace-107c-4177-8d7c-f4f052785c16';
 const ITEM_ID = 'f230fe74-dd2d-40db-a0a4-21a8597526ef';
 const PASSED_ID = 'f03a1a64-f159-4f39-86ca-c21b135d6815';
+const USER_ID = '882c64fe-a728-40a0-91a9-96c74f585895';
+const draftContext: RunDraftContext = {
+  userId: USER_ID,
+  workspaceSlug: 'acme',
+  projectSlug: 'authentication',
+  runId: RUN_ID,
+  itemId: ITEM_ID,
+};
 const detail: TestRunDetailResponse = {
   project: {
     id: 'c684c153-3802-49c7-94d1-a443262a9129',
@@ -77,6 +87,7 @@ describe('RunDetail', () => {
   let queryClient: QueryClient;
 
   beforeEach(async () => {
+    localStorage.clear();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     workspaceApi.testRun.mockReset().mockResolvedValue(detail);
     workspaceApi.recordTestResult.mockReset().mockResolvedValue({
@@ -112,9 +123,19 @@ describe('RunDetail', () => {
         },
       ],
     }).compileComponents();
+    TestBed.inject(BrowserSession).user.set({
+      id: USER_ID,
+      email: 'ada@example.com',
+      displayName: 'Ada',
+      emailVerified: true,
+    });
   });
 
-  afterEach(() => queryClient.clear());
+  afterEach(() => {
+    localStorage.clear();
+    queryClient.clear();
+    vi.useRealTimers();
+  });
 
   it('renders the immutable case snapshot and records a timed result', async () => {
     const fixture = TestBed.createComponent(RunDetail);
@@ -139,5 +160,57 @@ describe('RunDetail', () => {
         stepResults: [{ position: 0, statusId: PASSED_ID }],
       },
     );
+  });
+
+  it('restores and clears an item-scoped execution draft after submission', async () => {
+    const draftStore = TestBed.inject(RunDraftStore);
+    draftStore.save(draftContext, {
+      comment: 'Connection interrupted',
+      elapsedSeconds: 17,
+      stepStatuses: { 0: PASSED_ID },
+    });
+    const fixture = TestBed.createComponent(RunDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    await vi.waitFor(() =>
+      expect(fixture.componentInstance.resultForm.getRawValue()).toEqual({
+        comment: 'Connection interrupted',
+        elapsedSeconds: 17,
+      }),
+    );
+    expect(fixture.componentInstance.isStepStatusSelected(0, PASSED_ID)).toBe(true);
+    expect(fixture.componentInstance.draftRestored()).toBe(true);
+
+    fixture.componentInstance.record(PASSED_ID);
+    await vi.waitFor(() => expect(draftStore.load(draftContext)).toBeNull());
+    expect(fixture.componentInstance.resultForm.getRawValue()).toEqual({
+      comment: '',
+      elapsedSeconds: 0,
+    });
+  });
+
+  it('tracks elapsed time and keeps the draft when execution goes offline', async () => {
+    const fixture = TestBed.createComponent(RunDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    vi.useFakeTimers();
+    fixture.componentInstance.startTimer();
+    vi.advanceTimersByTime(2_000);
+    expect(fixture.componentInstance.resultForm.controls.elapsedSeconds.value).toBe(2);
+    fixture.componentInstance.pauseTimer();
+    vi.advanceTimersByTime(1_000);
+    expect(fixture.componentInstance.resultForm.controls.elapsedSeconds.value).toBe(2);
+
+    fixture.componentInstance.handleOffline();
+    expect(fixture.componentInstance.online()).toBe(false);
+    expect(TestBed.inject(RunDraftStore).load(draftContext)).toMatchObject({
+      elapsedSeconds: 2,
+    });
+    fixture.componentInstance.resetTimer();
+    expect(fixture.componentInstance.resultForm.controls.elapsedSeconds.value).toBe(0);
   });
 });

@@ -8,6 +8,7 @@ header,
 .case-heading,
 .result-actions,
 .step-statuses,
+.timer-controls,
 .close-confirmation {
   align-items: center;
   display: flex;
@@ -151,9 +152,21 @@ textarea {
   resize: vertical;
   width: 100%;
 }
-form input {
-  display: block;
-  margin: 10px 0 14px;
+.timer-controls {
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.timer-controls input {
+  width: 120px;
+}
+.timer-controls output {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.draft-state {
+  color: var(--text-2);
+  font-size: 0.875rem;
+  margin-bottom: 14px;
 }
 .result-actions {
   flex-wrap: wrap;

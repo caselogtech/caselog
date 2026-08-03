@@ -125,11 +125,38 @@
               <label for="result-comment">{{ 'workspace.runs.detail.comment' | transloco }}</label>
               <textarea id="result-comment" formControlName="comment"></textarea>
               <label for="elapsed-seconds">{{ 'workspace.runs.detail.elapsedSeconds' | transloco }}</label>
-              <input id="elapsed-seconds" type="number" min="0" max="86400" formControlName="elapsedSeconds" />
+              <div class="timer-controls">
+                <input id="elapsed-seconds" type="number" min="0" max="86400" step="1" formControlName="elapsedSeconds" />
+                @if (timerRunning()) {
+                  <button type="button" (click)="pauseTimer()">{{ 'workspace.runs.detail.pauseTimer' | transloco }}</button>
+                } @else {
+                  <button type="button" (click)="startTimer()">{{ 'workspace.runs.detail.startTimer' | transloco }}</button>
+                }
+                <button type="button" (click)="resetTimer()">{{ 'workspace.runs.detail.resetTimer' | transloco }}</button>
+                <output for="elapsed-seconds" aria-live="polite">
+                  {{ 'workspace.runs.detail.timerValue' | transloco: { seconds: resultForm.controls.elapsedSeconds.value } }}
+                </output>
+              </div>
+              @if (resultForm.controls.elapsedSeconds.invalid && (resultForm.controls.elapsedSeconds.dirty || resultForm.controls.elapsedSeconds.touched)) {
+                <p class="action-error">{{ 'workspace.runs.detail.elapsedInvalid' | transloco }}</p>
+              }
+              <p class="draft-state" aria-live="polite">
+                @if (draftStorageError()) {
+                  <span class="error">{{ 'workspace.runs.detail.draftError' | transloco }}</span>
+                } @else if (!online()) {
+                  {{ 'workspace.runs.detail.offlineDraft' | transloco }}
+                } @else if (draftRestored()) {
+                  {{ 'workspace.runs.detail.draftRestored' | transloco }}
+                } @else if (draftSavedAt()) {
+                  {{ 'workspace.runs.detail.draftSaved' | transloco }}
+                } @else {
+                  {{ 'workspace.runs.detail.draftReady' | transloco }}
+                }
+              </p>
               <div class="result-actions">
                 @for (status of data.statuses; track status.id) {
                   @if (status.key !== 'untested') {
-                    <button type="button" [style.border-color]="status.color" (click)="record(status.id)">{{ status.name }}</button>
+                    <button type="button" [disabled]="!online() || result.isPending() || resultForm.invalid" [style.border-color]="status.color" (click)="record(status.id)">{{ status.name }}</button>
                   }
                 }
               </div>
