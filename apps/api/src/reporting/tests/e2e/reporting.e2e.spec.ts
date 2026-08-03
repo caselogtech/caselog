@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { runProgressResponseSchema, sessionResponseSchema } from '@caselog/schemas';
+import {
+  caseExecutionHistoryResponseSchema,
+  runProgressResponseSchema,
+  sessionResponseSchema,
+} from '@caselog/schemas';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -10,7 +14,7 @@ import type { PrismaClient } from '../../../generated/prisma/client';
 
 const PASSWORD = 'correct horse battery staple';
 
-describe('run progress reporting', () => {
+describe('reporting', () => {
   let app: NestFastifyApplication;
   let admin: PrismaClient;
   let email = '';
@@ -20,6 +24,8 @@ describe('run progress reporting', () => {
   let projectId = '';
   let runId = '';
   let foreignRunId = '';
+  let caseId = '';
+  let foreignCaseId = '';
 
   beforeAll(async () => {
     const adminUrl = process.env.MIGRATION_DATABASE_URL;
@@ -115,21 +121,22 @@ describe('run progress reporting', () => {
         where: { organizationId_id: { organizationId, id: testCase.id } },
         data: { currentVersionId: version.id },
       });
-      return version;
+      return { testCase, version };
     };
 
-    const versions = await Promise.all([
+    const cases = await Promise.all([
       createVersion(authenticationSuite.id, 1n, 'Sign in'),
       createVersion(authenticationSuite.id, 2n, 'Reset password'),
       createVersion(checkoutSuite.id, 3n, 'Place order'),
     ]);
+    caseId = cases[0]?.testCase.id ?? '';
     const run = await admin.testRun.create({
       data: { organizationId, projectId, name: 'Release regression', status: 'ACTIVE' },
     });
     runId = run.id;
     const statusByKey = new Map(statuses.map((status) => [status.key, status.id]));
-    await Promise.all(
-      versions.map((version, index) =>
+    const runItems = await Promise.all(
+      cases.map(({ version }, index) =>
         admin.testRunItem.create({
           data: {
             organizationId,
@@ -144,6 +151,39 @@ describe('run progress reporting', () => {
         }),
       ),
     );
+    const firstRunItem = runItems[0];
+    const failedStatusId = statusByKey.get('failed');
+    const passedStatusId = statusByKey.get('passed');
+    if (!firstRunItem || !failedStatusId || !passedStatusId) {
+      throw new Error('Expected reporting result fixtures');
+    }
+    const executedAt = new Date();
+    await Promise.all([
+      admin.testResult.create({
+        data: {
+          organizationId,
+          testRunItemId: firstRunItem.id,
+          statusId: failedStatusId,
+          attempt: 1,
+          comment: 'Authentication service was unavailable',
+          executedById: user.id,
+          executedAt: new Date(executedAt.getTime() - 60_000),
+          build: 'rc-1',
+        },
+      }),
+      admin.testResult.create({
+        data: {
+          organizationId,
+          testRunItemId: firstRunItem.id,
+          statusId: passedStatusId,
+          attempt: 2,
+          comment: 'Passed after service recovery',
+          executedById: user.id,
+          executedAt,
+          build: 'rc-2',
+        },
+      }),
+    ]);
 
     const foreignOrganization = await admin.organization.create({
       data: { name: 'Foreign Reporting Workspace', slug: `foreign-reporting-${suffix}` },
@@ -165,6 +205,33 @@ describe('run progress reporting', () => {
       },
     });
     foreignRunId = foreignRun.id;
+    const foreignSuite = await admin.suite.create({
+      data: {
+        organizationId: foreignOrganizationId,
+        projectId: foreignProject.id,
+        name: 'Foreign',
+      },
+    });
+    const foreignSection = await admin.section.create({
+      data: {
+        organizationId: foreignOrganizationId,
+        projectId: foreignProject.id,
+        suiteId: foreignSuite.id,
+        name: 'Foreign section',
+        path: `/${randomUUID()}`,
+        depth: 0,
+      },
+    });
+    const foreignCase = await admin.testCase.create({
+      data: {
+        organizationId: foreignOrganizationId,
+        projectId: foreignProject.id,
+        suiteId: foreignSuite.id,
+        sectionId: foreignSection.id,
+        caseNumber: 1n,
+      },
+    });
+    foreignCaseId = foreignCase.id;
 
     const organizationSession = await app.inject({
       method: 'POST',
@@ -178,6 +245,7 @@ describe('run progress reporting', () => {
   afterAll(async () => {
     if (admin) {
       const organizationIds = [organizationId, foreignOrganizationId].filter(Boolean);
+      await admin.testResult.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.testRunItem.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.testRun.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.testCase.updateMany({
@@ -229,6 +297,46 @@ describe('run progress reporting', () => {
     const response = await app.inject({
       method: 'GET',
       url: `/api/v1/projects/reporting/reports/runs/${foreignRunId}/progress`,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+
+    expect(response.statusCode, response.body).toBe(404);
+    expect(response.json().error).toMatchObject({ code: 'not_found' });
+  });
+
+  it('returns paginated execution history across immutable attempts', async () => {
+    const firstPageResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/reporting/reports/cases/${caseId}/history?limit=1`,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+
+    expect(firstPageResponse.statusCode, firstPageResponse.body).toBe(200);
+    const firstPage = caseExecutionHistoryResponseSchema.parse(firstPageResponse.json());
+    expect(firstPage.testCase).toMatchObject({ caseNumber: '1', title: 'Sign in' });
+    expect(firstPage.items).toHaveLength(1);
+    expect(firstPage.items[0]).toMatchObject({
+      result: { attempt: 2, build: 'rc-2', comment: 'Passed after service recovery' },
+      run: { id: runId, name: 'Release regression' },
+      caseVersion: { version: 1, title: 'Sign in' },
+    });
+    expect(firstPage.nextCursor).toBe(firstPage.items[0]?.result.id);
+
+    const secondPageResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/reporting/reports/cases/${caseId}/history?limit=1&cursor=${firstPage.nextCursor}`,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(secondPageResponse.statusCode, secondPageResponse.body).toBe(200);
+    const secondPage = caseExecutionHistoryResponseSchema.parse(secondPageResponse.json());
+    expect(secondPage.items[0]?.result).toMatchObject({ attempt: 1, build: 'rc-1' });
+    expect(secondPage.nextCursor).toBeNull();
+  });
+
+  it('returns 404 for a case owned by another tenant', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/reporting/reports/cases/${foreignCaseId}/history`,
       headers: { authorization: `Bearer ${organizationToken}` },
     });
 

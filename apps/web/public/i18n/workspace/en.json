@@ -183,7 +183,16 @@
       "historicalVersion": "Historical version {{version}}",
       "restore": "Restore as new version",
       "restoring": "Restoring…",
-      "closeVersion": "Close"
+      "closeVersion": "Close",
+      "executionHistoryEyebrow": "Test history",
+      "executionHistory": "Execution history",
+      "executionHistoryLoading": "Loading execution history…",
+      "executionHistoryRetry": "Reload history",
+      "executionHistoryEmpty": "This test case has not been executed in a run yet.",
+      "executionAttempt": "Attempt {{attempt}}",
+      "executionUnknownUser": "Unknown executor",
+      "executionHistoryLoadMore": "Load more history",
+      "executionHistoryLoadingMore": "Loading more history…"
     }
   },
   "runs": {

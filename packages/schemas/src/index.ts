@@ -78,6 +78,10 @@ export {
 export { healthResponseSchema, type HealthResponse } from './health.js';
 export { organizationIdSchema, type OrganizationId } from './organization.js';
 export {
+  caseExecutionHistoryItemSchema,
+  caseExecutionHistoryParamsSchema,
+  caseExecutionHistoryQuerySchema,
+  caseExecutionHistoryResponseSchema,
   runProgressAssigneeSchema,
   runProgressParamsSchema,
   runProgressResponseSchema,
@@ -88,6 +92,10 @@ export {
   type RunProgressResponse,
   type RunProgressStatus,
   type RunProgressSuite,
+  type CaseExecutionHistoryItem,
+  type CaseExecutionHistoryParams,
+  type CaseExecutionHistoryQuery,
+  type CaseExecutionHistoryResponse,
 } from './reporting.js';
 export {
   createTestRunRequestSchema,

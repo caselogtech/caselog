@@ -1,23 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import type { RunProgressSource } from '../../domain/calculations/run-progress';
-
-export type ReportingResult<T> =
-  | { kind: 'found'; value: T }
-  | { kind: 'project_not_found' }
-  | { kind: 'run_not_found' };
+import type { ReportingResult } from './reporting-result';
 
 @Injectable()
-export class ReportingRepository {
+export class RunProgressRepository {
   constructor(
     @Inject(TenantDatabaseService) private readonly tenantDatabase: TenantDatabaseService,
   ) {}
 
-  async runProgress(
+  async find(
     organizationId: string,
     projectSlug: string,
     runId: string,
-  ): Promise<ReportingResult<RunProgressSource>> {
+  ): Promise<ReportingResult<RunProgressSource, 'project_not_found' | 'run_not_found'>> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
       const project = await transaction.project.findUnique({
         where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },

@@ -293,6 +293,90 @@
           }
         </aside>
       </div>
+
+      <section class="execution-history" aria-labelledby="execution-history-title">
+        <div class="execution-history-heading">
+          <div>
+            <p class="eyebrow">{{ 'workspace.cases.detail.executionHistoryEyebrow' | transloco }}</p>
+            <h2 id="execution-history-title">
+              {{ 'workspace.cases.detail.executionHistory' | transloco }}
+            </h2>
+          </div>
+        </div>
+
+        @if (executionHistory.isPending()) {
+          <p aria-live="polite">{{ 'workspace.cases.detail.executionHistoryLoading' | transloco }}</p>
+        } @else if (executionHistory.isError()) {
+          <div role="alert">
+            <p>{{ errorTranslationKey() | transloco }}</p>
+            <button type="button" (click)="executionHistory.refetch()">
+              {{ 'workspace.cases.detail.executionHistoryRetry' | transloco }}
+            </button>
+          </div>
+        } @else if (executionHistoryItems().length === 0) {
+          <p>{{ 'workspace.cases.detail.executionHistoryEmpty' | transloco }}</p>
+        } @else {
+          <ol>
+            @for (entry of executionHistoryItems(); track entry.result.id) {
+              <li>
+                <div class="execution-history-result">
+                  <span
+                    class="execution-status"
+                    [style.border-color]="entry.result.status.color"
+                  >
+                    {{ entry.result.status.name }}
+                  </span>
+                  <div>
+                    <a
+                      href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ entry.run.id }}/items/{{ entry.runItemId }}/results/{{ entry.result.id }}"
+                      [routerLink]="[
+                        '/',
+                        workspaceSlug,
+                        projectSlug,
+                        'runs',
+                        entry.run.id,
+                        'items',
+                        entry.runItemId,
+                        'results',
+                        entry.result.id
+                      ]"
+                    >
+                      {{ entry.run.name }} ·
+                      {{ 'workspace.cases.detail.executionAttempt' | transloco: { attempt: entry.result.attempt } }}
+                    </a>
+                    <p>
+                      {{ 'workspace.cases.detail.version' | transloco: { version: entry.caseVersion.version } }}
+                      @if (entry.result.build) {
+                        · {{ 'workspace.runs.build' | transloco }} {{ entry.result.build }}
+                      }
+                    </p>
+                  </div>
+                  <small>
+                    {{ entry.result.executedAt | date: 'medium' }} ·
+                    {{ entry.result.executedBy?.displayName ?? ('workspace.cases.detail.executionUnknownUser' | transloco) }}
+                  </small>
+                </div>
+                @if (entry.result.comment) {
+                  <p class="execution-comment">{{ entry.result.comment }}</p>
+                }
+              </li>
+            }
+          </ol>
+          @if (executionHistory.hasNextPage()) {
+            <button
+              type="button"
+              [disabled]="executionHistory.isFetchingNextPage()"
+              (click)="executionHistory.fetchNextPage()"
+            >
+              {{
+                (executionHistory.isFetchingNextPage()
+                  ? 'workspace.cases.detail.executionHistoryLoadingMore'
+                  : 'workspace.cases.detail.executionHistoryLoadMore') | transloco
+              }}
+            </button>
+          }
+        }
+      </section>
     }
   }
 </main>

@@ -14,7 +14,12 @@ import {
   updateTestCaseRequestSchema,
 } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import {
+  injectInfiniteQuery,
+  injectMutation,
+  injectQuery,
+  QueryClient,
+} from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { WorkspaceApi } from '../../data-access/workspace-api';
@@ -64,6 +69,23 @@ export class CaseDetail {
     queryKey: ['test-case', this.workspaceSlug, this.projectSlug, this.caseId],
     queryFn: () => this.workspaceApi.testCase(this.workspaceSlug, this.projectSlug, this.caseId),
   }));
+
+  readonly executionHistory = injectInfiniteQuery(() => ({
+    queryKey: ['case-execution-history', this.workspaceSlug, this.projectSlug, this.caseId],
+    queryFn: ({ pageParam }) =>
+      this.workspaceApi.testCaseExecutionHistory(
+        this.workspaceSlug,
+        this.projectSlug,
+        this.caseId,
+        pageParam ?? undefined,
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  }));
+
+  readonly executionHistoryItems = computed(
+    () => this.executionHistory.data()?.pages.flatMap(({ items }) => items) ?? [],
+  );
 
   readonly structure = injectQuery(() => ({
     queryKey: ['project-structure', this.workspaceSlug, this.projectSlug],
@@ -249,6 +271,7 @@ export class CaseDetail {
       this.updateCase.error() ??
         this.restoreVersion.error() ??
         this.selectedVersion.error() ??
+        this.executionHistory.error() ??
         this.detail.error(),
     );
   }

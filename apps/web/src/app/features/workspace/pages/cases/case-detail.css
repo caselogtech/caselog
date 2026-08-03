@@ -25,11 +25,72 @@
 }
 
 .case-body,
-.version-panel {
+.version-panel,
+.execution-history {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 24px;
+}
+
+.execution-history {
+  margin-top: 20px;
+}
+
+.execution-history-heading {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.execution-history-heading h2 {
+  margin-top: 0;
+}
+
+.execution-history ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.execution-history li {
+  border-top: 1px solid var(--border);
+  padding: 14px 0;
+}
+
+.execution-history-result {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.execution-history-result p,
+.execution-comment {
+  color: var(--text-2);
+  margin: 4px 0 0;
+}
+
+.execution-history-result small {
+  color: var(--text-2);
+  text-align: right;
+}
+
+.execution-status {
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 5px 9px;
+}
+
+.execution-history button {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  cursor: pointer;
+  font: inherit;
+  min-height: 36px;
+  padding: 7px 10px;
 }
 
 .case-metadata {
@@ -188,5 +249,14 @@
   .detail-layout,
   .case-metadata {
     grid-template-columns: 1fr;
+  }
+
+  .execution-history-result {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+
+  .execution-history-result small {
+    text-align: left;
   }
 }

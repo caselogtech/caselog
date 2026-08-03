@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
+  caseExecutionHistoryResponseSchema,
   createTestCaseResponseSchema,
   createTestRunResponseSchema,
   assignTestRunItemResponseSchema,
@@ -23,6 +24,7 @@ import {
   type CreateTestCaseResponse,
   type CreateTestRunRequest,
   type CreateTestRunResponse,
+  type CaseExecutionHistoryResponse,
   type AssignTestRunItemResponse,
   type CreateTestResultRequest,
   type CreateTestResultResponse,
@@ -192,6 +194,23 @@ export class WorkspaceApi {
       ),
     );
     return runProgressResponseSchema.parse(response);
+  }
+
+  async testCaseExecutionHistory(
+    workspaceSlug: string,
+    projectSlug: string,
+    caseId: string,
+    cursor?: string,
+    limit = 25,
+  ): Promise<CaseExecutionHistoryResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/reports/cases/${encodeURIComponent(caseId)}/history`,
+        { params: { limit, ...(cursor ? { cursor } : {}) } },
+      ),
+    );
+    return caseExecutionHistoryResponseSchema.parse(response);
   }
 
   async startTestRun(

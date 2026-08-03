@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import type {
+  CaseExecutionHistoryResponse,
   ProjectStructureResponse,
   TestCaseDetailResponse,
   UpdateTestCaseResponse,
@@ -76,9 +77,58 @@ const structure: ProjectStructureResponse = {
   ],
 };
 
+const executionHistory: CaseExecutionHistoryResponse = {
+  project: detail.project,
+  testCase: {
+    id: caseId,
+    caseNumber: '42',
+    title: detail.testCase.currentVersion.title,
+  },
+  items: [
+    {
+      runItemId: '6556621a-35f4-4719-b78c-0726ae0f65dc',
+      result: {
+        id: '11851619-3a04-4240-a9ce-e0d5abef0272',
+        attempt: 2,
+        status: {
+          id: 'b0529f51-0af7-4202-92c7-e8125269ca50',
+          key: 'passed',
+          name: 'Passed',
+          color: '#16A34A',
+          isFinal: true,
+          countsAsFailure: false,
+        },
+        comment: 'Passed after retry',
+        elapsedMs: 4_000,
+        executedAt: '2026-08-02T13:00:00.000Z',
+        executedBy: {
+          id: 'add2bb85-bfcb-435a-94d8-65f72879e9c3',
+          displayName: 'Quality Owner',
+        },
+        build: 'rc-2',
+      },
+      run: {
+        id: '09cbd4a7-1263-45cc-98f1-d3a169395746',
+        name: 'Release regression',
+        status: 'completed',
+        build: 'rc-2',
+        createdAt: '2026-08-02T12:00:00.000Z',
+        closedAt: '2026-08-02T14:00:00.000Z',
+      },
+      caseVersion: {
+        id: detail.testCase.currentVersion.id,
+        version: 1,
+        title: detail.testCase.currentVersion.title,
+      },
+    },
+  ],
+  nextCursor: null,
+};
+
 describe('CaseDetail', () => {
   const workspaceApi = {
     testCase: vi.fn(),
+    testCaseExecutionHistory: vi.fn(),
     projectStructure: vi.fn(),
     updateTestCase: vi.fn(),
     testCaseVersion: vi.fn(),
@@ -91,11 +141,13 @@ describe('CaseDetail', () => {
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
     workspaceApi.testCase.mockReset();
+    workspaceApi.testCaseExecutionHistory.mockReset();
     workspaceApi.projectStructure.mockReset();
     workspaceApi.updateTestCase.mockReset();
     workspaceApi.testCaseVersion.mockReset();
     workspaceApi.restoreTestCaseVersion.mockReset();
     workspaceApi.testCase.mockResolvedValue(detail);
+    workspaceApi.testCaseExecutionHistory.mockResolvedValue(executionHistory);
     workspaceApi.projectStructure.mockResolvedValue(structure);
     await TestBed.configureTestingModule({
       imports: [CaseDetail, i18nTestingModule()],
@@ -135,6 +187,28 @@ describe('CaseDetail', () => {
     );
     expect(fixture.nativeElement.querySelector('.version-panel')?.textContent).toContain(
       'Version 1',
+    );
+  });
+
+  it('renders execution history across test runs', async () => {
+    const fixture = TestBed.createComponent(CaseDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() =>
+      expect(fixture.componentInstance.executionHistory.isSuccess()).toBe(true),
+    );
+    fixture.detectChanges();
+
+    expect(workspaceApi.testCaseExecutionHistory).toHaveBeenCalledWith(
+      'acme-quality',
+      'authentication',
+      caseId,
+      undefined,
+    );
+    expect(fixture.nativeElement.querySelector('.execution-history')?.textContent).toContain(
+      'Release regression',
+    );
+    expect(fixture.nativeElement.querySelector('.execution-history')?.textContent).toContain(
+      'Passed after retry',
     );
   });
 
