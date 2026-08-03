@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import type { TestRunDetailResponse } from '@caselog/schemas';
+import type { RunProgressResponse, TestRunDetailResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { BrowserSession } from '../../../../../core/auth/browser-session';
@@ -76,9 +76,35 @@ const detail: TestRunDetailResponse = {
   ],
 };
 
+const progress: RunProgressResponse = {
+  project: detail.project,
+  run: detail.run,
+  progressPercent: 0,
+  passRate: null,
+  successfulCount: 0,
+  incompleteCount: 1,
+  statuses: [
+    {
+      status: detail.items[0]?.status as NonNullable<(typeof detail.items)[number]['status']>,
+      count: 1,
+      percentage: 100,
+    },
+  ],
+  assignees: [{ assignee: null, itemCount: 1, completedCount: 0, failedCount: 0 }],
+  suites: [
+    {
+      suite: { id: '3ba44470-2ee9-4edb-b684-e23f4e6f491c', name: 'Authentication' },
+      itemCount: 1,
+      completedCount: 0,
+      failedCount: 0,
+    },
+  ],
+};
+
 describe('RunDetail', () => {
   const workspaceApi = {
     testRun: vi.fn(),
+    runProgress: vi.fn(),
     startTestRun: vi.fn(),
     closeTestRun: vi.fn(),
     assignTestRunItem: vi.fn(),
@@ -90,6 +116,7 @@ describe('RunDetail', () => {
     localStorage.clear();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     workspaceApi.testRun.mockReset().mockResolvedValue(detail);
+    workspaceApi.runProgress.mockReset().mockResolvedValue(progress);
     workspaceApi.recordTestResult.mockReset().mockResolvedValue({
       result: {
         id: '4c305be5-9ab8-4ef4-889c-08b666b5d402',
@@ -161,6 +188,17 @@ describe('RunDetail', () => {
         stepResults: [{ position: 0, statusId: PASSED_ID }],
       },
     );
+  });
+
+  it('renders the aggregated progress report', async () => {
+    const fixture = TestBed.createComponent(RunDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.progress.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    expect(workspaceApi.runProgress).toHaveBeenCalledWith('acme', 'authentication', RUN_ID);
+    expect(fixture.nativeElement.textContent).toContain('Execution progress');
+    expect(fixture.nativeElement.textContent).toContain('Authentication');
   });
 
   it('restores and clears an item-scoped execution draft after submission', async () => {

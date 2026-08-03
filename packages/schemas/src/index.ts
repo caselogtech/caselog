@@ -78,6 +78,18 @@ export {
 export { healthResponseSchema, type HealthResponse } from './health.js';
 export { organizationIdSchema, type OrganizationId } from './organization.js';
 export {
+  runProgressAssigneeSchema,
+  runProgressParamsSchema,
+  runProgressResponseSchema,
+  runProgressStatusSchema,
+  runProgressSuiteSchema,
+  type RunProgressAssignee,
+  type RunProgressParams,
+  type RunProgressResponse,
+  type RunProgressStatus,
+  type RunProgressSuite,
+} from './reporting.js';
+export {
   createTestRunRequestSchema,
   createTestRunHeadersSchema,
   createTestRunResponseSchema,

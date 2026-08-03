@@ -7,6 +7,7 @@ import {
   createTestResultResponseSchema,
   projectListResponseSchema,
   projectStructureResponseSchema,
+  runProgressResponseSchema,
   sectionResponseSchema,
   suiteResponseSchema,
   testCaseListResponseSchema,
@@ -28,6 +29,7 @@ import {
   type OrganizationTokenResponse,
   type ProjectListResponse,
   type ProjectStructureResponse,
+  type RunProgressResponse,
   type SectionResponse,
   type SuiteResponse,
   type TestCaseListResponse,
@@ -176,6 +178,20 @@ export class WorkspaceApi {
       ),
     );
     return testRunDetailResponseSchema.parse(response);
+  }
+
+  async runProgress(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+  ): Promise<RunProgressResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/reports/runs/${encodeURIComponent(runId)}/progress`,
+      ),
+    );
+    return runProgressResponseSchema.parse(response);
   }
 
   async startTestRun(

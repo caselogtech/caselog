@@ -17,6 +17,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import {
   injectInfiniteQuery,
   injectMutation,
+  injectQuery,
   QueryClient,
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
@@ -76,6 +77,11 @@ export class RunDetail {
       ),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  }));
+
+  readonly progress = injectQuery(() => ({
+    queryKey: ['run-progress', this.workspaceSlug, this.projectSlug, this.runId],
+    queryFn: () => this.workspaceApi.runProgress(this.workspaceSlug, this.projectSlug, this.runId),
   }));
 
   readonly items = computed(() => this.detail.data()?.pages.flatMap(({ items }) => items) ?? []);
@@ -289,9 +295,14 @@ export class RunDetail {
     void this.queryClient.invalidateQueries({
       queryKey: ['test-runs', this.workspaceSlug, this.projectSlug],
     });
-    return this.queryClient.invalidateQueries({
-      queryKey: ['test-run', this.workspaceSlug, this.projectSlug, this.runId],
-    });
+    return Promise.all([
+      this.queryClient.invalidateQueries({
+        queryKey: ['test-run', this.workspaceSlug, this.projectSlug, this.runId],
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: ['run-progress', this.workspaceSlug, this.projectSlug, this.runId],
+      }),
+    ]).then(() => undefined);
   }
 
   private persistDraft(): void {

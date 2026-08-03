@@ -64,11 +64,70 @@ select,
 aside,
 article,
 .state,
-.close-confirmation {
+.close-confirmation,
+.progress-report {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 12px;
+}
+.progress-report {
+  margin-bottom: 18px;
+}
+.progress-heading {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+.progress-heading strong {
+  font-size: 1.5rem;
+}
+.progress-report progress {
+  accent-color: var(--accent);
+  height: 10px;
+  width: 100%;
+}
+.progress-metrics,
+.progress-breakdowns {
+  display: grid;
+  gap: 12px;
+}
+.progress-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 16px 0;
+}
+.progress-metrics div {
+  background: var(--surface-1);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+.progress-metrics strong {
+  font-size: 1.25rem;
+}
+.progress-metrics span {
+  color: var(--text-2);
+  font-size: 0.8rem;
+}
+.progress-breakdowns {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.breakdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.breakdown-list li {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+.breakdown-list li span:not(.status-dot) {
+  flex: 1;
 }
 aside button {
   align-items: center;
@@ -191,5 +250,9 @@ textarea {
   }
   .header-actions {
     margin-top: 12px;
+  }
+  .progress-metrics,
+  .progress-breakdowns {
+    grid-template-columns: 1fr;
   }
 }
