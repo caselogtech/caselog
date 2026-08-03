@@ -7,6 +7,7 @@ import {
 } from './test-case.js';
 
 export const testRunStatusSchema = z.enum(['draft', 'active', 'completed', 'archived']);
+export const createTestRunStatusSchema = z.enum(['draft', 'active']);
 
 export const testRunListParamsSchema = testCaseListParamsSchema;
 
@@ -41,6 +42,7 @@ export const createTestRunRequestSchema = z
       .union([z.string().trim().min(1).max(200), z.literal('')])
       .optional()
       .transform((value) => value || undefined),
+    status: createTestRunStatusSchema.default('active'),
     caseIds: z.array(z.uuid()).min(1).max(500),
   })
   .superRefine(({ caseIds }, context) => {
@@ -196,7 +198,8 @@ export type TestRunListParams = z.infer<typeof testRunListParamsSchema>;
 export type TestRunListQuery = z.infer<typeof testRunListQuerySchema>;
 export type TestRunSummary = z.infer<typeof testRunSummarySchema>;
 export type TestRunListResponse = z.infer<typeof testRunListResponseSchema>;
-export type CreateTestRunRequest = z.infer<typeof createTestRunRequestSchema>;
+export type CreateTestRunRequest = z.input<typeof createTestRunRequestSchema>;
+export type CreateTestRunStatus = z.infer<typeof createTestRunStatusSchema>;
 export type CreateTestRunResponse = z.infer<typeof createTestRunResponseSchema>;
 export type TestRunDetailParams = z.infer<typeof testRunDetailParamsSchema>;
 export type TestRunItemParams = z.infer<typeof testRunItemParamsSchema>;

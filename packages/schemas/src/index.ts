@@ -64,6 +64,7 @@ export { organizationIdSchema, type OrganizationId } from './organization.js';
 export {
   createTestRunRequestSchema,
   createTestRunResponseSchema,
+  createTestRunStatusSchema,
   assignTestRunItemRequestSchema,
   assignTestRunItemResponseSchema,
   createTestResultRequestSchema,
@@ -91,6 +92,7 @@ export {
   testRunSummarySchema,
   type CreateTestRunRequest,
   type CreateTestRunResponse,
+  type CreateTestRunStatus,
   type AssignTestRunItemRequest,
   type AssignTestRunItemResponse,
   type CreateTestResultRequest,

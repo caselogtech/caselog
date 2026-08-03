@@ -1209,6 +1209,71 @@ describe('authentication API', () => {
       take: 2,
       select: { id: true, currentVersionId: true },
     });
+
+    const draft = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/runs',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        name: 'Authentication draft',
+        status: 'draft',
+        caseIds: [selectedCases[0]?.id],
+      },
+    });
+    expect(draft.statusCode, draft.body).toBe(201);
+    expect(draft.json().run).toMatchObject({
+      name: 'Authentication draft',
+      status: 'draft',
+      itemCount: 1,
+    });
+    const draftRunId = draft.json().run.id as string;
+
+    const draftRuns = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/runs?status=draft',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(draftRuns.statusCode, draftRuns.body).toBe(200);
+    expect(draftRuns.json().items).toEqual([
+      expect.objectContaining({ id: draftRunId, status: 'draft' }),
+    ]);
+
+    const archiveWithDraftRun = await app.inject({
+      method: 'DELETE',
+      url: '/api/v1/projects/authentication',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archiveWithDraftRun.statusCode, archiveWithDraftRun.body).toBe(409);
+    expect(archiveWithDraftRun.json().error.code).toBe('project_has_open_runs');
+
+    const startedDraft = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${draftRunId}/start`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(startedDraft.statusCode, startedDraft.body).toBe(201);
+    expect(startedDraft.json().run).toMatchObject({ id: draftRunId, status: 'active' });
+    const closedDraft = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${draftRunId}/close`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(closedDraft.statusCode, closedDraft.body).toBe(201);
+    expect(closedDraft.json().run).toMatchObject({ id: draftRunId, status: 'completed' });
+
+    const invalidInitialStatus = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects/authentication/runs',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        name: 'Invalid completed run',
+        status: 'completed',
+        caseIds: [selectedCases[0]?.id],
+      },
+    });
+    expect(invalidInitialStatus.statusCode, invalidInitialStatus.body).toBe(400);
+    expect(invalidInitialStatus.json().error.code).toBe('validation_failed');
+
     const response = await app.inject({
       method: 'POST',
       url: '/api/v1/projects/authentication/runs',

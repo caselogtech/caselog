@@ -181,7 +181,7 @@ export class TestRunRepository {
           projectId,
           name: request.name,
           build: request.build,
-          status: RunStatus.ACTIVE,
+          status: RUN_STATUS[request.status ?? 'active'],
           items: {
             create: request.caseIds.map((caseId, position) => ({
               caseVersionId: versionByCase.get(caseId) as string,
