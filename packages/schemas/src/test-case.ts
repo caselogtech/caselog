@@ -1,10 +1,5 @@
 import { z } from 'zod';
-
-export const projectSlugSchema = z
-  .string()
-  .min(1)
-  .max(50)
-  .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/);
+import { projectSlugSchema } from './project.js';
 
 export const testCaseListParamsSchema = z.object({
   projectSlug: projectSlugSchema,

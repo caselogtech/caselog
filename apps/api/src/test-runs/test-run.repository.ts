@@ -141,14 +141,18 @@ export class TestRunRepository {
     request: CreateTestRunRequest,
   ): Promise<RunResult<TestRunSummary>> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
-      const project = await transaction.project.findUnique({
-        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
-        select: { id: true },
-      });
-      if (!project) return { kind: 'project_not_found' };
+      const lockedProject = await transaction.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM projects
+        WHERE organization_id = ${organizationId}::uuid
+          AND slug = ${projectSlug}
+          AND deleted_at IS NULL
+        FOR SHARE
+      `;
+      const projectId = lockedProject[0]?.id;
+      if (!projectId) return { kind: 'project_not_found' };
       const cases = await transaction.testCase.findMany({
         where: {
-          projectId: project.id,
+          projectId,
           id: { in: request.caseIds },
           currentVersionId: { not: null },
           deletedAt: null,
@@ -160,7 +164,7 @@ export class TestRunRepository {
         where: {
           organizationId_projectId_key: {
             organizationId,
-            projectId: project.id,
+            projectId,
             key: 'untested',
           },
           deletedAt: null,
@@ -174,7 +178,7 @@ export class TestRunRepository {
       const run = await transaction.testRun.create({
         data: {
           organizationId,
-          projectId: project.id,
+          projectId,
           name: request.name,
           build: request.build,
           status: RunStatus.ACTIVE,

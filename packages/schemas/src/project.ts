@@ -1,5 +1,18 @@
 import { z } from 'zod';
 
+export const projectSlugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(50)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+
+export const projectKeySchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z][A-Z0-9_]{1,11}$/);
+
 export const projectListQuerySchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -21,6 +34,19 @@ export const projectListResponseSchema = z.object({
   nextCursor: z.uuid().nullable(),
 });
 
+export const createProjectRequestSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  key: projectKeySchema,
+  slug: projectSlugSchema,
+});
+
+export const createProjectResponseSchema = z.object({ project: projectSummarySchema });
+
+export const projectParamsSchema = z.object({ projectSlug: projectSlugSchema });
+
 export type ProjectListQuery = z.infer<typeof projectListQuerySchema>;
 export type ProjectSummary = z.infer<typeof projectSummarySchema>;
 export type ProjectListResponse = z.infer<typeof projectListResponseSchema>;
+export type CreateProjectRequest = z.infer<typeof createProjectRequestSchema>;
+export type CreateProjectResponse = z.infer<typeof createProjectResponseSchema>;
+export type ProjectParams = z.infer<typeof projectParamsSchema>;

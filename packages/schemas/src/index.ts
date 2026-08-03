@@ -118,15 +118,22 @@ export {
   type TestRunSummary,
 } from './test-run.js';
 export {
+  createProjectRequestSchema,
+  createProjectResponseSchema,
   projectListQuerySchema,
   projectListResponseSchema,
+  projectKeySchema,
+  projectParamsSchema,
+  projectSlugSchema,
   projectSummarySchema,
+  type CreateProjectRequest,
+  type CreateProjectResponse,
   type ProjectListQuery,
   type ProjectListResponse,
+  type ProjectParams,
   type ProjectSummary,
 } from './project.js';
 export {
-  projectSlugSchema,
   projectStructureResponseSchema,
   createSuiteRequestSchema,
   updateSuiteRequestSchema,

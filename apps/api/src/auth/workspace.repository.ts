@@ -4,6 +4,7 @@ import type { WorkspaceSummary } from '@caselog/schemas';
 import { Prisma } from '../generated/prisma/client';
 import type { MembershipRole } from '../generated/prisma/enums';
 import { PrismaService } from '../core/database/prisma.service';
+import { DEFAULT_PROJECT_STATUSES } from '../projects/project-defaults';
 
 const MAX_WORKSPACES_PER_USER = 5;
 
@@ -15,15 +16,6 @@ const ROLE_MAP: Record<MembershipRole, WorkspaceSummary['role']> = {
   CONTRIBUTOR: 'contributor',
   READ_ONLY: 'read_only',
 };
-
-const DEFAULT_STATUSES = [
-  ['untested', 'Untested', '#64748B', 'circle', false, false],
-  ['passed', 'Passed', '#16A34A', 'check', true, false],
-  ['failed', 'Failed', '#DC2626', 'x', true, true],
-  ['blocked', 'Blocked', '#D97706', 'ban', true, false],
-  ['retest', 'Retest', '#2563EB', 'rotate-ccw', false, false],
-  ['skipped', 'Skipped', '#475569', 'skip-forward', true, false],
-] as const;
 
 type WorkspaceRow = {
   organizationId: string;
@@ -113,7 +105,7 @@ export class WorkspaceRepository {
         });
         await transaction.usageCounter.create({ data: { organizationId: organization.id } });
         await transaction.resultStatus.createMany({
-          data: DEFAULT_STATUSES.map(
+          data: DEFAULT_PROJECT_STATUSES.map(
             ([key, statusName, color, icon, isFinal, countsAsFailure], position) => ({
               organizationId: organization.id,
               projectId: project.id,

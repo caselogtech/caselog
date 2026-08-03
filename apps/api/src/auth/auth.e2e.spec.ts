@@ -44,6 +44,7 @@ describe('authentication API', () => {
   let createdResultId: string;
   let createdAttachmentResultId: string;
   let createdAttachmentId: string;
+  let createdProjectSlug: string;
   let registrationCookie: string;
   let registrationResponse: Awaited<ReturnType<NestFastifyApplication['inject']>>;
 
@@ -441,6 +442,98 @@ describe('authentication API', () => {
     });
     expect(invalidLimit.statusCode).toBe(400);
     expect(invalidLimit.json().error.code).toBe('validation_failed');
+  });
+
+  it('creates a ready-to-use project and archives only projects without open runs', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    createdProjectSlug = `tooling-${suffix}`;
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Tooling Project', key: 'tools', slug: createdProjectSlug },
+    });
+    expect(created.statusCode, created.body).toBe(201);
+    expect(created.json()).toMatchObject({
+      project: {
+        key: 'TOOLS',
+        slug: createdProjectSlug,
+        name: 'Tooling Project',
+        caseCount: 0,
+        activeRunCount: 0,
+      },
+    });
+    const projectId = created.json().project.id as string;
+    const [statuses, suite] = await Promise.all([
+      admin.resultStatus.findMany({
+        where: { organizationId, projectId },
+        orderBy: { position: 'asc' },
+        select: { key: true },
+      }),
+      admin.suite.findFirst({
+        where: { organizationId, projectId, deletedAt: null },
+        select: { id: true, name: true },
+      }),
+    ]);
+    expect(statuses.map(({ key }) => key)).toEqual([
+      'untested',
+      'passed',
+      'failed',
+      'blocked',
+      'retest',
+      'skipped',
+    ]);
+    expect(suite).toMatchObject({ name: 'Main suite' });
+    await expect(
+      admin.section.findFirst({
+        where: { organizationId, projectId, suiteId: suite?.id },
+        select: { name: true, depth: true },
+      }),
+    ).resolves.toEqual({ name: 'Getting started', depth: 0 });
+
+    const duplicateKey = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Duplicate key', key: 'TOOLS', slug: `other-${suffix}` },
+    });
+    expect(duplicateKey.statusCode, duplicateKey.body).toBe(409);
+    expect(duplicateKey.json().error.code).toBe('project_key_taken');
+    const duplicateSlug = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        name: 'Duplicate slug',
+        key: `T${suffix.toUpperCase()}`,
+        slug: createdProjectSlug,
+      },
+    });
+    expect(duplicateSlug.statusCode, duplicateSlug.body).toBe(409);
+    expect(duplicateSlug.json().error.code).toBe('project_slug_taken');
+
+    const archivedSlug = `archive-${suffix}`;
+    const archiveCandidate = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: { name: 'Archive Candidate', key: `A${suffix.toUpperCase()}`, slug: archivedSlug },
+    });
+    expect(archiveCandidate.statusCode, archiveCandidate.body).toBe(201);
+    const archived = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/${archivedSlug}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archived.statusCode, archived.body).toBe(204);
+    await expect(
+      admin.project.findUnique({
+        where: {
+          organizationId_slug: { organizationId: organizationId as string, slug: archivedSlug },
+        },
+        select: { deletedAt: true },
+      }),
+    ).resolves.toMatchObject({ deletedAt: expect.any(Date) });
   });
 
   it('lists current test case versions with pagination and tenant-safe project resolution', async () => {
@@ -1054,6 +1147,13 @@ describe('authentication API', () => {
     });
     const runId = response.json().run.id as string;
     createdRunId = runId;
+    const archiveWithOpenRun = await app.inject({
+      method: 'DELETE',
+      url: '/api/v1/projects/authentication',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archiveWithOpenRun.statusCode, archiveWithOpenRun.body).toBe(409);
+    expect(archiveWithOpenRun.json().error.code).toBe('project_has_open_runs');
     const snapshotItems = await admin.testRunItem.findMany({
       where: { organizationId, testRunId: runId },
       orderBy: { position: 'asc' },
@@ -1538,6 +1638,20 @@ describe('authentication API', () => {
     });
 
     try {
+      const createProject = await app.inject({
+        method: 'POST',
+        url: '/api/v1/projects',
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+        payload: { name: 'Forbidden project', key: 'NOPE', slug: 'forbidden-project' },
+      });
+      expect(createProject.statusCode, createProject.body).toBe(403);
+      const archiveProject = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/projects/${createdProjectSlug}`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+      });
+      expect(archiveProject.statusCode, archiveProject.body).toBe(403);
+
       const response = await app.inject({
         method: 'POST',
         url: '/api/v1/projects/authentication/cases',
@@ -1719,6 +1833,12 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantCases.statusCode).toBe(404);
+    const crossTenantProjectArchive = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/${createdProjectSlug}`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantProjectArchive.statusCode).toBe(404);
     const crossTenantCaseDetail = await app.inject({
       method: 'GET',
       url: `/api/v1/projects/authentication/cases/${editableCaseId}`,
