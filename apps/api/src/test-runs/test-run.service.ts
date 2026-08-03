@@ -93,6 +93,27 @@ export class TestRunService {
     return testRunLifecycleResponseSchema.parse({ run: result.value });
   }
 
+  async archive(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    runId: string,
+  ): Promise<void> {
+    this.assertManage(principal);
+    const result = await this.runs.archive(principal.organizationId, projectSlug, runId);
+    this.assertFound(result);
+  }
+
+  async restore(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    runId: string,
+  ): Promise<TestRunLifecycleResponse> {
+    this.assertManage(principal);
+    const result = await this.runs.restore(principal.organizationId, projectSlug, runId);
+    this.assertFound(result);
+    return testRunLifecycleResponseSchema.parse({ run: result.value });
+  }
+
   async assign(
     principal: OrganizationAccessPrincipal,
     projectSlug: string,

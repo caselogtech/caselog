@@ -1,4 +1,17 @@
-import { Body, Controller, Get, Inject, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import type {
   CreateTestRunResponse,
   AssignTestRunItemResponse,
@@ -73,6 +86,23 @@ export class TestRunController {
     @Param() params: TestRunDetailParamsDto,
   ): Promise<TestRunLifecycleResponse> {
     return this.runs.close(principal, params.projectSlug, params.runId);
+  }
+
+  @Delete(':runId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  archive(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunDetailParamsDto,
+  ): Promise<void> {
+    return this.runs.archive(principal, params.projectSlug, params.runId);
+  }
+
+  @Post(':runId/restore')
+  restore(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunDetailParamsDto,
+  ): Promise<TestRunLifecycleResponse> {
+    return this.runs.restore(principal, params.projectSlug, params.runId);
   }
 
   @Put(':runId/items/:itemId/assignee')

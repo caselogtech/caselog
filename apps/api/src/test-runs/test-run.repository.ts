@@ -334,6 +334,22 @@ export class TestRunRepository {
     return this.changeLifecycle(organizationId, projectSlug, runId, 'close');
   }
 
+  async archive(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+  ): Promise<RunResult<TestRunSummary>> {
+    return this.changeLifecycle(organizationId, projectSlug, runId, 'archive');
+  }
+
+  async restore(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+  ): Promise<RunResult<TestRunSummary>> {
+    return this.changeLifecycle(organizationId, projectSlug, runId, 'restore');
+  }
+
   async assign(
     organizationId: string,
     projectSlug: string,
@@ -706,44 +722,60 @@ export class TestRunRepository {
     organizationId: string,
     projectSlug: string,
     runId: string,
-    action: 'start' | 'close',
+    action: 'start' | 'close' | 'archive' | 'restore',
   ): Promise<RunResult<TestRunSummary>> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
       const context = await this.lockRun(transaction, organizationId, projectSlug, runId);
       if (context.kind !== 'found') return context;
       const current = context.value.run;
-      if (current.status === RunStatus.ARCHIVED) return { kind: 'invalid_run_state' };
+      if ((action === 'start' || action === 'close') && current.status === RunStatus.ARCHIVED) {
+        return { kind: 'invalid_run_state' };
+      }
       if (action === 'start' && current.status === RunStatus.COMPLETED) {
         return { kind: 'invalid_run_state' };
       }
-      const run =
-        action === 'start' && current.status === RunStatus.DRAFT
-          ? await transaction.testRun.update({
-              where: { organizationId_id: { organizationId, id: runId } },
-              data: { status: RunStatus.ACTIVE },
-              select: {
-                id: true,
-                name: true,
-                status: true,
-                build: true,
-                createdAt: true,
-                closedAt: true,
-              },
-            })
-          : action === 'close' && current.status !== RunStatus.COMPLETED
-            ? await transaction.testRun.update({
-                where: { organizationId_id: { organizationId, id: runId } },
-                data: { status: RunStatus.COMPLETED, closedAt: new Date() },
-                select: {
-                  id: true,
-                  name: true,
-                  status: true,
-                  build: true,
-                  createdAt: true,
-                  closedAt: true,
-                },
-              })
-            : current;
+      if (
+        action === 'archive' &&
+        current.status !== RunStatus.COMPLETED &&
+        current.status !== RunStatus.ARCHIVED
+      ) {
+        return { kind: 'invalid_run_state' };
+      }
+      if (
+        action === 'restore' &&
+        current.status !== RunStatus.ARCHIVED &&
+        current.status !== RunStatus.COMPLETED
+      ) {
+        return { kind: 'invalid_run_state' };
+      }
+      let nextStatus: RunStatus | null = null;
+      if (action === 'start' && current.status === RunStatus.DRAFT) {
+        nextStatus = RunStatus.ACTIVE;
+      } else if (action === 'close' && current.status !== RunStatus.COMPLETED) {
+        nextStatus = RunStatus.COMPLETED;
+      } else if (action === 'archive' && current.status === RunStatus.COMPLETED) {
+        nextStatus = RunStatus.ARCHIVED;
+      } else if (action === 'restore' && current.status === RunStatus.ARCHIVED) {
+        nextStatus = RunStatus.COMPLETED;
+      }
+
+      const run = nextStatus
+        ? await transaction.testRun.update({
+            where: { organizationId_id: { organizationId, id: runId } },
+            data: {
+              status: nextStatus,
+              ...(action === 'close' ? { closedAt: new Date() } : {}),
+            },
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              build: true,
+              createdAt: true,
+              closedAt: true,
+            },
+          })
+        : current;
       const counts = await this.countItems(transaction, [run.id]);
       return { kind: 'found', value: this.toSummary(run, counts.get(run.id)) };
     });

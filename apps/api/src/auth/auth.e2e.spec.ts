@@ -1302,6 +1302,21 @@ describe('authentication API', () => {
     expect(startedAgain.statusCode, startedAgain.body).toBe(201);
     expect(startedAgain.json().run.status).toBe('active');
 
+    const archiveActive = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/runs/${runId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archiveActive.statusCode, archiveActive.body).toBe(409);
+    expect(archiveActive.json().error.code).toBe('invalid_run_state');
+    const restoreActive = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/restore`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(restoreActive.statusCode, restoreActive.body).toBe(409);
+    expect(restoreActive.json().error.code).toBe('invalid_run_state');
+
     const attachmentBody = Buffer.from('caselog result evidence');
     const attachmentChecksum = createHash('sha256').update(attachmentBody).digest('hex');
     const uploadSession = await app.inject({
@@ -1623,6 +1638,45 @@ describe('authentication API', () => {
     });
     expect(restartClosed.statusCode, restartClosed.body).toBe(409);
     expect(restartClosed.json().error.code).toBe('invalid_run_state');
+
+    const archived = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/runs/${runId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archived.statusCode, archived.body).toBe(204);
+    const archivedAgain = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/runs/${runId}`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archivedAgain.statusCode, archivedAgain.body).toBe(204);
+
+    const archivedRuns = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/authentication/runs?status=archived',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archivedRuns.statusCode, archivedRuns.body).toBe(200);
+    expect(archivedRuns.json().items).toEqual([
+      expect.objectContaining({ id: runId, status: 'archived' }),
+    ]);
+
+    const restored = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/restore`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(restored.statusCode, restored.body).toBe(201);
+    expect(restored.json().run).toMatchObject({ id: runId, status: 'completed' });
+    expect(restored.json().run.closedAt).toBe(closed.json().run.closedAt);
+    const restoredAgain = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${runId}/restore`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(restoredAgain.statusCode, restoredAgain.body).toBe(201);
+    expect(restoredAgain.json()).toEqual(restored.json());
   });
 
   it('assigns unique case numbers to concurrent creates', async () => {
@@ -1832,6 +1886,18 @@ describe('authentication API', () => {
         headers: { authorization: `Bearer ${organizationAccessToken}` },
       });
       expect(closeRun.statusCode, closeRun.body).toBe(403);
+      const archiveRun = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/projects/authentication/runs/${createdRunId}`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+      });
+      expect(archiveRun.statusCode, archiveRun.body).toBe(403);
+      const restoreRun = await app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/authentication/runs/${createdRunId}/restore`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+      });
+      expect(restoreRun.statusCode, restoreRun.body).toBe(403);
       const recordResult = await app.inject({
         method: 'POST',
         url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/results`,
@@ -1973,6 +2039,18 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantRunDetail.statusCode).toBe(404);
+    const crossTenantRunArchive = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantRunArchive.statusCode).toBe(404);
+    const crossTenantRunRestore = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}/restore`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantRunRestore.statusCode).toBe(404);
     const crossTenantResult = await app.inject({
       method: 'POST',
       url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/results`,
