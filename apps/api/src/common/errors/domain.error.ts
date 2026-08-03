@@ -50,3 +50,21 @@ export class ResourceNotFoundError extends DomainError {
     super('not_found', 'The requested resource was not found', { resource });
   }
 }
+
+export class InvalidPayloadError extends DomainError {
+  constructor(code: string, message: string, details: Record<string, unknown> = {}) {
+    super(code, message, details);
+  }
+}
+
+export class PayloadTooLargeError extends DomainError {
+  constructor(code: string, message: string, details: Record<string, unknown> = {}) {
+    super(code, message, details);
+  }
+}
+
+export class UnsupportedMediaTypeError extends DomainError {
+  constructor(expected: string) {
+    super('unsupported_media_type', `Content-Type must be ${expected}`, { expected });
+  }
+}

@@ -11,6 +11,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import type {
@@ -24,7 +25,9 @@ import type {
   TestRunLifecycleResponse,
   TestResultDetailResponse,
   TestResultHistoryResponse,
+  JUnitUploadResponse,
 } from '@caselog/schemas';
+import type { FastifyRequest } from 'fastify';
 import { OrganizationAuthGuard } from '../auth/organization-auth.guard';
 import { CurrentOrganization } from '../auth/organization-principal.decorator';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
@@ -87,6 +90,24 @@ export class TestRunController {
       params.runId,
       headers['idempotency-key'] as string | undefined,
       request,
+    );
+  }
+
+  @Post(':runId/results/junit')
+  ingestJUnitResults(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: TestRunDetailParamsDto,
+    @Headers() headers: IdempotencyHeadersDto,
+    @Headers('content-type') contentType: string | undefined,
+    @Req() request: FastifyRequest,
+  ): Promise<JUnitUploadResponse> {
+    return this.runs.ingestJUnitResults(
+      principal,
+      params.projectSlug,
+      params.runId,
+      headers['idempotency-key'] as string | undefined,
+      contentType,
+      request.body,
     );
   }
 

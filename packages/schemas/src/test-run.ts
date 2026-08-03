@@ -250,6 +250,30 @@ export const bulkTestResultsResponseSchema = z.object({
   unmatched: z.array(unmatchedBulkTestResultSchema),
 });
 
+export const junitUploadUnmatchedResultSchema = z.object({
+  sequence: z.number().int().positive(),
+  name: z.string().min(1),
+  automationId: z.string().min(1).max(500),
+  caseNumber: z
+    .string()
+    .regex(/^[1-9]\d*$/)
+    .nullable(),
+  reason: z.enum(['not_found', 'ambiguous']),
+});
+
+export const junitUploadResponseSchema = z.object({
+  total: z.number().int().nonnegative(),
+  recorded: z.number().int().nonnegative(),
+  truncated: z.number().int().nonnegative(),
+  counts: z.object({
+    passed: z.number().int().nonnegative(),
+    failed: z.number().int().nonnegative(),
+    error: z.number().int().nonnegative(),
+    skipped: z.number().int().nonnegative(),
+  }),
+  unmatched: z.array(junitUploadUnmatchedResultSchema),
+});
+
 export const testResultHistoryQuerySchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -293,6 +317,8 @@ export type BulkTestResultsRequest = z.infer<typeof bulkTestResultsRequestSchema
 export type BulkTestResultItemResponse = z.infer<typeof bulkTestResultItemResponseSchema>;
 export type UnmatchedBulkTestResult = z.infer<typeof unmatchedBulkTestResultSchema>;
 export type BulkTestResultsResponse = z.infer<typeof bulkTestResultsResponseSchema>;
+export type JUnitUploadUnmatchedResult = z.infer<typeof junitUploadUnmatchedResultSchema>;
+export type JUnitUploadResponse = z.infer<typeof junitUploadResponseSchema>;
 export type CreateStepResultRequest = z.infer<typeof createStepResultRequestSchema>;
 export type StepResultResponse = z.infer<typeof stepResultResponseSchema>;
 export type ResultAttachmentResponse = z.infer<typeof resultAttachmentResponseSchema>;

@@ -4,6 +4,7 @@ import {
   bulkTestResultsResponseSchema,
   createTestRunResponseSchema,
   idempotencyKeySchema,
+  junitUploadResponseSchema,
   assignTestRunItemResponseSchema,
   createTestResultResponseSchema,
   testRunDetailResponseSchema,
@@ -17,6 +18,7 @@ import {
   type AssignTestRunItemResponse,
   type BulkTestResultsRequest,
   type BulkTestResultsResponse,
+  type JUnitUploadResponse,
   type CreateTestResultRequest,
   type CreateTestResultResponse,
   type OrganizationAccessPrincipal,
@@ -33,9 +35,13 @@ import { AttachmentService } from '../attachments/attachment.service';
 import { ZodValidationException } from 'nestjs-zod';
 import {
   AuthorizationDeniedError,
+  InvalidPayloadError,
+  PayloadTooLargeError,
   ResourceConflictError,
   ResourceNotFoundError,
+  UnsupportedMediaTypeError,
 } from '../common/errors/domain.error';
+import { JUnitParseError, parseJUnitResults, type ParsedJUnitResult } from './junit-parser';
 import { TestRunRepository, type RunResult } from './test-run.repository';
 
 @Injectable()
@@ -171,6 +177,49 @@ export class TestRunService {
     return bulkTestResultsResponseSchema.parse(result.value);
   }
 
+  async ingestJUnitResults(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    runId: string,
+    idempotencyKey: string | undefined,
+    contentType: string | undefined,
+    body: unknown,
+  ): Promise<JUnitUploadResponse> {
+    if (principal.role === 'read_only') throw new AuthorizationDeniedError();
+    if (!['application/xml', 'text/xml'].includes(contentType?.split(';')[0]?.trim() ?? '')) {
+      throw new UnsupportedMediaTypeError('application/xml');
+    }
+    const key = this.parseIdempotencyKey(idempotencyKey);
+    const input = this.junitInput(body);
+    const requestDigest = createHash('sha256');
+    const parsedResults: ParsedJUnitResult[] = [];
+    try {
+      for await (const result of parseJUnitResults(this.hashInput(input, requestDigest))) {
+        parsedResults.push(result);
+      }
+    } catch (error) {
+      if (error instanceof JUnitParseError) {
+        if (error.code === 'limit_exceeded') {
+          throw new PayloadTooLargeError('junit_upload_limit_exceeded', error.message);
+        }
+        throw new InvalidPayloadError(`junit_${error.code}`, error.message);
+      }
+      throw error;
+    }
+
+    const result = await this.runs.ingestJUnitResults(
+      principal.organizationId,
+      principal.sub,
+      projectSlug,
+      runId,
+      key,
+      requestDigest.digest('hex'),
+      parsedResults,
+    );
+    this.assertFound(result);
+    return junitUploadResponseSchema.parse(result.value);
+  }
+
   async recordResult(
     principal: OrganizationAccessPrincipal,
     projectSlug: string,
@@ -298,11 +347,44 @@ export class TestRunService {
         'Multiple bulk results matched the same test run item',
       );
     }
+    if (result.kind === 'ingest_status_unavailable') {
+      throw new ResourceConflictError(
+        'junit_status_unavailable',
+        'The project must have active passed and failed statuses for JUnit ingestion',
+      );
+    }
     if (result.kind === 'idempotency_conflict') {
       throw new ResourceConflictError(
         'idempotency_key_reused',
         'This idempotency key was already used for a different request',
       );
+    }
+  }
+
+  private junitInput(body: unknown): AsyncIterable<Uint8Array | string> {
+    if (typeof body === 'string' || body instanceof Uint8Array) {
+      return (async function* () {
+        yield body;
+      })();
+    }
+    if (
+      typeof body === 'object' &&
+      body !== null &&
+      Symbol.asyncIterator in body &&
+      typeof body[Symbol.asyncIterator] === 'function'
+    ) {
+      return body as AsyncIterable<Uint8Array | string>;
+    }
+    throw new InvalidPayloadError('junit_body_required', 'A JUnit XML request body is required');
+  }
+
+  private async *hashInput(
+    input: AsyncIterable<Uint8Array | string>,
+    digest: ReturnType<typeof createHash>,
+  ): AsyncGenerator<Uint8Array | string> {
+    for await (const chunk of input) {
+      digest.update(chunk);
+      yield chunk;
     }
   }
 }

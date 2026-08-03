@@ -298,7 +298,7 @@ function parseDuration(value: string | undefined): number | null {
     throw new JUnitParseError('invalid_testcase', 'JUnit test case time must be non-negative');
   }
   const milliseconds = Math.round(seconds * 1_000);
-  if (!Number.isSafeInteger(milliseconds)) {
+  if (!Number.isSafeInteger(milliseconds) || milliseconds > 2_147_483_647) {
     throw new JUnitParseError('invalid_testcase', 'JUnit test case time is too large');
   }
   return milliseconds;

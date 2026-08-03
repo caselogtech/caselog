@@ -1971,6 +1971,128 @@ describe('authentication API', () => {
       });
     }
 
+    const junitUrl = `/api/v1/projects/authentication/runs/${runId}/results/junit`;
+    const junitXml = `<?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="authentication">
+        <testcase automation_id="auth.valid-login" name="valid login" time="0.25" />
+        <testcase automation_id="renamed.invalid-password" case_number="2" name="invalid password" time="0.5">
+          <failure message="Expected login rejection" type="AssertionError">received a session</failure>
+          <system-out>POST /login returned 200</system-out>
+        </testcase>
+        <testcase automation_id="auth.valid-login" name="valid login retry" time="0.3">
+          <error message="Browser disconnected" type="NetworkError">socket closed</error>
+        </testcase>
+        <testcase case_number="2" name="invalid password skipped"><skipped /></testcase>
+        <testcase automation_id="auth.orphaned" name="unknown test"><skipped /></testcase>
+      </testsuite>`;
+    const missingJUnitKey = await app.inject({
+      method: 'POST',
+      url: junitUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'content-type': 'application/xml',
+      },
+      payload: junitXml,
+    });
+    expect(missingJUnitKey.statusCode, missingJUnitKey.body).toBe(400);
+    expect(missingJUnitKey.json().error.code).toBe('validation_failed');
+
+    const unsupportedJUnitContent = await app.inject({
+      method: 'POST',
+      url: junitUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'idempotency-key': randomUUID(),
+      },
+      payload: {},
+    });
+    expect(unsupportedJUnitContent.statusCode, unsupportedJUnitContent.body).toBe(415);
+    expect(unsupportedJUnitContent.json().error.code).toBe('unsupported_media_type');
+
+    const recoverableJUnitKey = randomUUID();
+    const invalidJUnit = await app.inject({
+      method: 'POST',
+      url: junitUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'content-type': 'application/xml',
+        'idempotency-key': recoverableJUnitKey,
+      },
+      payload:
+        '<testsuite><testcase automation_id="auth.valid-login" name="valid"/><testcase name="broken"></testsuite>',
+    });
+    expect(invalidJUnit.statusCode, invalidJUnit.body).toBe(400);
+    expect(invalidJUnit.json().error.code).toBe('junit_malformed_xml');
+
+    const junitIdempotencyKey = recoverableJUnitKey;
+    const junitRequest = (payload = junitXml) =>
+      app.inject({
+        method: 'POST',
+        url: junitUrl,
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'content-type': 'application/xml; charset=utf-8',
+          'idempotency-key': junitIdempotencyKey,
+        },
+        payload,
+      });
+    const [junitUpload, junitReplay] = await Promise.all([junitRequest(), junitRequest()]);
+    expect(junitUpload.statusCode, junitUpload.body).toBe(201);
+    expect(junitUpload.json()).toEqual({
+      total: 5,
+      recorded: 4,
+      truncated: 0,
+      counts: { passed: 1, failed: 1, error: 1, skipped: 2 },
+      unmatched: [
+        {
+          sequence: 5,
+          name: 'unknown test',
+          automationId: 'auth.orphaned',
+          caseNumber: null,
+          reason: 'not_found',
+        },
+      ],
+    });
+    expect(junitReplay.statusCode, junitReplay.body).toBe(201);
+    expect(junitReplay.json()).toEqual(junitUpload.json());
+    await expect(
+      admin.testResult.count({ where: { organizationId, testRunItemId: createdRunItemId } }),
+    ).resolves.toBe(6);
+    await expect(
+      admin.testResult.count({ where: { organizationId, testRunItemId: bulkItem.id } }),
+    ).resolves.toBe(6);
+    await expect(
+      admin.testResult.findFirstOrThrow({
+        where: { organizationId, testRunItemId: createdRunItemId, attempt: 6 },
+        select: { elapsedMs: true, comment: true, status: { select: { key: true } } },
+      }),
+    ).resolves.toEqual({
+      elapsedMs: 300,
+      comment: 'Browser disconnected\n\nsocket closed',
+      status: { key: 'failed' },
+    });
+    await expect(
+      admin.testResult.findFirstOrThrow({
+        where: { organizationId, testRunItemId: bulkItem.id, attempt: 6 },
+        select: { status: { select: { key: true } } },
+      }),
+    ).resolves.toEqual({ status: { key: 'untested' } });
+    await expect(
+      admin.testResult.findFirstOrThrow({
+        where: { organizationId, testRunItemId: bulkItem.id, attempt: 5 },
+        select: { elapsedMs: true, comment: true, status: { select: { key: true } } },
+      }),
+    ).resolves.toEqual({
+      elapsedMs: 500,
+      comment:
+        'Expected login rejection\n\nreceived a session\n\nStandard output:\nPOST /login returned 200',
+      status: { key: 'failed' },
+    });
+
+    const reusedJUnitKey = await junitRequest('<testsuite/>');
+    expect(reusedJUnitKey.statusCode, reusedJUnitKey.body).toBe(409);
+    expect(reusedJUnitKey.json().error.code).toBe('idempotency_key_reused');
+
     const duplicateSelection = await app.inject({
       method: 'POST',
       url: '/api/v1/projects/authentication/runs',
@@ -2024,6 +2146,9 @@ describe('authentication API', () => {
     const replayAfterClose = await bulkRequest();
     expect(replayAfterClose.statusCode, replayAfterClose.body).toBe(201);
     expect(replayAfterClose.json()).toEqual(bulk.json());
+    const junitReplayAfterClose = await junitRequest();
+    expect(junitReplayAfterClose.statusCode, junitReplayAfterClose.body).toBe(201);
+    expect(junitReplayAfterClose.json()).toEqual(junitUpload.json());
     const bulkAfterClose = await app.inject({
       method: 'POST',
       url: bulkUrl,
@@ -2035,6 +2160,18 @@ describe('authentication API', () => {
     });
     expect(bulkAfterClose.statusCode, bulkAfterClose.body).toBe(409);
     expect(bulkAfterClose.json().error.code).toBe('run_closed');
+    const junitAfterClose = await app.inject({
+      method: 'POST',
+      url: junitUrl,
+      headers: {
+        authorization: `Bearer ${organizationAccessToken}`,
+        'content-type': 'application/xml',
+        'idempotency-key': randomUUID(),
+      },
+      payload: '<testsuite/>',
+    });
+    expect(junitAfterClose.statusCode, junitAfterClose.body).toBe(409);
+    expect(junitAfterClose.json().error.code).toBe('run_closed');
     const assignmentAfterClose = await app.inject({
       method: 'PUT',
       url: `/api/v1/projects/authentication/runs/${runId}/items/${createdRunItemId}/assignee`,
@@ -2332,6 +2469,17 @@ describe('authentication API', () => {
         },
       });
       expect(bulkResults.statusCode, bulkResults.body).toBe(403);
+      const junitResults = await app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/authentication/runs/${createdRunId}/results/junit`,
+        headers: {
+          authorization: `Bearer ${organizationAccessToken}`,
+          'content-type': 'application/xml',
+          'idempotency-key': randomUUID(),
+        },
+        payload: '<testsuite/>',
+      });
+      expect(junitResults.statusCode, junitResults.body).toBe(403);
       const createUpload = await app.inject({
         method: 'POST',
         url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/uploads`,
@@ -2507,6 +2655,17 @@ describe('authentication API', () => {
       },
     });
     expect(crossTenantBulkResults.statusCode).toBe(404);
+    const crossTenantJUnitResults = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/authentication/runs/${createdRunId}/results/junit`,
+      headers: {
+        authorization: `Bearer ${provisionedToken.json().accessToken as string}`,
+        'content-type': 'application/xml',
+        'idempotency-key': randomUUID(),
+      },
+      payload: '<testsuite/>',
+    });
+    expect(crossTenantJUnitResults.statusCode).toBe(404);
     const crossTenantResultHistory = await app.inject({
       method: 'GET',
       url: `/api/v1/projects/authentication/runs/${createdRunId}/items/${createdRunItemId}/results`,

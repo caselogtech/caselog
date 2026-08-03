@@ -15,8 +15,10 @@ import {
   DomainError,
   EmailVerificationRequiredError,
   InvalidSessionError,
+  PayloadTooLargeError,
   ResourceConflictError,
   ResourceNotFoundError,
+  UnsupportedMediaTypeError,
 } from '../errors/domain.error';
 
 type ApiErrorBody = {
@@ -92,6 +94,8 @@ export class ApiExceptionFilter implements ExceptionFilter {
     if (error instanceof ResourceNotFoundError) {
       return HttpStatus.NOT_FOUND;
     }
+    if (error instanceof PayloadTooLargeError) return HttpStatus.PAYLOAD_TOO_LARGE;
+    if (error instanceof UnsupportedMediaTypeError) return HttpStatus.UNSUPPORTED_MEDIA_TYPE;
     return HttpStatus.BAD_REQUEST;
   }
 

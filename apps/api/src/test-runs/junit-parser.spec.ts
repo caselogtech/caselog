@@ -169,6 +169,11 @@ describe('JUnit parser', () => {
       'invalid_testcase',
     ],
     [
+      'rejects durations outside the database integer range',
+      '<testsuite><testcase name="invalid" time="2147483.648"/></testsuite>',
+      'invalid_testcase',
+    ],
+    [
       'validates explicit case numbers',
       '<testsuite><testcase name="invalid" case_number="CASE-1"/></testsuite>',
       'invalid_testcase',

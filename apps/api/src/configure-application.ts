@@ -7,6 +7,12 @@ export async function configureApplication(app: NestFastifyApplication): Promise
     NestFastifyApplication['register']
   >[0];
   await app.register(cookiePlugin);
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .addContentTypeParser(['application/xml', 'text/xml'], (_request, payload, done) => {
+      done(null, payload);
+    });
   app.setGlobalPrefix('api/v1');
   app.enableShutdownHooks();
 }

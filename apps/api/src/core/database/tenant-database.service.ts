@@ -4,18 +4,20 @@ import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { PrismaService } from './prisma.service';
 
 export type TenantTransaction = Prisma.TransactionClient;
+export type TenantTransactionOptions = { maxWait?: number; timeout?: number };
 
 export async function runInTenant<T>(
   prisma: PrismaClient,
   organizationId: string,
   operation: (transaction: TenantTransaction) => Promise<T>,
+  options?: TenantTransactionOptions,
 ): Promise<T> {
   const tenantId = organizationIdSchema.parse(organizationId);
 
   return prisma.$transaction(async (transaction) => {
     await transaction.$executeRaw`SELECT set_config('caselog.organization_id', ${tenantId}, true)`;
     return operation(transaction);
-  });
+  }, options);
 }
 
 @Injectable()
@@ -25,7 +27,8 @@ export class TenantDatabaseService {
   run<T>(
     organizationId: string,
     operation: (transaction: TenantTransaction) => Promise<T>,
+    options?: TenantTransactionOptions,
   ): Promise<T> {
-    return runInTenant(this.prisma, organizationId, operation);
+    return runInTenant(this.prisma, organizationId, operation, options);
   }
 }
