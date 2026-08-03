@@ -14,6 +14,7 @@ import {
 import type {
   CreateProjectResponse,
   OrganizationAccessPrincipal,
+  ProjectLifecycleResponse,
   ProjectListResponse,
 } from '@caselog/schemas';
 import { OrganizationAuthGuard } from '../auth/organization-auth.guard';
@@ -50,5 +51,13 @@ export class ProjectController {
     @Param() params: ProjectParamsDto,
   ): Promise<void> {
     return this.projects.archive(principal, params.projectSlug);
+  }
+
+  @Post(':projectSlug/restore')
+  restore(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: ProjectParamsDto,
+  ): Promise<ProjectLifecycleResponse> {
+    return this.projects.restore(principal, params.projectSlug);
   }
 }

@@ -13,9 +13,12 @@ export const projectKeySchema = z
   .toUpperCase()
   .regex(/^[A-Z][A-Z0-9_]{1,11}$/);
 
+export const projectStateSchema = z.enum(['active', 'archived']);
+
 export const projectListQuerySchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(25),
+  state: projectStateSchema.default('active'),
 });
 
 export const projectSummarySchema = z.object({
@@ -23,6 +26,7 @@ export const projectSummarySchema = z.object({
   key: z.string().min(1).max(12),
   slug: z.string().min(1).max(50),
   name: z.string().min(1).max(120),
+  state: projectStateSchema,
   caseCount: z.number().int().nonnegative(),
   activeRunCount: z.number().int().nonnegative(),
   createdAt: z.iso.datetime(),
@@ -44,9 +48,16 @@ export const createProjectResponseSchema = z.object({ project: projectSummarySch
 
 export const projectParamsSchema = z.object({ projectSlug: projectSlugSchema });
 
+export const projectLifecycleResponseSchema = z.object({
+  projectId: z.uuid(),
+  state: projectStateSchema,
+});
+
 export type ProjectListQuery = z.infer<typeof projectListQuerySchema>;
 export type ProjectSummary = z.infer<typeof projectSummarySchema>;
 export type ProjectListResponse = z.infer<typeof projectListResponseSchema>;
 export type CreateProjectRequest = z.infer<typeof createProjectRequestSchema>;
 export type CreateProjectResponse = z.infer<typeof createProjectResponseSchema>;
 export type ProjectParams = z.infer<typeof projectParamsSchema>;
+export type ProjectLifecycleResponse = z.infer<typeof projectLifecycleResponseSchema>;
+export type ProjectState = z.infer<typeof projectStateSchema>;

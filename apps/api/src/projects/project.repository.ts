@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import type { CreateProjectRequest, ProjectSummary } from '@caselog/schemas';
+import type {
+  CreateProjectRequest,
+  ProjectLifecycleResponse,
+  ProjectState,
+  ProjectSummary,
+} from '@caselog/schemas';
 import { TenantDatabaseService } from '../core/database/tenant-database.service';
 import { Prisma } from '../generated/prisma/client';
 import { RunStatus } from '../generated/prisma/enums';
@@ -20,6 +25,10 @@ export type ArchiveProjectResult =
   | { kind: 'archived' }
   | { kind: 'project_not_found' }
   | { kind: 'open_runs' };
+
+export type RestoreProjectResult =
+  | { kind: 'restored'; value: ProjectLifecycleResponse }
+  | { kind: 'project_not_found' };
 
 @Injectable()
 export class ProjectRepository {
@@ -86,6 +95,7 @@ export class ProjectRepository {
           kind: 'created',
           value: {
             ...project,
+            state: 'active',
             caseCount: 0,
             activeRunCount: 0,
             createdAt: project.createdAt.toISOString(),
@@ -131,14 +141,35 @@ export class ProjectRepository {
     });
   }
 
+  async restore(organizationId: string, projectSlug: string): Promise<RestoreProjectResult> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const projects = await transaction.$queryRaw<Array<{ id: string; deletedAt: Date | null }>>`
+        SELECT id, deleted_at AS "deletedAt" FROM projects
+        WHERE organization_id = ${organizationId}::uuid
+          AND slug = ${projectSlug}
+        FOR UPDATE
+      `;
+      const project = projects[0];
+      if (!project) return { kind: 'project_not_found' };
+      if (project.deletedAt) {
+        await transaction.project.update({
+          where: { organizationId_id: { organizationId, id: project.id } },
+          data: { deletedAt: null },
+        });
+      }
+      return { kind: 'restored', value: { projectId: project.id, state: 'active' } };
+    });
+  }
+
   async list(
     organizationId: string,
     cursor: string | undefined,
     limit: number,
+    state: ProjectState,
   ): Promise<ProjectPage> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
       const projects = await transaction.project.findMany({
-        where: { deletedAt: null },
+        where: { deletedAt: state === 'active' ? null : { not: null } },
         cursor: cursor ? { organizationId_id: { organizationId, id: cursor } } : undefined,
         skip: cursor ? 1 : undefined,
         take: limit + 1,
@@ -148,6 +179,7 @@ export class ProjectRepository {
           key: true,
           slug: true,
           name: true,
+          deletedAt: true,
           createdAt: true,
           updatedAt: true,
           _count: {
@@ -162,8 +194,9 @@ export class ProjectRepository {
       const hasNextPage = projects.length > limit;
       const page = hasNextPage ? projects.slice(0, limit) : projects;
       return {
-        items: page.map(({ _count, createdAt, updatedAt, ...project }) => ({
+        items: page.map(({ _count, deletedAt, createdAt, updatedAt, ...project }) => ({
           ...project,
+          state: deletedAt ? 'archived' : 'active',
           caseCount: _count.testCases,
           activeRunCount: _count.testRuns,
           createdAt: createdAt.toISOString(),

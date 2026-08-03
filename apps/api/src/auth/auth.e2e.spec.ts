@@ -442,6 +442,14 @@ describe('authentication API', () => {
     });
     expect(invalidLimit.statusCode).toBe(400);
     expect(invalidLimit.json().error.code).toBe('validation_failed');
+
+    const invalidState = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects?state=deleted',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(invalidState.statusCode).toBe(400);
+    expect(invalidState.json().error.code).toBe('validation_failed');
   });
 
   it('creates a ready-to-use project and archives only projects without open runs', async () => {
@@ -459,6 +467,7 @@ describe('authentication API', () => {
         key: 'TOOLS',
         slug: createdProjectSlug,
         name: 'Tooling Project',
+        state: 'active',
         caseCount: 0,
         activeRunCount: 0,
       },
@@ -534,6 +543,82 @@ describe('authentication API', () => {
         select: { deletedAt: true },
       }),
     ).resolves.toMatchObject({ deletedAt: expect.any(Date) });
+
+    const activeProjects = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects?limit=100',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(activeProjects.statusCode, activeProjects.body).toBe(200);
+    expect(activeProjects.json().items.map(({ slug }: { slug: string }) => slug)).not.toContain(
+      archivedSlug,
+    );
+
+    const archivedProjects = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects?state=archived',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(archivedProjects.statusCode, archivedProjects.body).toBe(200);
+    expect(archivedProjects.json().items).toEqual([
+      expect.objectContaining({
+        id: archiveCandidate.json().project.id,
+        slug: archivedSlug,
+        state: 'archived',
+      }),
+    ]);
+
+    const reuseArchivedKey = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        name: 'Reuse archived key',
+        key: `A${suffix.toUpperCase()}`,
+        slug: `reuse-key-${suffix}`,
+      },
+    });
+    expect(reuseArchivedKey.statusCode, reuseArchivedKey.body).toBe(409);
+    expect(reuseArchivedKey.json().error.code).toBe('project_key_taken');
+
+    const reuseArchivedSlug = await app.inject({
+      method: 'POST',
+      url: '/api/v1/projects',
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+      payload: {
+        name: 'Reuse archived slug',
+        key: `R${suffix.toUpperCase()}`,
+        slug: archivedSlug,
+      },
+    });
+    expect(reuseArchivedSlug.statusCode, reuseArchivedSlug.body).toBe(409);
+    expect(reuseArchivedSlug.json().error.code).toBe('project_slug_taken');
+
+    const restored = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/${archivedSlug}/restore`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(restored.statusCode, restored.body).toBe(201);
+    expect(restored.json()).toEqual({
+      projectId: archiveCandidate.json().project.id,
+      state: 'active',
+    });
+    const restoredAgain = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/${archivedSlug}/restore`,
+      headers: { authorization: `Bearer ${organizationAccessToken}` },
+    });
+    expect(restoredAgain.statusCode, restoredAgain.body).toBe(201);
+    expect(restoredAgain.json()).toEqual(restored.json());
+    await expect(
+      admin.project.findUnique({
+        where: {
+          organizationId_slug: { organizationId: organizationId as string, slug: archivedSlug },
+        },
+        select: { deletedAt: true },
+      }),
+    ).resolves.toEqual({ deletedAt: null });
   });
 
   it('lists current test case versions with pagination and tenant-safe project resolution', async () => {
@@ -1651,6 +1736,12 @@ describe('authentication API', () => {
         headers: { authorization: `Bearer ${organizationAccessToken}` },
       });
       expect(archiveProject.statusCode, archiveProject.body).toBe(403);
+      const restoreProject = await app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/${createdProjectSlug}/restore`,
+        headers: { authorization: `Bearer ${organizationAccessToken}` },
+      });
+      expect(restoreProject.statusCode, restoreProject.body).toBe(403);
 
       const response = await app.inject({
         method: 'POST',
@@ -1839,6 +1930,12 @@ describe('authentication API', () => {
       headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
     });
     expect(crossTenantProjectArchive.statusCode).toBe(404);
+    const crossTenantProjectRestore = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/${createdProjectSlug}/restore`,
+      headers: { authorization: `Bearer ${provisionedToken.json().accessToken as string}` },
+    });
+    expect(crossTenantProjectRestore.statusCode).toBe(404);
     const crossTenantCaseDetail = await app.inject({
       method: 'GET',
       url: `/api/v1/projects/authentication/cases/${editableCaseId}`,

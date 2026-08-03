@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   createProjectResponseSchema,
+  projectLifecycleResponseSchema,
   projectListResponseSchema,
   type CreateProjectRequest,
   type CreateProjectResponse,
   type OrganizationAccessPrincipal,
+  type ProjectLifecycleResponse,
   type ProjectListQuery,
   type ProjectListResponse,
 } from '@caselog/schemas';
@@ -21,7 +23,7 @@ export class ProjectService {
 
   async list(organizationId: string, query: ProjectListQuery): Promise<ProjectListResponse> {
     return projectListResponseSchema.parse(
-      await this.projects.list(organizationId, query.cursor, query.limit),
+      await this.projects.list(organizationId, query.cursor, query.limit, query.state),
     );
   }
 
@@ -56,6 +58,16 @@ export class ProjectService {
         'Close active and draft test runs before archiving this project',
       );
     }
+  }
+
+  async restore(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+  ): Promise<ProjectLifecycleResponse> {
+    this.assertManage(principal);
+    const result = await this.projects.restore(principal.organizationId, projectSlug);
+    if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
+    return projectLifecycleResponseSchema.parse(result.value);
   }
 
   private assertManage(principal: OrganizationAccessPrincipal): void {

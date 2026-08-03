@@ -123,14 +123,18 @@ export {
   projectListQuerySchema,
   projectListResponseSchema,
   projectKeySchema,
+  projectLifecycleResponseSchema,
   projectParamsSchema,
   projectSlugSchema,
+  projectStateSchema,
   projectSummarySchema,
   type CreateProjectRequest,
   type CreateProjectResponse,
   type ProjectListQuery,
   type ProjectListResponse,
+  type ProjectLifecycleResponse,
   type ProjectParams,
+  type ProjectState,
   type ProjectSummary,
 } from './project.js';
 export {
