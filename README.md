@@ -24,6 +24,8 @@ pnpm dev
 ```
 
 - API: `http://localhost:3000/api/v1/health`
+- OpenAPI UI: `http://localhost:3000/api/v1/docs`
+- OpenAPI JSON: `http://localhost:3000/api/v1/openapi.json`
 - Web: `http://localhost:4200`
 - MinIO console: `http://localhost:9001`
 - Mailpit: `http://localhost:8025`
@@ -34,6 +36,13 @@ pnpm dev
 pnpm check
 pnpm test
 pnpm build
+```
+
+Regenerate the committed OpenAPI document and frontend TypeScript contract after a
+public API change:
+
+```bash
+pnpm openapi:generate
 ```
 
 ## CLI

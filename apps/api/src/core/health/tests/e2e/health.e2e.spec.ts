@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -31,5 +33,27 @@ describe('health endpoint', () => {
       service: 'api',
       status: 'ok',
     });
+  });
+
+  it('serves a typed OpenAPI contract', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/v1/openapi.json' });
+
+    expect(response.statusCode, response.body).toBe(200);
+    const document = response.json();
+    expect(document).toMatchObject({
+      openapi: '3.1.0',
+      info: { title: 'Caselog API', version: '1.0.0' },
+    });
+    expect(document.paths['/api/v1/auth/login'].post.responses['200'].content).toBeDefined();
+    expect(
+      document.paths['/api/v1/projects/{projectSlug}/runs'].post.responses['201'].content,
+    ).toBeDefined();
+    expect(document.components.schemas.SessionResponseDto).toBeDefined();
+    expect(document.components.schemas.ApiErrorResponseDto).toBeDefined();
+
+    const generatedDocument = JSON.parse(
+      await readFile(resolve(process.cwd(), 'openapi.json'), 'utf8'),
+    );
+    expect(document).toEqual(generatedDocument);
   });
 });

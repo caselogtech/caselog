@@ -6,6 +6,7 @@ import type {
   CreateUploadSessionResponse,
   OrganizationAccessPrincipal,
 } from '@caselog/schemas';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
 import { CaseAttachmentService } from '../../application/services/case-attachment.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
@@ -16,13 +17,21 @@ import {
   CompleteCaseAttachmentRequestDto,
   CreateCaseAttachmentUploadSessionRequestDto,
 } from '../dto/attachment.dto';
+import {
+  AttachmentDownloadResponseDto,
+  CaseAttachmentListResponseDto,
+  CaseAttachmentResponseDto,
+  CreateUploadSessionResponseDto,
+} from '../dto/attachment-response.dto';
 
 @Controller('projects/:projectSlug/cases/:caseId/versions/:versionId')
 @UseGuards(OrganizationAuthGuard)
+@ApiBearerAuth('access-token')
 export class CaseAttachmentController {
   constructor(@Inject(CaseAttachmentService) private readonly attachments: CaseAttachmentService) {}
 
   @Post('uploads')
+  @ApiCreatedResponse({ type: CreateUploadSessionResponseDto })
   createUploadSession(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: CaseAttachmentParamsDto,
@@ -38,6 +47,7 @@ export class CaseAttachmentController {
   }
 
   @Post('attachments')
+  @ApiCreatedResponse({ type: CaseAttachmentResponseDto })
   complete(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: CaseAttachmentParamsDto,
@@ -53,6 +63,7 @@ export class CaseAttachmentController {
   }
 
   @Get('attachments')
+  @ApiOkResponse({ type: CaseAttachmentListResponseDto })
   list(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: CaseAttachmentParamsDto,
@@ -68,6 +79,7 @@ export class CaseAttachmentController {
   }
 
   @Post('attachments/:attachmentId/download')
+  @ApiCreatedResponse({ type: AttachmentDownloadResponseDto })
   createDownload(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: CaseAttachmentItemParamsDto,

@@ -4,6 +4,7 @@ import type {
   CreateUploadSessionResponse,
   OrganizationAccessPrincipal,
 } from '@caselog/schemas';
+import { ApiBearerAuth, ApiCreatedResponse } from '@nestjs/swagger';
 import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
@@ -12,13 +13,19 @@ import {
   CreateUploadSessionRequestDto,
 } from '../dto/attachment.dto';
 import { AttachmentService } from '../../application/services/attachment.service';
+import {
+  AttachmentDownloadResponseDto,
+  CreateUploadSessionResponseDto,
+} from '../dto/attachment-response.dto';
 
 @Controller('projects/:projectSlug/runs/:runId/items/:itemId/uploads')
 @UseGuards(OrganizationAuthGuard)
+@ApiBearerAuth('access-token')
 export class AttachmentController {
   constructor(@Inject(AttachmentService) private readonly attachments: AttachmentService) {}
 
   @Post()
+  @ApiCreatedResponse({ type: CreateUploadSessionResponseDto })
   createUploadSession(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: CreateUploadSessionParamsDto,
@@ -38,10 +45,12 @@ export class AttachmentController {
   'projects/:projectSlug/runs/:runId/items/:itemId/results/:resultId/attachments/:attachmentId/download',
 )
 @UseGuards(OrganizationAuthGuard)
+@ApiBearerAuth('access-token')
 export class AttachmentDownloadController {
   constructor(@Inject(AttachmentService) private readonly attachments: AttachmentService) {}
 
   @Post()
+  @ApiCreatedResponse({ type: AttachmentDownloadResponseDto })
   createDownload(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: AttachmentDownloadParamsDto,

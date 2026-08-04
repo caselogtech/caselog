@@ -6,7 +6,9 @@
       "!!**/.angular/**",
       "!!**/dist/**",
       "!!**/node_modules/**",
-      "!!apps/api/src/generated/**"
+      "!!apps/api/src/generated/**",
+      "!!apps/api/openapi.json",
+      "!!apps/web/src/app/core/api/generated/**"
     ]
   },
   "formatter": {

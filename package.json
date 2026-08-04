@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
-    "check": "pnpm format:check && pnpm lint && pnpm i18n:check && pnpm typecheck",
+    "check": "pnpm format:check && pnpm lint && pnpm i18n:check && pnpm typecheck && pnpm openapi:check",
     "dev": "pnpm --parallel --stream --filter @caselog/api --filter @caselog/web run dev",
     "db:migrate": "pnpm --filter @caselog/api db:migrate",
     "db:migrate:deploy": "pnpm --filter @caselog/api db:migrate:deploy",
@@ -22,12 +22,15 @@
     "i18n:check": "pnpm --filter @caselog/web i18n:check",
     "lint": "biome lint apps packages scripts && pnpm lint:architecture",
     "lint:architecture": "node scripts/check-backend-boundaries.mjs",
+    "openapi:generate": "pnpm --filter @caselog/api openapi:generate && openapi-typescript apps/api/openapi.json -o apps/web/src/app/core/api/generated/openapi.ts",
+    "openapi:check": "openapi-typescript apps/api/openapi.json -o apps/web/src/app/core/api/generated/openapi.ts --check",
     "pretest": "pnpm db:migrate:deploy",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
+    "openapi-typescript": "7.13.0",
     "typescript": "~5.9.3"
   }
 }

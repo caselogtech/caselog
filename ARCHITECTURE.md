@@ -232,6 +232,9 @@ scope. ADR 0002 and ADR 0006 describe the complete decision.
 - The REST API uses the `/api/v1` prefix.
 - Zod schemas in `packages/schemas` are the shared contract between the API and web
   client.
+- Request and response DTOs expose those schemas through OpenAPI. The committed
+  OpenAPI document and generated frontend types must be regenerated with
+  `pnpm openapi:generate` whenever a public endpoint changes.
 - DTOs do not expose Prisma entities directly.
 - Everything available through the UI must also be available through the public API.
 - Collections use cursor pagination.

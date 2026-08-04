@@ -12,6 +12,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import {
+  ApiAcceptedResponse,
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import type {
   AuthUser,
   EmailVerificationResponse,
@@ -34,6 +42,13 @@ import { AuthService, type SessionResult } from '../../application/services/auth
 import { SessionAuthGuard } from '../guards/session-auth.guard';
 import { CurrentSession } from '../decorators/session-principal.decorator';
 import type { SessionPrincipal } from '@caselog/schemas';
+import {
+  AuthUserResponseDto,
+  EmailVerificationResponseDto,
+  MessageResponseDto,
+  OrganizationTokenResponseDto,
+  SessionResponseDto,
+} from '../dto/auth-response.dto';
 
 const REFRESH_COOKIE_DEVELOPMENT = 'caselog_refresh';
 const REFRESH_COOKIE_PRODUCTION = '__Host-caselog_refresh';
@@ -46,6 +61,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @ApiCreatedResponse({ type: SessionResponseDto })
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async register(
     @Body() request: RegisterRequestDto,
@@ -56,6 +72,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: SessionResponseDto })
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async login(
     @Body() request: LoginRequestDto,
@@ -66,6 +83,8 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: SessionResponseDto })
+  @ApiCookieAuth('refresh-cookie')
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async refresh(
     @Req() request: FastifyRequest,
@@ -79,6 +98,8 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse()
+  @ApiCookieAuth('refresh-cookie')
   async logout(
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
@@ -88,6 +109,8 @@ export class AuthController {
   }
 
   @Get('me')
+  @ApiOkResponse({ type: AuthUserResponseDto })
+  @ApiBearerAuth('access-token')
   @UseGuards(SessionAuthGuard)
   me(@CurrentSession() principal: SessionPrincipal): Promise<AuthUser> {
     return this.auth.me(principal);
@@ -95,6 +118,8 @@ export class AuthController {
 
   @Post('email/verification')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiAcceptedResponse({ type: MessageResponseDto })
+  @ApiBearerAuth('access-token')
   @UseGuards(SessionAuthGuard)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   resendEmailVerification(@CurrentSession() principal: SessionPrincipal): Promise<MessageResponse> {
@@ -103,6 +128,7 @@ export class AuthController {
 
   @Post('email/verify')
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: EmailVerificationResponseDto })
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   verifyEmail(@Body() request: EmailVerificationRequestDto): Promise<EmailVerificationResponse> {
     return this.auth.verifyEmail(request.token);
@@ -110,6 +136,7 @@ export class AuthController {
 
   @Post('password/forgot')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiAcceptedResponse({ type: MessageResponseDto })
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   forgotPassword(@Body() request: ForgotPasswordRequestDto): Promise<MessageResponse> {
     return this.auth.forgotPassword(request);
@@ -117,6 +144,7 @@ export class AuthController {
 
   @Post('password/reset')
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: MessageResponseDto })
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   resetPassword(@Body() request: ResetPasswordRequestDto): Promise<MessageResponse> {
     return this.auth.resetPassword(request);
@@ -124,6 +152,8 @@ export class AuthController {
 
   @Post('organizations/:slug/token')
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: OrganizationTokenResponseDto })
+  @ApiBearerAuth('access-token')
   @UseGuards(SessionAuthGuard)
   organizationToken(
     @CurrentSession() principal: SessionPrincipal,

@@ -27,6 +27,14 @@ import type {
   TestResultHistoryResponse,
   JUnitUploadResponse,
 } from '@caselog/schemas';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
 import {
   CurrentOrganization,
@@ -50,13 +58,27 @@ import {
   TestResultParamsDto,
 } from '../dto/test-run.dto';
 import { TestRunService } from '../../application/services/test-run.service';
+import {
+  AssignTestRunItemResponseDto,
+  BulkTestResultsResponseDto,
+  CreateTestResultResponseDto,
+  CreateTestRunResponseDto,
+  JUnitUploadResponseDto,
+  TestResultDetailResponseDto,
+  TestResultHistoryResponseDto,
+  TestRunDetailResponseDto,
+  TestRunLifecycleResponseDto,
+  TestRunListResponseDto,
+} from '../dto/test-run-response.dto';
 
 @Controller('projects/:projectSlug/runs')
 @UseGuards(OrganizationAuthGuard)
+@ApiBearerAuth('access-token')
 export class TestRunController {
   constructor(@Inject(TestRunService) private readonly runs: TestRunService) {}
 
   @Get()
+  @ApiOkResponse({ type: TestRunListResponseDto })
   list(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunListParamsDto,
@@ -66,6 +88,7 @@ export class TestRunController {
   }
 
   @Post()
+  @ApiCreatedResponse({ type: CreateTestRunResponseDto })
   create(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunListParamsDto,
@@ -81,6 +104,7 @@ export class TestRunController {
   }
 
   @Post(':runId/results/bulk')
+  @ApiCreatedResponse({ type: BulkTestResultsResponseDto })
   @RequireApiTokenScopes('results:write')
   bulkRecordResults(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -98,6 +122,9 @@ export class TestRunController {
   }
 
   @Post(':runId/results/junit')
+  @ApiConsumes('application/xml', 'text/xml')
+  @ApiBody({ schema: { type: 'string', description: 'JUnit XML document' } })
+  @ApiCreatedResponse({ type: JUnitUploadResponseDto })
   @RequireApiTokenScopes('results:write')
   ingestJUnitResults(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -117,6 +144,7 @@ export class TestRunController {
   }
 
   @Get(':runId')
+  @ApiOkResponse({ type: TestRunDetailResponseDto })
   @RequireApiTokenScopes('runs:read')
   detail(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -127,6 +155,7 @@ export class TestRunController {
   }
 
   @Post(':runId/start')
+  @ApiCreatedResponse({ type: TestRunLifecycleResponseDto })
   start(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunDetailParamsDto,
@@ -135,6 +164,7 @@ export class TestRunController {
   }
 
   @Post(':runId/close')
+  @ApiCreatedResponse({ type: TestRunLifecycleResponseDto })
   close(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunDetailParamsDto,
@@ -144,6 +174,7 @@ export class TestRunController {
 
   @Delete(':runId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse()
   archive(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunDetailParamsDto,
@@ -152,6 +183,7 @@ export class TestRunController {
   }
 
   @Post(':runId/restore')
+  @ApiCreatedResponse({ type: TestRunLifecycleResponseDto })
   restore(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunDetailParamsDto,
@@ -160,6 +192,7 @@ export class TestRunController {
   }
 
   @Put(':runId/items/:itemId/assignee')
+  @ApiOkResponse({ type: AssignTestRunItemResponseDto })
   assign(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunItemParamsDto,
@@ -169,6 +202,7 @@ export class TestRunController {
   }
 
   @Post(':runId/items/:itemId/results')
+  @ApiCreatedResponse({ type: CreateTestResultResponseDto })
   recordResult(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunItemParamsDto,
@@ -184,6 +218,7 @@ export class TestRunController {
   }
 
   @Get(':runId/items/:itemId/results')
+  @ApiOkResponse({ type: TestResultHistoryResponseDto })
   @RequireApiTokenScopes('runs:read')
   resultHistory(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -200,6 +235,7 @@ export class TestRunController {
   }
 
   @Get(':runId/items/:itemId/results/:resultId')
+  @ApiOkResponse({ type: TestResultDetailResponseDto })
   @RequireApiTokenScopes('runs:read')
   resultDetail(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,

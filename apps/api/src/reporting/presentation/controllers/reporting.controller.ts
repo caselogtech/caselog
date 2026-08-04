@@ -4,6 +4,7 @@ import type {
   OrganizationAccessPrincipal,
   RunProgressResponse,
 } from '@caselog/schemas';
+import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import {
   CurrentOrganization,
   OrganizationAuthGuard,
@@ -16,13 +17,19 @@ import {
   CaseExecutionHistoryQueryDto,
   RunProgressParamsDto,
 } from '../dto/reporting.dto';
+import {
+  CaseExecutionHistoryResponseDto,
+  RunProgressResponseDto,
+} from '../dto/reporting-response.dto';
 
 @Controller('projects/:projectSlug/reports')
 @UseGuards(OrganizationAuthGuard)
+@ApiBearerAuth('access-token')
 export class ReportingController {
   constructor(@Inject(ReportingService) private readonly reports: ReportingService) {}
 
   @Get('runs/:runId/progress')
+  @ApiOkResponse({ type: RunProgressResponseDto })
   @RequireApiTokenScopes('runs:read')
   runProgress(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -32,6 +39,7 @@ export class ReportingController {
   }
 
   @Get('cases/:caseId/history')
+  @ApiOkResponse({ type: CaseExecutionHistoryResponseDto })
   @RequireApiTokenScopes('runs:read')
   caseExecutionHistory(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,

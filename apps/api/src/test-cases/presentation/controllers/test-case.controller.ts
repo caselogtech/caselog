@@ -21,6 +21,12 @@ import type {
   TestCaseVersion,
   UpdateTestCaseResponse,
 } from '@caselog/schemas';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
@@ -33,13 +39,23 @@ import {
   TestCaseVersionParamsDto,
 } from '../dto/test-case.dto';
 import { TestCaseService } from '../../application/services/test-case.service';
+import {
+  CreateTestCaseResponseDto,
+  TestCaseDetailResponseDto,
+  TestCaseLifecycleResponseDto,
+  TestCaseListResponseDto,
+  TestCaseVersionResponseDto,
+  UpdateTestCaseResponseDto,
+} from '../dto/test-case-response.dto';
 
 @Controller('projects/:projectSlug/cases')
 @UseGuards(OrganizationAuthGuard)
+@ApiBearerAuth('access-token')
 export class TestCaseController {
   constructor(@Inject(TestCaseService) private readonly testCases: TestCaseService) {}
 
   @Get()
+  @ApiOkResponse({ type: TestCaseListResponseDto })
   list(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseListParamsDto,
@@ -49,6 +65,7 @@ export class TestCaseController {
   }
 
   @Post()
+  @ApiCreatedResponse({ type: CreateTestCaseResponseDto })
   create(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseListParamsDto,
@@ -58,6 +75,7 @@ export class TestCaseController {
   }
 
   @Get(':caseId')
+  @ApiOkResponse({ type: TestCaseDetailResponseDto })
   detail(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseDetailParamsDto,
@@ -66,6 +84,7 @@ export class TestCaseController {
   }
 
   @Put(':caseId')
+  @ApiOkResponse({ type: UpdateTestCaseResponseDto })
   update(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseDetailParamsDto,
@@ -75,6 +94,7 @@ export class TestCaseController {
   }
 
   @Get(':caseId/versions/:versionId')
+  @ApiOkResponse({ type: TestCaseVersionResponseDto })
   version(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseVersionParamsDto,
@@ -88,6 +108,7 @@ export class TestCaseController {
   }
 
   @Post(':caseId/versions/:versionId/restore')
+  @ApiCreatedResponse({ type: UpdateTestCaseResponseDto })
   restore(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseVersionParamsDto,
@@ -104,6 +125,7 @@ export class TestCaseController {
 
   @Delete(':caseId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse()
   archive(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseDetailParamsDto,
@@ -112,6 +134,7 @@ export class TestCaseController {
   }
 
   @Post(':caseId/restore')
+  @ApiCreatedResponse({ type: TestCaseLifecycleResponseDto })
   restoreArchived(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseDetailParamsDto,
@@ -120,6 +143,7 @@ export class TestCaseController {
   }
 
   @Post(':caseId/duplicate')
+  @ApiCreatedResponse({ type: CreateTestCaseResponseDto })
   duplicate(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseDetailParamsDto,

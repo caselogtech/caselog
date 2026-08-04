@@ -17,6 +17,12 @@ import type {
   SectionResponse,
   SuiteResponse,
 } from '@caselog/schemas';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
@@ -32,15 +38,22 @@ import {
   UpdateSuiteRequestDto,
 } from '../dto/test-case.dto';
 import { ProjectStructureService } from '../../application/services/project-structure.service';
+import {
+  ProjectStructureResponseDto,
+  SectionResponseDto,
+  SuiteResponseDto,
+} from '../dto/test-case-response.dto';
 
 @Controller('projects/:projectSlug/structure')
 @UseGuards(OrganizationAuthGuard)
+@ApiBearerAuth('access-token')
 export class ProjectStructureController {
   constructor(
     @Inject(ProjectStructureService) private readonly structure: ProjectStructureService,
   ) {}
 
   @Get()
+  @ApiOkResponse({ type: ProjectStructureResponseDto })
   get(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseListParamsDto,
@@ -49,6 +62,7 @@ export class ProjectStructureController {
   }
 
   @Post('suites')
+  @ApiCreatedResponse({ type: SuiteResponseDto })
   createSuite(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseListParamsDto,
@@ -58,6 +72,7 @@ export class ProjectStructureController {
   }
 
   @Put('suites/:suiteId')
+  @ApiOkResponse({ type: SuiteResponseDto })
   updateSuite(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: SuiteParamsDto,
@@ -67,6 +82,7 @@ export class ProjectStructureController {
   }
 
   @Put('suites/:suiteId/move')
+  @ApiOkResponse({ type: SuiteResponseDto })
   moveSuite(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: SuiteParamsDto,
@@ -77,6 +93,7 @@ export class ProjectStructureController {
 
   @Delete('suites/:suiteId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse()
   deleteSuite(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: SuiteParamsDto,
@@ -85,6 +102,7 @@ export class ProjectStructureController {
   }
 
   @Post('suites/:suiteId/sections')
+  @ApiCreatedResponse({ type: SectionResponseDto })
   createSection(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: CreateSectionParamsDto,
@@ -94,6 +112,7 @@ export class ProjectStructureController {
   }
 
   @Put('sections/:sectionId')
+  @ApiOkResponse({ type: SectionResponseDto })
   updateSection(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: SectionParamsDto,
@@ -103,6 +122,7 @@ export class ProjectStructureController {
   }
 
   @Put('sections/:sectionId/move')
+  @ApiOkResponse({ type: SectionResponseDto })
   moveSection(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: SectionParamsDto,
@@ -113,6 +133,7 @@ export class ProjectStructureController {
 
   @Delete('sections/:sectionId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse()
   deleteSection(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: SectionParamsDto,

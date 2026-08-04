@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import type {
   CreateWorkspaceResponse,
   SessionPrincipal,
@@ -21,18 +22,26 @@ import { CreateWorkspaceRequestDto, WorkspaceSlugAvailabilityQueryDto } from '..
 import { SessionAuthGuard } from '../guards/session-auth.guard';
 import { CurrentSession } from '../decorators/session-principal.decorator';
 import { WorkspaceService } from '../../application/services/workspace.service';
+import {
+  CreateWorkspaceResponseDto,
+  WorkspaceListResponseDto,
+  WorkspaceSlugAvailabilityResponseDto,
+} from '../dto/auth-response.dto';
 
 @Controller('auth/workspaces')
 @UseGuards(SessionAuthGuard)
+@ApiBearerAuth('access-token')
 export class WorkspaceController {
   constructor(@Inject(WorkspaceService) private readonly workspaces: WorkspaceService) {}
 
   @Get()
+  @ApiOkResponse({ type: WorkspaceListResponseDto })
   list(@CurrentSession() principal: SessionPrincipal): Promise<WorkspaceListResponse> {
     return this.workspaces.list(principal.sub);
   }
 
   @Get('slug-availability')
+  @ApiOkResponse({ type: WorkspaceSlugAvailabilityResponseDto })
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   slugAvailability(
     @Query() query: WorkspaceSlugAvailabilityQueryDto,
@@ -42,6 +51,7 @@ export class WorkspaceController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiCreatedResponse({ type: CreateWorkspaceResponseDto })
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   create(
     @CurrentSession() principal: SessionPrincipal,
