@@ -51,6 +51,7 @@ layout.
     dto/
     guards/
     decorators/
+    workers/
   application/
     services/
     ports/
@@ -76,7 +77,7 @@ other modules may import. Configuration specific to a feature belongs to
 The structure describes stable architectural responsibilities:
 
 - `presentation/` contains HTTP and framework entry points: controllers, request and
-  response DTOs, guards, and transport-specific decorators.
+  response DTOs, guards, transport-specific decorators, and background job workers.
 - `application/` contains use cases, orchestration services, and ports required by
   those use cases.
 - `domain/` contains business models, policies, state transitions, and pure business
@@ -199,6 +200,17 @@ S3, email, Jira, Monday, and other external systems are hidden behind narrow por
 An infrastructure adapter implements a port and is connected through dependency
 injection. Internal classes do not require interfaces by default; introduce an
 abstraction at a real external or replaceable boundary.
+
+### Background jobs and projections
+
+- `core/jobs` owns the generic job-queue port and the pg-boss adapter. Feature modules
+  never import pg-boss directly.
+- A feature registers its worker in `presentation/workers/`; the worker validates the
+  payload and calls an application service.
+- Job handlers are idempotent, have bounded retries, and use an explicit dead-letter queue.
+- A source mutation invalidates a projection in the same tenant transaction before it
+  enqueues refresh work. Projection reads compare revisions and rebuild synchronously if a
+  job was delayed or missed, so background processing cannot make the API return stale data.
 
 ## 4. Multi-tenancy
 

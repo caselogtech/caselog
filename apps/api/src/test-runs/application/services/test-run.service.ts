@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   bulkTestResultsResponseSchema,
   createTestRunResponseSchema,
@@ -32,6 +32,7 @@ import {
   type TestResultHistoryResponse,
 } from '@caselog/schemas';
 import { AttachmentService } from '../../../attachments/public-api';
+import { RunProgressRefreshQueue } from '../../../reporting/public-api';
 import { ZodValidationException } from 'nestjs-zod';
 import {
   AuthorizationDeniedError,
@@ -56,12 +57,16 @@ import {
 
 @Injectable()
 export class TestRunService {
+  private readonly logger = new Logger(TestRunService.name);
+
   constructor(
     @Inject(TestRunRepository) private readonly runs: TestRunRepository,
     @Inject(TestResultRepository) private readonly results: TestResultRepository,
     @Inject(TestResultQueryRepository) private readonly resultQueries: TestResultQueryRepository,
     @Inject(JUnitIngestRepository) private readonly junitResults: JUnitIngestRepository,
     @Inject(AttachmentService) private readonly attachments: AttachmentService,
+    @Inject(RunProgressRefreshQueue)
+    private readonly runProgressRefresh: RunProgressRefreshQueue,
   ) {}
 
   async list(
@@ -91,7 +96,9 @@ export class TestRunService {
       request,
     );
     this.assertFound(result);
-    return createTestRunResponseSchema.parse({ run: result.value });
+    const response = createTestRunResponseSchema.parse({ run: result.value });
+    await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, response.run.id);
+    return response;
   }
 
   async detail(
@@ -113,7 +120,9 @@ export class TestRunService {
     this.assertManage(principal);
     const result = await this.runs.start(principal.organizationId, projectSlug, runId);
     this.assertFound(result);
-    return testRunLifecycleResponseSchema.parse({ run: result.value });
+    const response = testRunLifecycleResponseSchema.parse({ run: result.value });
+    await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    return response;
   }
 
   async close(
@@ -124,7 +133,9 @@ export class TestRunService {
     this.assertManage(principal);
     const result = await this.runs.close(principal.organizationId, projectSlug, runId);
     this.assertFound(result);
-    return testRunLifecycleResponseSchema.parse({ run: result.value });
+    const response = testRunLifecycleResponseSchema.parse({ run: result.value });
+    await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    return response;
   }
 
   async archive(
@@ -135,6 +146,7 @@ export class TestRunService {
     this.assertManage(principal);
     const result = await this.runs.archive(principal.organizationId, projectSlug, runId);
     this.assertFound(result);
+    await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
   }
 
   async restore(
@@ -145,7 +157,9 @@ export class TestRunService {
     this.assertManage(principal);
     const result = await this.runs.restore(principal.organizationId, projectSlug, runId);
     this.assertFound(result);
-    return testRunLifecycleResponseSchema.parse({ run: result.value });
+    const response = testRunLifecycleResponseSchema.parse({ run: result.value });
+    await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    return response;
   }
 
   async assign(
@@ -164,7 +178,9 @@ export class TestRunService {
       request,
     );
     this.assertFound(result);
-    return assignTestRunItemResponseSchema.parse(result.value);
+    const response = assignTestRunItemResponseSchema.parse(result.value);
+    await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    return response;
   }
 
   async bulkRecordResults(
@@ -187,7 +203,9 @@ export class TestRunService {
       request,
     );
     this.assertFound(result);
-    return bulkTestResultsResponseSchema.parse(result.value);
+    const response = bulkTestResultsResponseSchema.parse(result.value);
+    await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    return response;
   }
 
   async ingestJUnitResults(
@@ -230,7 +248,9 @@ export class TestRunService {
       parsedResults,
     );
     this.assertFound(result);
-    return junitUploadResponseSchema.parse(result.value);
+    const response = junitUploadResponseSchema.parse(result.value);
+    await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    return response;
   }
 
   async recordResult(
@@ -269,7 +289,9 @@ export class TestRunService {
       await this.attachments.discardCompletedUploadObjects(preparedAttachments);
     }
     this.assertFound(result);
-    return createTestResultResponseSchema.parse(result.value);
+    const response = createTestResultResponseSchema.parse(result.value);
+    await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    return response;
   }
 
   async resultHistory(
@@ -311,6 +333,19 @@ export class TestRunService {
   private assertManage(principal: OrganizationAccessPrincipal): void {
     if (!['owner', 'admin', 'lead'].includes(principal.role)) {
       throw new AuthorizationDeniedError();
+    }
+  }
+
+  private async enqueueRunProgressRefresh(
+    organizationId: string,
+    projectSlug: string,
+    runId: string,
+  ): Promise<void> {
+    try {
+      await this.runProgressRefresh.enqueue({ organizationId, projectSlug, runId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown job queue error';
+      this.logger.error(`Failed to enqueue run progress refresh for ${runId}: ${message}`);
     }
   }
 

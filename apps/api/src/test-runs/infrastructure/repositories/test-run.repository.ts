@@ -12,6 +12,8 @@ import {
   type TestRunSummary,
 } from '@caselog/schemas';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
+import { bumpProjectionRevision } from '../../../core/database/infrastructure/persistence/projection-revision';
+import { RUN_PROGRESS_PROJECTION } from '../../../reporting/public-api';
 import { RunStatus } from '../../../generated/prisma/enums';
 import {
   claimIdempotency,
@@ -357,6 +359,7 @@ export class TestRunRepository {
         where: { organizationId_id: { organizationId, id: item.id } },
         data: { assigneeId: assignee?.user.id ?? null },
       });
+      await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
       return {
         kind: 'found',
         value: { itemId: item.id, assignee: assignee?.user ?? null },
@@ -422,6 +425,9 @@ export class TestRunRepository {
             },
           })
         : current;
+      if (nextStatus) {
+        await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
+      }
       const counts = await countRunItems(transaction, [run.id]);
       return { kind: 'found', value: toRunSummary(run, counts.get(run.id)) };
     });

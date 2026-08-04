@@ -98,6 +98,8 @@ model Organization {
   testCaseVersions       TestCaseVersion[]
   resultStatuses         ResultStatus[]
   testRuns               TestRun[]
+  runProgressSnapshots   RunProgressSnapshot[]
+  projectionRevisions    ProjectionRevision[]
   testRunItems           TestRunItem[]
   testResults            TestResult[]
   testStepResults        TestStepResult[]
@@ -407,14 +409,44 @@ model TestRun {
   closedAt       DateTime? @map("closed_at") @db.Timestamptz(3)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  project        Project         @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
-  items          TestRunItem[]
-  uploadSessions UploadSession[]
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project          Project              @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  items            TestRunItem[]
+  uploadSessions   UploadSession[]
+  progressSnapshot RunProgressSnapshot?
 
   @@id([organizationId, id], map: "pk_test_runs")
   @@index([organizationId, projectId, status, createdAt], map: "idx_test_runs_organization_id_project_id_status_created_at")
   @@map("test_runs")
+}
+
+model RunProgressSnapshot {
+  organizationId String   @map("organization_id") @db.Uuid
+  runId          String   @map("run_id") @db.Uuid
+  revision       Int
+  response       Json
+  calculatedAt   DateTime @default(now()) @map("calculated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  run          TestRun      @relation(fields: [organizationId, runId], references: [organizationId, id], onDelete: Cascade)
+
+  @@id([organizationId, runId], map: "pk_run_progress_snapshots")
+  @@index([organizationId, calculatedAt], map: "idx_run_progress_snapshots_organization_id_calculated_at")
+  @@map("run_progress_snapshots")
+}
+
+model ProjectionRevision {
+  organizationId String   @map("organization_id") @db.Uuid
+  projection     String   @db.VarChar(80)
+  sourceId       String   @map("source_id") @db.Uuid
+  revision       Int      @default(0)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, projection, sourceId], map: "pk_projection_revisions")
+  @@index([organizationId, updatedAt], map: "idx_projection_revisions_organization_id_updated_at")
+  @@map("projection_revisions")
 }
 
 model TestRunItem {

@@ -8,6 +8,8 @@ import type {
 } from '@caselog/schemas';
 import type { PreparedResultAttachment } from '../../../attachments/public-api';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
+import { bumpProjectionRevision } from '../../../core/database/infrastructure/persistence/projection-revision';
+import { RUN_PROGRESS_PROJECTION } from '../../../reporting/public-api';
 import { Prisma } from '../../../generated/prisma/client';
 import { AttachmentTargetType, RunStatus } from '../../../generated/prisma/enums';
 import {
@@ -130,6 +132,7 @@ export class TestResultRepository {
         where: { organizationId_id: { organizationId, id: itemId } },
         data: { statusId: status.id },
       });
+      await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
       if (request.stepResults && request.stepResults.length > 0) {
         await transaction.testStepResult.createMany({
           data: request.stepResults.map((step) => ({
@@ -358,6 +361,7 @@ export class TestResultRepository {
           AND item.test_run_id = ${runId}::uuid
           AND item.id = changes.id
       `;
+      await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
 
       const responseResults = results.map(({ itemId, resultId, attempt, statusId }) => {
         const status = statusById.get(statusId);

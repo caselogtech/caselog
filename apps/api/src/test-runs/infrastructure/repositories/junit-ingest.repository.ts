@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { JUnitUploadResponse } from '@caselog/schemas';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
+import { bumpProjectionRevision } from '../../../core/database/infrastructure/persistence/projection-revision';
+import { RUN_PROGRESS_PROJECTION } from '../../../reporting/public-api';
 import { Prisma } from '../../../generated/prisma/client';
 import { RunStatus } from '../../../generated/prisma/enums';
 import type { ParsedJUnitResult } from '../../domain/parsers/junit-parser';
@@ -178,6 +180,7 @@ export class JUnitIngestRepository {
               AND item.test_run_id = ${runId}::uuid
               AND item.id = changes.id
           `;
+          await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
         }
 
         const counts: JUnitUploadResponse['counts'] = {

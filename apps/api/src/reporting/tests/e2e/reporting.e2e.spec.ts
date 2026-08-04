@@ -6,7 +6,7 @@ import {
 } from '@caselog/schemas';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../../../app.module';
 import { configureApplication } from '../../../configure-application';
 import { createPrismaClient } from '../../../core/database/infrastructure/prisma/prisma-client';
@@ -23,6 +23,8 @@ describe('reporting', () => {
   let organizationToken = '';
   let projectId = '';
   let runId = '';
+  let untestedRunItemId = '';
+  let passedStatusId = '';
   let foreignRunId = '';
   let caseId = '';
   let foreignCaseId = '';
@@ -153,8 +155,9 @@ describe('reporting', () => {
     );
     const firstRunItem = runItems[0];
     const failedStatusId = statusByKey.get('failed');
-    const passedStatusId = statusByKey.get('passed');
-    if (!firstRunItem || !failedStatusId || !passedStatusId) {
+    passedStatusId = statusByKey.get('passed') ?? '';
+    untestedRunItemId = runItems[2]?.id ?? '';
+    if (!firstRunItem || !failedStatusId || !passedStatusId || !untestedRunItemId) {
       throw new Error('Expected reporting result fixtures');
     }
     const executedAt = new Date();
@@ -245,6 +248,9 @@ describe('reporting', () => {
   afterAll(async () => {
     if (admin) {
       const organizationIds = [organizationId, foreignOrganizationId].filter(Boolean);
+      await admin.runProgressSnapshot.deleteMany({
+        where: { organizationId: { in: organizationIds } },
+      });
       await admin.testResult.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.testRunItem.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.testRun.deleteMany({ where: { organizationId: { in: organizationIds } } });
@@ -291,6 +297,78 @@ describe('reporting', () => {
     ]);
     expect(progress.suites).toHaveLength(2);
     expect(progress.assignees).toHaveLength(2);
+
+    const snapshot = await admin.runProgressSnapshot.findUnique({
+      where: { organizationId_runId: { organizationId, runId } },
+    });
+    expect(snapshot).toMatchObject({ revision: 0 });
+    expect(runProgressResponseSchema.parse(snapshot?.response)).toEqual(progress);
+  });
+
+  it('refreshes a stale projection after a run result changes', async () => {
+    const resultResponse = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/reporting/runs/${runId}/items/${untestedRunItemId}/results`,
+      headers: { authorization: `Bearer ${organizationToken}` },
+      payload: { statusId: passedStatusId, comment: 'Checkout passed' },
+    });
+    expect(resultResponse.statusCode, resultResponse.body).toBe(201);
+
+    await vi.waitFor(
+      async () => {
+        const snapshot = await admin.runProgressSnapshot.findUnique({
+          where: { organizationId_runId: { organizationId, runId } },
+          select: { revision: true },
+        });
+        expect(snapshot?.revision).toBe(1);
+      },
+      { timeout: 5_000 },
+    );
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/reporting/reports/runs/${runId}/progress`,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(response.statusCode, response.body).toBe(200);
+    expect(runProgressResponseSchema.parse(response.json())).toMatchObject({
+      progressPercent: 100,
+      passRate: 66.7,
+      successfulCount: 2,
+      incompleteCount: 0,
+      run: { itemCount: 3, completedCount: 3, failedCount: 1 },
+    });
+  });
+
+  it('self-heals a stale projection when a refresh job was missed', async () => {
+    await admin.projectionRevision.upsert({
+      where: {
+        organizationId_projection_sourceId: {
+          organizationId,
+          projection: 'run_progress',
+          sourceId: runId,
+        },
+      },
+      create: { organizationId, projection: 'run_progress', sourceId: runId, revision: 1 },
+      update: { revision: { increment: 1 } },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/reporting/reports/runs/${runId}/progress`,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(response.statusCode, response.body).toBe(200);
+    expect(runProgressResponseSchema.parse(response.json())).toMatchObject({
+      progressPercent: 100,
+      successfulCount: 2,
+    });
+
+    const snapshot = await admin.runProgressSnapshot.findUnique({
+      where: { organizationId_runId: { organizationId, runId } },
+      select: { revision: true },
+    });
+    expect(snapshot?.revision).toBe(2);
   });
 
   it('returns 404 for a run owned by another tenant', async () => {

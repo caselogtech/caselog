@@ -7,14 +7,17 @@ import {
   type RunProgressResponse,
 } from '@caselog/schemas';
 import { ResourceNotFoundError } from '../../../common/errors/domain.error';
-import { buildRunProgress } from '../../domain/calculations/run-progress';
 import { CaseExecutionHistoryRepository } from '../../infrastructure/repositories/case-execution-history.repository';
-import { RunProgressRepository } from '../../infrastructure/repositories/run-progress.repository';
+import { RunProgressProjectionRepository } from '../../infrastructure/repositories/run-progress-projection.repository';
+import { RunProgressProjectionService } from './run-progress-projection.service';
 
 @Injectable()
 export class ReportingService {
   constructor(
-    @Inject(RunProgressRepository) private readonly runProgressReports: RunProgressRepository,
+    @Inject(RunProgressProjectionRepository)
+    private readonly runProgressReports: RunProgressProjectionRepository,
+    @Inject(RunProgressProjectionService)
+    private readonly runProgressProjections: RunProgressProjectionService,
     @Inject(CaseExecutionHistoryRepository)
     private readonly caseHistoryReports: CaseExecutionHistoryRepository,
   ) {}
@@ -31,7 +34,14 @@ export class ReportingService {
     if (result.kind === 'run_not_found') {
       throw new ResourceNotFoundError('test_run');
     }
-    return runProgressResponseSchema.parse(buildRunProgress(result.value));
+    const snapshot = result.value.snapshot;
+    if (snapshot && snapshot.revision === result.value.currentRevision) {
+      return runProgressResponseSchema.parse(snapshot.response);
+    }
+
+    const refreshed = await this.runProgressProjections.refresh(organizationId, projectSlug, runId);
+    if (!refreshed) throw new ResourceNotFoundError('test_run');
+    return refreshed;
   }
 
   async caseExecutionHistory(

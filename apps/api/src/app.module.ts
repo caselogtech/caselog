@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { DatabaseModule } from './core/database/database.module';
 import { HealthModule } from './core/health/health.module';
+import { JobsModule } from './core/jobs/jobs.module';
 import { MailModule } from './core/mail/mail.module';
 import { StorageModule } from './core/storage/storage.module';
 import { ProjectModule } from './projects/project.module';
@@ -17,6 +18,7 @@ import { TestRunModule } from './test-runs/test-run.module';
 @Module({
   imports: [
     DatabaseModule,
+    JobsModule,
     AttachmentModule,
     MailModule,
     StorageModule,
