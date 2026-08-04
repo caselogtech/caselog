@@ -355,11 +355,12 @@ model TestCaseVersion {
   createdById    String?      @map("created_by_id") @db.Uuid
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  testCase     TestCase      @relation("CaseVersions", fields: [organizationId, testCaseId], references: [organizationId, id], onDelete: Restrict)
-  currentFor   TestCase?     @relation("CurrentVersion")
-  createdBy    User?         @relation("VersionAuthor", fields: [createdById], references: [id], onDelete: SetNull)
-  runItems     TestRunItem[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  testCase       TestCase        @relation("CaseVersions", fields: [organizationId, testCaseId], references: [organizationId, id], onDelete: Restrict)
+  currentFor     TestCase?       @relation("CurrentVersion")
+  createdBy      User?           @relation("VersionAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  runItems       TestRunItem[]
+  uploadSessions UploadSession[]
 
   @@id([organizationId, id], map: "pk_test_case_versions")
   @@unique([organizationId, testCaseId, version], map: "uq_test_case_versions_organization_id_test_case_id_version")
@@ -513,8 +514,9 @@ model UploadSession {
   organizationId String    @map("organization_id") @db.Uuid
   id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   projectId      String    @map("project_id") @db.Uuid
-  testRunId      String    @map("test_run_id") @db.Uuid
-  testRunItemId  String    @map("test_run_item_id") @db.Uuid
+  testRunId      String?   @map("test_run_id") @db.Uuid
+  testRunItemId  String?   @map("test_run_item_id") @db.Uuid
+  caseVersionId  String?   @map("case_version_id") @db.Uuid
   createdById    String    @map("created_by_id") @db.Uuid
   storageKey     String    @map("storage_key") @db.VarChar(1024)
   fileName       String    @map("file_name") @db.VarChar(255)
@@ -526,15 +528,17 @@ model UploadSession {
   completedAt    DateTime? @map("completed_at") @db.Timestamptz(3)
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  project      Project      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
-  testRun      TestRun      @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Cascade)
-  testRunItem  TestRunItem  @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Cascade)
-  createdBy    User         @relation("UploadCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project      Project          @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  testRun      TestRun?         @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Cascade)
+  testRunItem  TestRunItem?     @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Cascade)
+  caseVersion  TestCaseVersion? @relation(fields: [organizationId, caseVersionId], references: [organizationId, id], onDelete: Cascade)
+  createdBy    User             @relation("UploadCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
   @@id([organizationId, id], map: "pk_upload_sessions")
   @@unique([organizationId, storageKey], map: "uq_upload_sessions_organization_id_storage_key")
   @@index([organizationId, testRunItemId, completedAt, expiresAt], map: "idx_upload_sessions_org_item_completed_expires")
+  @@index([organizationId, caseVersionId, completedAt, expiresAt], map: "idx_upload_sessions_org_case_version_completed_expires")
   @@index([organizationId, expiresAt], map: "idx_upload_sessions_organization_id_expires_at")
   @@map("upload_sessions")
 }

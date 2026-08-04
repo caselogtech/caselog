@@ -2,9 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { CreateUploadSessionRequest } from '@caselog/schemas';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import { AttachmentTargetType, RunStatus } from '../../../generated/prisma/enums';
-
-const MAX_PENDING_UPLOADS_PER_USER = 20;
-const MAX_PENDING_STORAGE_BYTES = 500n * 1_024n * 1_024n;
+import { hasPendingUploadCapacity } from '../persistence/upload-quota.persistence';
 
 export type CreateUploadRecord = {
   id: string;
@@ -134,11 +132,6 @@ export class AttachmentRepository {
     record: CreateUploadRecord,
   ): Promise<CreateUploadResult> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
-      await transaction.$queryRaw`
-        SELECT id FROM organizations
-        WHERE id = ${organizationId}::uuid
-        FOR UPDATE
-      `;
       const project = await transaction.project.findUnique({
         where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
         select: { id: true },
@@ -164,20 +157,8 @@ export class AttachmentRepository {
         const stepCount = item.caseVersion.template === 'STEPS' ? (content.steps?.length ?? 0) : 0;
         if (request.stepPosition >= stepCount) return { kind: 'invalid_step_position' };
       }
-      const now = new Date();
-      const [userPendingCount, pendingStorage] = await Promise.all([
-        transaction.uploadSession.count({
-          where: { createdById: userId, completedAt: null, expiresAt: { gt: now } },
-        }),
-        transaction.uploadSession.aggregate({
-          where: { completedAt: null, expiresAt: { gt: now } },
-          _sum: { sizeBytes: true },
-        }),
-      ]);
       if (
-        userPendingCount >= MAX_PENDING_UPLOADS_PER_USER ||
-        (pendingStorage._sum.sizeBytes ?? 0n) + BigInt(request.sizeBytes) >
-          MAX_PENDING_STORAGE_BYTES
+        !(await hasPendingUploadCapacity(transaction, organizationId, userId, request.sizeBytes))
       ) {
         return { kind: 'upload_limit_reached' };
       }

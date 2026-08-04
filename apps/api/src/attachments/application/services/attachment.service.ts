@@ -21,6 +21,7 @@ import {
   AttachmentRepository,
   type CreateUploadResult,
 } from '../../infrastructure/repositories/attachment.repository';
+import { uploadMetadataMatches } from '../../domain/policies/upload-metadata';
 
 export type PreparedResultAttachment = {
   id: string;
@@ -130,7 +131,7 @@ export class AttachmentService {
     try {
       for (const upload of uploads) {
         const source = await this.storage.stat(upload.storageKey);
-        if (!source || !this.matchesUpload(source, upload)) {
+        if (!source || !uploadMetadataMatches(source, upload)) {
           throw new ResourceConflictError(
             'upload_incomplete',
             'An uploaded object is missing or does not match its declared metadata',
@@ -152,7 +153,7 @@ export class AttachmentService {
         prepared.push(attachment);
         await this.storage.copy(upload.storageKey, storageKey);
         const snapshot = await this.storage.stat(storageKey);
-        if (!snapshot || !this.matchesUpload(snapshot, upload)) {
+        if (!snapshot || !uploadMetadataMatches(snapshot, upload)) {
           throw new ResourceConflictError(
             'upload_incomplete',
             'The uploaded object could not be verified after promotion',
@@ -195,17 +196,6 @@ export class AttachmentService {
         'Too many pending uploads exist for this workspace',
       );
     }
-  }
-
-  private matchesUpload(
-    object: { contentType: string | null; sizeBytes: number; checksumSha256: string | null },
-    upload: { contentType: string; sizeBytes: number; checksumSha256: string },
-  ): boolean {
-    return (
-      object.contentType === upload.contentType &&
-      object.sizeBytes === upload.sizeBytes &&
-      object.checksumSha256 === upload.checksumSha256
-    );
   }
 
   private async deleteFinalObjects(attachments: PreparedResultAttachment[]): Promise<void> {

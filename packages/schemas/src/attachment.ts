@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { testCaseVersionParamsSchema } from './test-case.js';
 import { testResultParamsSchema, testRunItemParamsSchema } from './test-run.js';
 
 export const attachmentContentTypeSchema = z.enum([
@@ -28,6 +29,34 @@ export const createUploadSessionRequestSchema = z.object({
 
 export const createUploadSessionParamsSchema = testRunItemParamsSchema;
 
+export const createCaseAttachmentUploadSessionRequestSchema = createUploadSessionRequestSchema.omit(
+  {
+    stepPosition: true,
+  },
+);
+export const caseAttachmentParamsSchema = testCaseVersionParamsSchema;
+export const caseAttachmentItemParamsSchema = caseAttachmentParamsSchema.extend({
+  attachmentId: z.uuid(),
+});
+export const completeCaseAttachmentRequestSchema = z.object({ uploadId: z.uuid() });
+export const caseAttachmentListQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+});
+export const caseAttachmentSchema = z.object({
+  id: z.uuid(),
+  fileName: z.string().min(1).max(255),
+  contentType: attachmentContentTypeSchema,
+  sizeBytes: z.number().int().positive(),
+  checksumSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  createdAt: z.iso.datetime(),
+});
+export const caseAttachmentListResponseSchema = z.object({
+  items: z.array(caseAttachmentSchema),
+  nextCursor: z.uuid().nullable(),
+});
+export const caseAttachmentResponseSchema = z.object({ attachment: caseAttachmentSchema });
+
 export const attachmentDownloadParamsSchema = testResultParamsSchema.extend({
   attachmentId: z.uuid(),
 });
@@ -55,3 +84,13 @@ export type CreateUploadSessionParams = z.infer<typeof createUploadSessionParams
 export type CreateUploadSessionResponse = z.infer<typeof createUploadSessionResponseSchema>;
 export type AttachmentDownloadParams = z.infer<typeof attachmentDownloadParamsSchema>;
 export type AttachmentDownloadResponse = z.infer<typeof attachmentDownloadResponseSchema>;
+export type CreateCaseAttachmentUploadSessionRequest = z.infer<
+  typeof createCaseAttachmentUploadSessionRequestSchema
+>;
+export type CaseAttachmentParams = z.infer<typeof caseAttachmentParamsSchema>;
+export type CaseAttachmentItemParams = z.infer<typeof caseAttachmentItemParamsSchema>;
+export type CompleteCaseAttachmentRequest = z.infer<typeof completeCaseAttachmentRequestSchema>;
+export type CaseAttachmentListQuery = z.infer<typeof caseAttachmentListQuerySchema>;
+export type CaseAttachment = z.infer<typeof caseAttachmentSchema>;
+export type CaseAttachmentListResponse = z.infer<typeof caseAttachmentListResponseSchema>;
+export type CaseAttachmentResponse = z.infer<typeof caseAttachmentResponseSchema>;
