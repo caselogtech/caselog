@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -35,7 +35,7 @@ const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
   selector: 'app-case-detail',
   imports: [DatePipe, ReactiveFormsModule, RouterLink, TranslocoPipe],
   templateUrl: './case-detail.html',
-  styleUrls: ['./case-create.css', './case-detail.css'],
+  styleUrls: ['./case-create.css', './case-detail.css', './case-attachments.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CaseDetail {
@@ -44,6 +44,7 @@ export class CaseDetail {
   private readonly workspaceApi = inject(WorkspaceApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
+  private readonly document = inject(DOCUMENT);
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
@@ -93,6 +94,54 @@ export class CaseDetail {
   }));
 
   readonly current = computed(() => this.detail.data()?.testCase.currentVersion ?? null);
+
+  readonly attachments = injectInfiniteQuery(() => {
+    const versionId = this.current()?.id ?? '';
+    return {
+      queryKey: ['case-attachments', this.workspaceSlug, this.projectSlug, this.caseId, versionId],
+      queryFn: ({ pageParam }) =>
+        this.workspaceApi.testCaseAttachments(
+          this.workspaceSlug,
+          this.projectSlug,
+          this.caseId,
+          versionId,
+          pageParam ?? undefined,
+        ),
+      initialPageParam: null as string | null,
+      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+      enabled: Boolean(versionId),
+    };
+  });
+
+  readonly attachmentItems = computed(
+    () => this.attachments.data()?.pages.flatMap(({ items }) => items) ?? [],
+  );
+
+  readonly uploadAttachment = injectMutation(() => ({
+    mutationFn: (file: File) => {
+      const versionId = this.requireCurrentVersionId();
+      return this.workspaceApi.uploadTestCaseAttachment(
+        this.workspaceSlug,
+        this.projectSlug,
+        this.caseId,
+        versionId,
+        file,
+      );
+    },
+    onSuccess: () => this.invalidateAttachments(),
+  }));
+
+  readonly downloadAttachment = injectMutation(() => ({
+    mutationFn: (attachmentId: string) =>
+      this.workspaceApi.testCaseAttachmentDownload(
+        this.workspaceSlug,
+        this.projectSlug,
+        this.caseId,
+        this.requireCurrentVersionId(),
+        attachmentId,
+      ),
+    onSuccess: ({ download }) => this.openDownload(download.url),
+  }));
 
   readonly selectedVersion = injectQuery(() => ({
     queryKey: [
@@ -238,6 +287,21 @@ export class CaseDetail {
     }
   }
 
+  selectAttachment(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0);
+    if (file && this.canEdit()) {
+      this.uploadAttachment.mutate(file);
+    }
+    input.value = '';
+  }
+
+  formatFileSize(sizeBytes: number): string {
+    if (sizeBytes < 1_024) return `${sizeBytes} B`;
+    if (sizeBytes < 1_048_576) return `${(sizeBytes / 1_024).toFixed(1)} KB`;
+    return `${(sizeBytes / 1_048_576).toFixed(1)} MB`;
+  }
+
   currentSteps(): Array<{ action: string; expected?: string }> {
     const content = this.current()?.content;
     return content && 'steps' in content ? content.steps : [];
@@ -273,6 +337,12 @@ export class CaseDetail {
         this.selectedVersion.error() ??
         this.executionHistory.error() ??
         this.detail.error(),
+    );
+  }
+
+  attachmentErrorTranslationKey(): string {
+    return apiErrorTranslationKey(
+      this.uploadAttachment.error() ?? this.downloadAttachment.error() ?? this.attachments.error(),
     );
   }
 
@@ -345,5 +415,28 @@ export class CaseDetail {
       ...common,
       content: { gherkin: value.gherkin },
     });
+  }
+
+  private requireCurrentVersionId(): string {
+    const versionId = this.current()?.id;
+    if (!versionId) {
+      throw new Error('Current case version is unavailable');
+    }
+    return versionId;
+  }
+
+  private invalidateAttachments(): Promise<void> {
+    return this.queryClient.invalidateQueries({
+      queryKey: ['case-attachments', this.workspaceSlug, this.projectSlug, this.caseId],
+    });
+  }
+
+  private openDownload(url: string): void {
+    const link = this.document.createElement('a');
+    link.href = url;
+    link.rel = 'noopener';
+    this.document.body.append(link);
+    link.click();
+    link.remove();
   }
 }

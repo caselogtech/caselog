@@ -294,6 +294,93 @@
         </aside>
       </div>
 
+      <section class="case-attachments" aria-labelledby="case-attachments-title">
+        <div class="case-attachments-heading">
+          <div>
+            <p class="eyebrow">{{ 'workspace.cases.detail.attachmentsEyebrow' | transloco }}</p>
+            <h2 id="case-attachments-title">
+              {{ 'workspace.cases.detail.attachments' | transloco }}
+            </h2>
+            <p>{{ 'workspace.cases.detail.attachmentsDescription' | transloco }}</p>
+          </div>
+          @if (canEdit()) {
+            <label
+              class="attachment-upload"
+              [class.disabled]="uploadAttachment.isPending()"
+              for="case-attachment-upload"
+            >
+              {{
+                (uploadAttachment.isPending()
+                  ? 'workspace.cases.detail.attachmentUploading'
+                  : 'workspace.cases.detail.attachmentChoose') | transloco
+              }}
+            </label>
+            <input
+              id="case-attachment-upload"
+              class="attachment-input"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain"
+              [disabled]="uploadAttachment.isPending()"
+              (change)="selectAttachment($event)"
+            />
+          }
+        </div>
+        <p class="attachment-types">
+          {{ 'workspace.cases.detail.attachmentAcceptedTypes' | transloco }}
+        </p>
+
+        @if (uploadAttachment.isError() || downloadAttachment.isError()) {
+          <p role="alert">{{ attachmentErrorTranslationKey() | transloco }}</p>
+        }
+
+        @if (attachments.isPending()) {
+          <p aria-live="polite">{{ 'workspace.cases.detail.attachmentsLoading' | transloco }}</p>
+        } @else if (attachments.isError()) {
+          <div role="alert">
+            <p>{{ attachmentErrorTranslationKey() | transloco }}</p>
+            <button type="button" (click)="attachments.refetch()">
+              {{ 'workspace.cases.detail.attachmentsRetry' | transloco }}
+            </button>
+          </div>
+        } @else if (attachmentItems().length === 0) {
+          <p>{{ 'workspace.cases.detail.attachmentsEmpty' | transloco }}</p>
+        } @else {
+          <ul>
+            @for (attachment of attachmentItems(); track attachment.id) {
+              <li>
+                <div>
+                  <strong>{{ attachment.fileName }}</strong>
+                  <p>
+                    {{ formatFileSize(attachment.sizeBytes) }} ·
+                    {{ attachment.createdAt | date: 'medium' }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  [disabled]="downloadAttachment.isPending()"
+                  (click)="downloadAttachment.mutate(attachment.id)"
+                >
+                  {{ 'workspace.cases.detail.attachmentDownload' | transloco }}
+                </button>
+              </li>
+            }
+          </ul>
+          @if (attachments.hasNextPage()) {
+            <button
+              type="button"
+              [disabled]="attachments.isFetchingNextPage()"
+              (click)="attachments.fetchNextPage()"
+            >
+              {{
+                (attachments.isFetchingNextPage()
+                  ? 'workspace.cases.detail.attachmentsLoadingMore'
+                  : 'workspace.cases.detail.attachmentsLoadMore') | transloco
+              }}
+            </button>
+          }
+        }
+      </section>
+
       <section class="execution-history" aria-labelledby="execution-history-title">
         <div class="execution-history-heading">
           <div>
