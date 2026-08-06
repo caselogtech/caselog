@@ -1,12 +1,11 @@
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import type { AddressInfo } from 'node:net';
-import { randomUUID } from 'node:crypto';
 import {
+  createJiraDefectResponseSchema,
   createJiraDataCenterConnectionResponseSchema,
   integrationConnectionListResponseSchema,
+  issueLinkListResponseSchema,
+  issueLinkResponseSchema,
   jiraIssueSearchResponseSchema,
   jiraProjectListResponseSchema,
-  sessionResponseSchema,
 } from '@caselog/schemas';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -15,25 +14,38 @@ import { AppModule } from '../../../app.module';
 import { configureApplication } from '../../../configure-application';
 import { createPrismaClient } from '../../../core/database/infrastructure/prisma/prisma-client';
 import type { PrismaClient } from '../../../generated/prisma/client';
-
-const PASSWORD = 'correct horse battery staple';
-const JIRA_TOKEN = 'jira-data-center-test-token';
-const ROTATED_JIRA_TOKEN = 'jira-data-center-rotated-token';
+import {
+  JIRA_TOKEN,
+  type JiraServerFixture,
+  ROTATED_JIRA_TOKEN,
+  startJiraServer,
+} from '../fixtures/jira-server.fixture';
+import {
+  createForeignCaseFixture,
+  createJiraWorkspaceFixture,
+  type JiraWorkspaceFixture,
+} from '../fixtures/jira-workspace.fixture';
 
 describe('Jira Data Center integration', () => {
   let app: NestFastifyApplication;
   let admin: PrismaClient;
-  let jira: ReturnType<typeof createServer>;
+  let jira: JiraServerFixture;
+  let workspace: JiraWorkspaceFixture;
   let jiraBaseUrl = '';
-  let email = '';
   let organizationId = '';
   let organizationToken = '';
+  let readOnlyToken = '';
   let connectionId = '';
+  let caseId = '';
+  let runId = '';
+  let itemId = '';
+  let resultId = '';
+  let attachmentId = '';
+  let projectSlug = '';
 
   beforeAll(async () => {
-    jira = createServer(handleJiraRequest);
-    await new Promise<void>((resolve) => jira.listen(0, '127.0.0.1', resolve));
-    jiraBaseUrl = `http://127.0.0.1:${(jira.address() as AddressInfo).port}`;
+    jira = await startJiraServer();
+    jiraBaseUrl = jira.baseUrl;
 
     const adminUrl = process.env.MIGRATION_DATABASE_URL;
     if (!adminUrl) throw new Error('MIGRATION_DATABASE_URL is required for Jira integration tests');
@@ -44,28 +56,18 @@ describe('Jira Data Center integration', () => {
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
 
-    const suffix = randomUUID().slice(0, 8);
-    email = `jira-integration-${suffix}@example.com`;
-    const registration = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { displayName: 'Jira Owner', email, password: PASSWORD, termsAccepted: true },
-    });
-    const session = sessionResponseSchema.parse(registration.json());
-    const user = await admin.user.findUniqueOrThrow({ where: { email } });
-    const organization = await admin.organization.create({
-      data: { name: 'Jira Workspace', slug: `jira-${suffix}` },
-    });
-    organizationId = organization.id;
-    await admin.membership.create({
-      data: { organizationId, userId: user.id, role: 'OWNER' },
-    });
-    const token = await app.inject({
-      method: 'POST',
-      url: `/api/v1/auth/organizations/${organization.slug}/token`,
-      headers: { authorization: `Bearer ${session.accessToken}` },
-    });
-    organizationToken = token.json().accessToken as string;
+    workspace = await createJiraWorkspaceFixture(admin, app);
+    ({
+      organizationId,
+      organizationToken,
+      readOnlyToken,
+      projectSlug,
+      caseId,
+      runId,
+      itemId,
+      resultId,
+      attachmentId,
+    } = workspace);
   });
 
   it('rejects invalid Jira credentials without persisting them', async () => {
@@ -89,19 +91,10 @@ describe('Jira Data Center integration', () => {
   });
 
   afterAll(async () => {
-    if (admin) {
-      await admin.integrationConnection.deleteMany({ where: { organizationId } });
-      await admin.idempotencyRecord.deleteMany({ where: { organizationId } });
-      await admin.membership.deleteMany({ where: { organizationId } });
-      await admin.organization.deleteMany({ where: { id: organizationId } });
-      await admin.user.deleteMany({ where: { email } });
-      await admin.$disconnect();
-    }
+    if (workspace) await workspace.cleanup();
+    if (admin) await admin.$disconnect();
     if (app) await app.close();
-    if (jira)
-      await new Promise<void>((resolve, reject) =>
-        jira.close((error) => (error ? reject(error) : resolve())),
-      );
+    if (jira) await jira.close();
   });
 
   it('verifies and stores an encrypted, idempotent connection', async () => {
@@ -205,6 +198,156 @@ describe('Jira Data Center integration', () => {
     });
   });
 
+  it('links an existing Jira issue to a test case without duplicates', async () => {
+    const url = `/api/v1/projects/${projectSlug}/cases/${caseId}/integrations/jira/issues`;
+    const request = { connectionId, issueKey: 'QA-42' };
+    const first = await app.inject({
+      method: 'POST',
+      url,
+      headers: { authorization: `Bearer ${organizationToken}` },
+      payload: request,
+    });
+    expect(first.statusCode, first.body).toBe(201);
+    const linked = issueLinkResponseSchema.parse(first.json()).link;
+    expect(linked).toMatchObject({
+      linkType: 'requirement',
+      externalIssueKey: 'QA-42',
+      title: 'Checkout fails',
+      status: { id: '1', name: 'Open' },
+    });
+
+    const replay = await app.inject({
+      method: 'POST',
+      url,
+      headers: { authorization: `Bearer ${organizationToken}` },
+      payload: request,
+    });
+    expect(replay.statusCode, replay.body).toBe(201);
+    expect(issueLinkResponseSchema.parse(replay.json()).link.id).toBe(linked.id);
+
+    const list = await app.inject({
+      method: 'GET',
+      url,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(list.statusCode, list.body).toBe(200);
+    expect(issueLinkListResponseSchema.parse(list.json()).links).toHaveLength(1);
+  });
+
+  it('hides issue links across tenant boundaries', async () => {
+    const foreignCase = await createForeignCaseFixture(admin, projectSlug);
+
+    try {
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/v1/projects/${projectSlug}/cases/${foreignCase.caseId}/integrations/jira/issues`,
+        headers: { authorization: `Bearer ${organizationToken}` },
+      });
+      expect(response.statusCode, response.body).toBe(404);
+    } finally {
+      await foreignCase.cleanup();
+    }
+  });
+
+  it('allows read-only members to list but not mutate issue links', async () => {
+    const caseUrl = `/api/v1/projects/${projectSlug}/cases/${caseId}/integrations/jira/issues`;
+    const resultUrl = `/api/v1/projects/${projectSlug}/runs/${runId}/items/${itemId}/results/${resultId}/integrations/jira/issues`;
+    const headers = { authorization: `Bearer ${readOnlyToken}` };
+
+    const list = await app.inject({ method: 'GET', url: caseUrl, headers });
+    expect(list.statusCode, list.body).toBe(200);
+
+    const link = await app.inject({
+      method: 'POST',
+      url: resultUrl,
+      headers,
+      payload: { connectionId, issueKey: 'QA-42' },
+    });
+    expect(link.statusCode, link.body).toBe(403);
+    expect(link.json().error.code).toBe('insufficient_permissions');
+
+    const defect = await app.inject({
+      method: 'POST',
+      url: `${resultUrl}/defects`,
+      headers: { ...headers, 'idempotency-key': 'read-only-defect' },
+      payload: { connectionId, jiraProjectKey: 'QA' },
+    });
+    expect(defect.statusCode, defect.body).toBe(403);
+    expect(defect.json().error.code).toBe('insufficient_permissions');
+  });
+
+  it('creates an idempotent Jira defect with failure context and evidence', async () => {
+    const url = `/api/v1/projects/${projectSlug}/runs/${runId}/items/${itemId}/results/${resultId}/integrations/jira/issues/defects`;
+    const headers = {
+      authorization: `Bearer ${organizationToken}`,
+      'idempotency-key': 'create-checkout-defect',
+    };
+    const request = {
+      connectionId,
+      jiraProjectKey: 'QA',
+      issueType: 'Bug',
+      environment: 'Chrome 140 / staging',
+      attachmentIds: [attachmentId],
+    };
+    const first = await app.inject({ method: 'POST', url, headers, payload: request });
+    expect(first.statusCode, first.body).toBe(201);
+    const created = createJiraDefectResponseSchema.parse(first.json());
+    expect(created).toMatchObject({
+      link: { linkType: 'defect', externalIssueKey: 'QA-99', status: null },
+      attachmentWarnings: [],
+    });
+    expect(jira.state.createIssueCount).toBe(1);
+    expect(jira.state.createdIssuePayload?.fields?.summary).toContain('Card checkout completes');
+    expect(jira.state.createdIssuePayload?.fields?.description).toContain('build-42');
+    expect(jira.state.createdIssuePayload?.fields?.description).toContain('Chrome 140 / staging');
+    expect(jira.state.createdIssuePayload?.fields?.description).toContain(
+      'The payment gateway returned HTTP 500.',
+    );
+    expect(jira.state.createdIssuePayload?.fields?.description).toContain(`results/${resultId}`);
+    expect(jira.state.uploadedEvidence).toContain('checkout-failure.png');
+
+    const replay = await app.inject({ method: 'POST', url, headers, payload: request });
+    expect(replay.statusCode, replay.body).toBe(201);
+    expect(replay.json()).toEqual(created);
+    expect(jira.state.createIssueCount).toBe(1);
+
+    const conflict = await app.inject({
+      method: 'POST',
+      url,
+      headers,
+      payload: { ...request, summary: 'Different summary' },
+    });
+    expect(conflict.statusCode, conflict.body).toBe(409);
+
+    const links = await app.inject({
+      method: 'GET',
+      url: url.replace('/defects', ''),
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(issueLinkListResponseSchema.parse(links.json()).links).toHaveLength(1);
+  });
+
+  it('does not retry automatically when Jira creation has an ambiguous outcome', async () => {
+    const url = `/api/v1/projects/${projectSlug}/runs/${runId}/items/${itemId}/results/${resultId}/integrations/jira/issues/defects`;
+    const headers = {
+      authorization: `Bearer ${organizationToken}`,
+      'idempotency-key': 'ambiguous-jira-create',
+    };
+    const request = {
+      connectionId,
+      jiraProjectKey: 'AMBIG',
+      attachmentIds: [],
+    };
+    const first = await app.inject({ method: 'POST', url, headers, payload: request });
+    expect(first.statusCode, first.body).toBe(502);
+    expect(jira.state.createIssueCount).toBe(2);
+
+    const retry = await app.inject({ method: 'POST', url, headers, payload: request });
+    expect(retry.statusCode, retry.body).toBe(409);
+    expect(retry.json().error.code).toBe('issue_creation_requires_reconciliation');
+    expect(jira.state.createIssueCount).toBe(2);
+  });
+
   it('lists public metadata without exposing credentials and disconnects cleanly', async () => {
     const list = await app.inject({
       method: 'GET',
@@ -236,54 +379,3 @@ describe('Jira Data Center integration', () => {
     expect(afterDelete.statusCode, afterDelete.body).toBe(404);
   });
 });
-
-function handleJiraRequest(request: IncomingMessage, response: ServerResponse): void {
-  const acceptedTokens = new Set([`Bearer ${JIRA_TOKEN}`, `Bearer ${ROTATED_JIRA_TOKEN}`]);
-  if (!acceptedTokens.has(request.headers.authorization ?? '')) {
-    sendJson(response, 401, { message: 'Unauthorized' });
-    return;
-  }
-  const url = new URL(request.url ?? '/', 'http://jira.test');
-  if (request.method === 'GET' && url.pathname === '/rest/api/2/myself') {
-    sendJson(response, 200, { key: 'qa-owner', displayName: 'QA Owner' });
-    return;
-  }
-  if (request.method === 'GET' && url.pathname === '/rest/api/2/project') {
-    sendJson(response, 200, [
-      { id: '10000', key: 'QA', name: 'Quality', projectTypeKey: 'software' },
-    ]);
-    return;
-  }
-  if (request.method === 'POST' && url.pathname === '/rest/api/2/search') {
-    let body = '';
-    request.on('data', (chunk) => {
-      body += chunk;
-    });
-    request.on('end', () => {
-      const query = JSON.parse(body) as { startAt: number; maxResults: number };
-      sendJson(response, 200, {
-        startAt: query.startAt,
-        maxResults: query.maxResults,
-        total: 1,
-        issues: [
-          {
-            id: '1042',
-            key: 'QA-42',
-            fields: {
-              summary: 'Checkout fails',
-              status: { id: '1', name: 'Open' },
-              issuetype: { id: '10001', name: 'Bug' },
-            },
-          },
-        ],
-      });
-    });
-    return;
-  }
-  sendJson(response, 404, { message: 'Not found' });
-}
-
-function sendJson(response: ServerResponse, status: number, body: unknown): void {
-  response.writeHead(status, { 'content-type': 'application/json' });
-  response.end(JSON.stringify(body));
-}

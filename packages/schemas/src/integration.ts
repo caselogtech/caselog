@@ -81,6 +81,73 @@ export const jiraIssueSearchResponseSchema = z.object({
   issues: z.array(jiraIssueSchema),
 });
 
+export const issueLinkSchema = z.object({
+  id: z.uuid(),
+  connectionId: integrationConnectionIdSchema,
+  linkType: z.enum(['requirement', 'defect']),
+  externalIssueId: z.string().min(1).max(255),
+  externalIssueKey: z.string().min(1).max(255),
+  title: z.string().max(500),
+  url: z.url(),
+  issueType: z.string().min(1).max(120),
+  status: z.object({ id: z.string().min(1), name: z.string().min(1) }).nullable(),
+  lastSyncedAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+});
+
+export const issueLinkResponseSchema = z.object({ link: issueLinkSchema });
+export const issueLinkListResponseSchema = z.object({ links: z.array(issueLinkSchema) });
+
+export const linkJiraIssueRequestSchema = z.object({
+  connectionId: integrationConnectionIdSchema,
+  issueKey: z.string().trim().min(1).max(255),
+});
+
+export const caseIssueLinkParamsSchema = z.object({
+  projectSlug: z.string().min(1).max(50),
+  caseId: z.uuid(),
+});
+
+export const resultIssueLinkParamsSchema = z.object({
+  projectSlug: z.string().min(1).max(50),
+  runId: z.uuid(),
+  itemId: z.uuid(),
+  resultId: z.uuid(),
+});
+
+export const issueLinkItemParamsSchema = z.object({ linkId: z.uuid() });
+export const caseIssueLinkItemParamsSchema = caseIssueLinkParamsSchema.extend({ linkId: z.uuid() });
+export const resultIssueLinkItemParamsSchema = resultIssueLinkParamsSchema.extend({
+  linkId: z.uuid(),
+});
+
+export const createDefectHeadersSchema = createIntegrationConnectionHeadersSchema;
+
+export const createJiraDefectRequestSchema = z
+  .object({
+    connectionId: integrationConnectionIdSchema,
+    jiraProjectKey: z.string().trim().min(1).max(255),
+    issueType: z.string().trim().min(1).max(120).default('Bug'),
+    summary: z.string().trim().min(1).max(255).optional(),
+    environment: z.string().trim().min(1).max(500).optional(),
+    description: z.string().trim().max(10_000).optional(),
+    attachmentIds: z.array(z.uuid()).max(10).default([]),
+  })
+  .superRefine(({ attachmentIds }, context) => {
+    if (new Set(attachmentIds).size !== attachmentIds.length) {
+      context.addIssue({
+        code: 'custom',
+        path: ['attachmentIds'],
+        message: 'Attachment IDs must be unique',
+      });
+    }
+  });
+
+export const createJiraDefectResponseSchema = z.object({
+  link: issueLinkSchema,
+  attachmentWarnings: z.array(z.string()),
+});
+
 export type CreateJiraDataCenterConnectionRequest = z.infer<
   typeof createJiraDataCenterConnectionRequestSchema
 >;
@@ -100,3 +167,9 @@ export type JiraProjectListResponse = z.infer<typeof jiraProjectListResponseSche
 export type JiraIssueSearchRequest = z.infer<typeof jiraIssueSearchRequestSchema>;
 export type JiraIssue = z.infer<typeof jiraIssueSchema>;
 export type JiraIssueSearchResponse = z.infer<typeof jiraIssueSearchResponseSchema>;
+export type IssueLink = z.infer<typeof issueLinkSchema>;
+export type IssueLinkResponse = z.infer<typeof issueLinkResponseSchema>;
+export type IssueLinkListResponse = z.infer<typeof issueLinkListResponseSchema>;
+export type LinkJiraIssueRequest = z.infer<typeof linkJiraIssueRequestSchema>;
+export type CreateJiraDefectRequest = z.infer<typeof createJiraDefectRequestSchema>;
+export type CreateJiraDefectResponse = z.infer<typeof createJiraDefectResponseSchema>;

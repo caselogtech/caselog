@@ -47,6 +47,9 @@ describe('S3StorageProvider integration', () => {
     expect(downloaded.status, downloadedBody).toBe(200);
     expect(downloadedBody).toBe(body.toString());
     expect(downloaded.headers.get('content-disposition')).toContain('evidence%20report.txt');
+    await expect(storage.read(copiedStorageKey, body.byteLength)).resolves.toEqual(
+      Uint8Array.from(body),
+    );
     await storage.delete(copiedStorageKey);
   });
 });

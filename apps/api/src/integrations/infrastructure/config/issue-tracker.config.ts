@@ -10,12 +10,14 @@ const environmentSchema = z.object({
     .min(1_024)
     .max(10_000_000)
     .default(2_000_000),
+  WEB_BASE_URL: z.url(),
 });
 
 export type IssueTrackerConfig = {
   allowPrivateNetworks: boolean;
   timeoutMs: number;
   maxResponseBytes: number;
+  webBaseUrl: string;
 };
 
 export const ISSUE_TRACKER_CONFIG = Symbol('ISSUE_TRACKER_CONFIG');
@@ -29,5 +31,6 @@ export function createIssueTrackerConfig(): IssueTrackerConfig {
         environment.NODE_ENV !== 'production'),
     timeoutMs: environment.INTEGRATION_HTTP_TIMEOUT_MS,
     maxResponseBytes: environment.INTEGRATION_MAX_RESPONSE_BYTES,
+    webBaseUrl: environment.WEB_BASE_URL.replace(/\/$/, ''),
   };
 }

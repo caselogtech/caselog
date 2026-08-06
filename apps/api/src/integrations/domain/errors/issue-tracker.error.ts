@@ -1,6 +1,7 @@
 export type IssueTrackerFailureKind =
   | 'authentication'
   | 'rate_limited'
+  | 'rejected'
   | 'unavailable'
   | 'invalid_response';
 

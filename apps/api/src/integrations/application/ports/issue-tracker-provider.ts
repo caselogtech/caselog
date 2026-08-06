@@ -16,6 +16,22 @@ export type CreateIssueInput = {
   issueType: string;
   summary: string;
   description: string;
+  attachments: IssueTrackerAttachment[];
+};
+
+export type IssueTrackerAttachment = {
+  fileName: string;
+  contentType: string;
+  content: Uint8Array;
+};
+
+export type CreatedIssue = {
+  id: string;
+  key: string;
+  summary: string;
+  url: string;
+  issueType: string;
+  attachmentWarnings: string[];
 };
 
 export abstract class IssueTrackerProvider {
@@ -32,7 +48,7 @@ export abstract class IssueTrackerProvider {
   abstract createIssue(
     connection: IssueTrackerConnection,
     input: CreateIssueInput,
-  ): Promise<JiraIssue>;
+  ): Promise<CreatedIssue>;
 }
 
 export const ISSUE_TRACKER_PROVIDERS = Symbol('ISSUE_TRACKER_PROVIDERS');

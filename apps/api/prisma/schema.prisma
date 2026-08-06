@@ -111,6 +111,8 @@ model Organization {
   idempotencyRecords     IdempotencyRecord[]
   apiTokens              ApiToken[]
   integrationConnections IntegrationConnection[]
+  issueLinks             IssueLink[]
+  issueCreationRequests  IssueCreationRequest[]
 
   @@map("organizations")
 }
@@ -150,6 +152,8 @@ model User {
   createdUploads         UploadSession[]         @relation("UploadCreator")
   apiTokens              ApiToken[]              @relation("ApiTokenCreator")
   integrationConnections IntegrationConnection[] @relation("IntegrationConnectionCreator")
+  createdIssueLinks      IssueLink[]             @relation("IssueLinkCreator")
+  issueCreationRequests  IssueCreationRequest[]  @relation("IssueCreationRequestCreator")
 
   @@map("users")
 }
@@ -195,12 +199,80 @@ model IntegrationConnection {
   updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy    User?        @relation("IntegrationConnectionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy             User?                  @relation("IntegrationConnectionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  issueLinks            IssueLink[]
+  issueCreationRequests IssueCreationRequest[]
 
   @@id([organizationId, id], map: "pk_integration_connections")
   @@index([organizationId, provider, deletedAt], map: "idx_integration_connections_organization_provider")
   @@map("integration_connections")
+}
+
+model IssueLink {
+  organizationId       String    @map("organization_id") @db.Uuid
+  id                   String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId            String    @map("project_id") @db.Uuid
+  connectionId         String    @map("connection_id") @db.Uuid
+  linkType             String    @map("link_type") @db.VarChar(30)
+  testCaseId           String?   @map("test_case_id") @db.Uuid
+  testResultId         String?   @map("test_result_id") @db.Uuid
+  testResultExecutedAt DateTime? @map("test_result_executed_at") @db.Timestamptz(3)
+  externalIssueId      String    @map("external_issue_id") @db.VarChar(255)
+  externalIssueKey     String    @map("external_issue_key") @db.VarChar(255)
+  title                String    @db.VarChar(500)
+  url                  String    @db.VarChar(2048)
+  issueType            String    @map("issue_type") @db.VarChar(120)
+  statusId             String?   @map("status_id") @db.VarChar(255)
+  statusName           String?   @map("status_name") @db.VarChar(255)
+  lastSyncedAt         DateTime? @map("last_synced_at") @db.Timestamptz(3)
+  createdById          String?   @map("created_by_id") @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project               @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  connection   IntegrationConnection @relation(fields: [organizationId, connectionId], references: [organizationId, id], onDelete: Restrict)
+  testCase     TestCase?             @relation(fields: [organizationId, testCaseId], references: [organizationId, id], onDelete: Restrict)
+  testResult   TestResult?           @relation(fields: [organizationId, testResultId, testResultExecutedAt], references: [organizationId, id, executedAt], onDelete: Restrict)
+  createdBy    User?                 @relation("IssueLinkCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@id([organizationId, id], map: "pk_issue_links")
+  @@index([organizationId, projectId, deletedAt], map: "idx_issue_links_organization_project")
+  @@index([organizationId, connectionId, externalIssueId], map: "idx_issue_links_external_issue")
+  @@index([organizationId, testCaseId, deletedAt], map: "idx_issue_links_test_case")
+  @@index([organizationId, testResultId, testResultExecutedAt, deletedAt], map: "idx_issue_links_test_result")
+  @@map("issue_links")
+}
+
+model IssueCreationRequest {
+  organizationId       String   @map("organization_id") @db.Uuid
+  id                   String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId            String   @map("project_id") @db.Uuid
+  connectionId         String   @map("connection_id") @db.Uuid
+  testResultId         String   @map("test_result_id") @db.Uuid
+  testResultExecutedAt DateTime @map("test_result_executed_at") @db.Timestamptz(3)
+  idempotencyKey       String   @map("idempotency_key") @db.VarChar(200)
+  requestHash          String   @map("request_hash") @db.Char(64)
+  state                String   @default("pending") @db.VarChar(40)
+  response             Json?
+  lastError            String?  @map("last_error") @db.Text
+  createdById          String?  @map("created_by_id") @db.Uuid
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project               @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  connection   IntegrationConnection @relation(fields: [organizationId, connectionId], references: [organizationId, id], onDelete: Restrict)
+  testResult   TestResult            @relation(fields: [organizationId, testResultId, testResultExecutedAt], references: [organizationId, id, executedAt], onDelete: Restrict)
+  createdBy    User?                 @relation("IssueCreationRequestCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@id([organizationId, id], map: "pk_issue_creation_requests")
+  @@unique([organizationId, idempotencyKey], map: "uq_issue_creation_requests_organization_key")
+  @@index([organizationId, connectionId, state, updatedAt], map: "idx_issue_creation_requests_connection_state")
+  @@index([organizationId, testResultId, testResultExecutedAt], map: "idx_issue_creation_requests_test_result")
+  @@map("issue_creation_requests")
 }
 
 model AccountToken {
@@ -289,6 +361,8 @@ model Project {
   testRuns               TestRun[]
   uploadSessions         UploadSession[]
   customFieldDefinitions CustomFieldDefinition[]
+  issueLinks             IssueLink[]
+  issueCreationRequests  IssueCreationRequest[]
 
   @@id([organizationId, id], map: "pk_projects")
   @@unique([organizationId, key], map: "uq_projects_organization_id_key")
@@ -364,6 +438,7 @@ model TestCase {
   section        Section           @relation(fields: [organizationId, sectionId], references: [organizationId, id], onDelete: Restrict)
   currentVersion TestCaseVersion?  @relation("CurrentVersion", fields: [organizationId, currentVersionId], references: [organizationId, id], onDelete: Restrict)
   versions       TestCaseVersion[] @relation("CaseVersions")
+  issueLinks     IssueLink[]
 
   @@id([organizationId, id], map: "pk_test_cases")
   @@unique([organizationId, projectId, caseNumber], map: "uq_test_cases_organization_id_project_id_case_number")
@@ -516,11 +591,13 @@ model TestResult {
   executedAt     DateTime @default(now()) @map("executed_at") @db.Timestamptz(3)
   build          String?  @db.VarChar(200)
 
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  testRunItem  TestRunItem      @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Restrict)
-  status       ResultStatus     @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
-  executedBy   User?            @relation("ResultExecutor", fields: [executedById], references: [id], onDelete: SetNull)
-  stepResults  TestStepResult[]
+  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  testRunItem           TestRunItem            @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Restrict)
+  status                ResultStatus           @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
+  executedBy            User?                  @relation("ResultExecutor", fields: [executedById], references: [id], onDelete: SetNull)
+  stepResults           TestStepResult[]
+  issueLinks            IssueLink[]
+  issueCreationRequests IssueCreationRequest[]
 
   @@id([organizationId, id, executedAt], map: "pk_test_results")
   @@index([organizationId, testRunItemId, executedAt], map: "idx_test_results_organization_id_test_run_item_id_executed_at")

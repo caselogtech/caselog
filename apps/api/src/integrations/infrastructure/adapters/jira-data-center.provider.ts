@@ -9,6 +9,7 @@ import type {
 import { z } from 'zod';
 import {
   IssueTrackerProvider,
+  type CreatedIssue,
   type CreateIssueInput,
   type IssueTrackerConnection,
 } from '../../application/ports/issue-tracker-provider';
@@ -113,7 +114,7 @@ export class JiraDataCenterProvider extends IssueTrackerProvider {
   async createIssue(
     connection: IssueTrackerConnection,
     input: CreateIssueInput,
-  ): Promise<JiraIssue> {
+  ): Promise<CreatedIssue> {
     const created = createdIssueSchema.parse(
       await this.request(connection, '/rest/api/2/issue', {
         method: 'POST',
@@ -127,7 +128,37 @@ export class JiraDataCenterProvider extends IssueTrackerProvider {
         }),
       }),
     );
-    return this.getIssue(connection, created.key);
+    const attachmentWarnings: string[] = [];
+    for (const attachment of input.attachments) {
+      const form = new FormData();
+      const bytes = Uint8Array.from(attachment.content);
+      form.append(
+        'file',
+        new Blob([bytes.buffer], { type: attachment.contentType }),
+        attachment.fileName,
+      );
+      try {
+        await this.request(
+          connection,
+          `/rest/api/2/issue/${encodeURIComponent(created.key)}/attachments`,
+          {
+            method: 'POST',
+            body: form,
+            headers: { 'x-atlassian-token': 'no-check' },
+          },
+        );
+      } catch {
+        attachmentWarnings.push(`Could not attach ${attachment.fileName}`);
+      }
+    }
+    return {
+      id: created.id,
+      key: created.key,
+      summary: input.summary,
+      url: `${connection.baseUrl}/browse/${encodeURIComponent(created.key)}`,
+      issueType: input.issueType,
+      attachmentWarnings,
+    };
   }
 
   private async request(
@@ -149,7 +180,8 @@ export class JiraDataCenterProvider extends IssueTrackerProvider {
         headers: {
           accept: 'application/json',
           authorization: `Bearer ${token}`,
-          ...(init.body ? { 'content-type': 'application/json' } : {}),
+          ...(typeof init.body === 'string' ? { 'content-type': 'application/json' } : {}),
+          ...Object.fromEntries(new Headers(init.headers).entries()),
         },
       });
     } catch {
@@ -165,6 +197,12 @@ export class JiraDataCenterProvider extends IssueTrackerProvider {
         'rate_limited',
         'Jira rate limit was reached',
         Number.isFinite(retryAfter) ? retryAfter : undefined,
+      );
+    }
+    if ([400, 404, 409, 422].includes(response.status)) {
+      throw new IssueTrackerRequestError(
+        'rejected',
+        `Jira rejected the request with HTTP ${response.status}`,
       );
     }
     if (!response.ok) {

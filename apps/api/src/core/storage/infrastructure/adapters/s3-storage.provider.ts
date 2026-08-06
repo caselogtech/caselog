@@ -104,6 +104,20 @@ export class S3StorageProvider implements StorageProvider, OnModuleInit {
     }
   }
 
+  async read(storageKey: string, maxBytes: number): Promise<Uint8Array> {
+    const object = await this.client.send(
+      new GetObjectCommand({ Bucket: this.config.bucket, Key: storageKey }),
+    );
+    if ((object.ContentLength ?? 0) > maxBytes || !object.Body) {
+      throw new Error('Stored object exceeds the allowed read size');
+    }
+    const content = await object.Body.transformToByteArray();
+    if (content.byteLength > maxBytes) {
+      throw new Error('Stored object exceeds the allowed read size');
+    }
+    return content;
+  }
+
   async copy(sourceStorageKey: string, destinationStorageKey: string): Promise<void> {
     const copySource = encodeURIComponent(`${this.config.bucket}/${sourceStorageKey}`).replace(
       /%2F/g,

@@ -452,6 +452,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/cases/{caseId}/integrations/jira/issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CaseIssueLinkController_list"];
+        put?: never;
+        post: operations["CaseIssueLinkController_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/cases/{caseId}/integrations/jira/issues/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["CaseIssueLinkController_unlink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/results/{resultId}/integrations/jira/issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ResultIssueLinkController_list"];
+        put?: never;
+        post: operations["ResultIssueLinkController_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/results/{resultId}/integrations/jira/issues/defects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ResultIssueLinkController_createDefect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/results/{resultId}/integrations/jira/issues/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ResultIssueLinkController_unlink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -1290,6 +1370,93 @@ export interface components {
                     name: string;
                 };
             }[];
+        };
+        IssueLinkListResponseDto: {
+            links: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                connectionId: string;
+                /** @enum {string} */
+                linkType: "requirement" | "defect";
+                externalIssueId: string;
+                externalIssueKey: string;
+                title: string;
+                /** Format: uri */
+                url: string;
+                issueType: string;
+                status: {
+                    id: string;
+                    name: string;
+                } | null;
+                lastSyncedAt: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        LinkJiraIssueRequestDto: {
+            /** Format: uuid */
+            connectionId: string;
+            issueKey: string;
+        };
+        IssueLinkResponseDto: {
+            link: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                connectionId: string;
+                /** @enum {string} */
+                linkType: "requirement" | "defect";
+                externalIssueId: string;
+                externalIssueKey: string;
+                title: string;
+                /** Format: uri */
+                url: string;
+                issueType: string;
+                status: {
+                    id: string;
+                    name: string;
+                } | null;
+                lastSyncedAt: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            };
+        };
+        CreateJiraDefectRequestDto: {
+            /** Format: uuid */
+            connectionId: string;
+            jiraProjectKey: string;
+            /** @default Bug */
+            issueType: string;
+            summary?: string;
+            environment?: string;
+            description?: string;
+            /** @default [] */
+            attachmentIds: string[];
+        };
+        CreateJiraDefectResponseDto: {
+            link: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                connectionId: string;
+                /** @enum {string} */
+                linkType: "requirement" | "defect";
+                externalIssueId: string;
+                externalIssueKey: string;
+                title: string;
+                /** Format: uri */
+                url: string;
+                issueType: string;
+                status: {
+                    id: string;
+                    name: string;
+                } | null;
+                lastSyncedAt: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            };
+            attachmentWarnings: string[];
         };
         ProjectListResponseDto: {
             items: {
@@ -3176,6 +3343,243 @@ export interface operations {
             header?: never;
             path: {
                 connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CaseIssueLinkController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueLinkListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CaseIssueLinkController_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                caseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkJiraIssueRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueLinkResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CaseIssueLinkController_unlink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                caseId: string;
+                linkId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ResultIssueLinkController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+                resultId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueLinkListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ResultIssueLinkController_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+                resultId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkJiraIssueRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueLinkResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ResultIssueLinkController_createDefect: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+                resultId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateJiraDefectRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateJiraDefectResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ResultIssueLinkController_unlink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+                resultId: string;
+                linkId: string;
             };
             cookie?: never;
         };

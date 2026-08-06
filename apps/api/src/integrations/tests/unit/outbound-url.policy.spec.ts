@@ -6,6 +6,7 @@ describe('OutboundUrlPolicy', () => {
     allowPrivateNetworks: false,
     timeoutMs: 10_000,
     maxResponseBytes: 2_000_000,
+    webBaseUrl: 'http://localhost:4200',
   });
 
   it.each([
