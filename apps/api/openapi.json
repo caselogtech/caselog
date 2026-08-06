@@ -1157,6 +1157,132 @@
         ]
       }
     },
+    "/api/v1/projects/{projectSlug}/imports/csv/preview": {
+      "post": {
+        "operationId": "CsvImportController_preview",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvImportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvImportPreviewResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "CsvImport"
+        ]
+      }
+    },
+    "/api/v1/projects/{projectSlug}/imports/csv/commit": {
+      "post": {
+        "operationId": "CsvImportController_commit",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 200,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvImportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvImportResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "CsvImport"
+        ]
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "operationId": "ProjectController_list",
@@ -4518,6 +4644,343 @@
         "required": [
           "service",
           "status"
+        ]
+      },
+      "CsvImportRequestDto": {
+        "type": "object",
+        "properties": {
+          "csv": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000000
+          },
+          "delimiter": {
+            "default": ",",
+            "type": "string",
+            "enum": [
+              ",",
+              ";",
+              "\t"
+            ]
+          },
+          "mapping": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "sectionId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "template": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "automationId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "preconditions": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "expectedResult": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "content": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "title",
+              "content"
+            ]
+          },
+          "defaults": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "sectionId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "template": {
+                "type": "string",
+                "enum": [
+                  "steps",
+                  "text",
+                  "exploratory",
+                  "bdd"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "csv",
+          "mapping"
+        ]
+      },
+      "CsvImportPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "valid": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "invalid": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "total",
+              "valid",
+              "invalid"
+            ]
+          },
+          "rows": {
+            "maxItems": 1000,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rowNumber": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 9007199254740991
+                },
+                "valid": {
+                  "type": "boolean"
+                },
+                "value": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500
+                    },
+                    "sectionId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "automationId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        {
+                          "type": "string",
+                          "const": ""
+                        }
+                      ]
+                    },
+                    "preconditions": {
+                      "type": "string",
+                      "maxLength": 50000
+                    },
+                    "expectedResult": {
+                      "type": "string",
+                      "maxLength": 50000
+                    },
+                    "template": {
+                      "type": "string",
+                      "enum": [
+                        "steps",
+                        "text",
+                        "exploratory",
+                        "bdd"
+                      ]
+                    },
+                    "content": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "steps": {
+                              "minItems": 1,
+                              "maxItems": 200,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "action": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 10000
+                                  },
+                                  "expected": {
+                                    "type": "string",
+                                    "maxLength": 10000
+                                  }
+                                },
+                                "required": [
+                                  "action"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "steps"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 50000
+                            }
+                          },
+                          "required": [
+                            "text"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "charter": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 50000
+                            }
+                          },
+                          "required": [
+                            "charter"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "gherkin": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 50000
+                            }
+                          },
+                          "required": [
+                            "gherkin"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "sectionId",
+                    "template",
+                    "content"
+                  ]
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "field": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "message": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "field",
+                      "message"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "rowNumber",
+                "valid",
+                "issues"
+              ]
+            }
+          }
+        },
+        "required": [
+          "columns",
+          "summary",
+          "rows"
+        ]
+      },
+      "CsvImportResponseDto": {
+        "type": "object",
+        "properties": {
+          "imported": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "testCases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "caseNumber": {
+                  "type": "string",
+                  "pattern": "^[1-9]\\d*$"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                }
+              },
+              "required": [
+                "id",
+                "caseNumber",
+                "title"
+              ]
+            }
+          }
+        },
+        "required": [
+          "imported",
+          "testCases"
         ]
       },
       "ProjectListResponseDto": {

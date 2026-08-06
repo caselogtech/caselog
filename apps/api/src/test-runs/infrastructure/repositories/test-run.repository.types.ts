@@ -51,11 +51,6 @@ export type ResultRecord = {
 
 export type AttachmentRecord = ResultAttachmentResponse;
 
-export type IdempotencyClaim<T> =
-  | { kind: 'claimed' }
-  | { kind: 'replay'; value: T }
-  | { kind: 'conflict' };
-
 export type MatchableRunItem = {
   id: string;
   caseVersion: {

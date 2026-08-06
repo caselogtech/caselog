@@ -1,5 +1,19 @@
 export { apiErrorSchema, type ApiError } from './api-error.js';
 export {
+  csvImportHeadersSchema,
+  csvImportIssueSchema,
+  csvImportMappingSchema,
+  csvImportParamsSchema,
+  csvImportPreviewResponseSchema,
+  csvImportPreviewRowSchema,
+  csvImportRequestSchema,
+  csvImportResponseSchema,
+  type CsvImportPreviewResponse,
+  type CsvImportPreviewRow,
+  type CsvImportRequest,
+  type CsvImportResponse,
+} from './csv-import.js';
+export {
   attachmentDownloadParamsSchema,
   attachmentDownloadResponseSchema,
   attachmentContentTypeSchema,

@@ -50,6 +50,15 @@ pnpm openapi:generate
 The publishable `@caselog/cli` package provides streaming, idempotent JUnit uploads
 for CI pipelines. See [apps/cli/README.md](apps/cli/README.md) for usage.
 
+## CSV imports
+
+The API exposes separate preview and atomic commit endpoints under
+`/api/v1/projects/:projectSlug/imports/csv`. A mapping selects the CSV columns for
+title, section, template, automation ID, preconditions, expected result, and content.
+Imports are limited to 1,000 rows and 5 MB per request; commit requests require an
+`Idempotency-Key` header. For `steps` cases, the content cell accepts either a JSON
+array of steps or one `action => expected result` pair per line.
+
 ## License
 
 Server and web application code are licensed under AGPL-3.0-only. The Caselog name and marks are reserved.

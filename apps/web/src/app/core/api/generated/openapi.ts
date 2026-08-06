@@ -324,6 +324,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/imports/csv/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CsvImportController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/imports/csv/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CsvImportController_commit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -995,6 +1027,77 @@ export interface components {
             service: "api";
             /** @constant */
             status: "ok";
+        };
+        CsvImportRequestDto: {
+            csv: string;
+            /**
+             * @default ,
+             * @enum {string}
+             */
+            delimiter: "," | ";" | "\t";
+            mapping: {
+                title: string;
+                sectionId?: string;
+                template?: string;
+                automationId?: string;
+                preconditions?: string;
+                expectedResult?: string;
+                content: string;
+            };
+            /** @default {} */
+            defaults: {
+                /** Format: uuid */
+                sectionId?: string;
+                /** @enum {string} */
+                template?: "steps" | "text" | "exploratory" | "bdd";
+            };
+        };
+        CsvImportPreviewResponseDto: {
+            columns: string[];
+            summary: {
+                total: number;
+                valid: number;
+                invalid: number;
+            };
+            rows: {
+                rowNumber: number;
+                valid: boolean;
+                value?: {
+                    title: string;
+                    /** Format: uuid */
+                    sectionId: string;
+                    automationId?: string | "";
+                    preconditions?: string;
+                    expectedResult?: string;
+                    /** @enum {string} */
+                    template: "steps" | "text" | "exploratory" | "bdd";
+                    content: {
+                        steps: {
+                            action: string;
+                            expected?: string;
+                        }[];
+                    } | {
+                        text: string;
+                    } | {
+                        charter: string;
+                    } | {
+                        gherkin: string;
+                    };
+                };
+                issues: {
+                    field: string;
+                    message: string;
+                }[];
+            }[];
+        };
+        CsvImportResponseDto: {
+            imported: number;
+            testCases: {
+                /** Format: uuid */
+                id: string;
+                caseNumber: string;
+                title: string;
+            }[];
         };
         ProjectListResponseDto: {
             items: {
@@ -2602,6 +2705,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CsvImportController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvImportRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvImportPreviewResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CsvImportController_commit: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvImportRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvImportResponseDto"];
                 };
             };
             /** @description API error */
