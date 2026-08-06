@@ -189,6 +189,15 @@ export class IntegrationConnectionRepository {
     );
   }
 
+  async markSynced(organizationId: string, connectionId: string): Promise<void> {
+    await this.tenantDatabase.run(organizationId, (transaction) =>
+      transaction.integrationConnection.updateMany({
+        where: { organizationId, id: connectionId, deletedAt: null },
+        data: { status: 'active', lastSyncedAt: new Date(), lastError: null },
+      }),
+    );
+  }
+
   async delete(organizationId: string, connectionId: string): Promise<boolean> {
     const result = await this.tenantDatabase.run(organizationId, (transaction) =>
       transaction.integrationConnection.updateMany({

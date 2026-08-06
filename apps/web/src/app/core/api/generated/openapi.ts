@@ -1390,6 +1390,8 @@ export interface components {
                     name: string;
                 } | null;
                 lastSyncedAt: string | null;
+                lastSyncAttemptAt: string | null;
+                syncError: string | null;
                 /** Format: date-time */
                 createdAt: string;
             }[];
@@ -1418,6 +1420,8 @@ export interface components {
                     name: string;
                 } | null;
                 lastSyncedAt: string | null;
+                lastSyncAttemptAt: string | null;
+                syncError: string | null;
                 /** Format: date-time */
                 createdAt: string;
             };
@@ -1453,6 +1457,8 @@ export interface components {
                     name: string;
                 } | null;
                 lastSyncedAt: string | null;
+                lastSyncAttemptAt: string | null;
+                syncError: string | null;
                 /** Format: date-time */
                 createdAt: string;
             };

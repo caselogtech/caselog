@@ -226,6 +226,8 @@ model IssueLink {
   statusId             String?   @map("status_id") @db.VarChar(255)
   statusName           String?   @map("status_name") @db.VarChar(255)
   lastSyncedAt         DateTime? @map("last_synced_at") @db.Timestamptz(3)
+  lastSyncAttemptAt    DateTime? @map("last_sync_attempt_at") @db.Timestamptz(3)
+  syncError            String?   @map("sync_error") @db.Text
   createdById          String?   @map("created_by_id") @db.Uuid
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)

@@ -68,6 +68,25 @@ export class PgBossJobQueue extends JobQueue implements OnModuleInit, OnModuleDe
     await this.boss.upsert(queueName, payload, { singletonKey });
   }
 
+  async scheduleRecurring<T extends object>(
+    queueName: string,
+    scheduleKey: string,
+    cron: string,
+    payload: T,
+  ): Promise<void> {
+    await this.start();
+    await this.boss.schedule(queueName, cron, payload, {
+      key: scheduleKey,
+      singletonKey: scheduleKey,
+      tz: 'UTC',
+    });
+  }
+
+  async unscheduleRecurring(queueName: string, scheduleKey: string): Promise<void> {
+    await this.start();
+    await this.boss.unschedule(queueName, scheduleKey);
+  }
+
   private start(): Promise<PgBoss> {
     this.startPromise ??= this.boss.start();
     return this.startPromise;

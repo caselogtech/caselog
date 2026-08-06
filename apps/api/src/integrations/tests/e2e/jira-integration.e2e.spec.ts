@@ -14,6 +14,7 @@ import { AppModule } from '../../../app.module';
 import { configureApplication } from '../../../configure-application';
 import { createPrismaClient } from '../../../core/database/infrastructure/prisma/prisma-client';
 import type { PrismaClient } from '../../../generated/prisma/client';
+import { IssueStatusSyncService } from '../../application/services/issue-status-sync.service';
 import {
   JIRA_TOKEN,
   type JiraServerFixture,
@@ -274,6 +275,52 @@ describe('Jira Data Center integration', () => {
     });
     expect(defect.statusCode, defect.body).toBe(403);
     expect(defect.json().error.code).toBe('insufficient_permissions');
+  });
+
+  it('synchronizes Jira status snapshots and records missing remote issues', async () => {
+    const url = `/api/v1/projects/${projectSlug}/cases/${caseId}/integrations/jira/issues`;
+    const sync = app.get(IssueStatusSyncService);
+    jira.state.linkedIssueStatus = { id: '3', name: 'Done' };
+
+    await sync.syncConnection(organizationId, connectionId);
+    const refreshed = await app.inject({
+      method: 'GET',
+      url,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(issueLinkListResponseSchema.parse(refreshed.json()).links[0]).toMatchObject({
+      status: { id: '3', name: 'Done' },
+      lastSyncedAt: expect.any(String),
+      lastSyncAttemptAt: expect.any(String),
+      syncError: null,
+    });
+
+    jira.state.linkedIssueMissing = true;
+    await sync.syncConnection(organizationId, connectionId);
+    const missing = await app.inject({
+      method: 'GET',
+      url,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(issueLinkListResponseSchema.parse(missing.json()).links[0]).toMatchObject({
+      status: { id: '3', name: 'Done' },
+      syncError: 'Jira rejected the request with HTTP 404',
+    });
+
+    jira.state.linkedIssueMissing = false;
+    await sync.syncConnection(organizationId, connectionId);
+    const recovered = await app.inject({
+      method: 'GET',
+      url,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(issueLinkListResponseSchema.parse(recovered.json()).links[0]?.syncError).toBeNull();
+    await expect(
+      admin.integrationConnection.findFirst({
+        where: { organizationId, id: connectionId },
+        select: { status: true, lastSyncedAt: true, lastError: true },
+      }),
+    ).resolves.toMatchObject({ status: 'active', lastSyncedAt: expect.any(Date), lastError: null });
   });
 
   it('creates an idempotent Jira defect with failure context and evidence', async () => {

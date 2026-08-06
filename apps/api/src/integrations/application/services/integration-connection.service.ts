@@ -1,17 +1,12 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   createJiraDataCenterConnectionResponseSchema,
   integrationConnectionListResponseSchema,
-  jiraIssueSearchResponseSchema,
-  jiraProjectListResponseSchema,
   type CreateJiraDataCenterConnectionRequest,
   type CreateJiraDataCenterConnectionResponse,
   type IntegrationConnectionListResponse,
   type IssueTrackerIdentity,
-  type JiraIssueSearchRequest,
-  type JiraIssueSearchResponse,
-  type JiraProjectListResponse,
   type OrganizationAccessPrincipal,
   type UpdateJiraDataCenterCredentialsRequest,
 } from '@caselog/schemas';
@@ -34,9 +29,12 @@ import {
   IntegrationConnectionRepository,
   type StoredIntegrationConnection,
 } from '../../infrastructure/repositories/integration-connection.repository';
+import { IssueStatusSyncQueue } from './issue-status-sync.queue';
 
 @Injectable()
 export class IntegrationConnectionService {
+  private readonly logger = new Logger(IntegrationConnectionService.name);
+
   constructor(
     @Inject(IntegrationConnectionRepository)
     private readonly connections: IntegrationConnectionRepository,
@@ -44,6 +42,7 @@ export class IntegrationConnectionService {
     @Inject(OutboundUrlPolicy) private readonly urlPolicy: OutboundUrlPolicy,
     @Inject(ISSUE_TRACKER_PROVIDERS)
     private readonly providers: IssueTrackerProvider[],
+    @Inject(IssueStatusSyncQueue) private readonly statusSync: IssueStatusSyncQueue,
   ) {}
 
   async createJiraDataCenter(
@@ -75,6 +74,7 @@ export class IntegrationConnectionService {
     );
     if (replay?.kind === 'conflict') throw this.idempotencyConflict();
     if (replay?.kind === 'replay') {
+      await this.ensureSyncSchedule(principal.organizationId, replay.value.connection.id);
       return createJiraDataCenterConnectionResponseSchema.parse(replay.value);
     }
 
@@ -111,13 +111,18 @@ export class IntegrationConnectionService {
         'An active Jira connection already uses this name',
       );
     }
+    await this.ensureSyncSchedule(principal.organizationId, result.value.connection.id);
     return createJiraDataCenterConnectionResponseSchema.parse(result.value);
   }
 
   async list(principal: OrganizationAccessPrincipal): Promise<IntegrationConnectionListResponse> {
-    return integrationConnectionListResponseSchema.parse({
-      connections: await this.connections.list(principal.organizationId),
-    });
+    const connections = await this.connections.list(principal.organizationId);
+    await Promise.all(
+      connections
+        .filter(({ status }) => status !== 'disabled')
+        .map(({ id }) => this.ensureSyncSchedule(principal.organizationId, id)),
+    );
+    return integrationConnectionListResponseSchema.parse({ connections });
   }
 
   async updateCredentials(
@@ -150,6 +155,7 @@ export class IntegrationConnectionService {
       encryptedCredentials,
     );
     if (!connection) throw new ResourceNotFoundError('integration_connection');
+    await this.ensureSyncSchedule(principal.organizationId, connectionId);
     return createJiraDataCenterConnectionResponseSchema.parse({ connection, identity });
   }
 
@@ -164,43 +170,8 @@ export class IntegrationConnectionService {
         this.remoteConnection(principal.organizationId, stored),
       );
       await this.connections.markVerified(principal.organizationId, connectionId);
+      await this.ensureSyncSchedule(principal.organizationId, connectionId);
       return identity;
-    } catch (error) {
-      await this.rememberFailure(principal.organizationId, connectionId, error);
-      this.throwProviderError(error, false);
-    }
-  }
-
-  async listProjects(
-    principal: OrganizationAccessPrincipal,
-    connectionId: string,
-  ): Promise<JiraProjectListResponse> {
-    const stored = await this.requiredConnection(principal.organizationId, connectionId);
-    try {
-      return jiraProjectListResponseSchema.parse({
-        projects: await this.provider(stored.provider, stored.deployment).listProjects(
-          this.remoteConnection(principal.organizationId, stored),
-        ),
-      });
-    } catch (error) {
-      await this.rememberFailure(principal.organizationId, connectionId, error);
-      this.throwProviderError(error, false);
-    }
-  }
-
-  async searchIssues(
-    principal: OrganizationAccessPrincipal,
-    connectionId: string,
-    request: JiraIssueSearchRequest,
-  ): Promise<JiraIssueSearchResponse> {
-    const stored = await this.requiredConnection(principal.organizationId, connectionId);
-    try {
-      return jiraIssueSearchResponseSchema.parse(
-        await this.provider(stored.provider, stored.deployment).searchIssues(
-          this.remoteConnection(principal.organizationId, stored),
-          request,
-        ),
-      );
     } catch (error) {
       await this.rememberFailure(principal.organizationId, connectionId, error);
       this.throwProviderError(error, false);
@@ -211,6 +182,14 @@ export class IntegrationConnectionService {
     this.assertManage(principal);
     if (!(await this.connections.delete(principal.organizationId, connectionId))) {
       throw new ResourceNotFoundError('integration_connection');
+    }
+    try {
+      await this.statusSync.unschedule({
+        organizationId: principal.organizationId,
+        connectionId,
+      });
+    } catch (error) {
+      this.logger.warn(`Could not remove Jira sync schedule: ${this.errorMessage(error)}`);
     }
   }
 
@@ -294,5 +273,17 @@ export class IntegrationConnectionService {
       'idempotency_conflict',
       'This idempotency key was already used for a different request',
     );
+  }
+
+  private async ensureSyncSchedule(organizationId: string, connectionId: string): Promise<void> {
+    try {
+      await this.statusSync.ensureScheduled({ organizationId, connectionId });
+    } catch (error) {
+      this.logger.warn(`Could not create Jira sync schedule: ${this.errorMessage(error)}`);
+    }
+  }
+
+  private errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : 'unknown error';
   }
 }

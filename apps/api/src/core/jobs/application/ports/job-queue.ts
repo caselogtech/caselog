@@ -20,4 +20,13 @@ export abstract class JobQueue {
     singletonKey: string,
     payload: T,
   ): Promise<void>;
+
+  abstract scheduleRecurring<T extends object>(
+    queueName: string,
+    scheduleKey: string,
+    cron: string,
+    payload: T,
+  ): Promise<void>;
+
+  abstract unscheduleRecurring(queueName: string, scheduleKey: string): Promise<void>;
 }

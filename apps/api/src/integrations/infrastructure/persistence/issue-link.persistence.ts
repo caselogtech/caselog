@@ -12,6 +12,8 @@ export type IssueLinkRecord = {
   statusId: string | null;
   statusName: string | null;
   lastSyncedAt: Date | null;
+  lastSyncAttemptAt: Date | null;
+  syncError: string | null;
   createdAt: Date;
 };
 
@@ -27,6 +29,8 @@ export const issueLinkSelection = {
   statusId: true,
   statusName: true,
   lastSyncedAt: true,
+  lastSyncAttemptAt: true,
+  syncError: true,
   createdAt: true,
 } as const;
 
@@ -45,6 +49,8 @@ export function toIssueLink(record: IssueLinkRecord): IssueLink {
         ? { id: record.statusId, name: record.statusName }
         : null,
     lastSyncedAt: record.lastSyncedAt?.toISOString() ?? null,
+    lastSyncAttemptAt: record.lastSyncAttemptAt?.toISOString() ?? null,
+    syncError: record.syncError,
     createdAt: record.createdAt.toISOString(),
   };
 }

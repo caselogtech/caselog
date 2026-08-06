@@ -7,6 +7,7 @@ describe('OutboundUrlPolicy', () => {
     timeoutMs: 10_000,
     maxResponseBytes: 2_000_000,
     webBaseUrl: 'http://localhost:4200',
+    syncCron: '*/5 * * * *',
   });
 
   it.each([

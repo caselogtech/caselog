@@ -10,6 +10,8 @@ export type JiraServerState = {
     fields?: { description?: string; summary?: string; project?: { key?: string } };
   } | null;
   uploadedEvidence: string;
+  linkedIssueStatus: { id: string; name: string };
+  linkedIssueMissing: boolean;
 };
 
 export type JiraServerFixture = {
@@ -23,6 +25,8 @@ export async function startJiraServer(): Promise<JiraServerFixture> {
     createIssueCount: 0,
     createdIssuePayload: null,
     uploadedEvidence: '',
+    linkedIssueStatus: { id: '1', name: 'Open' },
+    linkedIssueMissing: false,
   };
   const server = createServer((request, response) => handleRequest(state, request, response));
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -60,12 +64,16 @@ function handleRequest(
     return;
   }
   if (request.method === 'GET' && url.pathname === '/rest/api/2/issue/QA-42') {
+    if (state.linkedIssueMissing) {
+      sendJson(response, 404, { message: 'Issue does not exist' });
+      return;
+    }
     sendJson(response, 200, {
       id: '1042',
       key: 'QA-42',
       fields: {
         summary: 'Checkout fails',
-        status: { id: '1', name: 'Open' },
+        status: state.linkedIssueStatus,
         issuetype: { id: '10001', name: 'Bug' },
       },
     });

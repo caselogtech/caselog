@@ -28,6 +28,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
 import { IntegrationConnectionService } from '../../application/services/integration-connection.service';
+import { IssueTrackerQueryService } from '../../application/services/issue-tracker-query.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
   CreateIntegrationConnectionHeadersDto,
@@ -49,6 +50,8 @@ export class JiraIntegrationController {
   constructor(
     @Inject(IntegrationConnectionService)
     private readonly integrations: IntegrationConnectionService,
+    @Inject(IssueTrackerQueryService)
+    private readonly queries: IssueTrackerQueryService,
   ) {}
 
   @Post('connections')
@@ -95,7 +98,7 @@ export class JiraIntegrationController {
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: IntegrationConnectionParamsDto,
   ): Promise<JiraProjectListResponse> {
-    return this.integrations.listProjects(principal, params.connectionId);
+    return this.queries.listProjects(principal, params.connectionId);
   }
 
   @Post('connections/:connectionId/issues/search')
@@ -106,7 +109,7 @@ export class JiraIntegrationController {
     @Param() params: IntegrationConnectionParamsDto,
     @Body() request: JiraIssueSearchRequestDto,
   ): Promise<JiraIssueSearchResponse> {
-    return this.integrations.searchIssues(principal, params.connectionId, request);
+    return this.queries.searchIssues(principal, params.connectionId, request);
   }
 
   @Delete('connections/:connectionId')

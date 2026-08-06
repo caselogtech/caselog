@@ -92,6 +92,8 @@ export const issueLinkSchema = z.object({
   issueType: z.string().min(1).max(120),
   status: z.object({ id: z.string().min(1), name: z.string().min(1) }).nullable(),
   lastSyncedAt: z.iso.datetime().nullable(),
+  lastSyncAttemptAt: z.iso.datetime().nullable(),
+  syncError: z.string().nullable(),
   createdAt: z.iso.datetime(),
 });
 
