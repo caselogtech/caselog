@@ -356,6 +356,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/integrations/jira/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["JiraIntegrationController_listConnections"];
+        put?: never;
+        post: operations["JiraIntegrationController_createConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/jira/connections/{connectionId}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["JiraIntegrationController_updateCredentials"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/jira/connections/{connectionId}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["JiraIntegrationController_verifyConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/jira/connections/{connectionId}/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["JiraIntegrationController_listProjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/jira/connections/{connectionId}/issues/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["JiraIntegrationController_searchIssues"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/jira/connections/{connectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["JiraIntegrationController_deleteConnection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -1097,6 +1193,102 @@ export interface components {
                 id: string;
                 caseNumber: string;
                 title: string;
+            }[];
+        };
+        CreateJiraDataCenterConnectionRequestDto: {
+            name: string;
+            /** Format: uri */
+            baseUrl: string;
+            personalAccessToken: string;
+        };
+        CreateJiraDataCenterConnectionResponseDto: {
+            connection: {
+                /** Format: uuid */
+                id: string;
+                /** @constant */
+                provider: "jira";
+                /** @constant */
+                deployment: "data_center";
+                name: string;
+                /** Format: uri */
+                baseUrl: string;
+                /** @constant */
+                authType: "pat";
+                /** @enum {string} */
+                status: "active" | "error" | "disabled";
+                verifiedAt: string | null;
+                lastSyncedAt: string | null;
+                lastError: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            };
+            identity: {
+                id: string;
+                displayName: string;
+            };
+        };
+        IntegrationConnectionListResponseDto: {
+            connections: {
+                /** Format: uuid */
+                id: string;
+                /** @constant */
+                provider: "jira";
+                /** @constant */
+                deployment: "data_center";
+                name: string;
+                /** Format: uri */
+                baseUrl: string;
+                /** @constant */
+                authType: "pat";
+                /** @enum {string} */
+                status: "active" | "error" | "disabled";
+                verifiedAt: string | null;
+                lastSyncedAt: string | null;
+                lastError: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        UpdateJiraDataCenterCredentialsRequestDto: {
+            personalAccessToken: string;
+        };
+        IssueTrackerIdentityDto: {
+            id: string;
+            displayName: string;
+        };
+        JiraProjectListResponseDto: {
+            projects: {
+                id: string;
+                key: string;
+                name: string;
+                projectType: string | null;
+            }[];
+        };
+        JiraIssueSearchRequestDto: {
+            jql: string;
+            /** @default 0 */
+            startAt: number;
+            /** @default 50 */
+            maxResults: number;
+        };
+        JiraIssueSearchResponseDto: {
+            startAt: number;
+            maxResults: number;
+            total: number;
+            issues: {
+                id: string;
+                key: string;
+                summary: string;
+                /** Format: uri */
+                url: string;
+                status: {
+                    id: string;
+                    name: string;
+                };
+                issueType: {
+                    id: string;
+                    name: string;
+                };
             }[];
         };
         ProjectListResponseDto: {
@@ -2776,6 +2968,224 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CsvImportResponseDto"];
                 };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    JiraIntegrationController_listConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationConnectionListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    JiraIntegrationController_createConnection: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateJiraDataCenterConnectionRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateJiraDataCenterConnectionResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    JiraIntegrationController_updateCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateJiraDataCenterCredentialsRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateJiraDataCenterConnectionResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    JiraIntegrationController_verifyConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueTrackerIdentityDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    JiraIntegrationController_listProjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JiraProjectListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    JiraIntegrationController_searchIssues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JiraIssueSearchRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JiraIssueSearchResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    JiraIntegrationController_deleteConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description API error */
             default: {

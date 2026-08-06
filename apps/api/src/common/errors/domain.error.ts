@@ -68,3 +68,9 @@ export class UnsupportedMediaTypeError extends DomainError {
     super('unsupported_media_type', `Content-Type must be ${expected}`, { expected });
   }
 }
+
+export class ExternalServiceError extends DomainError {
+  constructor(code: string, message: string, details: Record<string, unknown> = {}) {
+    super(code, message, details);
+  }
+}

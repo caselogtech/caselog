@@ -106,6 +106,33 @@ export {
   type MessageResponse,
 } from './auth.js';
 export { healthResponseSchema, type HealthResponse } from './health.js';
+export {
+  createIntegrationConnectionHeadersSchema,
+  createJiraDataCenterConnectionRequestSchema,
+  createJiraDataCenterConnectionResponseSchema,
+  integrationConnectionIdSchema,
+  integrationConnectionListResponseSchema,
+  integrationConnectionParamsSchema,
+  integrationConnectionSchema,
+  issueTrackerIdentitySchema,
+  jiraIssueSchema,
+  jiraIssueSearchRequestSchema,
+  jiraIssueSearchResponseSchema,
+  jiraProjectListResponseSchema,
+  jiraProjectSchema,
+  updateJiraDataCenterCredentialsRequestSchema,
+  type CreateJiraDataCenterConnectionRequest,
+  type CreateJiraDataCenterConnectionResponse,
+  type IntegrationConnection,
+  type IntegrationConnectionListResponse,
+  type IssueTrackerIdentity,
+  type JiraIssue,
+  type JiraIssueSearchRequest,
+  type JiraIssueSearchResponse,
+  type JiraProject,
+  type JiraProjectListResponse,
+  type UpdateJiraDataCenterCredentialsRequest,
+} from './integration.js';
 export { organizationIdSchema, type OrganizationId } from './organization.js';
 export {
   caseExecutionHistoryItemSchema,

@@ -8,6 +8,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { DatabaseModule } from './core/database/database.module';
 import { HealthModule } from './core/health/health.module';
 import { ImportModule } from './imports/import.module';
+import { IntegrationModule } from './integrations/integration.module';
 import { JobsModule } from './core/jobs/jobs.module';
 import { MailModule } from './core/mail/mail.module';
 import { StorageModule } from './core/storage/storage.module';
@@ -26,6 +27,7 @@ import { TestRunModule } from './test-runs/test-run.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     HealthModule,
     ImportModule,
+    IntegrationModule,
     AuthModule,
     ProjectModule,
     ReportingModule,

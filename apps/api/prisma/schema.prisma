@@ -110,6 +110,7 @@ model Organization {
   usageCounter           UsageCounter?
   idempotencyRecords     IdempotencyRecord[]
   apiTokens              ApiToken[]
+  integrationConnections IntegrationConnection[]
 
   @@map("organizations")
 }
@@ -139,15 +140,16 @@ model User {
   deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
   emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(3)
 
-  memberships        Membership[]
-  authoredVersions   TestCaseVersion[]   @relation("VersionAuthor")
-  assignedRunItems   TestRunItem[]       @relation("RunItemAssignee")
-  executedResults    TestResult[]        @relation("ResultExecutor")
-  passwordCredential PasswordCredential?
-  authSessions       AuthSession[]
-  accountTokens      AccountToken[]
-  createdUploads     UploadSession[]     @relation("UploadCreator")
-  apiTokens          ApiToken[]          @relation("ApiTokenCreator")
+  memberships            Membership[]
+  authoredVersions       TestCaseVersion[]       @relation("VersionAuthor")
+  assignedRunItems       TestRunItem[]           @relation("RunItemAssignee")
+  executedResults        TestResult[]            @relation("ResultExecutor")
+  passwordCredential     PasswordCredential?
+  authSessions           AuthSession[]
+  accountTokens          AccountToken[]
+  createdUploads         UploadSession[]         @relation("UploadCreator")
+  apiTokens              ApiToken[]              @relation("ApiTokenCreator")
+  integrationConnections IntegrationConnection[] @relation("IntegrationConnectionCreator")
 
   @@map("users")
 }
@@ -172,6 +174,33 @@ model ApiToken {
   @@index([organizationId, revokedAt, expiresAt], map: "idx_api_tokens_organization_id_active")
   @@index([organizationId, createdAt], map: "idx_api_tokens_organization_id_created_at")
   @@map("api_tokens")
+}
+
+model IntegrationConnection {
+  organizationId       String    @map("organization_id") @db.Uuid
+  id                   String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider             String    @db.VarChar(50)
+  deployment           String    @db.VarChar(50)
+  name                 String    @db.VarChar(120)
+  baseUrl              String    @map("base_url") @db.VarChar(2048)
+  authType             String    @map("auth_type") @db.VarChar(50)
+  encryptedCredentials Json      @map("encrypted_credentials")
+  status               String    @default("active") @db.VarChar(20)
+  lastError            String?   @map("last_error") @db.Text
+  syncCheckpoint       Json?     @map("sync_checkpoint")
+  verifiedAt           DateTime? @map("verified_at") @db.Timestamptz(3)
+  lastSyncedAt         DateTime? @map("last_synced_at") @db.Timestamptz(3)
+  createdById          String?   @map("created_by_id") @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("IntegrationConnectionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@id([organizationId, id], map: "pk_integration_connections")
+  @@index([organizationId, provider, deletedAt], map: "idx_integration_connections_organization_provider")
+  @@map("integration_connections")
 }
 
 model AccountToken {

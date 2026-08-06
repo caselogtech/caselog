@@ -14,6 +14,7 @@ import {
   AuthorizationDeniedError,
   DomainError,
   EmailVerificationRequiredError,
+  ExternalServiceError,
   InvalidSessionError,
   PayloadTooLargeError,
   ResourceConflictError,
@@ -96,6 +97,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     }
     if (error instanceof PayloadTooLargeError) return HttpStatus.PAYLOAD_TOO_LARGE;
     if (error instanceof UnsupportedMediaTypeError) return HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+    if (error instanceof ExternalServiceError) return HttpStatus.BAD_GATEWAY;
     return HttpStatus.BAD_REQUEST;
   }
 
