@@ -1,5 +1,12 @@
-import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
 import { PgBoss } from 'pg-boss';
+import { MetricsService } from '../../../observability/application/services/metrics.service';
 import { JobQueue, type JobQueueDefinition } from '../../application/ports/job-queue';
 import { jobDatabaseUrl } from '../config/job-queue.config';
 
@@ -13,10 +20,12 @@ export class PgBossJobQueue extends JobQueue implements OnModuleInit, OnModuleDe
   });
   private startPromise: Promise<PgBoss> | null = null;
 
-  constructor() {
+  constructor(@Inject(MetricsService) private readonly metrics: MetricsService) {
     super();
-    this.boss.on('error', (error) => this.logger.error(error.message, error.stack));
-    this.boss.on('warning', (warning) => this.logger.warn(warning.message));
+    this.boss.on('error', (error) =>
+      this.logger.error({ event: 'job.queue.error', errorName: error.name }),
+    );
+    this.boss.on('warning', () => this.logger.warn({ event: 'job.queue.warning' }));
   }
 
   async onModuleInit(): Promise<void> {
@@ -54,7 +63,14 @@ export class PgBossJobQueue extends JobQueue implements OnModuleInit, OnModuleDe
     }
     await this.boss.work<T>(definition.name, async (jobs) => {
       for (const job of jobs) {
-        await handler(job.data);
+        const startedAt = process.hrtime.bigint();
+        try {
+          await handler(job.data);
+          this.observeJob(definition.name, 'completed', startedAt);
+        } catch (error) {
+          this.observeJob(definition.name, 'failed', startedAt);
+          throw error;
+        }
       }
     });
   }
@@ -90,5 +106,11 @@ export class PgBossJobQueue extends JobQueue implements OnModuleInit, OnModuleDe
   private start(): Promise<PgBoss> {
     this.startPromise ??= this.boss.start();
     return this.startPromise;
+  }
+
+  private observeJob(queue: string, outcome: 'completed' | 'failed', startedAt: bigint): void {
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+    this.metrics.observeJob({ queue, outcome }, durationMs);
+    this.logger.log({ event: 'job.finished', queue, outcome, durationMs });
   }
 }

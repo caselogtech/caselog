@@ -203,7 +203,7 @@ export class AuthService {
       link.searchParams.set('token', token);
       await this.mail.sendEmailVerification(identity.email, identity.displayName, link.toString());
     } catch {
-      this.logger.warn('Could not deliver an email verification message');
+      this.logger.warn({ event: 'auth.email_verification.delivery_failed' });
     }
   }
 
@@ -221,7 +221,7 @@ export class AuthService {
       link.searchParams.set('token', token);
       await this.mail.sendPasswordReset(identity.email, identity.displayName, link.toString());
     } catch {
-      this.logger.warn('Could not deliver a password reset message');
+      this.logger.warn({ event: 'auth.password_reset.delivery_failed' });
     }
   }
 }

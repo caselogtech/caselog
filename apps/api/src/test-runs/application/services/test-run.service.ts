@@ -98,6 +98,7 @@ export class TestRunService {
     this.assertFound(result);
     const response = createTestRunResponseSchema.parse({ run: result.value });
     await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, response.run.id);
+    this.logger.log({ event: 'run.created', runId: response.run.id });
     return response;
   }
 
@@ -118,10 +119,16 @@ export class TestRunService {
     runId: string,
   ): Promise<TestRunLifecycleResponse> {
     this.assertManage(principal);
-    const result = await this.runs.start(principal.organizationId, projectSlug, runId);
+    const result = await this.runs.start(
+      principal.organizationId,
+      projectSlug,
+      runId,
+      principal.sub,
+    );
     this.assertFound(result);
     const response = testRunLifecycleResponseSchema.parse({ run: result.value });
     await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    this.logger.log({ event: 'run.started', runId });
     return response;
   }
 
@@ -131,10 +138,16 @@ export class TestRunService {
     runId: string,
   ): Promise<TestRunLifecycleResponse> {
     this.assertManage(principal);
-    const result = await this.runs.close(principal.organizationId, projectSlug, runId);
+    const result = await this.runs.close(
+      principal.organizationId,
+      projectSlug,
+      runId,
+      principal.sub,
+    );
     this.assertFound(result);
     const response = testRunLifecycleResponseSchema.parse({ run: result.value });
     await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    this.logger.log({ event: 'run.closed', runId });
     return response;
   }
 
@@ -144,9 +157,15 @@ export class TestRunService {
     runId: string,
   ): Promise<void> {
     this.assertManage(principal);
-    const result = await this.runs.archive(principal.organizationId, projectSlug, runId);
+    const result = await this.runs.archive(
+      principal.organizationId,
+      projectSlug,
+      runId,
+      principal.sub,
+    );
     this.assertFound(result);
     await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    this.logger.log({ event: 'run.archived', runId });
   }
 
   async restore(
@@ -155,10 +174,16 @@ export class TestRunService {
     runId: string,
   ): Promise<TestRunLifecycleResponse> {
     this.assertManage(principal);
-    const result = await this.runs.restore(principal.organizationId, projectSlug, runId);
+    const result = await this.runs.restore(
+      principal.organizationId,
+      projectSlug,
+      runId,
+      principal.sub,
+    );
     this.assertFound(result);
     const response = testRunLifecycleResponseSchema.parse({ run: result.value });
     await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    this.logger.log({ event: 'run.restored', runId });
     return response;
   }
 
@@ -205,6 +230,12 @@ export class TestRunService {
     this.assertFound(result);
     const response = bulkTestResultsResponseSchema.parse(result.value);
     await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    this.logger.log({
+      event: 'results.ingested',
+      runId,
+      source: 'bulk',
+      resultCount: request.results.length,
+    });
     return response;
   }
 
@@ -250,6 +281,12 @@ export class TestRunService {
     this.assertFound(result);
     const response = junitUploadResponseSchema.parse(result.value);
     await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    this.logger.log({
+      event: 'results.ingested',
+      runId,
+      source: 'junit',
+      resultCount: parsedResults.length,
+    });
     return response;
   }
 
@@ -291,6 +328,7 @@ export class TestRunService {
     this.assertFound(result);
     const response = createTestResultResponseSchema.parse(result.value);
     await this.enqueueRunProgressRefresh(principal.organizationId, projectSlug, runId);
+    this.logger.log({ event: 'results.ingested', runId, source: 'manual', resultCount: 1 });
     return response;
   }
 
@@ -344,8 +382,11 @@ export class TestRunService {
     try {
       await this.runProgressRefresh.enqueue({ organizationId, projectSlug, runId });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown job queue error';
-      this.logger.error(`Failed to enqueue run progress refresh for ${runId}: ${message}`);
+      this.logger.error({
+        event: 'run.progress_refresh.enqueue_failed',
+        runId,
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      });
     }
   }
 

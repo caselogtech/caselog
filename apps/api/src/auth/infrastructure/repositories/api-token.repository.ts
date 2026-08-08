@@ -7,6 +7,7 @@ import type {
 import { PrismaService } from '../../../core/database/infrastructure/prisma/prisma.service';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import type { ApiTokenScope } from '../../../generated/prisma/enums';
+import { appendAuditLog } from '../../../audit/public-api';
 
 const SCOPE_TO_DATABASE: Record<ApiTokenScopeValue, ApiTokenScope> = {
   'results:write': 'RESULTS_WRITE',
@@ -56,8 +57,8 @@ export class ApiTokenRepository {
       expiresAt: Date;
     },
   ): Promise<ApiTokenSummary> {
-    const record = await this.tenantDatabase.run(organizationId, (transaction) =>
-      transaction.apiToken.create({
+    const record = await this.tenantDatabase.run(organizationId, async (transaction) => {
+      const created = await transaction.apiToken.create({
         data: {
           organizationId,
           createdById,
@@ -68,8 +69,22 @@ export class ApiTokenRepository {
           expiresAt: input.expiresAt,
         },
         select: this.summarySelection,
-      }),
-    );
+      });
+      await appendAuditLog(transaction, {
+        organizationId,
+        actorId: createdById,
+        actorType: 'user',
+        action: 'api_token.created',
+        targetType: 'api_token',
+        targetId: created.id,
+        metadata: {
+          name: input.name,
+          scopes: input.scopes,
+          expiresAt: input.expiresAt.toISOString(),
+        },
+      });
+      return created;
+    });
     return this.toSummary(record);
   }
 
@@ -84,14 +99,24 @@ export class ApiTokenRepository {
     return records.map((record) => this.toSummary(record));
   }
 
-  async revoke(organizationId: string, tokenId: string): Promise<boolean> {
-    const result = await this.tenantDatabase.run(organizationId, (transaction) =>
-      transaction.apiToken.updateMany({
+  async revoke(organizationId: string, tokenId: string, actorId: string): Promise<boolean> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const result = await transaction.apiToken.updateMany({
         where: { organizationId, id: tokenId, revokedAt: null },
         data: { revokedAt: new Date() },
-      }),
-    );
-    return result.count === 1;
+      });
+      if (result.count === 1) {
+        await appendAuditLog(transaction, {
+          organizationId,
+          actorId,
+          actorType: 'user',
+          action: 'api_token.revoked',
+          targetType: 'api_token',
+          targetId: tokenId,
+        });
+      }
+      return result.count === 1;
+    });
   }
 
   async authenticate(tokenHash: string): Promise<ApiTokenPrincipal | undefined> {

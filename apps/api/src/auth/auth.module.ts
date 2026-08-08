@@ -12,6 +12,7 @@ import { AuthTokenService } from './application/services/auth-token.service';
 import { IdentityRepository } from './infrastructure/repositories/identity.repository';
 import { PasswordService } from './application/services/password.service';
 import { OrganizationAuthGuard } from './presentation/guards/organization-auth.guard';
+import { OrganizationRoleGuard } from './presentation/guards/organization-role.guard';
 import { OrganizationJwtStrategy } from './infrastructure/strategies/organization-jwt.strategy';
 import { SessionAuthGuard } from './presentation/guards/session-auth.guard';
 import { SessionJwtStrategy } from './infrastructure/strategies/session-jwt.strategy';
@@ -33,6 +34,7 @@ import { WorkspaceService } from './application/services/workspace.service';
     IdentityRepository,
     PasswordService,
     OrganizationAuthGuard,
+    OrganizationRoleGuard,
     OrganizationJwtStrategy,
     SessionAuthGuard,
     SessionJwtStrategy,
@@ -40,6 +42,6 @@ import { WorkspaceService } from './application/services/workspace.service';
     WorkspaceRepository,
     WorkspaceService,
   ],
-  exports: [ApiTokenService, OrganizationAuthGuard],
+  exports: [ApiTokenService, OrganizationAuthGuard, OrganizationRoleGuard],
 })
 export class AuthModule {}

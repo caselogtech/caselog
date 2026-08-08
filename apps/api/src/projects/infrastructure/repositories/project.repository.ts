@@ -9,6 +9,7 @@ import type {
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import { Prisma } from '../../../generated/prisma/client';
 import { RunStatus } from '../../../generated/prisma/enums';
+import { appendAuditLog } from '../../../audit/public-api';
 import { DEFAULT_PROJECT_STATUSES } from '../../domain/policies/project-defaults';
 
 type ProjectPage = {
@@ -114,7 +115,11 @@ export class ProjectRepository {
     }
   }
 
-  async archive(organizationId: string, projectSlug: string): Promise<ArchiveProjectResult> {
+  async archive(
+    organizationId: string,
+    projectSlug: string,
+    actorId: string,
+  ): Promise<ArchiveProjectResult> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
       const project = await transaction.$queryRaw<Array<{ id: string }>>`
         SELECT id FROM projects
@@ -137,11 +142,24 @@ export class ProjectRepository {
         where: { organizationId_id: { organizationId, id: projectId } },
         data: { deletedAt: new Date() },
       });
+      await appendAuditLog(transaction, {
+        organizationId,
+        actorId,
+        actorType: 'user',
+        action: 'project.archived',
+        targetType: 'project',
+        targetId: projectId,
+        metadata: { slug: projectSlug },
+      });
       return { kind: 'archived' };
     });
   }
 
-  async restore(organizationId: string, projectSlug: string): Promise<RestoreProjectResult> {
+  async restore(
+    organizationId: string,
+    projectSlug: string,
+    actorId: string,
+  ): Promise<RestoreProjectResult> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
       const projects = await transaction.$queryRaw<Array<{ id: string; deletedAt: Date | null }>>`
         SELECT id, deleted_at AS "deletedAt" FROM projects
@@ -155,6 +173,15 @@ export class ProjectRepository {
         await transaction.project.update({
           where: { organizationId_id: { organizationId, id: project.id } },
           data: { deletedAt: null },
+        });
+        await appendAuditLog(transaction, {
+          organizationId,
+          actorId,
+          actorType: 'user',
+          action: 'project.restored',
+          targetType: 'project',
+          targetId: project.id,
+          metadata: { slug: projectSlug },
         });
       }
       return { kind: 'restored', value: { projectId: project.id, state: 'active' } };

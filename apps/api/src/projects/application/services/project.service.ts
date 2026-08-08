@@ -50,7 +50,11 @@ export class ProjectService {
 
   async archive(principal: OrganizationAccessPrincipal, projectSlug: string): Promise<void> {
     this.assertManage(principal);
-    const result = await this.projects.archive(principal.organizationId, projectSlug);
+    const result = await this.projects.archive(
+      principal.organizationId,
+      projectSlug,
+      principal.sub,
+    );
     if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
     if (result.kind === 'open_runs') {
       throw new ResourceConflictError(
@@ -65,7 +69,11 @@ export class ProjectService {
     projectSlug: string,
   ): Promise<ProjectLifecycleResponse> {
     this.assertManage(principal);
-    const result = await this.projects.restore(principal.organizationId, projectSlug);
+    const result = await this.projects.restore(
+      principal.organizationId,
+      projectSlug,
+      principal.sub,
+    );
     if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
     return projectLifecycleResponseSchema.parse(result.value);
   }

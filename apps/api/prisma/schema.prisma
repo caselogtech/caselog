@@ -113,6 +113,8 @@ model Organization {
   integrationConnections IntegrationConnection[]
   issueLinks             IssueLink[]
   issueCreationRequests  IssueCreationRequest[]
+  auditLogs              AuditLog[]
+  invitations            WorkspaceInvitation[]
 
   @@map("organizations")
 }
@@ -154,6 +156,7 @@ model User {
   integrationConnections IntegrationConnection[] @relation("IntegrationConnectionCreator")
   createdIssueLinks      IssueLink[]             @relation("IssueLinkCreator")
   issueCreationRequests  IssueCreationRequest[]  @relation("IssueCreationRequestCreator")
+  sentInvitations        WorkspaceInvitation[]    @relation("InvitationSender")
 
   @@map("users")
 }
@@ -178,6 +181,25 @@ model ApiToken {
   @@index([organizationId, revokedAt, expiresAt], map: "idx_api_tokens_organization_id_active")
   @@index([organizationId, createdAt], map: "idx_api_tokens_organization_id_created_at")
   @@map("api_tokens")
+}
+
+model AuditLog {
+  organizationId String   @map("organization_id") @db.Uuid
+  id             String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId        String   @map("actor_id") @db.Uuid
+  actorType      String   @map("actor_type") @db.VarChar(30)
+  action         String   @db.VarChar(100)
+  targetType     String   @map("target_type") @db.VarChar(80)
+  targetId       String?  @map("target_id") @db.VarChar(200)
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@id([organizationId, id], map: "pk_audit_logs")
+  @@index([organizationId, createdAt, id], map: "idx_audit_logs_organization_id_created_at_id")
+  @@index([organizationId, action, createdAt], map: "idx_audit_logs_organization_id_action_created_at")
+  @@map("audit_logs")
 }
 
 model IntegrationConnection {
@@ -342,6 +364,29 @@ model Membership {
   @@unique([organizationId, userId], map: "uq_memberships_organization_id_user_id")
   @@index([organizationId, role], map: "idx_memberships_organization_id_role")
   @@map("memberships")
+}
+
+model WorkspaceInvitation {
+  organizationId String         @map("organization_id") @db.Uuid
+  id             String         @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String         @db.Citext
+  role           MembershipRole
+  tokenHash      String         @unique(map: "uq_workspace_invitations_token_hash") @map("token_hash") @db.Char(64)
+  invitedById    String         @map("invited_by_id") @db.Uuid
+  expiresAt      DateTime       @map("expires_at") @db.Timestamptz(3)
+  acceptedAt     DateTime?      @map("accepted_at") @db.Timestamptz(3)
+  revokedAt      DateTime?      @map("revoked_at") @db.Timestamptz(3)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  invitedBy    User         @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: Restrict)
+
+  @@id([organizationId, id], map: "pk_workspace_invitations")
+  @@unique([organizationId, email], map: "uq_workspace_invitations_organization_email")
+  @@index([organizationId, createdAt, id], map: "idx_workspace_invitations_organization_created_at_id")
+  @@index([organizationId, expiresAt], map: "idx_workspace_invitations_organization_expires_at")
+  @@map("workspace_invitations")
 }
 
 model Project {

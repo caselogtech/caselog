@@ -23,7 +23,12 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
+import {
+  CurrentOrganization,
+  OrganizationAuthGuard,
+  OrganizationRoleGuard,
+  RequireOrganizationAccess,
+} from '../../../auth/public-api';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import { CreateProjectRequestDto, ProjectListQueryDto, ProjectParamsDto } from '../dto/project.dto';
 import { ProjectService } from '../../application/services/project.service';
@@ -34,7 +39,7 @@ import {
 } from '../dto/project-response.dto';
 
 @Controller('projects')
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class ProjectController {
   constructor(@Inject(ProjectService) private readonly projects: ProjectService) {}
@@ -49,6 +54,7 @@ export class ProjectController {
   }
 
   @Post()
+  @RequireOrganizationAccess('lead')
   @ApiCreatedResponse({ type: CreateProjectResponseDto })
   create(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -58,6 +64,7 @@ export class ProjectController {
   }
 
   @Delete(':projectSlug')
+  @RequireOrganizationAccess('lead')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse()
   archive(
@@ -68,6 +75,7 @@ export class ProjectController {
   }
 
   @Post(':projectSlug/restore')
+  @RequireOrganizationAccess('lead')
   @ApiCreatedResponse({ type: ProjectLifecycleResponseDto })
   restore(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,

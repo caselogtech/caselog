@@ -26,13 +26,35 @@ describe('health endpoint', () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/v1/health',
+      headers: { 'x-request-id': 'health-check-42' },
     });
 
     expect(response.statusCode, response.body).toBe(200);
+    expect(response.headers['x-request-id']).toBe('health-check-42');
     expect(response.json()).toEqual({
       service: 'api',
       status: 'ok',
     });
+  });
+
+  it('returns a generated request ID in error responses', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/v1/missing' });
+
+    expect(response.statusCode, response.body).toBe(404);
+    const requestId = response.headers['x-request-id'];
+    expect(requestId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(response.json().error).toMatchObject({ code: 'http_error', requestId });
+  });
+
+  it('exposes Prometheus metrics without tenant or user dimensions', async () => {
+    await app.inject({ method: 'GET', url: '/api/v1/health' });
+    const response = await app.inject({ method: 'GET', url: '/api/v1/metrics' });
+
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.headers['content-type']).toContain('text/plain');
+    expect(response.body).toContain('caselog_http_requests_total');
+    expect(response.body).toContain('route="/api/v1/health"');
+    expect(response.body).not.toMatch(/organization|tenant|user/i);
   });
 
   it('serves a typed OpenAPI contract', async () => {

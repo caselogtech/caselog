@@ -22,14 +22,17 @@ import {
   ApiOkResponse,
 } from '@nestjs/swagger';
 import { CurrentOrganization } from '../decorators/organization-principal.decorator';
+import { RequireOrganizationAccess } from '../decorators/organization-access.decorator';
 import { OrganizationAuthGuard } from '../guards/organization-auth.guard';
+import { OrganizationRoleGuard } from '../guards/organization-role.guard';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import { ApiTokenParamsDto, CreateApiTokenRequestDto } from '../dto/api-token.dto';
 import { ApiTokenService } from '../../application/services/api-token.service';
 import { ApiTokenListResponseDto, CreateApiTokenResponseDto } from '../dto/auth-response.dto';
 
 @Controller('api-tokens')
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
+@RequireOrganizationAccess('admin')
 @ApiBearerAuth('access-token')
 export class ApiTokenController {
   constructor(@Inject(ApiTokenService) private readonly apiTokens: ApiTokenService) {}

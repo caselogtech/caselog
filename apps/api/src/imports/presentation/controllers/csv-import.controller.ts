@@ -15,7 +15,12 @@ import type {
   OrganizationAccessPrincipal,
 } from '@caselog/schemas';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
+import {
+  CurrentOrganization,
+  OrganizationAuthGuard,
+  OrganizationRoleGuard,
+  RequireOrganizationAccess,
+} from '../../../auth/public-api';
 import { CsvImportService } from '../../application/services/csv-import.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
@@ -27,12 +32,13 @@ import {
 } from '../dto/csv-import.dto';
 
 @Controller('projects/:projectSlug/imports/csv')
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class CsvImportController {
   constructor(@Inject(CsvImportService) private readonly csvImports: CsvImportService) {}
 
   @Post('preview')
+  @RequireOrganizationAccess('read')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: CsvImportPreviewResponseDto })
   preview(

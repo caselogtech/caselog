@@ -152,6 +152,7 @@ export class IntegrationConnectionService {
     const connection = await this.connections.updateCredentials(
       principal.organizationId,
       connectionId,
+      principal.sub,
       encryptedCredentials,
     );
     if (!connection) throw new ResourceNotFoundError('integration_connection');
@@ -169,7 +170,7 @@ export class IntegrationConnectionService {
       const identity = await this.provider(stored.provider, stored.deployment).verifyConnection(
         this.remoteConnection(principal.organizationId, stored),
       );
-      await this.connections.markVerified(principal.organizationId, connectionId);
+      await this.connections.markVerified(principal.organizationId, connectionId, principal.sub);
       await this.ensureSyncSchedule(principal.organizationId, connectionId);
       return identity;
     } catch (error) {
@@ -180,7 +181,7 @@ export class IntegrationConnectionService {
 
   async delete(principal: OrganizationAccessPrincipal, connectionId: string): Promise<void> {
     this.assertManage(principal);
-    if (!(await this.connections.delete(principal.organizationId, connectionId))) {
+    if (!(await this.connections.delete(principal.organizationId, connectionId, principal.sub))) {
       throw new ResourceNotFoundError('integration_connection');
     }
     try {
@@ -189,7 +190,10 @@ export class IntegrationConnectionService {
         connectionId,
       });
     } catch (error) {
-      this.logger.warn(`Could not remove Jira sync schedule: ${this.errorMessage(error)}`);
+      this.logger.warn({
+        event: 'integration.schedule.remove_failed',
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      });
     }
   }
 
@@ -279,11 +283,10 @@ export class IntegrationConnectionService {
     try {
       await this.statusSync.ensureScheduled({ organizationId, connectionId });
     } catch (error) {
-      this.logger.warn(`Could not create Jira sync schedule: ${this.errorMessage(error)}`);
+      this.logger.warn({
+        event: 'integration.schedule.create_failed',
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      });
     }
-  }
-
-  private errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : 'unknown error';
   }
 }

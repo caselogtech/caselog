@@ -39,6 +39,7 @@ import type { FastifyRequest } from 'fastify';
 import {
   CurrentOrganization,
   OrganizationAuthGuard,
+  OrganizationRoleGuard,
   RequireApiTokenScopes,
 } from '../../../auth/public-api';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
@@ -72,7 +73,7 @@ import {
 } from '../dto/test-run-response.dto';
 
 @Controller('projects/:projectSlug/runs')
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class TestRunController {
   constructor(@Inject(TestRunService) private readonly runs: TestRunService) {}

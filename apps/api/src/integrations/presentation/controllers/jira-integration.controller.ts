@@ -26,7 +26,12 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
+import {
+  CurrentOrganization,
+  OrganizationAuthGuard,
+  OrganizationRoleGuard,
+  RequireOrganizationAccess,
+} from '../../../auth/public-api';
 import { IntegrationConnectionService } from '../../application/services/integration-connection.service';
 import { IssueTrackerQueryService } from '../../application/services/issue-tracker-query.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
@@ -44,7 +49,7 @@ import {
 } from '../dto/integration.dto';
 
 @Controller('integrations/jira')
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class JiraIntegrationController {
   constructor(
@@ -55,6 +60,7 @@ export class JiraIntegrationController {
   ) {}
 
   @Post('connections')
+  @RequireOrganizationAccess('admin')
   @ApiCreatedResponse({ type: CreateJiraDataCenterConnectionResponseDto })
   createConnection(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -73,6 +79,7 @@ export class JiraIntegrationController {
   }
 
   @Put('connections/:connectionId/credentials')
+  @RequireOrganizationAccess('admin')
   @ApiOkResponse({ type: CreateJiraDataCenterConnectionResponseDto })
   updateCredentials(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -83,6 +90,7 @@ export class JiraIntegrationController {
   }
 
   @Post('connections/:connectionId/verify')
+  @RequireOrganizationAccess('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: IssueTrackerIdentityDto })
   verifyConnection(
@@ -102,6 +110,7 @@ export class JiraIntegrationController {
   }
 
   @Post('connections/:connectionId/issues/search')
+  @RequireOrganizationAccess('read')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: JiraIssueSearchResponseDto })
   searchIssues(
@@ -113,6 +122,7 @@ export class JiraIntegrationController {
   }
 
   @Delete('connections/:connectionId')
+  @RequireOrganizationAccess('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse()
   deleteConnection(

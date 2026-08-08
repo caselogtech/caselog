@@ -11,6 +11,7 @@ import {
   storeIdempotencyResponse,
 } from '../../../core/database/infrastructure/persistence/idempotency';
 import { Prisma } from '../../../generated/prisma/client';
+import { appendAuditLog } from '../../../audit/public-api';
 
 type ConnectionRecord = {
   id: string;
@@ -102,6 +103,19 @@ export class IntegrationConnectionRepository {
           },
           select: this.publicSelection,
         });
+        await appendAuditLog(transaction, {
+          organizationId,
+          actorId: createdById,
+          actorType: 'user',
+          action: 'integration.connection_created',
+          targetType: 'integration_connection',
+          targetId: id,
+          metadata: {
+            provider: 'jira',
+            deployment: 'data_center',
+            authType: 'pat',
+          },
+        });
         const response = { connection: this.toPublic(record), identity };
         await storeIdempotencyResponse(
           transaction,
@@ -147,18 +161,29 @@ export class IntegrationConnectionRepository {
     );
   }
 
-  async markVerified(organizationId: string, connectionId: string): Promise<void> {
-    await this.tenantDatabase.run(organizationId, (transaction) =>
-      transaction.integrationConnection.updateMany({
+  async markVerified(organizationId: string, connectionId: string, actorId: string): Promise<void> {
+    await this.tenantDatabase.run(organizationId, async (transaction) => {
+      const result = await transaction.integrationConnection.updateMany({
         where: { organizationId, id: connectionId, deletedAt: null },
         data: { status: 'active', lastError: null, verifiedAt: new Date() },
-      }),
-    );
+      });
+      if (result.count === 1) {
+        await appendAuditLog(transaction, {
+          organizationId,
+          actorId,
+          actorType: 'user',
+          action: 'integration.connection_verified',
+          targetType: 'integration_connection',
+          targetId: connectionId,
+        });
+      }
+    });
   }
 
   async updateCredentials(
     organizationId: string,
     connectionId: string,
+    actorId: string,
     encryptedCredentials: Prisma.InputJsonValue,
   ): Promise<IntegrationConnection | null> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
@@ -172,6 +197,14 @@ export class IntegrationConnectionRepository {
         },
       });
       if (updated.count === 0) return null;
+      await appendAuditLog(transaction, {
+        organizationId,
+        actorId,
+        actorType: 'user',
+        action: 'integration.credentials_rotated',
+        targetType: 'integration_connection',
+        targetId: connectionId,
+      });
       const record = await transaction.integrationConnection.findUniqueOrThrow({
         where: { organizationId_id: { organizationId, id: connectionId } },
         select: this.publicSelection,
@@ -198,18 +231,28 @@ export class IntegrationConnectionRepository {
     );
   }
 
-  async delete(organizationId: string, connectionId: string): Promise<boolean> {
-    const result = await this.tenantDatabase.run(organizationId, (transaction) =>
-      transaction.integrationConnection.updateMany({
+  async delete(organizationId: string, connectionId: string, actorId: string): Promise<boolean> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const result = await transaction.integrationConnection.updateMany({
         where: { organizationId, id: connectionId, provider: 'jira', deletedAt: null },
         data: {
           status: 'disabled',
           deletedAt: new Date(),
           encryptedCredentials: { deleted: true },
         },
-      }),
-    );
-    return result.count === 1;
+      });
+      if (result.count === 1) {
+        await appendAuditLog(transaction, {
+          organizationId,
+          actorId,
+          actorType: 'user',
+          action: 'integration.connection_disconnected',
+          targetType: 'integration_connection',
+          targetId: connectionId,
+        });
+      }
+      return result.count === 1;
+    });
   }
 
   private readonly publicSelection = {

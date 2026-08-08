@@ -56,7 +56,7 @@ export class ApiTokenService {
 
   async revoke(principal: OrganizationAccessPrincipal, tokenId: string): Promise<void> {
     this.assertManage(principal);
-    if (!(await this.apiTokens.revoke(principal.organizationId, tokenId))) {
+    if (!(await this.apiTokens.revoke(principal.organizationId, tokenId, principal.sub))) {
       throw new ResourceNotFoundError('api_token');
     }
   }

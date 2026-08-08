@@ -15,6 +15,7 @@ import { TenantDatabaseService } from '../../../core/database/application/servic
 import { bumpProjectionRevision } from '../../../core/database/infrastructure/persistence/projection-revision';
 import { RUN_PROGRESS_PROJECTION } from '../../../reporting/public-api';
 import { RunStatus } from '../../../generated/prisma/enums';
+import { appendAuditLog } from '../../../audit/public-api';
 import {
   claimIdempotency,
   countRunItems,
@@ -31,6 +32,13 @@ const RUN_STATUS: Record<TestRunStatus, RunStatus> = {
   completed: RunStatus.COMPLETED,
   archived: RunStatus.ARCHIVED,
 };
+
+const LIFECYCLE_AUDIT_ACTION = {
+  start: 'test_run.started',
+  close: 'test_run.closed',
+  archive: 'test_run.archived',
+  restore: 'test_run.restored',
+} as const;
 
 @Injectable()
 export class TestRunRepository {
@@ -294,32 +302,36 @@ export class TestRunRepository {
     organizationId: string,
     projectSlug: string,
     runId: string,
+    actorId: string,
   ): Promise<RunResult<TestRunSummary>> {
-    return this.changeLifecycle(organizationId, projectSlug, runId, 'start');
+    return this.changeLifecycle(organizationId, projectSlug, runId, actorId, 'start');
   }
 
   close(
     organizationId: string,
     projectSlug: string,
     runId: string,
+    actorId: string,
   ): Promise<RunResult<TestRunSummary>> {
-    return this.changeLifecycle(organizationId, projectSlug, runId, 'close');
+    return this.changeLifecycle(organizationId, projectSlug, runId, actorId, 'close');
   }
 
   archive(
     organizationId: string,
     projectSlug: string,
     runId: string,
+    actorId: string,
   ): Promise<RunResult<TestRunSummary>> {
-    return this.changeLifecycle(organizationId, projectSlug, runId, 'archive');
+    return this.changeLifecycle(organizationId, projectSlug, runId, actorId, 'archive');
   }
 
   restore(
     organizationId: string,
     projectSlug: string,
     runId: string,
+    actorId: string,
   ): Promise<RunResult<TestRunSummary>> {
-    return this.changeLifecycle(organizationId, projectSlug, runId, 'restore');
+    return this.changeLifecycle(organizationId, projectSlug, runId, actorId, 'restore');
   }
 
   async assign(
@@ -371,6 +383,7 @@ export class TestRunRepository {
     organizationId: string,
     projectSlug: string,
     runId: string,
+    actorId: string,
     action: 'start' | 'close' | 'archive' | 'restore',
   ): Promise<RunResult<TestRunSummary>> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
@@ -426,6 +439,19 @@ export class TestRunRepository {
           })
         : current;
       if (nextStatus) {
+        await appendAuditLog(transaction, {
+          organizationId,
+          actorId,
+          actorType: 'user',
+          action: LIFECYCLE_AUDIT_ACTION[action],
+          targetType: 'test_run',
+          targetId: runId,
+          metadata: {
+            projectSlug,
+            previousStatus: current.status.toLowerCase(),
+            nextStatus: nextStatus.toLowerCase(),
+          },
+        });
         await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
       }
       const counts = await countRunItems(transaction, [run.id]);

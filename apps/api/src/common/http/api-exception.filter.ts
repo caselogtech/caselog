@@ -6,7 +6,7 @@ import {
   Logger,
   type ExceptionFilter,
 } from '@nestjs/common';
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ZodValidationException } from 'nestjs-zod';
 import type { ZodError } from 'zod';
 import {
@@ -27,6 +27,7 @@ type ApiErrorBody = {
     code: string;
     message: string;
     details: Record<string, unknown>;
+    requestId: string;
   };
 };
 
@@ -35,22 +36,34 @@ export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost): void {
-    const response = host.switchToHttp().getResponse<FastifyReply>();
-    const { status, body } = this.toResponse(exception);
+    const http = host.switchToHttp();
+    const request = http.getRequest<FastifyRequest>();
+    const response = http.getResponse<FastifyReply>();
+    const { status, body } = this.toResponse(exception, request.id);
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error(exception);
+      this.logger.error(
+        {
+          event: 'http.request.failed',
+          requestId: request.id,
+          errorName: exception instanceof Error ? exception.name : 'UnknownError',
+        },
+        exception instanceof Error ? exception.stack : undefined,
+      );
     }
 
     response.header('Cache-Control', 'no-store').status(status).send(body);
   }
 
-  private toResponse(exception: unknown): { status: number; body: ApiErrorBody } {
+  private toResponse(
+    exception: unknown,
+    requestId: string,
+  ): { status: number; body: ApiErrorBody } {
     if (exception instanceof ZodValidationException) {
       const validationError = exception.getZodError() as ZodError;
       return {
         status: HttpStatus.BAD_REQUEST,
-        body: this.body('validation_failed', 'Request validation failed', {
+        body: this.body('validation_failed', 'Request validation failed', requestId, {
           issues: validationError.issues.map(({ code, message, path }) => ({
             code,
             message,
@@ -63,19 +76,19 @@ export class ApiExceptionFilter implements ExceptionFilter {
     if (exception instanceof DomainError) {
       return {
         status: this.domainStatus(exception),
-        body: this.body(exception.code, exception.message, exception.details),
+        body: this.body(exception.code, exception.message, requestId, exception.details),
       };
     }
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const code = status === HttpStatus.TOO_MANY_REQUESTS ? 'rate_limited' : 'http_error';
-      return { status, body: this.body(code, exception.message) };
+      return { status, body: this.body(code, exception.message, requestId) };
     }
 
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
-      body: this.body('internal_error', 'An unexpected error occurred'),
+      body: this.body('internal_error', 'An unexpected error occurred', requestId),
     };
   }
 
@@ -101,7 +114,12 @@ export class ApiExceptionFilter implements ExceptionFilter {
     return HttpStatus.BAD_REQUEST;
   }
 
-  private body(code: string, message: string, details: Record<string, unknown> = {}): ApiErrorBody {
-    return { error: { code, message, details } };
+  private body(
+    code: string,
+    message: string,
+    requestId: string,
+    details: Record<string, unknown> = {},
+  ): ApiErrorBody {
+    return { error: { code, message, details, requestId } };
   }
 }

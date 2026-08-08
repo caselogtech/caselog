@@ -18,6 +18,16 @@ for (const file of files) {
   const source = await readFile(file, 'utf8');
   const projectPath = normalize(relative(apiSource, file));
 
+  if (
+    projectPath.includes('/presentation/controllers/') &&
+    source.includes('OrganizationAuthGuard') &&
+    !source.includes('OrganizationRoleGuard')
+  ) {
+    violations.push(
+      `${projectPath}: tenant controllers must pair OrganizationAuthGuard with OrganizationRoleGuard`,
+    );
+  }
+
   for (const query of unsafeRawQueries) {
     if (source.includes(query)) {
       violations.push(`${projectPath}: ${query} is forbidden; use parameterized tagged SQL`);

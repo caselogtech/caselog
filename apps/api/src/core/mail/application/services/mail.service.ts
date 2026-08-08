@@ -46,4 +46,27 @@ export class MailService {
       ].join('\n'),
     });
   }
+
+  async sendWorkspaceInvitation(
+    to: string,
+    inviterName: string,
+    workspaceName: string,
+    role: string,
+    link: string,
+    expiresInDays: number,
+  ): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.config.from,
+      to,
+      subject: `Join ${workspaceName} on Caselog`,
+      text: [
+        `${inviterName} invited you to ${workspaceName} as ${role}.`,
+        '',
+        'Review and accept the invitation:',
+        link,
+        '',
+        `This invitation expires in ${expiresInDays} days.`,
+      ].join('\n'),
+    });
+  }
 }

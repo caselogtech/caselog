@@ -145,6 +145,7 @@ async function cleanupWorkspace(
   });
   const storage = app.get<StorageProvider>(STORAGE_PROVIDER);
   await Promise.allSettled(attachments.map(({ storageKey }) => storage.delete(storageKey)));
+  await admin.auditLog.deleteMany({ where: { organizationId } });
   await admin.issueCreationRequest.deleteMany({ where: { organizationId } });
   await admin.issueLink.deleteMany({ where: { organizationId } });
   await admin.integrationConnection.deleteMany({ where: { organizationId } });
@@ -162,6 +163,7 @@ async function cleanupWorkspace(
   await admin.section.deleteMany({ where: { organizationId } });
   await admin.suite.deleteMany({ where: { organizationId } });
   await admin.project.deleteMany({ where: { organizationId } });
+  await admin.usageCounter.deleteMany({ where: { organizationId } });
   await admin.membership.deleteMany({ where: { organizationId } });
   await admin.organization.deleteMany({ where: { id: organizationId } });
   await admin.user.deleteMany({ where: { email: { in: emails } } });

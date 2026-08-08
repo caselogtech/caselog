@@ -5,7 +5,12 @@ import type {
   OrganizationAccessPrincipal,
 } from '@caselog/schemas';
 import { ApiBearerAuth, ApiCreatedResponse } from '@nestjs/swagger';
-import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
+import {
+  CurrentOrganization,
+  OrganizationAuthGuard,
+  OrganizationRoleGuard,
+  RequireOrganizationAccess,
+} from '../../../auth/public-api';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
   AttachmentDownloadParamsDto,
@@ -19,7 +24,7 @@ import {
 } from '../dto/attachment-response.dto';
 
 @Controller('projects/:projectSlug/runs/:runId/items/:itemId/uploads')
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class AttachmentController {
   constructor(@Inject(AttachmentService) private readonly attachments: AttachmentService) {}
@@ -44,12 +49,13 @@ export class AttachmentController {
 @Controller(
   'projects/:projectSlug/runs/:runId/items/:itemId/results/:resultId/attachments/:attachmentId/download',
 )
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class AttachmentDownloadController {
   constructor(@Inject(AttachmentService) private readonly attachments: AttachmentService) {}
 
   @Post()
+  @RequireOrganizationAccess('read')
   @ApiCreatedResponse({ type: AttachmentDownloadResponseDto })
   createDownload(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,

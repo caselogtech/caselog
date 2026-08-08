@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
+  auditLogListResponseSchema,
   createApiTokenResponseSchema,
   sessionResponseSchema,
   type CreateApiTokenResponse,
@@ -175,6 +176,7 @@ describe('organization API tokens', () => {
   afterAll(async () => {
     if (admin) {
       const organizationIds = [organizationId, foreignOrganizationId].filter(Boolean);
+      await admin.auditLog.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.apiToken.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.idempotencyRecord.deleteMany({
         where: { organizationId: { in: organizationIds } },
@@ -241,6 +243,20 @@ describe('organization API tokens', () => {
       select: { tokenHash: true },
     });
     expect(stored.tokenHash).not.toBe(apiToken.token);
+
+    const auditResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/audit-logs?action=api_token.created',
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(auditResponse.statusCode, auditResponse.body).toBe(200);
+    expect(auditResponse.body).not.toContain(apiToken.token);
+    expect(auditLogListResponseSchema.parse(auditResponse.json()).items[0]).toMatchObject({
+      actor: { type: 'user' },
+      action: 'api_token.created',
+      target: { type: 'api_token', id: apiToken.apiToken.id },
+      metadata: { name: 'CI uploader', scopes: ['results:write', 'runs:read'] },
+    });
   });
 
   it('rejects expired and excessively long-lived tokens', async () => {
@@ -332,6 +348,13 @@ describe('organization API tokens', () => {
       headers: { authorization: `Bearer ${apiToken.token}` },
     });
     expect(response.statusCode, response.body).toBe(403);
+
+    const auditResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/audit-logs',
+      headers: { authorization: `Bearer ${apiToken.token}` },
+    });
+    expect(auditResponse.statusCode, auditResponse.body).toBe(403);
   });
 
   it('revokes a token immediately', async () => {
@@ -348,5 +371,18 @@ describe('organization API tokens', () => {
       headers: { authorization: `Bearer ${apiToken.token}` },
     });
     expect(denied.statusCode, denied.body).toBe(401);
+
+    const auditResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/audit-logs?action=api_token.revoked',
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(auditResponse.statusCode, auditResponse.body).toBe(200);
+    expect(auditLogListResponseSchema.parse(auditResponse.json()).items).toEqual([
+      expect.objectContaining({
+        action: 'api_token.revoked',
+        target: { type: 'api_token', id: apiToken.apiToken.id },
+      }),
+    ]);
   });
 });

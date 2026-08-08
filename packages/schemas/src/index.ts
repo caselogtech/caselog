@@ -1,5 +1,14 @@
 export { apiErrorSchema, type ApiError } from './api-error.js';
 export {
+  auditLogActionSchema,
+  auditLogListQuerySchema,
+  auditLogListResponseSchema,
+  auditLogSchema,
+  type AuditLog,
+  type AuditLogListQuery,
+  type AuditLogListResponse,
+} from './audit-log.js';
+export {
   csvImportHeadersSchema,
   csvImportIssueSchema,
   csvImportMappingSchema,
@@ -107,6 +116,23 @@ export {
 } from './auth.js';
 export { healthResponseSchema, type HealthResponse } from './health.js';
 export {
+  manageableWorkspaceRoleSchema,
+  updateWorkspaceMemberRoleRequestSchema,
+  workspaceMemberListQuerySchema,
+  workspaceMemberListResponseSchema,
+  workspaceMemberParamsSchema,
+  workspaceMemberResponseSchema,
+  workspaceMemberSchema,
+  workspaceMemberStateSchema,
+  type ManageableWorkspaceRole,
+  type UpdateWorkspaceMemberRoleRequest,
+  type WorkspaceMember,
+  type WorkspaceMemberListQuery,
+  type WorkspaceMemberListResponse,
+  type WorkspaceMemberParams,
+  type WorkspaceMemberResponse,
+} from './member.js';
+export {
   createIntegrationConnectionHeadersSchema,
   createDefectHeadersSchema,
   createJiraDefectRequestSchema,
@@ -151,6 +177,28 @@ export {
   type LinkJiraIssueRequest,
   type UpdateJiraDataCenterCredentialsRequest,
 } from './integration.js';
+export {
+  acceptWorkspaceInvitationResponseSchema,
+  createWorkspaceInvitationsRequestSchema,
+  createWorkspaceInvitationsResponseSchema,
+  invitationTokenParamsSchema,
+  invitationTokenSchema,
+  workspaceInvitationListQuerySchema,
+  workspaceInvitationListResponseSchema,
+  workspaceInvitationParamsSchema,
+  workspaceInvitationPreviewSchema,
+  workspaceInvitationResponseSchema,
+  workspaceInvitationSchema,
+  workspaceInvitationStatusSchema,
+  type AcceptWorkspaceInvitationResponse,
+  type CreateWorkspaceInvitationsRequest,
+  type CreateWorkspaceInvitationsResponse,
+  type WorkspaceInvitation,
+  type WorkspaceInvitationListQuery,
+  type WorkspaceInvitationListResponse,
+  type WorkspaceInvitationPreview,
+  type WorkspaceInvitationResponse,
+} from './invitation.js';
 export { organizationIdSchema, type OrganizationId } from './organization.js';
 export {
   caseExecutionHistoryItemSchema,

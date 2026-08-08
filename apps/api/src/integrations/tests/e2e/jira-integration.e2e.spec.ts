@@ -1,4 +1,5 @@
 import {
+  auditLogListResponseSchema,
   createJiraDefectResponseSchema,
   createJiraDataCenterConnectionResponseSchema,
   integrationConnectionListResponseSchema,
@@ -152,6 +153,20 @@ describe('Jira Data Center integration', () => {
       payload: { ...request, name: 'Different name' },
     });
     expect(conflict.statusCode, conflict.body).toBe(409);
+
+    const auditResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/audit-logs?action=integration.connection_created',
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(auditResponse.statusCode, auditResponse.body).toBe(200);
+    expect(auditLogListResponseSchema.parse(auditResponse.json()).items).toEqual([
+      expect.objectContaining({
+        action: 'integration.connection_created',
+        target: { type: 'integration_connection', id: connectionId },
+        metadata: { provider: 'jira', deployment: 'data_center', authType: 'pat' },
+      }),
+    ]);
   });
 
   it('lists remote projects and searches issues with JQL', async () => {
@@ -275,6 +290,13 @@ describe('Jira Data Center integration', () => {
     });
     expect(defect.statusCode, defect.body).toBe(403);
     expect(defect.json().error.code).toBe('insufficient_permissions');
+
+    const auditResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/audit-logs',
+      headers,
+    });
+    expect(auditResponse.statusCode, auditResponse.body).toBe(403);
   });
 
   it('synchronizes Jira status snapshots and records missing remote issues', async () => {
@@ -424,5 +446,17 @@ describe('Jira Data Center integration', () => {
       headers: { authorization: `Bearer ${organizationToken}` },
     });
     expect(afterDelete.statusCode, afterDelete.body).toBe(404);
+
+    await expect(
+      admin.auditLog.findMany({
+        where: { organizationId, targetId: connectionId },
+        orderBy: { createdAt: 'asc' },
+        select: { action: true },
+      }),
+    ).resolves.toEqual([
+      { action: 'integration.connection_created' },
+      { action: 'integration.credentials_rotated' },
+      { action: 'integration.connection_disconnected' },
+    ]);
   });
 });

@@ -8,6 +8,7 @@ import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import {
   CurrentOrganization,
   OrganizationAuthGuard,
+  OrganizationRoleGuard,
   RequireApiTokenScopes,
 } from '../../../auth/public-api';
 import { ReportingService } from '../../application/services/reporting.service';
@@ -23,7 +24,7 @@ import {
 } from '../dto/reporting-response.dto';
 
 @Controller('projects/:projectSlug/reports')
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class ReportingController {
   constructor(@Inject(ReportingService) private readonly reports: ReportingService) {}

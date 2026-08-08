@@ -92,6 +92,9 @@ importers:
       pg-boss:
         specifier: 12.27.0
         version: 12.27.0
+      pino:
+        specifier: 10.3.1
+        version: 10.3.1
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2

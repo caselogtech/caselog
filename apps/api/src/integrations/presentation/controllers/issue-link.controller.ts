@@ -23,7 +23,11 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { CurrentOrganization, OrganizationAuthGuard } from '../../../auth/public-api';
+import {
+  CurrentOrganization,
+  OrganizationAuthGuard,
+  OrganizationRoleGuard,
+} from '../../../auth/public-api';
 import { DefectCreationService } from '../../application/services/defect-creation.service';
 import { IssueLinkService } from '../../application/services/issue-link.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
@@ -41,7 +45,7 @@ import {
 } from '../dto/integration.dto';
 
 @Controller('projects/:projectSlug/cases/:caseId/integrations/jira/issues')
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class CaseIssueLinkController {
   constructor(@Inject(IssueLinkService) private readonly issueLinks: IssueLinkService) {}
@@ -84,7 +88,7 @@ export class CaseIssueLinkController {
 @Controller(
   'projects/:projectSlug/runs/:runId/items/:itemId/results/:resultId/integrations/jira/issues',
 )
-@UseGuards(OrganizationAuthGuard)
+@UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class ResultIssueLinkController {
   constructor(

@@ -49,6 +49,9 @@ describe('tenant database isolation', () => {
   });
 
   afterAll(async () => {
+    await admin.auditLog.deleteMany({
+      where: { organizationId: { in: [firstOrganizationId, secondOrganizationId] } },
+    });
     await admin.project.deleteMany({
       where: { organizationId: { in: [firstOrganizationId, secondOrganizationId] } },
     });
@@ -84,6 +87,94 @@ describe('tenant database isolation', () => {
         }),
       ),
     ).rejects.toThrow();
+  });
+
+  it('allows appending audit events but forbids changing or deleting them', async () => {
+    const auditLogId = randomUUID();
+    await runInTenant(application, firstOrganizationId, (transaction) =>
+      transaction.auditLog.create({
+        data: {
+          organizationId: firstOrganizationId,
+          id: auditLogId,
+          actorId: randomUUID(),
+          actorType: 'system',
+          action: 'test.audit_appended',
+          targetType: 'rls_test',
+          targetId: null,
+        },
+      }),
+    );
+
+    await expect(
+      runInTenant(application, firstOrganizationId, (transaction) =>
+        transaction.auditLog.updateMany({
+          where: { organizationId: firstOrganizationId, id: auditLogId },
+          data: { action: 'test.audit_changed' },
+        }),
+      ),
+    ).rejects.toThrow();
+    await expect(
+      runInTenant(application, firstOrganizationId, (transaction) =>
+        transaction.auditLog.deleteMany({
+          where: { organizationId: firstOrganizationId, id: auditLogId },
+        }),
+      ),
+    ).rejects.toThrow();
+
+    await expect(
+      runInTenant(application, firstOrganizationId, (transaction) =>
+        transaction.auditLog.findMany({ where: { id: auditLogId }, select: { action: true } }),
+      ),
+    ).resolves.toEqual([{ action: 'test.audit_appended' }]);
+    await expect(
+      runInTenant(application, secondOrganizationId, (transaction) =>
+        transaction.auditLog.findMany({ where: { id: auditLogId } }),
+      ),
+    ).resolves.toEqual([]);
+  });
+
+  it('enforces the tenant RLS policy on every table with organization_id', async () => {
+    const tables = await admin.$queryRaw<
+      Array<{
+        tableName: string;
+        rowSecurity: boolean;
+        forceRowSecurity: boolean;
+        hasTenantPolicy: boolean;
+      }>
+    >`
+      SELECT
+        relation.relname AS "tableName",
+        relation.relrowsecurity AS "rowSecurity",
+        relation.relforcerowsecurity AS "forceRowSecurity",
+        EXISTS (
+          SELECT 1
+          FROM pg_policy AS policy
+          WHERE policy.polrelid = relation.oid
+            AND policy.polname = 'tenant_isolation'
+            AND pg_get_expr(policy.polqual, policy.polrelid) LIKE '%current_organization_id%'
+            AND pg_get_expr(policy.polwithcheck, policy.polrelid) LIKE '%current_organization_id%'
+        ) AS "hasTenantPolicy"
+      FROM pg_class AS relation
+      JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+      WHERE namespace.nspname = 'public'
+        AND relation.relkind IN ('r', 'p')
+        AND EXISTS (
+          SELECT 1
+          FROM pg_attribute AS attribute
+          WHERE attribute.attrelid = relation.oid
+            AND attribute.attname = 'organization_id'
+            AND NOT attribute.attisdropped
+        )
+      ORDER BY relation.relname
+    `;
+
+    expect(tables.length).toBeGreaterThan(20);
+    expect(
+      tables.filter(
+        ({ rowSecurity, forceRowSecurity, hasTenantPolicy }) =>
+          !rowSecurity || !forceRowSecurity || !hasTenantPolicy,
+      ),
+    ).toEqual([]);
   });
 
   it('does not leak tenant context to the connection pool', async () => {

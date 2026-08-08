@@ -223,6 +223,9 @@ describe('authentication API', () => {
         await Promise.allSettled(
           [...attachments, ...uploads].map(({ storageKey }) => storage.delete(storageKey)),
         );
+        await admin.auditLog.deleteMany({
+          where: { organizationId: { in: organizationIds } },
+        });
         await admin.attachment.deleteMany({
           where: { organizationId: { in: organizationIds } },
         });
@@ -288,7 +291,11 @@ describe('authentication API', () => {
 
     expect(unknownEmail.statusCode).toBe(401);
     expect(wrongPassword.statusCode).toBe(401);
-    expect(unknownEmail.json()).toEqual(wrongPassword.json());
+    const { requestId: unknownRequestId, ...unknownError } = unknownEmail.json().error;
+    const { requestId: wrongPasswordRequestId, ...wrongPasswordError } = wrongPassword.json().error;
+    expect(unknownError).toEqual(wrongPasswordError);
+    expect(unknownRequestId).toEqual(expect.any(String));
+    expect(wrongPasswordRequestId).toEqual(expect.any(String));
   });
 
   it('returns the authenticated user for an active bearer session', async () => {
@@ -401,6 +408,7 @@ describe('authentication API', () => {
         code: 'not_found',
         message: 'The requested resource was not found',
         details: { resource: 'organization' },
+        requestId: expect.any(String),
       },
     });
   });
@@ -622,6 +630,19 @@ describe('authentication API', () => {
         select: { deletedAt: true },
       }),
     ).resolves.toEqual({ deletedAt: null });
+    await expect(
+      admin.auditLog.findMany({
+        where: {
+          organizationId,
+          targetId: archiveCandidate.json().project.id as string,
+        },
+        orderBy: { createdAt: 'asc' },
+        select: { action: true, metadata: true },
+      }),
+    ).resolves.toEqual([
+      { action: 'project.archived', metadata: { slug: archivedSlug } },
+      { action: 'project.restored', metadata: { slug: archivedSlug } },
+    ]);
   });
 
   it('lists current test case versions with pagination and tenant-safe project resolution', async () => {
@@ -2229,6 +2250,17 @@ describe('authentication API', () => {
     });
     expect(restoredAgain.statusCode, restoredAgain.body).toBe(201);
     expect(restoredAgain.json()).toEqual(restored.json());
+    await expect(
+      admin.auditLog.findMany({
+        where: { organizationId, targetId: runId },
+        orderBy: { createdAt: 'asc' },
+        select: { action: true },
+      }),
+    ).resolves.toEqual([
+      { action: 'test_run.closed' },
+      { action: 'test_run.archived' },
+      { action: 'test_run.restored' },
+    ]);
   });
 
   it('assigns unique case numbers to concurrent creates', async () => {
