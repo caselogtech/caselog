@@ -244,6 +244,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/workspaces/{workspaceId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WorkspaceController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WorkspaceSettingsController_get"];
+        put?: never;
+        post?: never;
+        delete: operations["WorkspaceSettingsController_delete"];
+        options?: never;
+        head?: never;
+        patch: operations["WorkspaceSettingsController_update"];
+        trace?: never;
+    };
     "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/uploads": {
         parameters: {
             query?: never;
@@ -1284,6 +1316,8 @@ export interface components {
                 membershipId: string;
                 /** @enum {string} */
                 role: "owner" | "admin" | "lead" | "tester" | "contributor" | "read_only";
+                deletedAt: string | null;
+                recoverableUntil: string | null;
             }[];
         };
         WorkspaceSlugAvailabilityResponseDto: {
@@ -1303,6 +1337,8 @@ export interface components {
                 membershipId: string;
                 /** @enum {string} */
                 role: "owner" | "admin" | "lead" | "tester" | "contributor" | "read_only";
+                deletedAt: string | null;
+                recoverableUntil: string | null;
             };
             demoProject: {
                 /** Format: uuid */
@@ -1311,6 +1347,23 @@ export interface components {
                 name: string;
                 slug: string;
             };
+        };
+        WorkspaceSettingsResponseDto: {
+            workspace: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+                deletedAt: string | null;
+                recoverableUntil: string | null;
+            };
+        };
+        UpdateWorkspaceRequestDto: {
+            name?: string;
+            slug?: string;
+        };
+        DeleteWorkspaceRequestDto: {
+            confirmation: string;
         };
         CreateUploadSessionRequestDto: {
             fileName: string;
@@ -3124,7 +3177,9 @@ export interface operations {
     };
     WorkspaceController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "active" | "deleted";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3199,6 +3254,128 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceSlugAvailabilityResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceSettingsResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceSettingsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceSettingsResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceSettingsController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteWorkspaceRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceSettingsResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceSettingsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkspaceRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceSettingsResponseDto"];
                 };
             };
             /** @description API error */
