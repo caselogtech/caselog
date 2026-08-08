@@ -9,6 +9,7 @@ import {
   sessionResponseSchema,
   workspaceListResponseSchema,
   workspaceSlugAvailabilityResponseSchema,
+  workspaceSettingsResponseSchema,
 } from '@caselog/schemas';
 import { createZodDto } from 'nestjs-zod';
 
@@ -21,6 +22,7 @@ export class WorkspaceListResponseDto extends createZodDto(workspaceListResponse
 export class WorkspaceSlugAvailabilityResponseDto extends createZodDto(
   workspaceSlugAvailabilityResponseSchema,
 ) {}
+export class WorkspaceSettingsResponseDto extends createZodDto(workspaceSettingsResponseSchema) {}
 export class CreateWorkspaceResponseDto extends createZodDto(createWorkspaceResponseSchema) {}
 export class ApiTokenListResponseDto extends createZodDto(apiTokenListResponseSchema) {}
 export class CreateApiTokenResponseDto extends createZodDto(createApiTokenResponseSchema) {}

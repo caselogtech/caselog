@@ -29,10 +29,15 @@ export class TenantAccessRepository {
   ) {}
 
   async findBySlug(userId: string, slug: string): Promise<OrganizationAccess | undefined> {
-    const organization = await this.prisma.organization.findFirst({
-      where: { slug, deletedAt: null },
-      select: { id: true, name: true, slug: true },
-    });
+    const [organization] = await this.prisma.$queryRaw<
+      Array<{ id: string; name: string; slug: string }>
+    >`
+      SELECT
+        organization_id AS id,
+        name,
+        slug
+      FROM public.resolve_active_workspace_slug(${slug}::VARCHAR(30))
+    `;
 
     if (!organization) {
       return undefined;
@@ -62,6 +67,12 @@ export class TenantAccessRepository {
   async validatePrincipal(
     principal: OrganizationSessionPrincipal,
   ): Promise<OrganizationSessionPrincipal | undefined> {
+    const organization = await this.prisma.organization.findFirst({
+      where: { id: principal.organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!organization) return undefined;
+
     const membership = await this.tenantDatabase.run(principal.organizationId, (transaction) =>
       transaction.membership.findUnique({
         where: {

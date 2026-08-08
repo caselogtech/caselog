@@ -6,6 +6,7 @@ import {
   workspaceSlugAvailabilityResponseSchema,
   type CreateWorkspaceRequest,
   type CreateWorkspaceResponse,
+  type WorkspaceListQuery,
   type WorkspaceListResponse,
   type WorkspaceSlugAvailabilityResponse,
 } from '@caselog/schemas';
@@ -24,9 +25,9 @@ export class WorkspaceService {
     @Inject(IdentityRepository) private readonly identities: IdentityRepository,
   ) {}
 
-  async list(userId: string): Promise<WorkspaceListResponse> {
+  async list(userId: string, query: WorkspaceListQuery): Promise<WorkspaceListResponse> {
     return workspaceListResponseSchema.parse({
-      workspaces: await this.workspaces.listForUser(userId),
+      workspaces: await this.workspaces.listForUser(userId, query.status),
     });
   }
 

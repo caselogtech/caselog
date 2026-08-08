@@ -115,8 +115,20 @@ model Organization {
   issueCreationRequests  IssueCreationRequest[]
   auditLogs              AuditLog[]
   invitations            WorkspaceInvitation[]
+  slugRedirects          OrganizationSlugRedirect[]
 
   @@map("organizations")
+}
+
+model OrganizationSlugRedirect {
+  organizationId String   @map("organization_id") @db.Uuid
+  slug           String   @unique(map: "uq_organization_slug_redirects_slug") @db.VarChar(30)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@id([organizationId, slug], map: "pk_organization_slug_redirects")
+  @@map("organization_slug_redirects")
 }
 
 model IdempotencyRecord {
@@ -156,7 +168,7 @@ model User {
   integrationConnections IntegrationConnection[] @relation("IntegrationConnectionCreator")
   createdIssueLinks      IssueLink[]             @relation("IssueLinkCreator")
   issueCreationRequests  IssueCreationRequest[]  @relation("IssueCreationRequestCreator")
-  sentInvitations        WorkspaceInvitation[]    @relation("InvitationSender")
+  sentInvitations        WorkspaceInvitation[]   @relation("InvitationSender")
 
   @@map("users")
 }

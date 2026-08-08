@@ -7,6 +7,8 @@ import {
   registerRequestSchema,
   resetPasswordRequestSchema,
   workspaceSlugAvailabilityQuerySchema,
+  workspaceListQuerySchema,
+  workspaceIdParamsSchema,
 } from '@caselog/schemas';
 import { createZodDto } from 'nestjs-zod';
 
@@ -27,3 +29,7 @@ export class CreateWorkspaceRequestDto extends createZodDto(createWorkspaceReque
 export class WorkspaceSlugAvailabilityQueryDto extends createZodDto(
   workspaceSlugAvailabilityQuerySchema,
 ) {}
+
+export class WorkspaceListQueryDto extends createZodDto(workspaceListQuerySchema) {}
+
+export class WorkspaceIdParamsDto extends createZodDto(workspaceIdParamsSchema) {}

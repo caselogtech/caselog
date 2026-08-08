@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import type { WorkspaceSummary } from '@caselog/schemas';
+import type { WorkspaceListQuery, WorkspaceSummary } from '@caselog/schemas';
 import { Prisma } from '../../../generated/prisma/client';
 import type { MembershipRole } from '../../../generated/prisma/enums';
 import { PrismaService } from '../../../core/database/infrastructure/prisma/prisma.service';
@@ -23,6 +23,8 @@ type WorkspaceRow = {
   slug: string;
   membershipId: string;
   role: WorkspaceSummary['role'];
+  deletedAt?: Date;
+  recoverableUntil?: Date;
 };
 
 export type ProvisionedWorkspace = {
@@ -39,9 +41,25 @@ export type ProvisionWorkspaceResult =
 export class WorkspaceRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async listForUser(userId: string): Promise<WorkspaceSummary[]> {
+  async listForUser(
+    userId: string,
+    status: WorkspaceListQuery['status'],
+  ): Promise<WorkspaceSummary[]> {
     const rows = await this.prisma.$transaction(async (transaction) => {
       await transaction.$executeRaw`SELECT set_config('caselog.user_id', ${userId}, true)`;
+      if (status === 'deleted') {
+        return transaction.$queryRaw<WorkspaceRow[]>`
+          SELECT
+            organization_id AS "organizationId",
+            name,
+            slug,
+            membership_id AS "membershipId",
+            role,
+            deleted_at AS "deletedAt",
+            recoverable_until AS "recoverableUntil"
+          FROM public.list_current_user_deleted_workspaces()
+        `;
+      }
       return transaction.$queryRaw<WorkspaceRow[]>`
         SELECT
           organization_id AS "organizationId",
@@ -58,15 +76,16 @@ export class WorkspaceRepository {
       slug: row.slug,
       membershipId: row.membershipId,
       role: row.role,
+      deletedAt: row.deletedAt?.toISOString() ?? null,
+      recoverableUntil: row.recoverableUntil?.toISOString() ?? null,
     }));
   }
 
   async isSlugAvailable(slug: string): Promise<boolean> {
-    const organization = await this.prisma.organization.findUnique({
-      where: { slug },
-      select: { id: true },
-    });
-    return !organization;
+    const [result] = await this.prisma.$queryRaw<Array<{ available: boolean }>>`
+      SELECT public.workspace_slug_is_available(${slug}::VARCHAR(30)) AS available
+    `;
+    return result?.available ?? false;
   }
 
   async provision(userId: string, name: string, slug: string): Promise<ProvisionWorkspaceResult> {
@@ -74,13 +93,20 @@ export class WorkspaceRepository {
       return await this.prisma.$transaction(async (transaction) => {
         await transaction.$executeRaw`SELECT set_config('caselog.user_id', ${userId}, true)`;
         await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
+        await transaction.$executeRaw`
+          SELECT pg_advisory_xact_lock(hashtextextended(${`workspace-slug:${slug}`}, 0))
+        `;
 
         const existing = await transaction.$queryRaw<Array<{ count: bigint }>>`
-          SELECT COUNT(*)::BIGINT AS count FROM public.list_current_user_workspaces()
+          SELECT public.count_current_user_workspaces() AS count
         `;
         if ((existing[0]?.count ?? 0n) >= BigInt(MAX_WORKSPACES_PER_USER)) {
           return { kind: 'limit_reached' };
         }
+        const [availability] = await transaction.$queryRaw<Array<{ available: boolean }>>`
+          SELECT public.workspace_slug_is_available(${slug}::VARCHAR(30)) AS available
+        `;
+        if (!availability?.available) return { kind: 'slug_conflict' };
 
         const organization = await transaction.organization.create({
           data: { name, slug },
@@ -147,6 +173,8 @@ export class WorkspaceRepository {
               ...organization,
               membershipId: membership.id,
               role: ROLE_MAP[membership.role],
+              deletedAt: null,
+              recoverableUntil: null,
             },
             demoProject: project,
           },

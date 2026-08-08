@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
   Post,
   Query,
   UseGuards,
@@ -16,28 +17,43 @@ import type {
   SessionPrincipal,
   WorkspaceListResponse,
   WorkspaceSlugAvailabilityResponse,
+  WorkspaceSettingsResponse,
 } from '@caselog/schemas';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
-import { CreateWorkspaceRequestDto, WorkspaceSlugAvailabilityQueryDto } from '../dto/auth.dto';
+import {
+  CreateWorkspaceRequestDto,
+  WorkspaceIdParamsDto,
+  WorkspaceListQueryDto,
+  WorkspaceSlugAvailabilityQueryDto,
+} from '../dto/auth.dto';
 import { SessionAuthGuard } from '../guards/session-auth.guard';
 import { CurrentSession } from '../decorators/session-principal.decorator';
 import { WorkspaceService } from '../../application/services/workspace.service';
+import { WorkspaceSettingsService } from '../../application/services/workspace-settings.service';
 import {
   CreateWorkspaceResponseDto,
   WorkspaceListResponseDto,
   WorkspaceSlugAvailabilityResponseDto,
+  WorkspaceSettingsResponseDto,
 } from '../dto/auth-response.dto';
 
 @Controller('auth/workspaces')
 @UseGuards(SessionAuthGuard)
 @ApiBearerAuth('access-token')
 export class WorkspaceController {
-  constructor(@Inject(WorkspaceService) private readonly workspaces: WorkspaceService) {}
+  constructor(
+    @Inject(WorkspaceService) private readonly workspaces: WorkspaceService,
+    @Inject(WorkspaceSettingsService)
+    private readonly workspaceSettings: WorkspaceSettingsService,
+  ) {}
 
   @Get()
   @ApiOkResponse({ type: WorkspaceListResponseDto })
-  list(@CurrentSession() principal: SessionPrincipal): Promise<WorkspaceListResponse> {
-    return this.workspaces.list(principal.sub);
+  list(
+    @CurrentSession() principal: SessionPrincipal,
+    @Query() query: WorkspaceListQueryDto,
+  ): Promise<WorkspaceListResponse> {
+    return this.workspaces.list(principal.sub, query);
   }
 
   @Get('slug-availability')
@@ -58,5 +74,15 @@ export class WorkspaceController {
     @Body() request: CreateWorkspaceRequestDto,
   ): Promise<CreateWorkspaceResponse> {
     return this.workspaces.create(principal.sub, request);
+  }
+
+  @Post(':workspaceId/restore')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: WorkspaceSettingsResponseDto })
+  restore(
+    @CurrentSession() principal: SessionPrincipal,
+    @Param() params: WorkspaceIdParamsDto,
+  ): Promise<WorkspaceSettingsResponse> {
+    return this.workspaceSettings.restore(principal.sub, params.workspaceId);
   }
 }

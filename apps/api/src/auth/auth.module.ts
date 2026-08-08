@@ -20,10 +20,18 @@ import { TenantAccessRepository } from './infrastructure/repositories/tenant-acc
 import { WorkspaceController } from './presentation/controllers/workspace.controller';
 import { WorkspaceRepository } from './infrastructure/repositories/workspace.repository';
 import { WorkspaceService } from './application/services/workspace.service';
+import { WorkspaceSettingsController } from './presentation/controllers/workspace-settings.controller';
+import { WorkspaceSettingsRepository } from './infrastructure/repositories/workspace-settings.repository';
+import { WorkspaceSettingsService } from './application/services/workspace-settings.service';
 
 @Module({
   imports: [JwtModule.register({}), PassportModule.register({ session: false })],
-  controllers: [ApiTokenController, AuthController, WorkspaceController],
+  controllers: [
+    ApiTokenController,
+    AuthController,
+    WorkspaceController,
+    WorkspaceSettingsController,
+  ],
   providers: [
     { provide: AUTH_CONFIG, useFactory: createAuthConfig },
     AccountTokenRepository,
@@ -41,6 +49,8 @@ import { WorkspaceService } from './application/services/workspace.service';
     TenantAccessRepository,
     WorkspaceRepository,
     WorkspaceService,
+    WorkspaceSettingsRepository,
+    WorkspaceSettingsService,
   ],
   exports: [ApiTokenService, OrganizationAuthGuard, OrganizationRoleGuard],
 })

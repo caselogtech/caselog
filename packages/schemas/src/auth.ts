@@ -162,6 +162,12 @@ export const workspaceSummarySchema = z.object({
   slug: organizationSlugSchema,
   membershipId: z.uuid(),
   role: workspaceRoleSchema,
+  deletedAt: z.iso.datetime().nullable(),
+  recoverableUntil: z.iso.datetime().nullable(),
+});
+
+export const workspaceListQuerySchema = z.object({
+  status: z.enum(['active', 'deleted']).default('active'),
 });
 
 export const workspaceListResponseSchema = z.object({
@@ -190,6 +196,31 @@ export const workspaceSlugAvailabilityQuerySchema = z.object({
 export const workspaceSlugAvailabilityResponseSchema = z.object({
   available: z.boolean(),
 });
+
+export const workspaceSettingsSchema = z.object({
+  id: z.uuid(),
+  name: z.string().min(1).max(120),
+  slug: organizationSlugSchema,
+  deletedAt: z.iso.datetime().nullable(),
+  recoverableUntil: z.iso.datetime().nullable(),
+});
+
+export const workspaceSettingsResponseSchema = z.object({ workspace: workspaceSettingsSchema });
+
+export const updateWorkspaceRequestSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120).optional(),
+    slug: organizationSlugSchema.optional(),
+  })
+  .refine(({ name, slug }) => name !== undefined || slug !== undefined, {
+    message: 'At least one workspace setting must be provided',
+  });
+
+export const deleteWorkspaceRequestSchema = z.object({
+  confirmation: z.string().min(1).max(120),
+});
+
+export const workspaceIdParamsSchema = z.object({ workspaceId: z.uuid() });
 
 const opaqueAccountTokenSchema = z.string().min(32).max(256);
 
@@ -236,6 +267,7 @@ export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 export type MessageResponse = z.infer<typeof messageResponseSchema>;
 export type EmailVerificationResponse = z.infer<typeof emailVerificationResponseSchema>;
 export type WorkspaceSummary = z.infer<typeof workspaceSummarySchema>;
+export type WorkspaceListQuery = z.infer<typeof workspaceListQuerySchema>;
 export type WorkspaceListResponse = z.infer<typeof workspaceListResponseSchema>;
 export type CreateWorkspaceRequest = z.infer<typeof createWorkspaceRequestSchema>;
 export type CreateWorkspaceResponse = z.infer<typeof createWorkspaceResponseSchema>;
@@ -243,3 +275,8 @@ export type WorkspaceSlugAvailabilityQuery = z.infer<typeof workspaceSlugAvailab
 export type WorkspaceSlugAvailabilityResponse = z.infer<
   typeof workspaceSlugAvailabilityResponseSchema
 >;
+export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;
+export type WorkspaceSettingsResponse = z.infer<typeof workspaceSettingsResponseSchema>;
+export type UpdateWorkspaceRequest = z.infer<typeof updateWorkspaceRequestSchema>;
+export type DeleteWorkspaceRequest = z.infer<typeof deleteWorkspaceRequestSchema>;
+export type WorkspaceIdParams = z.infer<typeof workspaceIdParamsSchema>;
