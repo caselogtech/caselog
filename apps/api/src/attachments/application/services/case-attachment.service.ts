@@ -98,8 +98,6 @@ export class CaseAttachmentService {
     }
 
     const upload = lookup.value.upload;
-    const source = await this.storage.stat(upload.storageKey);
-    if (!source || !uploadMetadataMatches(source, upload)) this.incompleteUpload();
     const storageKey = this.storagePath(
       principal.organizationId,
       caseId,
@@ -110,6 +108,8 @@ export class CaseAttachmentService {
 
     let response: CaseAttachmentResponse;
     try {
+      const source = await this.storage.stat(upload.storageKey);
+      if (!source || !uploadMetadataMatches(source, upload)) this.incompleteUpload();
       await this.storage.copy(upload.storageKey, storageKey);
       const snapshot = await this.storage.stat(storageKey);
       if (!snapshot || !uploadMetadataMatches(snapshot, upload)) this.incompleteUpload();

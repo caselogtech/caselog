@@ -132,6 +132,9 @@ describe('case attachments', () => {
       await admin.section.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.suite.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.project.deleteMany({ where: { organizationId: { in: organizationIds } } });
+      await admin.usageCounter.deleteMany({
+        where: { organizationId: { in: organizationIds } },
+      });
       await admin.membership.deleteMany({ where: { organizationId: { in: organizationIds } } });
       await admin.organization.deleteMany({ where: { id: { in: organizationIds } } });
       await admin.user.deleteMany({ where: { email: { in: [email, readOnlyEmail] } } });
@@ -217,6 +220,7 @@ describe('case attachments', () => {
   });
 
   it('completes the same upload concurrently without duplicating the attachment', async () => {
+    const usageBefore = await storageBytesUsed();
     const body = Buffer.from('concurrent case attachment');
     const upload = await createUploadSession('concurrent.txt', body);
     const stored = await fetch(upload.upload.url, {
@@ -239,6 +243,34 @@ describe('case attachments', () => {
     await expect(
       admin.attachment.count({ where: { organizationId, id: upload.upload.id } }),
     ).resolves.toBe(1);
+    await expect(storageBytesUsed()).resolves.toBe(usageBefore + BigInt(body.byteLength));
+  });
+
+  it('keeps storage usage consistent across soft delete, restore, and hard delete', async () => {
+    const usageBefore = await storageBytesUsed();
+    const content = 'storage accounting lifecycle';
+    const uploaded = await uploadAttachment('accounting.txt', content);
+    const attachmentId = uploaded.response.attachment.id;
+    const sizeBytes = BigInt(Buffer.byteLength(content));
+
+    await expect(storageBytesUsed()).resolves.toBe(usageBefore + sizeBytes);
+
+    await admin.attachment.update({
+      where: { organizationId_id: { organizationId, id: attachmentId } },
+      data: { deletedAt: new Date() },
+    });
+    await expect(storageBytesUsed()).resolves.toBe(usageBefore);
+
+    await admin.attachment.update({
+      where: { organizationId_id: { organizationId, id: attachmentId } },
+      data: { deletedAt: null },
+    });
+    await expect(storageBytesUsed()).resolves.toBe(usageBefore + sizeBytes);
+
+    await admin.attachment.delete({
+      where: { organizationId_id: { organizationId, id: attachmentId } },
+    });
+    await expect(storageBytesUsed()).resolves.toBe(usageBefore);
   });
 
   it('hides case attachment endpoints across tenant boundaries', async () => {
@@ -323,6 +355,11 @@ describe('case attachments', () => {
       uploadId: upload.upload.id,
       response: caseAttachmentResponseSchema.parse(completion.json()),
     };
+  }
+
+  async function storageBytesUsed(): Promise<bigint> {
+    const counter = await admin.usageCounter.findUnique({ where: { organizationId } });
+    return counter?.storageBytesUsed ?? 0n;
   }
 });
 
