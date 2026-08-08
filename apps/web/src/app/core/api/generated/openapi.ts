@@ -4,80 +4,16 @@
  */
 
 export interface paths {
-    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/uploads": {
+    "/api/v1/audit-logs": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["AuditLogController_list"];
         put?: never;
-        post: operations["AttachmentController_createUploadSession"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/results/{resultId}/attachments/{attachmentId}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["AttachmentDownloadController_createDownload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/cases/{caseId}/versions/{versionId}/uploads": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["CaseAttachmentController_createUploadSession"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/cases/{caseId}/versions/{versionId}/attachments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["CaseAttachmentController_list"];
-        put?: never;
-        post: operations["CaseAttachmentController_complete"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/cases/{caseId}/versions/{versionId}/attachments/{attachmentId}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["CaseAttachmentController_createDownload"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -308,6 +244,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AttachmentController_createUploadSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/results/{resultId}/attachments/{attachmentId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AttachmentDownloadController_createDownload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/cases/{caseId}/versions/{versionId}/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CaseAttachmentController_createUploadSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/cases/{caseId}/versions/{versionId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CaseAttachmentController_list"];
+        put?: never;
+        post: operations["CaseAttachmentController_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/cases/{caseId}/versions/{versionId}/attachments/{attachmentId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CaseAttachmentController_createDownload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -527,6 +543,150 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["ResultIssueLinkController_unlink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["InvitationController_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["InvitationController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["InvitationManagementController_list"];
+        put?: never;
+        post: operations["InvitationManagementController_createMany"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/invitations/{invitationId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["InvitationManagementController_resend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/invitations/{invitationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["InvitationManagementController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MemberController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/{membershipId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["MemberController_deactivate"];
+        options?: never;
+        head?: never;
+        patch: operations["MemberController_updateRole"];
+        trace?: never;
+    };
+    "/api/v1/members/{membershipId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MemberController_activate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/{membershipId}/transfer-ownership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MemberController_transferOwnership"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -984,70 +1144,24 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        CreateUploadSessionRequestDto: {
-            fileName: string;
-            /** @enum {string} */
-            contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "application/pdf" | "text/plain";
-            sizeBytes: number;
-            checksumSha256: string;
-            stepPosition?: number;
-        };
-        CreateUploadSessionResponseDto: {
-            upload: {
-                /** Format: uuid */
-                id: string;
-                /** @constant */
-                method: "PUT";
-                /** Format: uri */
-                url: string;
-                headers: {
-                    [key: string]: string;
-                };
-                /** Format: date-time */
-                expiresAt: string;
-            };
-        };
-        AttachmentDownloadResponseDto: {
-            download: {
-                /** Format: uri */
-                url: string;
-                /** Format: date-time */
-                expiresAt: string;
-            };
-        };
-        CreateCaseAttachmentUploadSessionRequestDto: {
-            fileName: string;
-            /** @enum {string} */
-            contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "application/pdf" | "text/plain";
-            sizeBytes: number;
-            checksumSha256: string;
-        };
-        CompleteCaseAttachmentRequestDto: {
-            /** Format: uuid */
-            uploadId: string;
-        };
-        CaseAttachmentResponseDto: {
-            attachment: {
-                /** Format: uuid */
-                id: string;
-                fileName: string;
-                /** @enum {string} */
-                contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "application/pdf" | "text/plain";
-                sizeBytes: number;
-                checksumSha256: string;
-                /** Format: date-time */
-                createdAt: string;
-            };
-        };
-        CaseAttachmentListResponseDto: {
+        AuditLogListResponseDto: {
             items: {
                 /** Format: uuid */
                 id: string;
-                fileName: string;
-                /** @enum {string} */
-                contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "application/pdf" | "text/plain";
-                sizeBytes: number;
-                checksumSha256: string;
+                actor: {
+                    /** Format: uuid */
+                    id: string;
+                    /** @enum {string} */
+                    type: "user" | "api_token" | "system";
+                };
+                action: string;
+                target: {
+                    type: string;
+                    id: string | null;
+                };
+                metadata: {
+                    [key: string]: unknown;
+                };
                 /** Format: date-time */
                 createdAt: string;
             }[];
@@ -1197,6 +1311,75 @@ export interface components {
                 name: string;
                 slug: string;
             };
+        };
+        CreateUploadSessionRequestDto: {
+            fileName: string;
+            /** @enum {string} */
+            contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "application/pdf" | "text/plain";
+            sizeBytes: number;
+            checksumSha256: string;
+            stepPosition?: number;
+        };
+        CreateUploadSessionResponseDto: {
+            upload: {
+                /** Format: uuid */
+                id: string;
+                /** @constant */
+                method: "PUT";
+                /** Format: uri */
+                url: string;
+                headers: {
+                    [key: string]: string;
+                };
+                /** Format: date-time */
+                expiresAt: string;
+            };
+        };
+        AttachmentDownloadResponseDto: {
+            download: {
+                /** Format: uri */
+                url: string;
+                /** Format: date-time */
+                expiresAt: string;
+            };
+        };
+        CreateCaseAttachmentUploadSessionRequestDto: {
+            fileName: string;
+            /** @enum {string} */
+            contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "application/pdf" | "text/plain";
+            sizeBytes: number;
+            checksumSha256: string;
+        };
+        CompleteCaseAttachmentRequestDto: {
+            /** Format: uuid */
+            uploadId: string;
+        };
+        CaseAttachmentResponseDto: {
+            attachment: {
+                /** Format: uuid */
+                id: string;
+                fileName: string;
+                /** @enum {string} */
+                contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "application/pdf" | "text/plain";
+                sizeBytes: number;
+                checksumSha256: string;
+                /** Format: date-time */
+                createdAt: string;
+            };
+        };
+        CaseAttachmentListResponseDto: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                fileName: string;
+                /** @enum {string} */
+                contentType: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "application/pdf" | "text/plain";
+                sizeBytes: number;
+                checksumSha256: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            nextCursor: string | null;
         };
         HealthResponseDto: {
             /** @constant */
@@ -1463,6 +1646,157 @@ export interface components {
                 createdAt: string;
             };
             attachmentWarnings: string[];
+        };
+        WorkspaceInvitationPreviewDto: {
+            email: string;
+            /** @enum {string} */
+            role: "admin" | "lead" | "tester" | "contributor" | "read_only";
+            /** Format: date-time */
+            expiresAt: string;
+            workspace: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+            };
+            invitedBy: {
+                /** Format: uuid */
+                id: string;
+                displayName: string;
+            };
+        };
+        AcceptWorkspaceInvitationResponseDto: {
+            workspace: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+            };
+            /** Format: uuid */
+            membershipId: string;
+            /** @enum {string} */
+            role: "admin" | "lead" | "tester" | "contributor" | "read_only";
+        };
+        WorkspaceInvitationListResponseDto: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                /** @enum {string} */
+                role: "admin" | "lead" | "tester" | "contributor" | "read_only";
+                /** @enum {string} */
+                status: "pending" | "accepted" | "revoked" | "expired";
+                /** Format: date-time */
+                expiresAt: string;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                invitedBy: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                };
+            }[];
+            nextCursor: string | null;
+        };
+        CreateWorkspaceInvitationsRequestDto: {
+            invitations: {
+                email: string;
+                /** @enum {string} */
+                role: "admin" | "lead" | "tester" | "contributor" | "read_only";
+            }[];
+        };
+        CreateWorkspaceInvitationsResponseDto: {
+            invitations: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                /** @enum {string} */
+                role: "admin" | "lead" | "tester" | "contributor" | "read_only";
+                /** @enum {string} */
+                status: "pending" | "accepted" | "revoked" | "expired";
+                /** Format: date-time */
+                expiresAt: string;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                invitedBy: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                };
+            }[];
+        };
+        WorkspaceInvitationResponseDto: {
+            invitation: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                /** @enum {string} */
+                role: "admin" | "lead" | "tester" | "contributor" | "read_only";
+                /** @enum {string} */
+                status: "pending" | "accepted" | "revoked" | "expired";
+                /** Format: date-time */
+                expiresAt: string;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                invitedBy: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                };
+            };
+        };
+        WorkspaceMemberListResponseDto: {
+            items: {
+                /** Format: uuid */
+                membershipId: string;
+                user: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: email */
+                    email: string;
+                    displayName: string;
+                };
+                /** @enum {string} */
+                role: "owner" | "admin" | "lead" | "tester" | "contributor" | "read_only";
+                /** @enum {string} */
+                state: "active" | "inactive";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            nextCursor: string | null;
+        };
+        UpdateWorkspaceMemberRoleRequestDto: {
+            /** @enum {string} */
+            role: "admin" | "lead" | "tester" | "contributor" | "read_only";
+        };
+        WorkspaceMemberResponseDto: {
+            member: {
+                /** Format: uuid */
+                membershipId: string;
+                user: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: email */
+                    email: string;
+                    displayName: string;
+                };
+                /** @enum {string} */
+                role: "owner" | "admin" | "lead" | "tester" | "contributor" | "read_only";
+                /** @enum {string} */
+                state: "active" | "inactive";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            };
         };
         ProjectListResponseDto: {
             items: {
@@ -2356,6 +2690,7 @@ export interface components {
                 details: {
                     [key: string]: unknown;
                 };
+                requestId: string;
             };
         };
     };
@@ -2367,124 +2702,15 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    AttachmentController_createUploadSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-                itemId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateUploadSessionRequestDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateUploadSessionResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    AttachmentDownloadController_createDownload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-                itemId: string;
-                resultId: string;
-                attachmentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentDownloadResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    CaseAttachmentController_createUploadSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                caseId: string;
-                versionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCaseAttachmentUploadSessionRequestDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateUploadSessionResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    CaseAttachmentController_list: {
+    AuditLogController_list: {
         parameters: {
             query?: {
                 cursor?: string;
                 limit?: number;
+                action?: string;
             };
             header?: never;
-            path: {
-                projectSlug: string;
-                caseId: string;
-                versionId: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -2494,76 +2720,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CaseAttachmentListResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    CaseAttachmentController_complete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                caseId: string;
-                versionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CompleteCaseAttachmentRequestDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CaseAttachmentResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    CaseAttachmentController_createDownload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                caseId: string;
-                versionId: string;
-                attachmentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentDownloadResponseDto"];
+                    "application/json": components["schemas"]["AuditLogListResponseDto"];
                 };
             };
             /** @description API error */
@@ -3042,6 +3199,216 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceSlugAvailabilityResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    AttachmentController_createUploadSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUploadSessionRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateUploadSessionResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    AttachmentDownloadController_createDownload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+                resultId: string;
+                attachmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentDownloadResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CaseAttachmentController_createUploadSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                caseId: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCaseAttachmentUploadSessionRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateUploadSessionResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CaseAttachmentController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+                caseId: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseAttachmentListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CaseAttachmentController_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                caseId: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteCaseAttachmentRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseAttachmentResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CaseAttachmentController_createDownload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                caseId: string;
+                versionId: string;
+                attachmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentDownloadResponseDto"];
                 };
             };
             /** @description API error */
@@ -3596,6 +3963,342 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    InvitationController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceInvitationPreviewDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    InvitationController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptWorkspaceInvitationResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    InvitationManagementController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                status?: "pending" | "accepted" | "revoked" | "expired" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceInvitationListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    InvitationManagementController_createMany: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWorkspaceInvitationsRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateWorkspaceInvitationsResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    InvitationManagementController_resend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceInvitationResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    InvitationManagementController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    MemberController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                state?: "active" | "inactive" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMemberListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    MemberController_deactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    MemberController_updateRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkspaceMemberRoleRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMemberResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    MemberController_activate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMemberResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    MemberController_transferOwnership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMemberResponseDto"];
+                };
             };
             /** @description API error */
             default: {
