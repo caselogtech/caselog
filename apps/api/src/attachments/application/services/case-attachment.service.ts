@@ -23,10 +23,10 @@ import {
   STORAGE_PROVIDER,
   type StorageProvider,
 } from '../../../core/storage/application/ports/storage.provider';
-import { uploadMetadataMatches } from '../../domain/policies/upload-metadata';
 import { CaseAttachmentQueryRepository } from '../../infrastructure/repositories/case-attachment-query.repository';
 import type { CaseAttachmentResult } from '../../infrastructure/repositories/case-attachment.types';
 import { CaseAttachmentUploadRepository } from '../../infrastructure/repositories/case-attachment-upload.repository';
+import { AttachmentBlobService } from './attachment-blob.service';
 
 @Injectable()
 export class CaseAttachmentService {
@@ -35,6 +35,7 @@ export class CaseAttachmentService {
     private readonly uploads: CaseAttachmentUploadRepository,
     @Inject(CaseAttachmentQueryRepository)
     private readonly attachments: CaseAttachmentQueryRepository,
+    @Inject(AttachmentBlobService) private readonly blobs: AttachmentBlobService,
     @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider,
   ) {}
 
@@ -98,28 +99,18 @@ export class CaseAttachmentService {
     }
 
     const upload = lookup.value.upload;
-    const storageKey = this.storagePath(
-      principal.organizationId,
-      caseId,
-      versionId,
-      'attachments',
-      upload.id,
-    );
+    const [blob] = await this.blobs.promoteMany(principal.organizationId, [upload]);
+    if (!blob) throw new Error('Promoted attachment blob disappeared');
 
     let response: CaseAttachmentResponse;
     try {
-      const source = await this.storage.stat(upload.storageKey);
-      if (!source || !uploadMetadataMatches(source, upload)) this.incompleteUpload();
-      await this.storage.copy(upload.storageKey, storageKey);
-      const snapshot = await this.storage.stat(storageKey);
-      if (!snapshot || !uploadMetadataMatches(snapshot, upload)) this.incompleteUpload();
       const result = await this.uploads.complete(
         principal.organizationId,
         principal.sub,
         projectSlug,
         caseId,
         versionId,
-        { storageKey, upload },
+        { storageKey: blob.storageKey, upload },
       );
       this.assertFound(result);
       response = caseAttachmentResponseSchema.parse({ attachment: result.value });
@@ -135,7 +126,6 @@ export class CaseAttachmentService {
       if (replay.kind === 'found' && replay.value.state === 'completed') {
         return caseAttachmentResponseSchema.parse({ attachment: replay.value.attachment });
       }
-      await this.storage.delete(storageKey).catch(() => undefined);
       throw error;
     }
     await this.storage.delete(upload.storageKey).catch(() => undefined);
@@ -178,6 +168,7 @@ export class CaseAttachmentService {
     const download = await this.storage.createDownloadUrl(
       result.value.storageKey,
       result.value.fileName,
+      result.value.contentType,
     );
     return attachmentDownloadResponseSchema.parse({
       download: { url: download.url, expiresAt: download.expiresAt.toISOString() },
@@ -207,18 +198,11 @@ export class CaseAttachmentService {
     }
   }
 
-  private incompleteUpload(): never {
-    throw new ResourceConflictError(
-      'upload_incomplete',
-      'The uploaded object is missing or does not match its declared metadata',
-    );
-  }
-
   private storagePath(
     organizationId: string,
     caseId: string,
     versionId: string,
-    collection: 'uploads' | 'attachments',
+    collection: 'uploads',
     objectId: string,
   ): string {
     return `${organizationId}/cases/${caseId}/versions/${versionId}/${collection}/${objectId}`;

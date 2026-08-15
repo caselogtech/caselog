@@ -4,12 +4,10 @@ import { PrismaService } from '../../../core/database/infrastructure/prisma/pris
 
 export type AttachmentStorageState = 'HEALTHY' | 'MISSING' | 'MISMATCH';
 
-export type MaintenanceAttachment = {
-  id: string;
-  storageKey: string;
-  contentType: string;
-  sizeBytes: number;
+export type MaintenanceBlob = {
   checksumSha256: string;
+  storageKey: string;
+  sizeBytes: number;
   storageStatus: AttachmentStorageState;
 };
 
@@ -65,61 +63,76 @@ export class StorageMaintenanceRepository {
     });
   }
 
-  listDiscardedAttachments(
+  listDiscardedBlobs(
     organizationId: string,
+    now: Date,
     limit: number,
-  ): Promise<MaintenanceObjectReference[]> {
-    return this.tenantDatabase.run(organizationId, (transaction) =>
-      transaction.attachment.findMany({
-        where: { organizationId, deletedAt: { not: null }, storageStatus: { not: 'MISSING' } },
-        orderBy: [{ deletedAt: 'asc' }, { id: 'asc' }],
+  ): Promise<Array<{ checksumSha256: string; storageKey: string }>> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const candidates = await transaction.attachmentBlob.findMany({
+        where: {
+          organizationId,
+          storageStatus: { not: 'MISSING' },
+          attachments: { some: { deletedAt: { not: null } }, none: { deletedAt: null } },
+        },
+        orderBy: [{ createdAt: 'asc' }, { checksumSha256: 'asc' }],
         take: limit,
-        select: { id: true, storageKey: true },
-      }),
-    );
+        select: { checksumSha256: true, storageKey: true },
+      });
+      const protectedUploads = await transaction.uploadSession.findMany({
+        where: {
+          organizationId,
+          checksumSha256: { in: candidates.map(({ checksumSha256 }) => checksumSha256) },
+          expiresAt: { gt: now },
+        },
+        select: { checksumSha256: true },
+      });
+      const protectedChecksums = new Set(
+        protectedUploads.map(({ checksumSha256 }) => checksumSha256),
+      );
+      return candidates.filter(({ checksumSha256 }) => !protectedChecksums.has(checksumSha256));
+    });
   }
 
-  listAttachmentsForReconciliation(
+  listBlobsForReconciliation(
     organizationId: string,
     checkedBefore: Date,
     limit: number,
-  ): Promise<MaintenanceAttachment[]> {
+  ): Promise<MaintenanceBlob[]> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
-      const attachments = await transaction.attachment.findMany({
+      const blobs = await transaction.attachmentBlob.findMany({
         where: {
           organizationId,
-          deletedAt: null,
+          attachments: { some: { deletedAt: null } },
           OR: [{ storageCheckedAt: null }, { storageCheckedAt: { lte: checkedBefore } }],
         },
-        orderBy: [{ storageCheckedAt: { sort: 'asc', nulls: 'first' } }, { id: 'asc' }],
+        orderBy: [{ storageCheckedAt: { sort: 'asc', nulls: 'first' } }, { checksumSha256: 'asc' }],
         take: limit,
         select: {
-          id: true,
-          storageKey: true,
-          contentType: true,
-          sizeBytes: true,
           checksumSha256: true,
+          storageKey: true,
+          sizeBytes: true,
           storageStatus: true,
         },
       });
-      return attachments.map((attachment) => ({
-        ...attachment,
-        sizeBytes: Number(attachment.sizeBytes),
+      return blobs.map((blob) => ({
+        ...blob,
+        sizeBytes: Number(blob.sizeBytes),
       }));
     });
   }
 
-  recordAttachmentStatus(
+  recordBlobStatus(
     organizationId: string,
-    attachmentId: string,
+    checksumSha256: string,
     storageKey: string,
     status: AttachmentStorageState,
     observedSizeBytes: number | null,
     checkedAt: Date,
   ): Promise<boolean> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
-      const updated = await transaction.attachment.updateMany({
-        where: { organizationId, id: attachmentId, storageKey },
+      const updated = await transaction.attachmentBlob.updateMany({
+        where: { organizationId, checksumSha256, storageKey },
         data: {
           storageStatus: status,
           storageObservedSizeBytes: observedSizeBytes === null ? null : BigInt(observedSizeBytes),
@@ -133,17 +146,37 @@ export class StorageMaintenanceRepository {
   async referencedStorageKeys(organizationId: string, storageKeys: string[]): Promise<Set<string>> {
     if (storageKeys.length === 0) return new Set();
     return this.tenantDatabase.run(organizationId, async (transaction) => {
-      const [attachments, uploads] = await Promise.all([
-        transaction.attachment.findMany({
-          where: { organizationId, storageKey: { in: storageKeys }, deletedAt: null },
+      const blobPrefix = `${organizationId}/blobs/sha256/`;
+      const blobChecksums = storageKeys.flatMap((storageKey) => {
+        if (!storageKey.startsWith(blobPrefix)) return [];
+        const checksumSha256 = storageKey.slice(storageKey.lastIndexOf('/') + 1);
+        return /^[a-f0-9]{64}$/.test(checksumSha256) ? [checksumSha256] : [];
+      });
+      const [blobs, uploads] = await Promise.all([
+        transaction.attachmentBlob.findMany({
+          where: {
+            organizationId,
+            storageKey: { in: storageKeys },
+            attachments: { some: { deletedAt: null } },
+          },
           select: { storageKey: true },
         }),
         transaction.uploadSession.findMany({
-          where: { organizationId, storageKey: { in: storageKeys } },
-          select: { storageKey: true },
+          where: {
+            organizationId,
+            expiresAt: { gt: new Date() },
+            OR: [{ storageKey: { in: storageKeys } }, { checksumSha256: { in: blobChecksums } }],
+          },
+          select: { storageKey: true, checksumSha256: true },
         }),
       ]);
-      return new Set([...attachments, ...uploads].map(({ storageKey }) => storageKey));
+      return new Set([
+        ...blobs.map(({ storageKey }) => storageKey),
+        ...uploads.flatMap(({ storageKey, checksumSha256 }) => [
+          storageKey,
+          `${organizationId}/blobs/sha256/${checksumSha256.slice(0, 2)}/${checksumSha256}`,
+        ]),
+      ]);
     });
   }
 
@@ -174,16 +207,28 @@ export class StorageMaintenanceRepository {
           hashtextextended(${`storage-usage:${organizationId}`}, 0)
         )
       `;
+      await transaction.$executeRaw`
+        UPDATE attachment_blobs AS blob
+        SET active_reference_count = (
+          SELECT COUNT(*)::INTEGER
+          FROM attachments AS attachment
+          WHERE attachment.organization_id = blob.organization_id
+            AND attachment.checksum_sha256 = blob.checksum_sha256
+            AND attachment.deleted_at IS NULL
+        )
+        WHERE blob.organization_id = ${organizationId}::UUID
+      `;
       const [total] = await transaction.$queryRaw<Array<{ storageBytesUsed: bigint }>>`
         SELECT COALESCE(SUM(
           CASE
-            WHEN deleted_at IS NULL AND storage_status <> 'missing'
-              THEN COALESCE(storage_observed_size_bytes, size_bytes)
+            WHEN blob.storage_status <> 'missing'
+              THEN COALESCE(blob.storage_observed_size_bytes, blob.size_bytes)
             ELSE 0
           END
         ), 0)::BIGINT AS "storageBytesUsed"
-        FROM attachments
-        WHERE organization_id = ${organizationId}::UUID
+        FROM attachment_blobs AS blob
+        WHERE blob.organization_id = ${organizationId}::UUID
+          AND blob.active_reference_count > 0
       `;
       const storageBytesUsed = total?.storageBytesUsed ?? 0n;
       await transaction.usageCounter.upsert({

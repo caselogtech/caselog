@@ -35,7 +35,11 @@ export type StoredObjectPage = {
 
 export interface StorageProvider {
   createUploadUrl(input: CreateUploadUrlInput): Promise<UploadUrl>;
-  createDownloadUrl(storageKey: string, fileName: string): Promise<DownloadUrl>;
+  createDownloadUrl(
+    storageKey: string,
+    fileName: string,
+    contentType: string,
+  ): Promise<DownloadUrl>;
   stat(storageKey: string): Promise<StoredObject | null>;
   read(storageKey: string, maxBytes: number): Promise<Uint8Array>;
   copy(sourceStorageKey: string, destinationStorageKey: string): Promise<void>;

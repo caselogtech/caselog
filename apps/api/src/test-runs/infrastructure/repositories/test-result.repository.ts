@@ -147,13 +147,42 @@ export class TestResultRepository {
         });
       }
       if (preparedAttachments.length > 0) {
+        const checkedAt = new Date();
+        const blobsByChecksum = new Map(
+          preparedAttachments.map((attachment) => [attachment.checksumSha256, attachment]),
+        );
+        for (const attachment of blobsByChecksum.values()) {
+          await transaction.attachmentBlob.upsert({
+            where: {
+              organizationId_checksumSha256: {
+                organizationId,
+                checksumSha256: attachment.checksumSha256,
+              },
+            },
+            create: {
+              organizationId,
+              checksumSha256: attachment.checksumSha256,
+              storageKey: attachment.storageKey,
+              sizeBytes: BigInt(attachment.sizeBytes),
+              storageStatus: 'HEALTHY',
+              storageCheckedAt: checkedAt,
+              storageObservedSizeBytes: BigInt(attachment.sizeBytes),
+            },
+            update: {
+              storageKey: attachment.storageKey,
+              sizeBytes: BigInt(attachment.sizeBytes),
+              storageStatus: 'HEALTHY',
+              storageCheckedAt: checkedAt,
+              storageObservedSizeBytes: BigInt(attachment.sizeBytes),
+            },
+          });
+        }
         await transaction.attachment.createMany({
           data: preparedAttachments.map((attachment) => ({
             organizationId,
             id: attachment.id,
             targetType: AttachmentTargetType.RESULT,
             targetId: result.id,
-            storageKey: attachment.storageKey,
             fileName: attachment.fileName,
             contentType: attachment.contentType,
             sizeBytes: BigInt(attachment.sizeBytes),

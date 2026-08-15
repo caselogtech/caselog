@@ -180,13 +180,37 @@ export class CaseAttachmentUploadRepository {
         );
         return attachment ? { kind: 'found', value: attachment } : { kind: 'invalid_upload' };
       }
+      const checkedAt = new Date();
+      await transaction.attachmentBlob.upsert({
+        where: {
+          organizationId_checksumSha256: {
+            organizationId,
+            checksumSha256: record.upload.checksumSha256,
+          },
+        },
+        create: {
+          organizationId,
+          checksumSha256: record.upload.checksumSha256,
+          storageKey: record.storageKey,
+          sizeBytes: BigInt(record.upload.sizeBytes),
+          storageStatus: 'HEALTHY',
+          storageCheckedAt: checkedAt,
+          storageObservedSizeBytes: BigInt(record.upload.sizeBytes),
+        },
+        update: {
+          storageKey: record.storageKey,
+          sizeBytes: BigInt(record.upload.sizeBytes),
+          storageStatus: 'HEALTHY',
+          storageCheckedAt: checkedAt,
+          storageObservedSizeBytes: BigInt(record.upload.sizeBytes),
+        },
+      });
       const attachment = await transaction.attachment.create({
         data: {
           organizationId,
           id: upload.id,
           targetType: AttachmentTargetType.CASE_VERSION,
           targetId: context.versionId,
-          storageKey: record.storageKey,
           fileName: record.upload.fileName,
           contentType: record.upload.contentType,
           sizeBytes: BigInt(record.upload.sizeBytes),

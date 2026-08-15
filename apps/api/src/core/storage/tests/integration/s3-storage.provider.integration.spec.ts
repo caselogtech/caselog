@@ -41,7 +41,11 @@ describe('S3StorageProvider integration', () => {
       sizeBytes: body.byteLength,
       checksumSha256,
     });
-    const download = await storage.createDownloadUrl(copiedStorageKey, 'evidence report.txt');
+    const download = await storage.createDownloadUrl(
+      copiedStorageKey,
+      'evidence report.txt',
+      'text/plain',
+    );
     const downloaded = await fetch(download.url);
     const downloadedBody = await downloaded.text();
     expect(downloaded.status, downloadedBody).toBe(200);

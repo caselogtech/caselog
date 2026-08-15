@@ -21,7 +21,7 @@ import {
   AttachmentRepository,
   type CreateUploadResult,
 } from '../../infrastructure/repositories/attachment.repository';
-import { uploadMetadataMatches } from '../../domain/policies/upload-metadata';
+import { AttachmentBlobService } from './attachment-blob.service';
 
 export type PreparedResultAttachment = {
   id: string;
@@ -39,6 +39,7 @@ export type PreparedResultAttachment = {
 export class AttachmentService {
   constructor(
     @Inject(AttachmentRepository) private readonly attachments: AttachmentRepository,
+    @Inject(AttachmentBlobService) private readonly blobs: AttachmentBlobService,
     @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider,
   ) {}
 
@@ -99,6 +100,7 @@ export class AttachmentService {
     const download = await this.storage.createDownloadUrl(
       attachment.storageKey,
       attachment.fileName,
+      attachment.contentType,
     );
     return attachmentDownloadResponseSchema.parse({
       download: { url: download.url, expiresAt: download.expiresAt.toISOString() },
@@ -127,48 +129,27 @@ export class AttachmentService {
         'One or more uploads are expired, completed, or unavailable for this result',
       );
     }
-    const prepared: PreparedResultAttachment[] = [];
-    try {
-      for (const upload of uploads) {
-        const source = await this.storage.stat(upload.storageKey);
-        if (!source || !uploadMetadataMatches(source, upload)) {
-          throw new ResourceConflictError(
-            'upload_incomplete',
-            'An uploaded object is missing or does not match its declared metadata',
-          );
-        }
-        const id = randomUUID();
-        const storageKey = `${principal.organizationId}/runs/${runId}/attachments/${id}`;
-        const attachment: PreparedResultAttachment = {
-          id,
-          uploadId: upload.id,
-          sourceStorageKey: upload.storageKey,
-          storageKey,
-          fileName: upload.fileName,
-          contentType: upload.contentType,
-          sizeBytes: upload.sizeBytes,
-          checksumSha256: upload.checksumSha256,
-          stepPosition: upload.stepPosition,
-        };
-        prepared.push(attachment);
-        await this.storage.copy(upload.storageKey, storageKey);
-        const snapshot = await this.storage.stat(storageKey);
-        if (!snapshot || !uploadMetadataMatches(snapshot, upload)) {
-          throw new ResourceConflictError(
-            'upload_incomplete',
-            'The uploaded object could not be verified after promotion',
-          );
-        }
-      }
-      return prepared;
-    } catch (error) {
-      await this.deleteFinalObjects(prepared);
-      throw error;
-    }
+    const promoted = await this.blobs.promoteMany(principal.organizationId, uploads);
+    return uploads.map((upload, index) => {
+      const blob = promoted[index];
+      if (!blob) throw new Error('Promoted attachment blob disappeared');
+      return {
+        id: randomUUID(),
+        uploadId: upload.id,
+        sourceStorageKey: upload.storageKey,
+        storageKey: blob.storageKey,
+        fileName: upload.fileName,
+        contentType: upload.contentType,
+        sizeBytes: upload.sizeBytes,
+        checksumSha256: upload.checksumSha256,
+        stepPosition: upload.stepPosition,
+      };
+    });
   }
 
-  async discardPreparedAttachments(attachments: PreparedResultAttachment[]): Promise<void> {
-    await this.deleteFinalObjects(attachments);
+  async discardPreparedAttachments(_attachments: PreparedResultAttachment[]): Promise<void> {
+    // A content-addressed object may already be referenced by another request.
+    // Unreferenced promotions are reclaimed by the bounded orphan scan.
   }
 
   async discardCompletedUploadObjects(attachments: PreparedResultAttachment[]): Promise<void> {
@@ -196,9 +177,5 @@ export class AttachmentService {
         'Too many pending uploads exist for this workspace',
       );
     }
-  }
-
-  private async deleteFinalObjects(attachments: PreparedResultAttachment[]): Promise<void> {
-    await Promise.allSettled(attachments.map(({ storageKey }) => this.storage.delete(storageKey)));
   }
 }

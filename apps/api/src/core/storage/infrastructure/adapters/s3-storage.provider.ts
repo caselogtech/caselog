@@ -68,13 +68,18 @@ export class S3StorageProvider implements StorageProvider, OnModuleInit {
     };
   }
 
-  async createDownloadUrl(storageKey: string, fileName: string): Promise<DownloadUrl> {
+  async createDownloadUrl(
+    storageKey: string,
+    fileName: string,
+    contentType: string,
+  ): Promise<DownloadUrl> {
     const expiresAt = new Date(Date.now() + this.config.downloadUrlTtlSeconds * 1_000);
     const disposition = `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`;
     const command = new GetObjectCommand({
       Bucket: this.config.bucket,
       Key: storageKey,
       ResponseContentDisposition: disposition,
+      ResponseContentType: contentType,
     });
     return {
       url: await getSignedUrl(this.client, command, {

@@ -19,4 +19,8 @@ export type CaseAttachmentUploadLookup =
   | { state: 'pending'; upload: PendingCaseAttachmentUpload }
   | { state: 'completed'; attachment: CaseAttachment };
 
-export type CaseAttachmentDownload = { storageKey: string; fileName: string };
+export type CaseAttachmentDownload = {
+  storageKey: string;
+  fileName: string;
+  contentType: string;
+};

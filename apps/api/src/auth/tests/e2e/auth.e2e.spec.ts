@@ -210,7 +210,7 @@ describe('authentication API', () => {
       ].filter((id): id is string => Boolean(id));
       if (organizationIds.length > 0) {
         const [attachments, uploads] = await Promise.all([
-          admin.attachment.findMany({
+          admin.attachmentBlob.findMany({
             where: { organizationId: { in: organizationIds } },
             select: { storageKey: true },
           }),
@@ -227,6 +227,9 @@ describe('authentication API', () => {
           where: { organizationId: { in: organizationIds } },
         });
         await admin.attachment.deleteMany({
+          where: { organizationId: { in: organizationIds } },
+        });
+        await admin.attachmentBlob.deleteMany({
           where: { organizationId: { in: organizationIds } },
         });
         await admin.uploadSession.deleteMany({
@@ -1620,9 +1623,10 @@ describe('authentication API', () => {
     await expect(
       admin.attachment.findFirst({
         where: { organizationId, targetId: attachmentResultId },
+        select: { checksumSha256: true, blob: { select: { storageKey: true } } },
       }),
     ).resolves.toMatchObject({
-      storageKey: expect.stringContaining('/attachments/'),
+      blob: { storageKey: expect.stringContaining('/blobs/sha256/') },
       checksumSha256: attachmentChecksum,
     });
     const reusedUpload = await app.inject({

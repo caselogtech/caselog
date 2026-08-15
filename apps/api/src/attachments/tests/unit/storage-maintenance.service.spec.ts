@@ -11,13 +11,16 @@ describe('StorageMaintenanceService', () => {
     const recent = new Date(Date.now());
     const repository = repositoryMock({
       expiredUploads: [{ id: 'upload-1', storageKey: `${ORGANIZATION_ID}/uploads/expired` }],
-      discardedAttachments: [
-        { id: 'discarded', storageKey: `${ORGANIZATION_ID}/attachments/discarded` },
+      discardedBlobs: [
+        {
+          checksumSha256: 'd'.repeat(64),
+          storageKey: `${ORGANIZATION_ID}/attachments/discarded`,
+        },
       ],
-      attachments: [
-        attachment('healthy', `${ORGANIZATION_ID}/attachments/healthy`),
-        attachment('missing', `${ORGANIZATION_ID}/attachments/missing`),
-        attachment('mismatch', `${ORGANIZATION_ID}/attachments/mismatch`),
+      blobs: [
+        blob(`${ORGANIZATION_ID}/attachments/healthy`),
+        blob(`${ORGANIZATION_ID}/attachments/missing`),
+        blob(`${ORGANIZATION_ID}/attachments/mismatch`),
       ],
       referencedKeys: new Set([`${ORGANIZATION_ID}/attachments/referenced`]),
     });
@@ -49,11 +52,11 @@ describe('StorageMaintenanceService', () => {
 
     expect(result).toEqual({
       expiredUploadsDeleted: 1,
-      discardedAttachmentsDeleted: 1,
+      discardedBlobsDeleted: 1,
       orphanedObjectsDeleted: 1,
-      attachmentsHealthy: 1,
-      attachmentsMissing: 1,
-      attachmentsMismatched: 1,
+      blobsHealthy: 1,
+      blobsMissing: 1,
+      blobsMismatched: 1,
       storageBytesUsed: 10n,
     });
     expect(storage.delete).toHaveBeenCalledWith(`${ORGANIZATION_ID}/uploads/expired`);
@@ -61,7 +64,7 @@ describe('StorageMaintenanceService', () => {
     expect(storage.delete).toHaveBeenCalledWith(`${ORGANIZATION_ID}/attachments/orphan`);
     expect(storage.delete).not.toHaveBeenCalledWith(`${ORGANIZATION_ID}/attachments/referenced`);
     expect(storage.delete).not.toHaveBeenCalledWith(`${ORGANIZATION_ID}/attachments/recent`);
-    expect(repository.recordAttachmentStatus.mock.calls.map((call) => call[3])).toEqual([
+    expect(repository.recordBlobStatus.mock.calls.map((call) => call[3])).toEqual([
       'MISSING',
       'HEALTHY',
       'MISSING',
@@ -98,11 +101,9 @@ describe('StorageMaintenanceService', () => {
   });
 });
 
-function attachment(id: string, storageKey: string) {
+function blob(storageKey: string) {
   return {
-    id,
     storageKey,
-    contentType: 'text/plain',
     sizeBytes: 10,
     checksumSha256: 'a'.repeat(64),
     storageStatus: 'HEALTHY' as const,
@@ -116,17 +117,17 @@ function object(storageKey: string, lastModifiedAt: Date) {
 function repositoryMock(
   values: {
     expiredUploads?: Array<{ id: string; storageKey: string }>;
-    discardedAttachments?: Array<{ id: string; storageKey: string }>;
-    attachments?: ReturnType<typeof attachment>[];
+    discardedBlobs?: Array<{ checksumSha256: string; storageKey: string }>;
+    blobs?: ReturnType<typeof blob>[];
     referencedKeys?: Set<string>;
   } = {},
 ) {
   return {
     listExpiredUploads: vi.fn().mockResolvedValue(values.expiredUploads ?? []),
     deleteExpiredUpload: vi.fn().mockResolvedValue(true),
-    listDiscardedAttachments: vi.fn().mockResolvedValue(values.discardedAttachments ?? []),
-    listAttachmentsForReconciliation: vi.fn().mockResolvedValue(values.attachments ?? []),
-    recordAttachmentStatus: vi.fn().mockResolvedValue(true),
+    listDiscardedBlobs: vi.fn().mockResolvedValue(values.discardedBlobs ?? []),
+    listBlobsForReconciliation: vi.fn().mockResolvedValue(values.blobs ?? []),
+    recordBlobStatus: vi.fn().mockResolvedValue(true),
     getOrphanScanCursor: vi.fn().mockResolvedValue(null),
     referencedStorageKeys: vi.fn().mockResolvedValue(values.referencedKeys ?? new Set()),
     setOrphanScanCursor: vi.fn().mockResolvedValue(undefined),

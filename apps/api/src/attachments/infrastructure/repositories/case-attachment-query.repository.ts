@@ -96,9 +96,22 @@ export class CaseAttachmentQueryRepository {
           targetId: context.versionId,
           deletedAt: null,
         },
-        select: { storageKey: true, fileName: true },
+        select: {
+          fileName: true,
+          contentType: true,
+          blob: { select: { storageKey: true } },
+        },
       });
-      return attachment ? { kind: 'found', value: attachment } : { kind: 'not_found' };
+      return attachment
+        ? {
+            kind: 'found',
+            value: {
+              storageKey: attachment.blob.storageKey,
+              fileName: attachment.fileName,
+              contentType: attachment.contentType,
+            },
+          }
+        : { kind: 'not_found' };
     });
   }
 }

@@ -1,0 +1,98 @@
+-- A negative value in INSERT ... ON CONFLICT is checked before PostgreSQL takes
+-- the conflict branch. Create a zero counter first, then apply either-sign delta.
+CREATE FUNCTION "caselog"."apply_attachment_storage_usage_delta"(
+    target_organization_id UUID,
+    size_delta BIGINT
+) RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF size_delta = 0 THEN RETURN; END IF;
+    INSERT INTO "usage_counters" ("organization_id", "storage_bytes_used", "updated_at")
+    VALUES (target_organization_id, 0, CURRENT_TIMESTAMP)
+    ON CONFLICT ("organization_id") DO NOTHING;
+    UPDATE "usage_counters"
+    SET "storage_bytes_used" = "storage_bytes_used" + size_delta,
+        "updated_at" = CURRENT_TIMESTAMP
+    WHERE "organization_id" = target_organization_id;
+END
+$$;
+
+REVOKE ALL ON FUNCTION "caselog"."apply_attachment_storage_usage_delta"(UUID, BIGINT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION "caselog"."apply_attachment_storage_usage_delta"(UUID, BIGINT) TO caselog_app;
+
+CREATE OR REPLACE FUNCTION "caselog"."update_attachment_storage_usage"() RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    target_organization_id UUID;
+    target_checksum CHAR(64);
+    reference_delta INTEGER := 0;
+    reference_count INTEGER;
+    physical_size BIGINT;
+    size_delta BIGINT := 0;
+BEGIN
+    IF TG_OP = 'UPDATE' AND (
+      NEW."organization_id" <> OLD."organization_id"
+      OR NEW."checksum_sha256" <> OLD."checksum_sha256"
+    ) THEN RAISE EXCEPTION 'attachment blob identity cannot be changed'; END IF;
+    target_organization_id := CASE WHEN TG_OP = 'DELETE' THEN OLD."organization_id" ELSE NEW."organization_id" END;
+    target_checksum := CASE WHEN TG_OP = 'DELETE' THEN OLD."checksum_sha256" ELSE NEW."checksum_sha256" END;
+    IF TG_OP = 'INSERT' AND NEW."deleted_at" IS NULL THEN reference_delta := 1;
+    ELSIF TG_OP = 'DELETE' AND OLD."deleted_at" IS NULL THEN reference_delta := -1;
+    ELSIF TG_OP = 'UPDATE' AND OLD."deleted_at" IS NULL AND NEW."deleted_at" IS NOT NULL THEN reference_delta := -1;
+    ELSIF TG_OP = 'UPDATE' AND OLD."deleted_at" IS NOT NULL AND NEW."deleted_at" IS NULL THEN reference_delta := 1;
+    END IF;
+    IF reference_delta = 0 THEN
+      IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+      RETURN NEW;
+    END IF;
+    PERFORM pg_advisory_xact_lock(hashtextextended('storage-usage:' || target_organization_id::TEXT, 0));
+    UPDATE "attachment_blobs" AS blob
+    SET "active_reference_count" = blob."active_reference_count" + reference_delta
+    WHERE blob."organization_id" = target_organization_id
+      AND blob."checksum_sha256" = target_checksum
+    RETURNING blob."active_reference_count",
+      CASE WHEN blob."storage_status" <> 'missing'
+        THEN COALESCE(blob."storage_observed_size_bytes", blob."size_bytes") ELSE 0 END
+    INTO reference_count, physical_size;
+    IF reference_count < 0 THEN RAISE EXCEPTION 'attachment blob reference count cannot be negative'; END IF;
+    IF reference_delta = 1 AND reference_count = 1 THEN size_delta := physical_size;
+    ELSIF reference_delta = -1 AND reference_count = 0 THEN size_delta := -physical_size;
+    END IF;
+    PERFORM "caselog"."apply_attachment_storage_usage_delta"(target_organization_id, size_delta);
+    IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+    RETURN NEW;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION "caselog"."update_attachment_blob_storage_usage"() RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    target_organization_id UUID;
+    previous_size BIGINT := 0;
+    current_size BIGINT := 0;
+BEGIN
+    IF TG_OP = 'UPDATE' AND (
+      NEW."organization_id" <> OLD."organization_id"
+      OR NEW."checksum_sha256" <> OLD."checksum_sha256"
+    ) THEN RAISE EXCEPTION 'attachment blob identity cannot be changed'; END IF;
+    target_organization_id := CASE WHEN TG_OP = 'DELETE' THEN OLD."organization_id" ELSE NEW."organization_id" END;
+    PERFORM pg_advisory_xact_lock(hashtextextended('storage-usage:' || target_organization_id::TEXT, 0));
+    IF (CASE WHEN TG_OP = 'DELETE' THEN OLD."active_reference_count" ELSE NEW."active_reference_count" END) > 0 THEN
+      IF TG_OP <> 'INSERT' AND OLD."storage_status" <> 'missing' THEN
+        previous_size := COALESCE(OLD."storage_observed_size_bytes", OLD."size_bytes");
+      END IF;
+      IF TG_OP <> 'DELETE' AND NEW."storage_status" <> 'missing' THEN
+        current_size := COALESCE(NEW."storage_observed_size_bytes", NEW."size_bytes");
+      END IF;
+    END IF;
+    PERFORM "caselog"."apply_attachment_storage_usage_delta"(
+      target_organization_id,
+      current_size - previous_size
+    );
+    IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+    RETURN NEW;
+END
+$$;

@@ -11,25 +11,25 @@ import {
   MetricsService,
   type StorageMaintenanceAction,
 } from '../../../core/observability/application/services/metrics.service';
-import { uploadMetadataMatches } from '../../domain/policies/upload-metadata';
+import { attachmentBlobMatches } from '../../domain/policies/attachment-blob';
 import {
   type AttachmentStorageState,
   StorageMaintenanceRepository,
 } from '../../infrastructure/repositories/storage-maintenance.repository';
 
 const STATUS_METRIC_ACTION: Record<AttachmentStorageState, StorageMaintenanceAction> = {
-  HEALTHY: 'attachment_healthy',
-  MISSING: 'attachment_missing',
-  MISMATCH: 'attachment_mismatch',
+  HEALTHY: 'blob_healthy',
+  MISSING: 'blob_missing',
+  MISMATCH: 'blob_mismatch',
 };
 
 export type StorageMaintenanceSummary = {
   expiredUploadsDeleted: number;
-  discardedAttachmentsDeleted: number;
+  discardedBlobsDeleted: number;
   orphanedObjectsDeleted: number;
-  attachmentsHealthy: number;
-  attachmentsMissing: number;
-  attachmentsMismatched: number;
+  blobsHealthy: number;
+  blobsMissing: number;
+  blobsMismatched: number;
   storageBytesUsed: bigint;
 };
 
@@ -49,18 +49,18 @@ export class StorageMaintenanceService {
     const now = new Date();
     const summary: StorageMaintenanceSummary = {
       expiredUploadsDeleted: 0,
-      discardedAttachmentsDeleted: 0,
+      discardedBlobsDeleted: 0,
       orphanedObjectsDeleted: 0,
-      attachmentsHealthy: 0,
-      attachmentsMissing: 0,
-      attachmentsMismatched: 0,
+      blobsHealthy: 0,
+      blobsMissing: 0,
+      blobsMismatched: 0,
       storageBytesUsed: 0n,
     };
 
     await this.repository.repairUsageCounter(organizationId);
     await this.cleanupExpiredUploads(organizationId, now, summary);
-    await this.cleanupDiscardedAttachments(organizationId, now, summary);
-    await this.reconcileAttachments(organizationId, now, summary);
+    await this.cleanupDiscardedBlobs(organizationId, now, summary);
+    await this.reconcileBlobs(organizationId, now, summary);
     await this.cleanupOrphanedObjects(organizationId, now, summary);
     summary.storageBytesUsed = await this.repository.repairUsageCounter(organizationId);
 
@@ -92,62 +92,63 @@ export class StorageMaintenanceService {
     }
   }
 
-  private async cleanupDiscardedAttachments(
+  private async cleanupDiscardedBlobs(
     organizationId: string,
     now: Date,
     summary: StorageMaintenanceSummary,
   ): Promise<void> {
-    const attachments = await this.repository.listDiscardedAttachments(
+    const blobs = await this.repository.listDiscardedBlobs(
       organizationId,
+      now,
       this.config.maintenanceBatchSize,
     );
-    for (const attachment of attachments) {
-      await this.storage.delete(attachment.storageKey);
+    for (const blob of blobs) {
+      await this.storage.delete(blob.storageKey);
       if (
-        await this.repository.recordAttachmentStatus(
+        await this.repository.recordBlobStatus(
           organizationId,
-          attachment.id,
-          attachment.storageKey,
+          blob.checksumSha256,
+          blob.storageKey,
           'MISSING',
           null,
           now,
         )
       ) {
-        summary.discardedAttachmentsDeleted += 1;
-        this.metrics.observeStorageMaintenance('discarded_attachment_deleted');
+        summary.discardedBlobsDeleted += 1;
+        this.metrics.observeStorageMaintenance('discarded_blob_deleted');
       }
     }
   }
 
-  private async reconcileAttachments(
+  private async reconcileBlobs(
     organizationId: string,
     now: Date,
     summary: StorageMaintenanceSummary,
   ): Promise<void> {
     const checkedBefore = new Date(now.getTime() - this.config.recheckHours * 3_600_000);
-    const attachments = await this.repository.listAttachmentsForReconciliation(
+    const blobs = await this.repository.listBlobsForReconciliation(
       organizationId,
       checkedBefore,
       this.config.maintenanceBatchSize,
     );
-    for (const attachment of attachments) {
-      const object = await this.storage.stat(attachment.storageKey);
+    for (const blob of blobs) {
+      const object = await this.storage.stat(blob.storageKey);
       const status: AttachmentStorageState = !object
         ? 'MISSING'
-        : uploadMetadataMatches(object, attachment)
+        : attachmentBlobMatches(object, blob)
           ? 'HEALTHY'
           : 'MISMATCH';
-      await this.repository.recordAttachmentStatus(
+      await this.repository.recordBlobStatus(
         organizationId,
-        attachment.id,
-        attachment.storageKey,
+        blob.checksumSha256,
+        blob.storageKey,
         status,
         object?.sizeBytes ?? null,
         now,
       );
-      if (status === 'HEALTHY') summary.attachmentsHealthy += 1;
-      if (status === 'MISSING') summary.attachmentsMissing += 1;
-      if (status === 'MISMATCH') summary.attachmentsMismatched += 1;
+      if (status === 'HEALTHY') summary.blobsHealthy += 1;
+      if (status === 'MISSING') summary.blobsMissing += 1;
+      if (status === 'MISMATCH') summary.blobsMismatched += 1;
       this.metrics.observeStorageMaintenance(STATUS_METRIC_ACTION[status]);
     }
   }

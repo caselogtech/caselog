@@ -6,10 +6,12 @@ import {
 } from './presentation/controllers/attachment.controller';
 import { CaseAttachmentController } from './presentation/controllers/case-attachment.controller';
 import { AttachmentService } from './application/services/attachment.service';
+import { AttachmentBlobService } from './application/services/attachment-blob.service';
 import { CaseAttachmentService } from './application/services/case-attachment.service';
 import { StorageMaintenanceQueue } from './application/services/storage-maintenance.queue';
 import { StorageMaintenanceService } from './application/services/storage-maintenance.service';
 import { AttachmentRepository } from './infrastructure/repositories/attachment.repository';
+import { AttachmentBlobRepository } from './infrastructure/repositories/attachment-blob.repository';
 import { CaseAttachmentQueryRepository } from './infrastructure/repositories/case-attachment-query.repository';
 import { CaseAttachmentUploadRepository } from './infrastructure/repositories/case-attachment-upload.repository';
 import { StorageMaintenanceRepository } from './infrastructure/repositories/storage-maintenance.repository';
@@ -19,6 +21,8 @@ import { StorageMaintenanceWorker } from './presentation/workers/storage-mainten
   imports: [AuthModule],
   controllers: [AttachmentController, AttachmentDownloadController, CaseAttachmentController],
   providers: [
+    AttachmentBlobRepository,
+    AttachmentBlobService,
     AttachmentRepository,
     AttachmentService,
     CaseAttachmentQueryRepository,

@@ -112,6 +112,7 @@ model Organization {
   testResults              TestResult[]
   testStepResults          TestStepResult[]
   uploadSessions           UploadSession[]
+  attachmentBlobs          AttachmentBlob[]
   attachments              Attachment[]
   customFieldDefinitions   CustomFieldDefinition[]
   customFieldValues        CustomFieldValue[]
@@ -693,27 +694,49 @@ model TestStepResult {
   @@map("test_step_results")
 }
 
-model Attachment {
+model AttachmentBlob {
   organizationId           String                  @map("organization_id") @db.Uuid
-  id                       String                  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  targetType               AttachmentTargetType    @map("target_type")
-  targetId                 String                  @map("target_id") @db.Uuid
-  storageKey               String                  @map("storage_key") @db.VarChar(1024)
-  fileName                 String                  @map("file_name") @db.VarChar(255)
-  contentType              String                  @map("content_type") @db.VarChar(255)
-  sizeBytes                BigInt                  @map("size_bytes")
   checksumSha256           String                  @map("checksum_sha256") @db.Char(64)
-  stepPosition             Int?                    @map("step_position")
-  createdAt                DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
-  deletedAt                DateTime?               @map("deleted_at") @db.Timestamptz(3)
+  storageKey               String                  @map("storage_key") @db.VarChar(1024)
+  sizeBytes                BigInt                  @map("size_bytes")
   storageStatus            AttachmentStorageStatus @default(HEALTHY) @map("storage_status")
   storageCheckedAt         DateTime?               @map("storage_checked_at") @db.Timestamptz(3)
   storageObservedSizeBytes BigInt?                 @map("storage_observed_size_bytes")
+  activeReferenceCount     Int                     @default(0) @map("active_reference_count")
+  createdAt                DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  attachments  Attachment[]
+
+  @@id([organizationId, checksumSha256], map: "pk_attachment_blobs")
+  @@unique([organizationId, storageKey], map: "uq_attachment_blobs_organization_id_storage_key")
+  @@index([organizationId, storageCheckedAt, checksumSha256], map: "idx_attachment_blobs_organization_storage_check")
+  @@map("attachment_blobs")
+}
+
+model Attachment {
+  organizationId                 String                  @map("organization_id") @db.Uuid
+  id                             String                  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  targetType                     AttachmentTargetType    @map("target_type")
+  targetId                       String                  @map("target_id") @db.Uuid
+  fileName                       String                  @map("file_name") @db.VarChar(255)
+  contentType                    String                  @map("content_type") @db.VarChar(255)
+  sizeBytes                      BigInt                  @map("size_bytes")
+  checksumSha256                 String                  @map("checksum_sha256") @db.Char(64)
+  stepPosition                   Int?                    @map("step_position")
+  createdAt                      DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  deletedAt                      DateTime?               @map("deleted_at") @db.Timestamptz(3)
+  /// Kept during the expand/contract rollout so pre-deduplication data can be rolled back safely.
+  legacyStorageKey               String?                 @map("storage_key") @db.VarChar(1024)
+  legacyStorageStatus            AttachmentStorageStatus @default(HEALTHY) @map("storage_status")
+  legacyStorageCheckedAt         DateTime?               @map("storage_checked_at") @db.Timestamptz(3)
+  legacyStorageObservedSizeBytes BigInt?                 @map("storage_observed_size_bytes")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  blob         AttachmentBlob @relation(fields: [organizationId, checksumSha256], references: [organizationId, checksumSha256], onDelete: Restrict)
 
   @@id([organizationId, id], map: "pk_attachments")
-  @@unique([organizationId, storageKey], map: "uq_attachments_organization_id_storage_key")
+  @@unique([organizationId, legacyStorageKey], map: "uq_attachments_organization_id_storage_key")
   @@index([organizationId, targetType, targetId], map: "idx_attachments_organization_id_target_type_target_id")
   @@index([organizationId, checksumSha256], map: "idx_attachments_organization_id_checksum_sha256")
   @@map("attachments")

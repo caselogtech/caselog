@@ -106,7 +106,7 @@ describe('case attachments', () => {
     if (admin) {
       const organizationIds = [organizationId, foreignOrganizationId].filter(Boolean);
       const [attachments, uploads] = await Promise.all([
-        admin.attachment.findMany({
+        admin.attachmentBlob.findMany({
           where: { organizationId: { in: organizationIds } },
           select: { storageKey: true },
         }),
@@ -120,6 +120,9 @@ describe('case attachments', () => {
         [...attachments, ...uploads].map(({ storageKey }) => storage.delete(storageKey)),
       );
       await admin.attachment.deleteMany({ where: { organizationId: { in: organizationIds } } });
+      await admin.attachmentBlob.deleteMany({
+        where: { organizationId: { in: organizationIds } },
+      });
       await admin.uploadSession.deleteMany({
         where: { organizationId: { in: organizationIds } },
       });
@@ -221,6 +224,59 @@ describe('case attachments', () => {
     expect(completion.json().error).toMatchObject({ code: 'upload_incomplete' });
   });
 
+  it('stores identical attachment bytes once while keeping separate references', async () => {
+    const usageBefore = await storageBytesUsed();
+    const content = 'shared content-addressed evidence';
+    const body = Buffer.from(content);
+    const checksumSha256 = createHash('sha256').update(content).digest('hex');
+    const [firstUpload, secondUpload] = await Promise.all([
+      createUploadSession('first-name.txt', body),
+      createUploadSession('second-name.txt', body),
+    ]);
+    const stored = await Promise.all(
+      [firstUpload, secondUpload].map(({ upload }) =>
+        fetch(upload.url, { method: 'PUT', headers: upload.headers, body }),
+      ),
+    );
+    expect(stored.map(({ status }) => status)).toEqual([200, 200]);
+    const completed = await Promise.all(
+      [firstUpload, secondUpload].map(({ upload }) =>
+        app.inject({
+          method: 'POST',
+          url: attachmentCollectionUrl(caseId, versionId),
+          headers: authorizationHeader(),
+          payload: { uploadId: upload.id },
+        }),
+      ),
+    );
+    expect(completed.map(({ statusCode }) => statusCode)).toEqual([201, 201]);
+    const [first, second] = completed.map((response) =>
+      caseAttachmentResponseSchema.parse(response.json()),
+    );
+    if (!first || !second) throw new Error('Attachment responses disappeared');
+
+    expect(first.attachment.id).not.toBe(second.attachment.id);
+    expect(first.attachment.fileName).toBe('first-name.txt');
+    expect(second.attachment.fileName).toBe('second-name.txt');
+    await expect(
+      admin.attachmentBlob.findUnique({
+        where: { organizationId_checksumSha256: { organizationId, checksumSha256 } },
+      }),
+    ).resolves.toMatchObject({ activeReferenceCount: 2 });
+    await expect(
+      admin.attachment.count({ where: { organizationId, checksumSha256, deletedAt: null } }),
+    ).resolves.toBe(2);
+    await expect(storageBytesUsed()).resolves.toBe(usageBefore + BigInt(body.byteLength));
+
+    const storage = app.get<StorageProvider>(STORAGE_PROVIDER);
+    const objects = await storage.list(
+      `${organizationId}/blobs/sha256/${checksumSha256.slice(0, 2)}/${checksumSha256}`,
+      null,
+      10,
+    );
+    expect(objects.objects).toHaveLength(1);
+  });
+
   it('completes the same upload concurrently without duplicating the attachment', async () => {
     const usageBefore = await storageBytesUsed();
     const body = Buffer.from('concurrent case attachment');
@@ -316,17 +372,26 @@ describe('case attachments', () => {
     const usageBefore = await storageBytesUsed();
 
     const missingId = randomUUID();
+    const missingChecksum = 'a'.repeat(64);
+    const missingKey = `${organizationId}/blobs/sha256/aa/${missingChecksum}`;
+    await admin.attachmentBlob.create({
+      data: {
+        organizationId,
+        checksumSha256: missingChecksum,
+        storageKey: missingKey,
+        sizeBytes: 50n,
+      },
+    });
     await admin.attachment.create({
       data: {
         organizationId,
         id: missingId,
         targetType: 'CASE_VERSION',
         targetId: versionId,
-        storageKey: `${organizationId}/cases/${caseId}/versions/${versionId}/attachments/${missingId}`,
         fileName: 'missing.txt',
         contentType: 'text/plain',
         sizeBytes: 50n,
-        checksumSha256: 'a'.repeat(64),
+        checksumSha256: missingChecksum,
       },
     });
 
@@ -346,17 +411,25 @@ describe('case attachments', () => {
       body: mismatchBody,
     });
     expect(mismatchStored.status, await mismatchStored.text()).toBe(200);
+    const expectedMismatchChecksum = 'b'.repeat(64);
+    await admin.attachmentBlob.create({
+      data: {
+        organizationId,
+        checksumSha256: expectedMismatchChecksum,
+        storageKey: mismatchKey,
+        sizeBytes: 75n,
+      },
+    });
     await admin.attachment.create({
       data: {
         organizationId,
         id: mismatchId,
         targetType: 'CASE_VERSION',
         targetId: versionId,
-        storageKey: mismatchKey,
         fileName: 'mismatch.txt',
         contentType: 'text/plain',
         sizeBytes: 75n,
-        checksumSha256: 'b'.repeat(64),
+        checksumSha256: expectedMismatchChecksum,
       },
     });
 
@@ -381,11 +454,20 @@ describe('case attachments', () => {
       where: { organizationId },
       data: { storageBytesUsed: usageBefore + 1_000n },
     });
+    await admin.attachmentBlob.update({
+      where: {
+        organizationId_checksumSha256: {
+          organizationId,
+          checksumSha256: expectedMismatchChecksum,
+        },
+      },
+      data: { activeReferenceCount: 0 },
+    });
     const summary = await maintenance.maintainOrganization(organizationId);
 
     expect(summary.expiredUploadsDeleted).toBe(1);
-    expect(summary.attachmentsMissing).toBeGreaterThanOrEqual(1);
-    expect(summary.attachmentsMismatched).toBeGreaterThanOrEqual(1);
+    expect(summary.blobsMissing).toBeGreaterThanOrEqual(1);
+    expect(summary.blobsMismatched).toBeGreaterThanOrEqual(1);
     await expect(
       admin.uploadSession.findUnique({
         where: { organizationId_id: { organizationId, id: expired.upload.id } },
@@ -393,8 +475,13 @@ describe('case attachments', () => {
     ).resolves.toBeNull();
     await expect(storage.stat(expiredStorageKey)).resolves.toBeNull();
     await expect(
-      admin.attachment.findUnique({
-        where: { organizationId_id: { organizationId, id: missingId } },
+      admin.attachmentBlob.findUnique({
+        where: {
+          organizationId_checksumSha256: {
+            organizationId,
+            checksumSha256: missingChecksum,
+          },
+        },
       }),
     ).resolves.toMatchObject({
       storageStatus: 'MISSING',
@@ -402,13 +489,19 @@ describe('case attachments', () => {
       storageCheckedAt: expect.any(Date),
     });
     await expect(
-      admin.attachment.findUnique({
-        where: { organizationId_id: { organizationId, id: mismatchId } },
+      admin.attachmentBlob.findUnique({
+        where: {
+          organizationId_checksumSha256: {
+            organizationId,
+            checksumSha256: expectedMismatchChecksum,
+          },
+        },
       }),
     ).resolves.toMatchObject({
       storageStatus: 'MISMATCH',
       storageObservedSizeBytes: BigInt(mismatchBody.byteLength),
       storageCheckedAt: expect.any(Date),
+      activeReferenceCount: 1,
     });
     await expect(storageBytesUsed()).resolves.toBe(usageBefore + BigInt(mismatchBody.byteLength));
   });
@@ -416,24 +509,32 @@ describe('case attachments', () => {
   it('serializes counter repair with concurrent attachment writes', async () => {
     const repository = app.get(StorageMaintenanceRepository);
     const usageBefore = await storageBytesUsed();
-    const attachments = Array.from({ length: 20 }, (_, index) => ({
-      id: randomUUID(),
-      sizeBytes: BigInt(index + 1),
-    }));
+    const attachments = Array.from({ length: 20 }, (_, index) => {
+      const checksumSha256 = createHash('sha256').update(`concurrency-${index}`).digest('hex');
+      return { id: randomUUID(), sizeBytes: BigInt(index + 1), checksumSha256 };
+    });
+    await admin.attachmentBlob.createMany({
+      data: attachments.map(({ checksumSha256, sizeBytes }) => ({
+        organizationId,
+        checksumSha256,
+        storageKey: `${organizationId}/blobs/sha256/${checksumSha256.slice(0, 2)}/${checksumSha256}`,
+        sizeBytes,
+        storageObservedSizeBytes: sizeBytes,
+      })),
+    });
 
     await Promise.all([
-      ...attachments.map(({ id, sizeBytes }) =>
+      ...attachments.map(({ id, sizeBytes, checksumSha256 }) =>
         admin.attachment.create({
           data: {
             organizationId,
             id,
             targetType: 'CASE_VERSION',
             targetId: versionId,
-            storageKey: `${organizationId}/concurrency/${id}`,
             fileName: `${id}.txt`,
             contentType: 'text/plain',
             sizeBytes,
-            checksumSha256: 'c'.repeat(64),
+            checksumSha256,
           },
         }),
       ),

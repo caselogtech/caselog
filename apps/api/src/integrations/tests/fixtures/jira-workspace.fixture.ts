@@ -139,7 +139,7 @@ async function cleanupWorkspace(
   organizationId: string,
   emails: string[],
 ): Promise<void> {
-  const attachments = await admin.attachment.findMany({
+  const attachments = await admin.attachmentBlob.findMany({
     where: { organizationId },
     select: { storageKey: true },
   });
@@ -151,6 +151,7 @@ async function cleanupWorkspace(
   await admin.integrationConnection.deleteMany({ where: { organizationId } });
   await admin.idempotencyRecord.deleteMany({ where: { organizationId } });
   await admin.attachment.deleteMany({ where: { organizationId } });
+  await admin.attachmentBlob.deleteMany({ where: { organizationId } });
   await admin.uploadSession.deleteMany({ where: { organizationId } });
   await admin.testStepResult.deleteMany({ where: { organizationId } });
   await admin.testResult.deleteMany({ where: { organizationId } });

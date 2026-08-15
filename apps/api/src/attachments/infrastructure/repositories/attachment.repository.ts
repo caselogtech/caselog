@@ -29,7 +29,11 @@ export type PendingUploadSession = {
   stepPosition: number | null;
 };
 
-export type DownloadableAttachment = { storageKey: string; fileName: string };
+export type DownloadableAttachment = {
+  storageKey: string;
+  fileName: string;
+  contentType: string;
+};
 
 @Injectable()
 export class AttachmentRepository {
@@ -70,15 +74,22 @@ export class AttachmentRepository {
         select: { id: true },
       });
       if (!result) return null;
-      return transaction.attachment.findFirst({
+      const attachment = await transaction.attachment.findFirst({
         where: {
           id: attachmentId,
           targetType: AttachmentTargetType.RESULT,
           targetId: result.id,
           deletedAt: null,
         },
-        select: { storageKey: true, fileName: true },
+        select: { fileName: true, contentType: true, blob: { select: { storageKey: true } } },
       });
+      return attachment
+        ? {
+            storageKey: attachment.blob.storageKey,
+            fileName: attachment.fileName,
+            contentType: attachment.contentType,
+          }
+        : null;
     });
   }
 

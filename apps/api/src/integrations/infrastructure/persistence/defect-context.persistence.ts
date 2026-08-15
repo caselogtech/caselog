@@ -125,7 +125,7 @@ export async function loadDefectContext(
           },
           select: {
             id: true,
-            storageKey: true,
+            blob: { select: { storageKey: true } },
             fileName: true,
             contentType: true,
             sizeBytes: true,
@@ -138,7 +138,18 @@ export async function loadDefectContext(
   );
   const attachments = attachmentIds.flatMap((id) => {
     const attachment = attachmentById.get(id);
-    return attachment ? [{ ...attachment, sizeBytes: Number(attachment.sizeBytes) }] : [];
+    return attachment
+      ? [
+          {
+            id: attachment.id,
+            storageKey: attachment.blob.storageKey,
+            fileName: attachment.fileName,
+            contentType: attachment.contentType,
+            sizeBytes: Number(attachment.sizeBytes),
+            stepPosition: attachment.stepPosition,
+          },
+        ]
+      : [];
   });
   if (
     attachments.some(({ sizeBytes }) => sizeBytes > MAX_ATTACHMENT_BYTES) ||

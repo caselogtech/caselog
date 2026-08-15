@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 
 type HttpLabels = { method: string; route: string; status: string };
 type JobLabels = { queue: string; outcome: 'completed' | 'failed' };
+export type AttachmentBlobPromotionAction = 'created' | 'repaired' | 'reused';
 export type StorageMaintenanceAction =
   | 'expired_upload_deleted'
-  | 'discarded_attachment_deleted'
+  | 'discarded_blob_deleted'
   | 'orphaned_object_deleted'
-  | 'attachment_healthy'
-  | 'attachment_missing'
-  | 'attachment_mismatch';
+  | 'blob_healthy'
+  | 'blob_missing'
+  | 'blob_mismatch';
 
 @Injectable()
 export class MetricsService {
@@ -16,6 +17,7 @@ export class MetricsService {
   private readonly httpDurationMs = new Map<string, { count: number; sum: number }>();
   private readonly jobs = new Map<string, number>();
   private readonly jobDurationMs = new Map<string, { count: number; sum: number }>();
+  private readonly attachmentBlobPromotions = new Map<string, number>();
   private readonly storageMaintenanceActions = new Map<string, number>();
 
   observeHttp(labels: HttpLabels, durationMs: number): void {
@@ -34,6 +36,10 @@ export class MetricsService {
     increment(this.storageMaintenanceActions, labelsKey({ action }));
   }
 
+  observeAttachmentBlobPromotion(action: AttachmentBlobPromotionAction): void {
+    increment(this.attachmentBlobPromotions, labelsKey({ action }));
+  }
+
   render(): string {
     return [
       '# HELP caselog_http_requests_total Completed HTTP requests.',
@@ -48,6 +54,9 @@ export class MetricsService {
       '# HELP caselog_job_duration_ms Background job duration in milliseconds.',
       '# TYPE caselog_job_duration_ms summary',
       ...renderSummary('caselog_job_duration_ms', this.jobDurationMs),
+      '# HELP caselog_attachment_blob_promotions_total Attachment blob promotion outcomes.',
+      '# TYPE caselog_attachment_blob_promotions_total counter',
+      ...renderCounter('caselog_attachment_blob_promotions_total', this.attachmentBlobPromotions),
       '# HELP caselog_storage_maintenance_actions_total Storage maintenance actions.',
       '# TYPE caselog_storage_maintenance_actions_total counter',
       ...renderCounter('caselog_storage_maintenance_actions_total', this.storageMaintenanceActions),
