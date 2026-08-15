@@ -107,7 +107,7 @@ describe('workspace invitations', () => {
           organizationId: foreignOrganizationId,
           email: outsiderEmail,
           role: 'TESTER',
-          tokenHash: 'a'.repeat(64),
+          tokenHash: randomUUID().replaceAll('-', '').repeat(2),
           invitedById: userId(ownerEmail),
           expiresAt: new Date(Date.now() + 86_400_000),
         },

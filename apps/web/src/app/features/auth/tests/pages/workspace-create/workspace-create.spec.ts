@@ -16,6 +16,8 @@ const createdWorkspace: CreateWorkspaceResponse = {
     name: 'Якість Плюс',
     slug: 'yakist-plyus',
     role: 'owner',
+    deletedAt: null,
+    recoverableUntil: null,
   },
   demoProject: {
     id: '77bcbeb6-1c8d-49ac-8358-e2c80ab0e187',

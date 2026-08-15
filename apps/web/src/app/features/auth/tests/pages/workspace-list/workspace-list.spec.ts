@@ -14,6 +14,8 @@ const workspaceResponse: WorkspaceListResponse = {
       name: 'Acme Quality',
       slug: 'acme-quality',
       role: 'owner',
+      deletedAt: null,
+      recoverableUntil: null,
     },
   ],
 };

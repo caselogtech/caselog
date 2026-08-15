@@ -10,6 +10,7 @@ describe('apiErrorTranslationKey', () => {
           code: 'workspace_slug_taken',
           message: 'Server fallback message',
           details: {},
+          requestId: 'request-1',
         },
       },
     });
@@ -25,6 +26,7 @@ describe('apiErrorTranslationKey', () => {
           code: 'unexpected_remote_code',
           message: 'Untrusted server message',
           details: {},
+          requestId: 'request-2',
         },
       },
     });
