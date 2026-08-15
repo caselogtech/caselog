@@ -11,6 +11,10 @@ const storageEnvironmentSchema = z.object({
   S3_AUTO_CREATE_BUCKET: z.enum(['true', 'false']).optional(),
   S3_UPLOAD_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(3_600).default(900),
   S3_DOWNLOAD_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(3_600).default(300),
+  STORAGE_MAINTENANCE_CRON: z.string().min(1).default('15 * * * *'),
+  STORAGE_MAINTENANCE_BATCH_SIZE: z.coerce.number().int().min(10).max(1_000).default(200),
+  STORAGE_ORPHAN_GRACE_HOURS: z.coerce.number().int().min(1).max(168).default(24),
+  STORAGE_RECHECK_HOURS: z.coerce.number().int().min(1).max(168).default(24),
 });
 
 export type StorageConfig = {
@@ -23,6 +27,10 @@ export type StorageConfig = {
   autoCreateBucket: boolean;
   uploadUrlTtlSeconds: number;
   downloadUrlTtlSeconds: number;
+  maintenanceCron: string;
+  maintenanceBatchSize: number;
+  orphanGraceHours: number;
+  recheckHours: number;
 };
 
 export const STORAGE_CONFIG = Symbol('STORAGE_CONFIG');
@@ -41,5 +49,9 @@ export function createStorageConfig(): StorageConfig {
       (environment.S3_AUTO_CREATE_BUCKET === undefined && environment.NODE_ENV !== 'production'),
     uploadUrlTtlSeconds: environment.S3_UPLOAD_URL_TTL_SECONDS,
     downloadUrlTtlSeconds: environment.S3_DOWNLOAD_URL_TTL_SECONDS,
+    maintenanceCron: environment.STORAGE_MAINTENANCE_CRON,
+    maintenanceBatchSize: environment.STORAGE_MAINTENANCE_BATCH_SIZE,
+    orphanGraceHours: environment.STORAGE_ORPHAN_GRACE_HOURS,
+    recheckHours: environment.STORAGE_RECHECK_HOURS,
   };
 }

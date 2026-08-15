@@ -50,6 +50,13 @@ describe('S3StorageProvider integration', () => {
     await expect(storage.read(copiedStorageKey, body.byteLength)).resolves.toEqual(
       Uint8Array.from(body),
     );
+    const listed = await storage.list('integration/', null, 1_000);
+    expect(listed.objects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ storageKey, sizeBytes: body.byteLength }),
+        expect.objectContaining({ storageKey: copiedStorageKey, sizeBytes: body.byteLength }),
+      ]),
+    );
     await storage.delete(copiedStorageKey);
   });
 });

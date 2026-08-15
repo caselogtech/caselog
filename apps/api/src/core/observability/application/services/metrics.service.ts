@@ -2,6 +2,13 @@ import { Injectable } from '@nestjs/common';
 
 type HttpLabels = { method: string; route: string; status: string };
 type JobLabels = { queue: string; outcome: 'completed' | 'failed' };
+export type StorageMaintenanceAction =
+  | 'expired_upload_deleted'
+  | 'discarded_attachment_deleted'
+  | 'orphaned_object_deleted'
+  | 'attachment_healthy'
+  | 'attachment_missing'
+  | 'attachment_mismatch';
 
 @Injectable()
 export class MetricsService {
@@ -9,6 +16,7 @@ export class MetricsService {
   private readonly httpDurationMs = new Map<string, { count: number; sum: number }>();
   private readonly jobs = new Map<string, number>();
   private readonly jobDurationMs = new Map<string, { count: number; sum: number }>();
+  private readonly storageMaintenanceActions = new Map<string, number>();
 
   observeHttp(labels: HttpLabels, durationMs: number): void {
     const key = labelsKey(labels);
@@ -20,6 +28,10 @@ export class MetricsService {
     const key = labelsKey(labels);
     increment(this.jobs, key);
     observe(this.jobDurationMs, key, durationMs);
+  }
+
+  observeStorageMaintenance(action: StorageMaintenanceAction): void {
+    increment(this.storageMaintenanceActions, labelsKey({ action }));
   }
 
   render(): string {
@@ -36,6 +48,9 @@ export class MetricsService {
       '# HELP caselog_job_duration_ms Background job duration in milliseconds.',
       '# TYPE caselog_job_duration_ms summary',
       ...renderSummary('caselog_job_duration_ms', this.jobDurationMs),
+      '# HELP caselog_storage_maintenance_actions_total Storage maintenance actions.',
+      '# TYPE caselog_storage_maintenance_actions_total counter',
+      ...renderCounter('caselog_storage_maintenance_actions_total', this.storageMaintenanceActions),
       '',
     ].join('\n');
   }

@@ -16,6 +16,8 @@ import {
   type StorageProvider,
 } from '../../../core/storage/application/ports/storage.provider';
 import type { PrismaClient } from '../../../generated/prisma/client';
+import { StorageMaintenanceService } from '../../application/services/storage-maintenance.service';
+import { StorageMaintenanceRepository } from '../../infrastructure/repositories/storage-maintenance.repository';
 
 const PASSWORD = 'correct horse battery staple';
 
@@ -306,6 +308,145 @@ describe('case attachments', () => {
     });
     expect(create.statusCode, create.body).toBe(403);
     expect(create.json().error).toMatchObject({ code: 'insufficient_permissions' });
+  });
+
+  it('cleans expired uploads, reconciles S3 health, and repairs physical usage', async () => {
+    const storage = app.get<StorageProvider>(STORAGE_PROVIDER);
+    const maintenance = app.get(StorageMaintenanceService);
+    const usageBefore = await storageBytesUsed();
+
+    const missingId = randomUUID();
+    await admin.attachment.create({
+      data: {
+        organizationId,
+        id: missingId,
+        targetType: 'CASE_VERSION',
+        targetId: versionId,
+        storageKey: `${organizationId}/cases/${caseId}/versions/${versionId}/attachments/${missingId}`,
+        fileName: 'missing.txt',
+        contentType: 'text/plain',
+        sizeBytes: 50n,
+        checksumSha256: 'a'.repeat(64),
+      },
+    });
+
+    const mismatchId = randomUUID();
+    const mismatchBody = Buffer.from('physical mismatch');
+    const mismatchKey = `${organizationId}/cases/${caseId}/versions/${versionId}/attachments/${mismatchId}`;
+    const mismatchChecksum = createHash('sha256').update(mismatchBody).digest('hex');
+    const mismatchUpload = await storage.createUploadUrl({
+      storageKey: mismatchKey,
+      contentType: 'text/plain',
+      sizeBytes: mismatchBody.byteLength,
+      checksumSha256: mismatchChecksum,
+    });
+    const mismatchStored = await fetch(mismatchUpload.url, {
+      method: 'PUT',
+      headers: mismatchUpload.headers,
+      body: mismatchBody,
+    });
+    expect(mismatchStored.status, await mismatchStored.text()).toBe(200);
+    await admin.attachment.create({
+      data: {
+        organizationId,
+        id: mismatchId,
+        targetType: 'CASE_VERSION',
+        targetId: versionId,
+        storageKey: mismatchKey,
+        fileName: 'mismatch.txt',
+        contentType: 'text/plain',
+        sizeBytes: 75n,
+        checksumSha256: 'b'.repeat(64),
+      },
+    });
+
+    const expiredBody = Buffer.from('expired upload');
+    const expired = await createUploadSession('expired.txt', expiredBody);
+    const expiredStorageKey = `${organizationId}/cases/${caseId}/versions/${versionId}/uploads/${expired.upload.id}`;
+    const expiredStored = await fetch(expired.upload.url, {
+      method: 'PUT',
+      headers: expired.upload.headers,
+      body: expiredBody,
+    });
+    expect(expiredStored.status, await expiredStored.text()).toBe(200);
+    await admin.uploadSession.update({
+      where: { organizationId_id: { organizationId, id: expired.upload.id } },
+      data: {
+        createdAt: new Date(Date.now() - 7_200_000),
+        expiresAt: new Date(Date.now() - 3_600_000),
+      },
+    });
+
+    await admin.usageCounter.update({
+      where: { organizationId },
+      data: { storageBytesUsed: usageBefore + 1_000n },
+    });
+    const summary = await maintenance.maintainOrganization(organizationId);
+
+    expect(summary.expiredUploadsDeleted).toBe(1);
+    expect(summary.attachmentsMissing).toBeGreaterThanOrEqual(1);
+    expect(summary.attachmentsMismatched).toBeGreaterThanOrEqual(1);
+    await expect(
+      admin.uploadSession.findUnique({
+        where: { organizationId_id: { organizationId, id: expired.upload.id } },
+      }),
+    ).resolves.toBeNull();
+    await expect(storage.stat(expiredStorageKey)).resolves.toBeNull();
+    await expect(
+      admin.attachment.findUnique({
+        where: { organizationId_id: { organizationId, id: missingId } },
+      }),
+    ).resolves.toMatchObject({
+      storageStatus: 'MISSING',
+      storageObservedSizeBytes: null,
+      storageCheckedAt: expect.any(Date),
+    });
+    await expect(
+      admin.attachment.findUnique({
+        where: { organizationId_id: { organizationId, id: mismatchId } },
+      }),
+    ).resolves.toMatchObject({
+      storageStatus: 'MISMATCH',
+      storageObservedSizeBytes: BigInt(mismatchBody.byteLength),
+      storageCheckedAt: expect.any(Date),
+    });
+    await expect(storageBytesUsed()).resolves.toBe(usageBefore + BigInt(mismatchBody.byteLength));
+  });
+
+  it('serializes counter repair with concurrent attachment writes', async () => {
+    const repository = app.get(StorageMaintenanceRepository);
+    const usageBefore = await storageBytesUsed();
+    const attachments = Array.from({ length: 20 }, (_, index) => ({
+      id: randomUUID(),
+      sizeBytes: BigInt(index + 1),
+    }));
+
+    await Promise.all([
+      ...attachments.map(({ id, sizeBytes }) =>
+        admin.attachment.create({
+          data: {
+            organizationId,
+            id,
+            targetType: 'CASE_VERSION',
+            targetId: versionId,
+            storageKey: `${organizationId}/concurrency/${id}`,
+            fileName: `${id}.txt`,
+            contentType: 'text/plain',
+            sizeBytes,
+            checksumSha256: 'c'.repeat(64),
+          },
+        }),
+      ),
+      ...Array.from({ length: 10 }, () => repository.repairUsageCounter(organizationId)),
+    ]);
+
+    const addedBytes = attachments.reduce((total, { sizeBytes }) => total + sizeBytes, 0n);
+    await repository.repairUsageCounter(organizationId);
+    await expect(storageBytesUsed()).resolves.toBe(usageBefore + addedBytes);
+    await admin.attachment.deleteMany({
+      where: { organizationId, id: { in: attachments.map(({ id }) => id) } },
+    });
+    await expect(storageBytesUsed()).resolves.toBe(usageBefore);
   });
 
   function authorizationHeader(): { authorization: string } {

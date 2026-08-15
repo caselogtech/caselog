@@ -68,6 +68,14 @@ enum AttachmentTargetType {
   @@map("attachment_target_type")
 }
 
+enum AttachmentStorageStatus {
+  HEALTHY  @map("healthy")
+  MISSING  @map("missing")
+  MISMATCH @map("mismatch")
+
+  @@map("attachment_storage_status")
+}
+
 enum AccountTokenPurpose {
   EMAIL_VERIFICATION @map("email_verification")
   PASSWORD_RESET     @map("password_reset")
@@ -90,32 +98,33 @@ model Organization {
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  memberships            Membership[]
-  projects               Project[]
-  suites                 Suite[]
-  sections               Section[]
-  testCases              TestCase[]
-  testCaseVersions       TestCaseVersion[]
-  resultStatuses         ResultStatus[]
-  testRuns               TestRun[]
-  runProgressSnapshots   RunProgressSnapshot[]
-  projectionRevisions    ProjectionRevision[]
-  testRunItems           TestRunItem[]
-  testResults            TestResult[]
-  testStepResults        TestStepResult[]
-  uploadSessions         UploadSession[]
-  attachments            Attachment[]
-  customFieldDefinitions CustomFieldDefinition[]
-  customFieldValues      CustomFieldValue[]
-  usageCounter           UsageCounter?
-  idempotencyRecords     IdempotencyRecord[]
-  apiTokens              ApiToken[]
-  integrationConnections IntegrationConnection[]
-  issueLinks             IssueLink[]
-  issueCreationRequests  IssueCreationRequest[]
-  auditLogs              AuditLog[]
-  invitations            WorkspaceInvitation[]
-  slugRedirects          OrganizationSlugRedirect[]
+  memberships              Membership[]
+  projects                 Project[]
+  suites                   Suite[]
+  sections                 Section[]
+  testCases                TestCase[]
+  testCaseVersions         TestCaseVersion[]
+  resultStatuses           ResultStatus[]
+  testRuns                 TestRun[]
+  runProgressSnapshots     RunProgressSnapshot[]
+  projectionRevisions      ProjectionRevision[]
+  testRunItems             TestRunItem[]
+  testResults              TestResult[]
+  testStepResults          TestStepResult[]
+  uploadSessions           UploadSession[]
+  attachments              Attachment[]
+  customFieldDefinitions   CustomFieldDefinition[]
+  customFieldValues        CustomFieldValue[]
+  usageCounter             UsageCounter?
+  idempotencyRecords       IdempotencyRecord[]
+  apiTokens                ApiToken[]
+  integrationConnections   IntegrationConnection[]
+  issueLinks               IssueLink[]
+  issueCreationRequests    IssueCreationRequest[]
+  auditLogs                AuditLog[]
+  invitations              WorkspaceInvitation[]
+  slugRedirects            OrganizationSlugRedirect[]
+  storageMaintenanceCursor StorageMaintenanceCursor?
 
   @@map("organizations")
 }
@@ -685,18 +694,21 @@ model TestStepResult {
 }
 
 model Attachment {
-  organizationId String               @map("organization_id") @db.Uuid
-  id             String               @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  targetType     AttachmentTargetType @map("target_type")
-  targetId       String               @map("target_id") @db.Uuid
-  storageKey     String               @map("storage_key") @db.VarChar(1024)
-  fileName       String               @map("file_name") @db.VarChar(255)
-  contentType    String               @map("content_type") @db.VarChar(255)
-  sizeBytes      BigInt               @map("size_bytes")
-  checksumSha256 String               @map("checksum_sha256") @db.Char(64)
-  stepPosition   Int?                 @map("step_position")
-  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
-  deletedAt      DateTime?            @map("deleted_at") @db.Timestamptz(3)
+  organizationId           String                  @map("organization_id") @db.Uuid
+  id                       String                  @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  targetType               AttachmentTargetType    @map("target_type")
+  targetId                 String                  @map("target_id") @db.Uuid
+  storageKey               String                  @map("storage_key") @db.VarChar(1024)
+  fileName                 String                  @map("file_name") @db.VarChar(255)
+  contentType              String                  @map("content_type") @db.VarChar(255)
+  sizeBytes                BigInt                  @map("size_bytes")
+  checksumSha256           String                  @map("checksum_sha256") @db.Char(64)
+  stepPosition             Int?                    @map("step_position")
+  createdAt                DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  deletedAt                DateTime?               @map("deleted_at") @db.Timestamptz(3)
+  storageStatus            AttachmentStorageStatus @default(HEALTHY) @map("storage_status")
+  storageCheckedAt         DateTime?               @map("storage_checked_at") @db.Timestamptz(3)
+  storageObservedSizeBytes BigInt?                 @map("storage_observed_size_bytes")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
@@ -705,6 +717,16 @@ model Attachment {
   @@index([organizationId, targetType, targetId], map: "idx_attachments_organization_id_target_type_target_id")
   @@index([organizationId, checksumSha256], map: "idx_attachments_organization_id_checksum_sha256")
   @@map("attachments")
+}
+
+model StorageMaintenanceCursor {
+  organizationId String   @id(map: "pk_storage_maintenance_cursors") @map("organization_id") @db.Uuid
+  afterKey       String?  @map("after_key") @db.VarChar(1024)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("storage_maintenance_cursors")
 }
 
 model UploadSession {

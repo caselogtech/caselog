@@ -5,6 +5,7 @@ import {
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -15,6 +16,7 @@ import type {
   CreateUploadUrlInput,
   DownloadUrl,
   StorageProvider,
+  StoredObjectPage,
   StoredObject,
   UploadUrl,
 } from '../../application/ports/storage.provider';
@@ -137,6 +139,32 @@ export class S3StorageProvider implements StorageProvider, OnModuleInit {
     await this.client.send(
       new DeleteObjectCommand({ Bucket: this.config.bucket, Key: storageKey }),
     );
+  }
+
+  async list(prefix: string, after: string | null, limit: number): Promise<StoredObjectPage> {
+    const response = await this.client.send(
+      new ListObjectsV2Command({
+        Bucket: this.config.bucket,
+        Prefix: prefix,
+        StartAfter: after ?? undefined,
+        MaxKeys: Math.min(Math.max(limit, 1), 1_000),
+      }),
+    );
+    const objects = (response.Contents ?? []).flatMap((object) =>
+      object.Key && object.LastModified
+        ? [
+            {
+              storageKey: object.Key,
+              sizeBytes: object.Size ?? 0,
+              lastModifiedAt: object.LastModified,
+            },
+          ]
+        : [],
+    );
+    return {
+      objects,
+      nextAfter: response.IsTruncated ? (objects.at(-1)?.storageKey ?? null) : null,
+    };
   }
 
   private isMissingBucket(error: unknown): boolean {
