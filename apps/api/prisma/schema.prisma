@@ -91,12 +91,13 @@ enum ApiTokenScope {
 }
 
 model Organization {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String    @db.VarChar(120)
-  slug      String    @unique(map: "uq_organizations_slug") @db.VarChar(30)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String    @db.VarChar(120)
+  slug           String    @unique(map: "uq_organizations_slug") @db.VarChar(30)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+  purgeStartedAt DateTime? @map("purge_started_at") @db.Timestamptz(3)
 
   memberships              Membership[]
   projects                 Project[]
@@ -127,6 +128,7 @@ model Organization {
   slugRedirects            OrganizationSlugRedirect[]
   storageMaintenanceCursor StorageMaintenanceCursor?
 
+  @@index([deletedAt, purgeStartedAt, id], map: "idx_organizations_workspace_purge")
   @@map("organizations")
 }
 
@@ -135,7 +137,7 @@ model OrganizationSlugRedirect {
   slug           String   @unique(map: "uq_organization_slug_redirects_slug") @db.VarChar(30)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@id([organizationId, slug], map: "pk_organization_slug_redirects")
   @@map("organization_slug_redirects")
@@ -216,7 +218,7 @@ model AuditLog {
   metadata       Json     @default("{}")
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@id([organizationId, id], map: "pk_audit_logs")
   @@index([organizationId, createdAt, id], map: "idx_audit_logs_organization_id_created_at_id")
@@ -379,7 +381,7 @@ model Membership {
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@id([organizationId, id], map: "pk_memberships")
@@ -401,7 +403,7 @@ model WorkspaceInvitation {
   createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   invitedBy    User         @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: Restrict)
 
   @@id([organizationId, id], map: "pk_workspace_invitations")
@@ -422,7 +424,7 @@ model Project {
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   suites                 Suite[]
   sections               Section[]
   testCases              TestCase[]
@@ -450,7 +452,7 @@ model Suite {
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project      Project      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
   sections     Section[]
   testCases    TestCase[]
@@ -475,7 +477,7 @@ model Section {
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project      Project      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
   suite        Suite        @relation(fields: [organizationId, suiteId], references: [organizationId, id], onDelete: Restrict)
   parent       Section?     @relation("SectionTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: Restrict)
@@ -501,7 +503,7 @@ model TestCase {
   updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project        Project           @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
   suite          Suite             @relation(fields: [organizationId, suiteId], references: [organizationId, id], onDelete: Restrict)
   section        Section           @relation(fields: [organizationId, sectionId], references: [organizationId, id], onDelete: Restrict)
@@ -530,7 +532,7 @@ model TestCaseVersion {
   createdById    String?      @map("created_by_id") @db.Uuid
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   testCase       TestCase        @relation("CaseVersions", fields: [organizationId, testCaseId], references: [organizationId, id], onDelete: Restrict)
   currentFor     TestCase?       @relation("CurrentVersion")
   createdBy      User?           @relation("VersionAuthor", fields: [createdById], references: [id], onDelete: SetNull)
@@ -558,7 +560,7 @@ model ResultStatus {
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project      Project          @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
   runItems     TestRunItem[]
   results      TestResult[]
@@ -582,7 +584,7 @@ model TestRun {
   closedAt       DateTime? @map("closed_at") @db.Timestamptz(3)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project          Project              @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
   items            TestRunItem[]
   uploadSessions   UploadSession[]
@@ -633,7 +635,7 @@ model TestRunItem {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   testRun        TestRun         @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Restrict)
   caseVersion    TestCaseVersion @relation(fields: [organizationId, caseVersionId], references: [organizationId, id], onDelete: Restrict)
   status         ResultStatus    @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
@@ -660,7 +662,7 @@ model TestResult {
   executedAt     DateTime @default(now()) @map("executed_at") @db.Timestamptz(3)
   build          String?  @db.VarChar(200)
 
-  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   testRunItem           TestRunItem            @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Restrict)
   status                ResultStatus           @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
   executedBy            User?                  @relation("ResultExecutor", fields: [executedById], references: [id], onDelete: SetNull)
@@ -684,7 +686,7 @@ model TestStepResult {
   comment          String?  @db.Text
   elapsedMs        Int?     @map("elapsed_ms")
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   testResult   TestResult   @relation(fields: [organizationId, testResultId, resultExecutedAt], references: [organizationId, id, executedAt], onDelete: Cascade)
   status       ResultStatus @relation(fields: [organizationId, statusId], references: [organizationId, id], onDelete: Restrict)
 
@@ -705,7 +707,7 @@ model AttachmentBlob {
   activeReferenceCount     Int                     @default(0) @map("active_reference_count")
   createdAt                DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   attachments  Attachment[]
 
   @@id([organizationId, checksumSha256], map: "pk_attachment_blobs")
@@ -732,7 +734,7 @@ model Attachment {
   legacyStorageCheckedAt         DateTime?               @map("storage_checked_at") @db.Timestamptz(3)
   legacyStorageObservedSizeBytes BigInt?                 @map("storage_observed_size_bytes")
 
-  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   blob         AttachmentBlob @relation(fields: [organizationId, checksumSha256], references: [organizationId, checksumSha256], onDelete: Restrict)
 
   @@id([organizationId, id], map: "pk_attachments")
@@ -770,7 +772,7 @@ model UploadSession {
   completedAt    DateTime? @map("completed_at") @db.Timestamptz(3)
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project      Project          @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
   testRun      TestRun?         @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Cascade)
   testRunItem  TestRunItem?     @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Cascade)
@@ -800,7 +802,7 @@ model CustomFieldDefinition {
   updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt      DateTime?             @map("deleted_at") @db.Timestamptz(3)
 
-  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project      Project            @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
   values       CustomFieldValue[]
 
@@ -820,7 +822,7 @@ model CustomFieldValue {
   createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   definition   CustomFieldDefinition @relation(fields: [organizationId, definitionId], references: [organizationId, id], onDelete: Restrict)
 
   @@id([organizationId, id], map: "pk_custom_field_values")
@@ -835,7 +837,7 @@ model UsageCounter {
   storageBytesUsed BigInt   @default(0) @map("storage_bytes_used")
   updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("usage_counters")
 }

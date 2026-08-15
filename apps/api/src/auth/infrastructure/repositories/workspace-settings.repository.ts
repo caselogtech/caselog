@@ -4,14 +4,14 @@ import { Prisma } from '../../../generated/prisma/client';
 import { appendAuditLog } from '../../../audit/public-api';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import { PrismaService } from '../../../core/database/infrastructure/prisma/prisma.service';
-
-const RECOVERY_WINDOW_MS = 30 * 24 * 60 * 60 * 1_000;
+import { workspaceRecoverableUntil } from '../../domain/policies/workspace-retention';
 
 type WorkspaceRecord = {
   id: string;
   name: string;
   slug: string;
   deletedAt: Date | null;
+  purgeStartedAt: Date | null;
 };
 
 export type UpdateWorkspaceResult =
@@ -41,7 +41,7 @@ export class WorkspaceSettingsRepository {
     const record = await this.tenantDatabase.run(organizationId, (transaction) =>
       transaction.organization.findFirst({
         where: { id: organizationId, deletedAt: null },
-        select: { id: true, name: true, slug: true, deletedAt: true },
+        select: { id: true, name: true, slug: true, deletedAt: true, purgeStartedAt: true },
       }),
     );
     return record ? this.toSettings(record) : null;
@@ -55,7 +55,7 @@ export class WorkspaceSettingsRepository {
     try {
       return await this.tenantDatabase.run(organizationId, async (transaction) => {
         const [current] = await transaction.$queryRaw<WorkspaceRecord[]>`
-          SELECT id, name, slug, deleted_at AS "deletedAt"
+          SELECT id, name, slug, deleted_at AS "deletedAt", purge_started_at AS "purgeStartedAt"
           FROM organizations
           WHERE id = ${organizationId}::UUID AND deleted_at IS NULL
           FOR UPDATE
@@ -87,7 +87,7 @@ export class WorkspaceSettingsRepository {
         const updated = await transaction.organization.update({
           where: { id: organizationId },
           data: { name: input.name, slug: input.slug },
-          select: { id: true, name: true, slug: true, deletedAt: true },
+          select: { id: true, name: true, slug: true, deletedAt: true, purgeStartedAt: true },
         });
         if (updated.slug !== current.slug) {
           await transaction.organizationSlugRedirect.create({
@@ -127,7 +127,7 @@ export class WorkspaceSettingsRepository {
   ): Promise<DeleteWorkspaceResult> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
       const [current] = await transaction.$queryRaw<WorkspaceRecord[]>`
-        SELECT id, name, slug, deleted_at AS "deletedAt"
+        SELECT id, name, slug, deleted_at AS "deletedAt", purge_started_at AS "purgeStartedAt"
         FROM organizations
         WHERE id = ${organizationId}::UUID AND deleted_at IS NULL
         FOR UPDATE
@@ -151,12 +151,12 @@ export class WorkspaceSettingsRepository {
         action: 'workspace.deletion_requested',
         targetType: 'workspace',
         targetId: organizationId,
-        metadata: { recoverableUntil: this.recoverableUntil(deletedAt).toISOString() },
+        metadata: { recoverableUntil: workspaceRecoverableUntil(deletedAt).toISOString() },
       });
       const deleted = await transaction.organization.update({
         where: { id: organizationId },
         data: { deletedAt },
-        select: { id: true, name: true, slug: true, deletedAt: true },
+        select: { id: true, name: true, slug: true, deletedAt: true, purgeStartedAt: true },
       });
       return { kind: 'deleted', value: this.toSettings(deleted) };
     });
@@ -167,8 +167,13 @@ export class WorkspaceSettingsRepository {
       await transaction.$executeRaw`
         SELECT set_config('caselog.organization_id', ${organizationId}, true)
       `;
+      await transaction.$executeRaw`
+        SELECT pg_advisory_xact_lock(
+          hashtextextended(${`workspace-purge:${organizationId}`}, 0)
+        )
+      `;
       const [current] = await transaction.$queryRaw<WorkspaceRecord[]>`
-        SELECT id, name, slug, deleted_at AS "deletedAt"
+        SELECT id, name, slug, deleted_at AS "deletedAt", purge_started_at AS "purgeStartedAt"
         FROM organizations
         WHERE id = ${organizationId}::UUID
         FOR UPDATE
@@ -184,14 +189,17 @@ export class WorkspaceSettingsRepository {
       if (!current.deletedAt) {
         return { kind: 'restored', value: this.toSettings(current) };
       }
-      if (this.recoverableUntil(current.deletedAt).getTime() <= Date.now()) {
+      if (
+        current.purgeStartedAt ||
+        workspaceRecoverableUntil(current.deletedAt).getTime() <= Date.now()
+      ) {
         return { kind: 'recovery_window_expired' };
       }
 
       const restored = await transaction.organization.update({
         where: { id: organizationId },
         data: { deletedAt: null },
-        select: { id: true, name: true, slug: true, deletedAt: true },
+        select: { id: true, name: true, slug: true, deletedAt: true, purgeStartedAt: true },
       });
       await appendAuditLog(transaction, {
         organizationId,
@@ -212,12 +220,8 @@ export class WorkspaceSettingsRepository {
       slug: record.slug,
       deletedAt: record.deletedAt?.toISOString() ?? null,
       recoverableUntil: record.deletedAt
-        ? this.recoverableUntil(record.deletedAt).toISOString()
+        ? workspaceRecoverableUntil(record.deletedAt).toISOString()
         : null,
     };
-  }
-
-  private recoverableUntil(deletedAt: Date): Date {
-    return new Date(deletedAt.getTime() + RECOVERY_WINDOW_MS);
   }
 }

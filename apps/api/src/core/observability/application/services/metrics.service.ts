@@ -10,6 +10,7 @@ export type StorageMaintenanceAction =
   | 'blob_healthy'
   | 'blob_missing'
   | 'blob_mismatch';
+export type WorkspacePurgeAction = 'object_deleted' | 'workspace_purged';
 
 @Injectable()
 export class MetricsService {
@@ -19,6 +20,7 @@ export class MetricsService {
   private readonly jobDurationMs = new Map<string, { count: number; sum: number }>();
   private readonly attachmentBlobPromotions = new Map<string, number>();
   private readonly storageMaintenanceActions = new Map<string, number>();
+  private readonly workspacePurgeActions = new Map<string, number>();
 
   observeHttp(labels: HttpLabels, durationMs: number): void {
     const key = labelsKey(labels);
@@ -38,6 +40,10 @@ export class MetricsService {
 
   observeAttachmentBlobPromotion(action: AttachmentBlobPromotionAction): void {
     increment(this.attachmentBlobPromotions, labelsKey({ action }));
+  }
+
+  observeWorkspacePurge(action: WorkspacePurgeAction, amount = 1): void {
+    increment(this.workspacePurgeActions, labelsKey({ action }), amount);
   }
 
   render(): string {
@@ -60,13 +66,16 @@ export class MetricsService {
       '# HELP caselog_storage_maintenance_actions_total Storage maintenance actions.',
       '# TYPE caselog_storage_maintenance_actions_total counter',
       ...renderCounter('caselog_storage_maintenance_actions_total', this.storageMaintenanceActions),
+      '# HELP caselog_workspace_purge_actions_total Expired workspace purge actions.',
+      '# TYPE caselog_workspace_purge_actions_total counter',
+      ...renderCounter('caselog_workspace_purge_actions_total', this.workspacePurgeActions),
       '',
     ].join('\n');
   }
 }
 
-function increment(values: Map<string, number>, key: string): void {
-  values.set(key, (values.get(key) ?? 0) + 1);
+function increment(values: Map<string, number>, key: string, amount = 1): void {
+  values.set(key, (values.get(key) ?? 0) + amount);
 }
 
 function observe(values: Map<string, { count: number; sum: number }>, key: string, value: number) {

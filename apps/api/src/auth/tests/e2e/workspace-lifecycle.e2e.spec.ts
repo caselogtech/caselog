@@ -325,5 +325,32 @@ describe('workspace lifecycle API', () => {
       { action: 'workspace.deletion_requested' },
       { action: 'workspace.restored' },
     ]);
+
+    const deletedAgain = await app.inject({
+      method: 'DELETE',
+      url: '/api/v1/workspace',
+      headers: { authorization: `Bearer ${organizationToken}` },
+      payload: { confirmation: 'Renamed Workspace' },
+    });
+    expect(deletedAgain.statusCode, deletedAgain.body).toBe(200);
+    await admin.organization.update({
+      where: { id: organizationId },
+      data: { purgeStartedAt: new Date() },
+    });
+
+    const claimedWorkspaces = await app.inject({
+      method: 'GET',
+      url: '/api/v1/auth/workspaces?status=deleted',
+      headers: { authorization: `Bearer ${ownerSessionToken}` },
+    });
+    expect(claimedWorkspaces.json().workspaces).toEqual([]);
+
+    const restoreAfterPurgeClaim = await app.inject({
+      method: 'POST',
+      url: `/api/v1/auth/workspaces/${organizationId}/restore`,
+      headers: { authorization: `Bearer ${ownerSessionToken}` },
+    });
+    expect(restoreAfterPurgeClaim.statusCode).toBe(409);
+    expect(restoreAfterPurgeClaim.json().error.code).toBe('workspace_recovery_window_expired');
   });
 });

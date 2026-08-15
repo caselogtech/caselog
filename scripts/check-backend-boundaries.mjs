@@ -13,6 +13,9 @@ const unsafeRawQueries = ['$queryRawUnsafe', '$executeRawUnsafe'];
 
 const files = await typescriptFiles(apiSource);
 const violations = [];
+const prismaSchema = await readFile(resolve('apps/api/prisma/schema.prisma'), 'utf8');
+
+verifyWorkspaceCascadeRelations(prismaSchema, violations);
 
 for (const file of files) {
   const source = await readFile(file, 'utf8');
@@ -85,4 +88,26 @@ function canAccessPersistence(projectPath) {
 
 function normalize(path) {
   return path.split(sep).join('/');
+}
+
+function verifyWorkspaceCascadeRelations(schema, target) {
+  for (const match of schema.matchAll(/model\s+(\w+)\s+\{([\s\S]*?)\n\}/g)) {
+    const [, model = 'unknown', body = ''] = match;
+    if (!/^\s*organizationId\s+/m.test(body)) continue;
+
+    const organizationRelation = body.match(
+      /^\s*organization\s+Organization\s+@relation\((.*)\)$/m,
+    );
+    if (!organizationRelation) {
+      target.push(
+        `prisma/schema.prisma: ${model} has organizationId without a direct Organization relation`,
+      );
+      continue;
+    }
+    if (!organizationRelation[1]?.includes('onDelete: Cascade')) {
+      target.push(
+        `prisma/schema.prisma: ${model}.organization must use onDelete: Cascade for workspace purge`,
+      );
+    }
+  }
 }

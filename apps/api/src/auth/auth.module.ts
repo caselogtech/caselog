@@ -23,6 +23,14 @@ import { WorkspaceService } from './application/services/workspace.service';
 import { WorkspaceSettingsController } from './presentation/controllers/workspace-settings.controller';
 import { WorkspaceSettingsRepository } from './infrastructure/repositories/workspace-settings.repository';
 import { WorkspaceSettingsService } from './application/services/workspace-settings.service';
+import {
+  createWorkspacePurgeConfig,
+  WORKSPACE_PURGE_CONFIG,
+} from './infrastructure/config/workspace-purge.config';
+import { WorkspacePurgeQueue } from './application/services/workspace-purge.queue';
+import { WorkspacePurgeService } from './application/services/workspace-purge.service';
+import { WorkspacePurgeRepository } from './infrastructure/repositories/workspace-purge.repository';
+import { WorkspacePurgeWorker } from './presentation/workers/workspace-purge.worker';
 
 @Module({
   imports: [JwtModule.register({}), PassportModule.register({ session: false })],
@@ -34,6 +42,7 @@ import { WorkspaceSettingsService } from './application/services/workspace-setti
   ],
   providers: [
     { provide: AUTH_CONFIG, useFactory: createAuthConfig },
+    { provide: WORKSPACE_PURGE_CONFIG, useFactory: createWorkspacePurgeConfig },
     AccountTokenRepository,
     ApiTokenRepository,
     ApiTokenService,
@@ -51,6 +60,10 @@ import { WorkspaceSettingsService } from './application/services/workspace-setti
     WorkspaceService,
     WorkspaceSettingsRepository,
     WorkspaceSettingsService,
+    WorkspacePurgeQueue,
+    WorkspacePurgeRepository,
+    WorkspacePurgeService,
+    WorkspacePurgeWorker,
   ],
   exports: [ApiTokenService, OrganizationAuthGuard, OrganizationRoleGuard],
 })

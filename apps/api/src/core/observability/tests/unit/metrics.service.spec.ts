@@ -9,6 +9,7 @@ describe('MetricsService', () => {
     metrics.observeJob({ queue: 'run-progress', outcome: 'failed' }, 25);
     metrics.observeAttachmentBlobPromotion('reused');
     metrics.observeStorageMaintenance('blob_missing');
+    metrics.observeWorkspacePurge('object_deleted', 3);
 
     const output = metrics.render();
     expect(output).toContain(
@@ -20,6 +21,7 @@ describe('MetricsService', () => {
     expect(output).toContain('caselog_jobs_total{outcome="failed",queue="run-progress"} 1');
     expect(output).toContain('caselog_attachment_blob_promotions_total{action="reused"} 1');
     expect(output).toContain('caselog_storage_maintenance_actions_total{action="blob_missing"} 1');
+    expect(output).toContain('caselog_workspace_purge_actions_total{action="object_deleted"} 3');
     expect(output).not.toMatch(/organization|tenant|user/i);
   });
 });
