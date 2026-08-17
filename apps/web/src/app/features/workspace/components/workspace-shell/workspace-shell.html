@@ -1,0 +1,48 @@
+<header class="product-header">
+  <a
+    class="brand"
+    href="/{{ workspaceSlug }}/projects"
+    [routerLink]="['/', workspaceSlug, 'projects']"
+    [attr.aria-label]="'app.homeAriaLabel' | transloco"
+  >
+    {{ 'app.brand' | transloco }}<span class="brand-dot">.</span>
+  </a>
+
+  <nav class="primary-navigation" [attr.aria-label]="'app.navigation.primary' | transloco">
+    @if (projectSlug()) {
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug() }}/cases"
+        [routerLink]="['/', workspaceSlug, projectSlug(), 'cases']"
+        routerLinkActive="active"
+      >
+        {{ 'app.navigation.testCases' | transloco }}
+      </a>
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug() }}/runs"
+        [routerLink]="['/', workspaceSlug, projectSlug(), 'runs']"
+        routerLinkActive="active"
+      >
+        {{ 'app.navigation.testRuns' | transloco }}
+      </a>
+    }
+    <a
+      href="/{{ workspaceSlug }}/projects"
+      [routerLink]="['/', workspaceSlug, 'projects']"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      {{ 'app.navigation.projects' | transloco }}
+    </a>
+  </nav>
+
+  <div class="account-context">
+    <span class="workspace-name">{{ workspaceName() }}</span>
+    <span class="avatar" [title]="displayName()" [attr.aria-label]="displayName()">
+      {{ initials() }}
+    </span>
+  </div>
+</header>
+
+<div class="workspace-view">
+  <router-outlet />
+</div>

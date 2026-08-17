@@ -6,7 +6,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withRouterConfig } from '@angular/router';
 import { provideTransloco } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 
@@ -31,7 +31,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(withInterceptors([sessionAuthInterceptor])),
     provideAppInitializer(restoreSession),
-    provideRouter(routes),
+    provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' })),
     provideTransloco({
       config: {
         availableLangs: ['en'],

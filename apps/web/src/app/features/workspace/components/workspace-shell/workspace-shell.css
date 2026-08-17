@@ -1,0 +1,135 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-width: 0;
+}
+
+.product-header {
+  align-items: center;
+  background: var(--color-bg);
+  border-bottom: 2px solid var(--color-divider);
+  display: flex;
+  flex: none;
+  gap: 32px;
+  height: 56px;
+  padding-inline: 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.brand {
+  color: var(--color-text);
+  flex: none;
+  font-size: 1.2667rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.brand-dot {
+  color: var(--color-accent);
+}
+
+.primary-navigation {
+  align-self: stretch;
+  display: flex;
+  gap: 24px;
+  min-width: 0;
+}
+
+.primary-navigation a {
+  align-items: center;
+  border-bottom: 2px solid transparent;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  display: flex;
+  font-size: 0.8667rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.primary-navigation a:hover,
+.primary-navigation a.active {
+  color: var(--color-text);
+}
+
+.primary-navigation a.active {
+  border-bottom-color: var(--color-accent);
+}
+
+.account-context {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.workspace-name {
+  color: var(--color-neutral-700);
+  font-size: 0.8rem;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar {
+  align-items: center;
+  background: var(--color-neutral-800);
+  border-radius: 50%;
+  color: var(--color-bg);
+  display: inline-flex;
+  flex: none;
+  font-size: 0.7333rem;
+  font-weight: 700;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.workspace-view {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+@media (max-width: 760px) {
+  .product-header {
+    gap: 18px;
+    padding-inline: 16px;
+  }
+
+  .primary-navigation {
+    gap: 16px;
+    overflow-x: auto;
+  }
+
+  .workspace-name {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .product-header {
+    gap: 12px;
+  }
+
+  .brand {
+    font-size: 0;
+  }
+
+  .brand::before {
+    content: "CL";
+    font-size: 1rem;
+  }
+
+  .brand-dot {
+    display: none;
+  }
+
+  .account-context {
+    display: none;
+  }
+}

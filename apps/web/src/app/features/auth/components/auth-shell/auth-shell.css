@@ -1,0 +1,24 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.auth-header {
+  align-items: center;
+  border-bottom: 2px solid var(--color-divider);
+  display: flex;
+  height: 56px;
+  padding-inline: 24px;
+}
+
+.brand {
+  color: var(--color-text);
+  font-size: 1.2667rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.brand-dot {
+  color: var(--color-accent);
+}

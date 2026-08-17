@@ -1,0 +1,214 @@
+<aside class="repository-sidebar" [attr.aria-label]="'workspace.cases.structure' | transloco">
+  <section class="project-context">
+    <h2>{{ 'workspace.cases.project' | transloco }}</h2>
+    <div class="project-card">
+      <strong>{{ projectName() || projectSlug() }}</strong>
+      <span>{{ projectKey() }}</span>
+    </div>
+  </section>
+
+  <section class="suite-navigation">
+    <h2>{{ 'workspace.cases.suites' | transloco }}</h2>
+    <button
+      type="button"
+      class="section-link all-cases"
+      [class.active]="!selectedSectionId()"
+      (click)="sectionSelected.emit('')"
+    >
+      {{ 'workspace.cases.allCases' | transloco }}
+    </button>
+
+    @if (structure.isPending()) {
+      <p class="sidebar-state">{{ 'workspace.cases.loadingStructure' | transloco }}</p>
+    } @else if (structure.isError()) {
+      <div class="sidebar-state error" role="alert">
+        <p>{{ errorTranslationKey() | transloco }}</p>
+        <button type="button" (click)="structure.refetch()">
+          {{ 'workspace.cases.retry' | transloco }}
+        </button>
+      </div>
+    } @else {
+      @for (
+        suite of structure.data()?.suites ?? [];
+        track suite.id;
+        let suiteIndex = $index;
+        let firstSuite = $first;
+        let lastSuite = $last
+      ) {
+        <div class="suite-group">
+          <div class="suite-heading">
+            <h3>{{ suite.name }}</h3>
+            @if (canManage()) {
+              <div class="structure-actions">
+                <button
+                  type="button"
+                  [disabled]="firstSuite || moveSuiteItem.isPending()"
+                  [attr.aria-label]="'workspace.cases.moveSuiteUp' | transloco"
+                  [title]="'workspace.cases.moveSuiteUp' | transloco"
+                  (click)="moveSuite(suite.id, suiteIndex - 1)"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  [disabled]="lastSuite || moveSuiteItem.isPending()"
+                  [attr.aria-label]="'workspace.cases.moveSuiteDown' | transloco"
+                  [title]="'workspace.cases.moveSuiteDown' | transloco"
+                  (click)="moveSuite(suite.id, suiteIndex + 1)"
+                >
+                  ↓
+                </button>
+                <button type="button" (click)="beginRename('suite', suite.id, suite.name)">
+                  {{ 'workspace.cases.rename' | transloco }}
+                </button>
+                <button type="button" (click)="beginSection(suite.id)">+</button>
+                <button type="button" (click)="requestDelete('suite', suite.id)">×</button>
+              </div>
+            }
+          </div>
+
+          @for (section of suite.sections; track section.id) {
+            <div class="section-row">
+              <button
+                type="button"
+                class="section-link"
+                [class.active]="selectedSectionId() === section.id"
+                [style.padding-left.px]="10 + section.depth * 14"
+                (click)="sectionSelected.emit(section.id)"
+              >
+                {{ section.name }}
+              </button>
+              @if (canManage()) {
+                <div class="structure-actions section-actions">
+                  <button
+                    type="button"
+                    [title]="'workspace.cases.rename' | transloco"
+                    (click)="beginRename('section', section.id, section.name)"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    [title]="'workspace.cases.addChildSection' | transloco"
+                    (click)="beginSection(suite.id, section.id)"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    [title]="'workspace.cases.move' | transloco"
+                    (click)="beginMoveSection(section.id, suite.id, section.position)"
+                  >
+                    ↕
+                  </button>
+                  <button
+                    type="button"
+                    [title]="'workspace.cases.delete' | transloco"
+                    (click)="requestDelete('section', section.id)"
+                  >
+                    ×
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  </section>
+
+  @if (canManage() && !structure.isPending() && !structure.isError()) {
+    <details class="structure-editor">
+      <summary>{{ 'workspace.cases.manageStructure' | transloco }}</summary>
+      <div class="structure-editor-body">
+
+      @if (
+        createSuite.isError() ||
+        createSection.isError() ||
+        renameStructureItem.isError() ||
+        moveSuiteItem.isError() ||
+        moveSectionItem.isError() ||
+        deleteStructureItem.isError()
+      ) {
+        <p class="sidebar-state error" role="alert">{{ errorTranslationKey() | transloco }}</p>
+      }
+
+      @if (sectionEditor()) {
+        <form class="structure-form" [formGroup]="sectionForm" (ngSubmit)="submitSection()">
+          <label for="new-section-name">{{ 'workspace.cases.sectionName' | transloco }}</label>
+          <input id="new-section-name" type="text" formControlName="name" />
+          <div>
+            <button type="submit">{{ 'workspace.cases.add' | transloco }}</button>
+            <button type="button" (click)="sectionEditor.set(null)">
+              {{ 'workspace.cases.cancel' | transloco }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (renameTarget()) {
+        <form class="structure-form" [formGroup]="renameForm" (ngSubmit)="submitRename()">
+          <label for="rename-structure">{{ 'workspace.cases.newName' | transloco }}</label>
+          <input id="rename-structure" type="text" formControlName="name" />
+          <div>
+            <button type="submit">{{ 'workspace.cases.saveName' | transloco }}</button>
+            <button type="button" (click)="renameTarget.set(null)">
+              {{ 'workspace.cases.cancel' | transloco }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (moveTarget()) {
+        <form class="structure-form" [formGroup]="moveForm" (ngSubmit)="submitMoveSection()">
+          <label for="move-section-suite">{{ 'workspace.cases.targetSuite' | transloco }}</label>
+          <select
+            id="move-section-suite"
+            formControlName="suiteId"
+            (change)="moveForm.controls.parentId.setValue('')"
+          >
+            @for (suite of structure.data()?.suites ?? []; track suite.id) {
+              <option [value]="suite.id">{{ suite.name }}</option>
+            }
+          </select>
+          <label for="move-section-parent">{{ 'workspace.cases.parentSection' | transloco }}</label>
+          <select id="move-section-parent" formControlName="parentId">
+            <option value="">{{ 'workspace.cases.rootLevel' | transloco }}</option>
+            @for (section of moveParentOptions(); track section.id) {
+              <option [value]="section.id">{{ section.name }}</option>
+            }
+          </select>
+          <label for="move-section-position">{{ 'workspace.cases.position' | transloco }}</label>
+          <input id="move-section-position" type="number" min="0" formControlName="position" />
+          <div>
+            <button type="submit">{{ 'workspace.cases.move' | transloco }}</button>
+            <button type="button" (click)="moveTarget.set(null)">
+              {{ 'workspace.cases.cancel' | transloco }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (deleteTarget()) {
+        <div class="structure-form delete-confirmation" role="alert">
+          <p>{{ 'workspace.cases.deleteStructureConfirmation' | transloco }}</p>
+          <div>
+            <button type="button" (click)="confirmDelete()">
+              {{ 'workspace.cases.confirmDelete' | transloco }}
+            </button>
+            <button type="button" (click)="deleteTarget.set(null)">
+              {{ 'workspace.cases.cancel' | transloco }}
+            </button>
+          </div>
+        </div>
+      }
+
+        <form class="structure-form add-suite-form" [formGroup]="suiteForm" (ngSubmit)="submitSuite()">
+          <label for="new-suite-name">{{ 'workspace.cases.suiteName' | transloco }}</label>
+          <input id="new-suite-name" type="text" formControlName="name" />
+          <button type="submit">{{ 'workspace.cases.addSuite' | transloco }}</button>
+        </form>
+      </div>
+    </details>
+  }
+</aside>

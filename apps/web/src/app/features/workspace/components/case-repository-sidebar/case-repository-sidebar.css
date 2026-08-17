@@ -1,0 +1,239 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+.repository-sidebar {
+  border-right: 2px solid var(--color-divider);
+  min-height: 100%;
+  padding: 20px;
+}
+
+h2 {
+  color: var(--color-neutral-700);
+  font-size: 0.7333rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.project-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: 10px;
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+}
+
+.project-card strong {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.project-card span {
+  color: var(--color-neutral-700);
+  font-size: 0.7333rem;
+}
+
+.suite-navigation,
+.structure-editor {
+  border-top: 2px solid var(--color-divider);
+  margin-top: 20px;
+  padding-top: 18px;
+}
+
+.structure-editor > summary {
+  color: var(--color-neutral-700);
+  cursor: pointer;
+  font-size: 0.7333rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  list-style-position: outside;
+  text-transform: uppercase;
+}
+
+.structure-editor > summary:hover {
+  color: var(--color-text);
+}
+
+.structure-editor-body {
+  padding-top: 2px;
+}
+
+.suite-group + .suite-group {
+  margin-top: 12px;
+}
+
+.suite-heading,
+.section-row {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.suite-heading h3 {
+  flex: 1;
+  font-size: 0.8667rem;
+  font-weight: 700;
+  margin: 6px 0 3px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-link {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--color-neutral-700);
+  cursor: pointer;
+  display: block;
+  flex: 1;
+  font-size: 0.8667rem;
+  min-height: 32px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 6px 8px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-link:hover,
+.section-link.active {
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
+
+.section-link.active {
+  font-weight: 600;
+}
+
+.all-cases {
+  margin-bottom: 8px;
+}
+
+.structure-actions {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  opacity: 0;
+}
+
+.suite-heading:hover .structure-actions,
+.suite-heading:focus-within .structure-actions,
+.section-row:hover .structure-actions,
+.section-row:focus-within .structure-actions {
+  opacity: 1;
+}
+
+.structure-actions button {
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: var(--color-neutral-700);
+  cursor: pointer;
+  font-size: 0.6667rem;
+  min-height: 26px;
+  padding: 3px;
+}
+
+.structure-actions button:hover {
+  background: var(--color-neutral-200);
+  color: var(--color-text);
+}
+
+.structure-actions button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.sidebar-state {
+  color: var(--color-neutral-700);
+  font-size: 0.8rem;
+  margin: 10px 0;
+}
+
+.sidebar-state.error {
+  color: var(--color-danger-text);
+}
+
+.sidebar-state p {
+  margin: 0 0 6px;
+}
+
+.sidebar-state button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.structure-form {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.structure-form label {
+  font-size: 0.7333rem;
+  font-weight: 600;
+}
+
+.structure-form input,
+.structure-form select {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-divider);
+  border-radius: 8px;
+  color: var(--color-text);
+  min-height: 36px;
+  padding: 6px 8px;
+  width: 100%;
+}
+
+.structure-form > div {
+  display: flex;
+  gap: 6px;
+}
+
+.structure-form button {
+  background: transparent;
+  border: 1px solid var(--color-divider);
+  border-radius: 8px;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.7333rem;
+  min-height: 32px;
+  padding: 5px 8px;
+}
+
+.delete-confirmation p {
+  color: var(--color-danger-text);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .repository-sidebar {
+    border-bottom: 2px solid var(--color-divider);
+    border-right: 0;
+    min-height: auto;
+  }
+
+  .suite-navigation {
+    column-gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .suite-navigation > h2,
+  .suite-navigation > .all-cases,
+  .suite-navigation > .sidebar-state {
+    grid-column: 1 / -1;
+  }
+}

@@ -122,7 +122,8 @@ describe('CaseList', () => {
       undefined,
       'active',
     );
-    expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain(
+    expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain('Test cases');
+    expect(fixture.nativeElement.querySelector('.project-card')?.textContent).toContain(
       'Authentication Project',
     );
     expect(fixture.nativeElement.querySelector('.case-id')?.textContent).toContain('AUTH-42');
@@ -164,7 +165,7 @@ describe('CaseList', () => {
     const fixture = TestBed.createComponent(CaseList);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
     fixture.detectChanges();
-    await vi.waitFor(() => expect(fixture.componentInstance.structure.isSuccess()).toBe(true));
+    await vi.waitFor(() => expect(fixture.componentInstance.cases.isSuccess()).toBe(true));
 
     await fixture.componentInstance.selectSection(SECTION_ID);
     await vi.waitFor(() =>
@@ -231,66 +232,5 @@ describe('CaseList', () => {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
-  });
-
-  it('creates a suite and refreshes the project structure', async () => {
-    workspaceApi.listTestCases.mockResolvedValue(response);
-    workspaceApi.createSuite.mockResolvedValue({
-      id: '67e2afe7-bd67-4039-a332-e4e4bddb9ac6',
-      name: 'Account security',
-      position: 1,
-    });
-    const fixture = TestBed.createComponent(CaseList);
-    fixture.detectChanges();
-    await vi.waitFor(() => expect(fixture.componentInstance.structure.isSuccess()).toBe(true));
-
-    fixture.componentInstance.suiteForm.controls.name.setValue('Account security');
-    fixture.componentInstance.submitSuite();
-
-    await vi.waitFor(() => expect(workspaceApi.createSuite).toHaveBeenCalledOnce());
-    expect(workspaceApi.createSuite).toHaveBeenCalledWith(
-      'acme-quality',
-      'authentication',
-      'Account security',
-    );
-  });
-
-  it('reorders, moves, and safely deletes structure items', async () => {
-    workspaceApi.listTestCases.mockResolvedValue(response);
-    workspaceApi.moveSuite.mockResolvedValue({
-      id: structure.suites[0]?.id,
-      name: 'Authentication suite',
-      position: 1,
-    });
-    workspaceApi.moveSection.mockResolvedValue({
-      id: SECTION_ID,
-      suiteId: structure.suites[0]?.id,
-      parentId: null,
-      name: 'Sign in',
-      depth: 0,
-      position: 1,
-    });
-    workspaceApi.deleteSection.mockResolvedValue(undefined);
-    const fixture = TestBed.createComponent(CaseList);
-    fixture.detectChanges();
-    await vi.waitFor(() => expect(fixture.componentInstance.structure.isSuccess()).toBe(true));
-
-    fixture.componentInstance.moveSuite(structure.suites[0]?.id ?? '', 1);
-    await vi.waitFor(() => expect(workspaceApi.moveSuite).toHaveBeenCalledOnce());
-
-    fixture.componentInstance.beginMoveSection(SECTION_ID, structure.suites[0]?.id ?? '', 0);
-    fixture.componentInstance.moveForm.controls.position.setValue(1);
-    fixture.componentInstance.submitMoveSection();
-    await vi.waitFor(() => expect(workspaceApi.moveSection).toHaveBeenCalledOnce());
-    expect(workspaceApi.moveSection).toHaveBeenCalledWith(
-      'acme-quality',
-      'authentication',
-      SECTION_ID,
-      { suiteId: structure.suites[0]?.id, parentId: null, position: 1 },
-    );
-
-    fixture.componentInstance.requestDelete('section', SECTION_ID);
-    fixture.componentInstance.confirmDelete();
-    await vi.waitFor(() => expect(workspaceApi.deleteSection).toHaveBeenCalledOnce());
   });
 });

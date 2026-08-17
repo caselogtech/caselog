@@ -1,7 +1,13 @@
 {
   "app": {
-    "brand": "Caselog",
-    "homeAriaLabel": "Caselog home"
+    "brand": "CASELOG",
+    "homeAriaLabel": "Caselog home",
+    "navigation": {
+      "primary": "Primary navigation",
+      "projects": "Projects",
+      "testCases": "Test cases",
+      "testRuns": "Test runs"
+    }
   },
   "errors": {
     "case_version_conflict": "This test case changed while you were editing it. Reload the latest version and try again.",

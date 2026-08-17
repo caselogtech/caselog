@@ -1,48 +1,66 @@
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/figtree-latin.woff2") format("woff2");
+}
+
 :root {
   color-scheme: light;
-  --surface-0: #f4f6f8;
-  --surface-1: #fafbfc;
-  --surface-2: #ffffff;
-  --text-1: #14171b;
-  --text-2: #4e5561;
-  --text-3: #6e7784;
-  --border: #dce0e6;
-  --accent: #3d4edb;
-  --error-surface: #fff2f1;
-  --error-border: #e8b4b0;
-  --error-text: #9e2922;
-  --success-surface: #eef8f0;
-  --success-border: #afd0b7;
-  --success-text: #246b35;
-  --radius: 6px;
-  --radius-sm: 4px;
+  --color-bg: #f4f4f3;
+  --color-surface: #e9ebeb;
+  --color-surface-raised: #f9f9f8;
+  --color-text: #1f2223;
+  --color-accent: #2c7686;
+  --color-accent-100: #e7f2f4;
+  --color-accent-200: #c6e2e7;
+  --color-accent-400: #5aa9b7;
+  --color-accent-600: #256676;
+  --color-accent-700: #1d5361;
+  --color-divider: color-mix(in srgb, var(--color-text) 30%, transparent);
+  --color-neutral-100: #f6f7f7;
+  --color-neutral-200: #e9ebeb;
+  --color-neutral-300: #d5d9d9;
+  --color-neutral-400: #b7bdbd;
+  --color-neutral-500: #979e9e;
+  --color-neutral-600: #798080;
+  --color-neutral-700: #5d6363;
+  --color-neutral-800: #424747;
+  --color-neutral-900: #2b2f2f;
+  --color-danger: #b8503c;
+  --color-danger-surface: #fbeae5;
+  --color-danger-text: #8d3c28;
+  --color-success: #2f8a4f;
+  --color-success-surface: #dff0e2;
+  --color-success-text: #1c6b3c;
+  --surface-0: var(--color-bg);
+  --surface-1: var(--color-surface);
+  --surface-2: var(--color-surface-raised);
+  --text-1: var(--color-text);
+  --text-2: var(--color-neutral-700);
+  --text-3: var(--color-neutral-600);
+  --border: var(--color-divider);
+  --accent: var(--color-accent);
+  --error-surface: var(--color-danger-surface);
+  --error-border: color-mix(in srgb, var(--color-danger) 40%, transparent);
+  --error-text: var(--color-danger-text);
+  --success-surface: var(--color-success-surface);
+  --success-border: color-mix(in srgb, var(--color-success) 40%, transparent);
+  --success-text: var(--color-success-text);
+  --radius: 10px;
+  --radius-sm: 8px;
+  --radius-lg: 12px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
-  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --surface-0: #0f1216;
-    --surface-1: #161a20;
-    --surface-2: #1c2128;
-    --text-1: #e6e9ed;
-    --text-2: #a8b0bb;
-    --text-3: #818a96;
-    --border: #2a313a;
-    --accent: #7a87f0;
-    --error-surface: #2b1919;
-    --error-border: #6f3430;
-    --error-text: #ffaaa3;
-    --success-surface: #16251a;
-    --success-border: #355d3e;
-    --success-text: #91d5a0;
-  }
+  --space-6: 32px;
+  --shadow-sm: 0 1px 2px rgba(45, 43, 43, 0.14);
+  --shadow-md: 0 3px 10px rgba(45, 43, 43, 0.16);
+  --font-sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
 }
 
 * {
@@ -53,9 +71,47 @@ html {
   background: var(--surface-0);
   color: var(--text-1);
   font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-accent-200);
+}
+
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  left: 0;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+  width: 1px;
 }

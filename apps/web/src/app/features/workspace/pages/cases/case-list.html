@@ -1,245 +1,47 @@
 <main class="cases-page" aria-labelledby="cases-title">
-  <header class="cases-header">
-    <div>
-      <p class="eyebrow">{{ 'workspace.cases.eyebrow' | transloco }}</p>
-      <h1 id="cases-title">
-        {{ project()?.name ?? ('workspace.cases.titleFallback' | transloco) }}
-      </h1>
-      <p>{{ 'workspace.cases.description' | transloco }}</p>
-    </div>
-    <div class="header-actions">
-      <a
-        class="back-link"
-        href="/{{ workspaceSlug }}/{{ projectSlug }}/runs"
-        [routerLink]="['/', workspaceSlug, projectSlug, 'runs']"
-      >
-        {{ 'workspace.cases.runs' | transloco }}
-      </a>
+  <app-case-repository-sidebar
+    [workspaceSlug]="workspaceSlug"
+    [projectSlug]="projectSlug"
+    [projectName]="project()?.name ?? ''"
+    [projectKey]="project()?.key ?? ''"
+    [selectedSectionId]="sectionId()"
+    (sectionSelected)="selectSection($event)"
+  />
+
+  <section class="case-content">
+    <header class="cases-header">
+      <div>
+        <p class="eyebrow">{{ 'workspace.cases.eyebrow' | transloco }}</p>
+        <h1 id="cases-title">{{ 'workspace.cases.titleFallback' | transloco }}</h1>
+        @if (project()?.name) {
+          <p class="project-description">{{ project()?.name }}</p>
+        }
+      </div>
       @if (canCreate() && state() === 'active') {
         <a
-          class="create-link"
+          class="primary-action"
           href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/new"
           [routerLink]="['/', workspaceSlug, projectSlug, 'cases', 'new']"
         >
+          <span aria-hidden="true">＋</span>
           {{ 'workspace.cases.create' | transloco }}
         </a>
       }
-      <a
-        class="back-link"
-        href="/{{ workspaceSlug }}/projects"
-        [routerLink]="['/', workspaceSlug, 'projects']"
-      >
-        {{ 'workspace.cases.back' | transloco }}
-      </a>
-    </div>
-  </header>
+    </header>
 
-  <div class="repository-layout">
-    <aside class="structure-panel" [attr.aria-label]="'workspace.cases.structure' | transloco">
-      <button
-        type="button"
-        class="section-option all-cases"
-        [class.active]="!sectionId()"
-        (click)="selectSection('')"
-      >
-        {{ 'workspace.cases.allCases' | transloco }}
-      </button>
-
-      @if (structure.isPending()) {
-        <p class="structure-state">{{ 'workspace.cases.loadingStructure' | transloco }}</p>
-      } @else if (structure.isError()) {
-        <div class="structure-state error">
-          <p>{{ errorTranslationKey() | transloco }}</p>
-          <button type="button" (click)="structure.refetch()">
-            {{ 'workspace.cases.retry' | transloco }}
-          </button>
-        </div>
-      } @else {
-        @for (
-          suite of structure.data()?.suites ?? [];
-          track suite.id;
-          let suiteIndex = $index;
-          let firstSuite = $first;
-          let lastSuite = $last
-        ) {
-          <section class="suite-group">
-            <div class="suite-heading">
-              <h2>{{ suite.name }}</h2>
-              @if (canCreate()) {
-                <div>
-                  <button
-                    type="button"
-                    [disabled]="firstSuite || moveSuiteItem.isPending()"
-                    [attr.aria-label]="'workspace.cases.moveSuiteUp' | transloco"
-                    [title]="'workspace.cases.moveSuiteUp' | transloco"
-                    (click)="moveSuite(suite.id, suiteIndex - 1)"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    [disabled]="lastSuite || moveSuiteItem.isPending()"
-                    [attr.aria-label]="'workspace.cases.moveSuiteDown' | transloco"
-                    [title]="'workspace.cases.moveSuiteDown' | transloco"
-                    (click)="moveSuite(suite.id, suiteIndex + 1)"
-                  >
-                    ↓
-                  </button>
-                  <button type="button" (click)="beginRename('suite', suite.id, suite.name)">
-                    {{ 'workspace.cases.rename' | transloco }}
-                  </button>
-                  <button type="button" (click)="beginSection(suite.id)">
-                    {{ 'workspace.cases.addSection' | transloco }}
-                  </button>
-                  <button type="button" (click)="requestDelete('suite', suite.id)">
-                    {{ 'workspace.cases.delete' | transloco }}
-                  </button>
-                </div>
-              }
-            </div>
-            @for (section of suite.sections; track section.id) {
-              <div class="section-row">
-                <button
-                  type="button"
-                  class="section-option"
-                  [class.active]="sectionId() === section.id"
-                  [style.padding-left.px]="12 + section.depth * 16"
-                  (click)="selectSection(section.id)"
-                >
-                  {{ section.name }}
-                </button>
-                @if (canCreate()) {
-                  <div class="section-actions">
-                    <button
-                      type="button"
-                      (click)="beginRename('section', section.id, section.name)"
-                    >
-                      {{ 'workspace.cases.rename' | transloco }}
-                    </button>
-                    <button type="button" (click)="beginSection(suite.id, section.id)">
-                      {{ 'workspace.cases.addChildSection' | transloco }}
-                    </button>
-                    <button
-                      type="button"
-                      (click)="beginMoveSection(section.id, suite.id, section.position)"
-                    >
-                      {{ 'workspace.cases.move' | transloco }}
-                    </button>
-                    <button type="button" (click)="requestDelete('section', section.id)">
-                      {{ 'workspace.cases.delete' | transloco }}
-                    </button>
-                  </div>
-                }
-              </div>
-            }
-          </section>
-        }
-
-        @if (canCreate()) {
-          @if (
-            createSuite.isError() ||
-            createSection.isError() ||
-            renameStructureItem.isError() ||
-            moveSuiteItem.isError() ||
-            moveSectionItem.isError() ||
-            deleteStructureItem.isError()
-          ) {
-            <p class="structure-state error" role="alert">{{ errorTranslationKey() | transloco }}</p>
-          }
-          @if (sectionEditor()) {
-            <form class="structure-form" [formGroup]="sectionForm" (ngSubmit)="submitSection()">
-              <label for="new-section-name">{{ 'workspace.cases.sectionName' | transloco }}</label>
-              <input id="new-section-name" type="text" formControlName="name" />
-              <div>
-                <button type="submit">{{ 'workspace.cases.add' | transloco }}</button>
-                <button type="button" (click)="sectionEditor.set(null)">
-                  {{ 'workspace.cases.cancel' | transloco }}
-                </button>
-              </div>
-            </form>
-          }
-
-          @if (renameTarget()) {
-            <form class="structure-form" [formGroup]="renameForm" (ngSubmit)="submitRename()">
-              <label for="rename-structure">{{ 'workspace.cases.newName' | transloco }}</label>
-              <input id="rename-structure" type="text" formControlName="name" />
-              <div>
-                <button type="submit">{{ 'workspace.cases.saveName' | transloco }}</button>
-                <button type="button" (click)="renameTarget.set(null)">
-                  {{ 'workspace.cases.cancel' | transloco }}
-                </button>
-              </div>
-            </form>
-          }
-
-          @if (moveTarget()) {
-            <form class="structure-form" [formGroup]="moveForm" (ngSubmit)="submitMoveSection()">
-              <label for="move-section-suite">{{ 'workspace.cases.targetSuite' | transloco }}</label>
-              <select
-                id="move-section-suite"
-                formControlName="suiteId"
-                (change)="moveForm.controls.parentId.setValue('')"
-              >
-                @for (suite of structure.data()?.suites ?? []; track suite.id) {
-                  <option [value]="suite.id">{{ suite.name }}</option>
-                }
-              </select>
-              <label for="move-section-parent">{{ 'workspace.cases.parentSection' | transloco }}</label>
-              <select id="move-section-parent" formControlName="parentId">
-                <option value="">{{ 'workspace.cases.rootLevel' | transloco }}</option>
-                @for (section of moveParentOptions(); track section.id) {
-                  <option [value]="section.id">{{ section.name }}</option>
-                }
-              </select>
-              <label for="move-section-position">{{ 'workspace.cases.position' | transloco }}</label>
-              <input id="move-section-position" type="number" min="0" formControlName="position" />
-              <div>
-                <button type="submit">{{ 'workspace.cases.move' | transloco }}</button>
-                <button type="button" (click)="moveTarget.set(null)">
-                  {{ 'workspace.cases.cancel' | transloco }}
-                </button>
-              </div>
-            </form>
-          }
-
-          @if (deleteTarget()) {
-            <div class="structure-form delete-confirmation" role="alert">
-              <p>{{ 'workspace.cases.deleteStructureConfirmation' | transloco }}</p>
-              <div>
-                <button type="button" (click)="confirmDelete()">
-                  {{ 'workspace.cases.confirmDelete' | transloco }}
-                </button>
-                <button type="button" (click)="deleteTarget.set(null)">
-                  {{ 'workspace.cases.cancel' | transloco }}
-                </button>
-              </div>
-            </div>
-          }
-
-          <form class="structure-form add-suite-form" [formGroup]="suiteForm" (ngSubmit)="submitSuite()">
-            <label for="new-suite-name">{{ 'workspace.cases.suiteName' | transloco }}</label>
-            <input id="new-suite-name" type="text" formControlName="name" />
-            <button type="submit">{{ 'workspace.cases.addSuite' | transloco }}</button>
-          </form>
-        }
-      }
-    </aside>
-
-    <div class="case-content">
-      <search>
-        <form class="case-search" [formGroup]="searchForm" (ngSubmit)="applySearch()">
-          <label for="case-search">{{ 'workspace.cases.searchLabel' | transloco }}</label>
-          <div>
-            <input
-              id="case-search"
-              type="search"
-              formControlName="search"
-              [placeholder]="'workspace.cases.searchPlaceholder' | transloco"
-            />
-            <button type="submit">{{ 'workspace.cases.searchSubmit' | transloco }}</button>
-          </div>
-        </form>
-      </search>
+    <div class="case-toolbar">
+      <form class="case-search" [formGroup]="searchForm" (ngSubmit)="applySearch()">
+        <label class="visually-hidden" for="case-search">
+          {{ 'workspace.cases.searchLabel' | transloco }}
+        </label>
+        <input
+          id="case-search"
+          type="search"
+          formControlName="search"
+          [placeholder]="'workspace.cases.searchPlaceholder' | transloco"
+        />
+        <button type="submit">{{ 'workspace.cases.searchSubmit' | transloco }}</button>
+      </form>
 
       <nav class="case-state-tabs" [attr.aria-label]="'workspace.cases.stateFilter' | transloco">
         <button
@@ -258,124 +60,151 @@
         </button>
       </nav>
 
-      @if (duplicateCase.isError() || archiveCase.isError() || restoreCase.isError()) {
-        <div class="case-action-error" role="alert">{{ errorTranslationKey() | transloco }}</div>
+      @if (!cases.isPending() && !cases.isError()) {
+        <span class="result-summary">
+          {{ 'workspace.cases.loadedCount' | transloco: { count: items().length } }}
+        </span>
       }
-
-      @if (cases.isPending()) {
-    <section class="cases-state" aria-live="polite">
-      {{ 'workspace.cases.loading' | transloco }}
-    </section>
-      } @else if (cases.isError()) {
-    <section class="cases-state error" role="alert">
-      <p>{{ errorTranslationKey() | transloco }}</p>
-      <button type="button" (click)="cases.refetch()">
-        {{ 'workspace.cases.retry' | transloco }}
-      </button>
-    </section>
-      } @else if (items().length === 0) {
-    <section class="cases-state">
-      <h2>
-        {{
-          (search()
-            ? 'workspace.cases.noMatchesTitle'
-            : state() === 'archived'
-              ? 'workspace.cases.noArchivedTitle'
-              : 'workspace.cases.emptyTitle') | transloco
-        }}
-      </h2>
-      <p>
-        {{
-          (search()
-            ? 'workspace.cases.noMatchesDescription'
-            : state() === 'archived'
-              ? 'workspace.cases.noArchivedDescription'
-              : 'workspace.cases.emptyDescription') | transloco
-        }}
-      </p>
-      @if (search()) {
-        <button type="button" (click)="clearSearch()">
-          {{ 'workspace.cases.clearSearch' | transloco }}
+      @if (hasFilters()) {
+        <button type="button" class="clear-filters" (click)="clearFilters()">
+          {{ 'workspace.cases.clearFilters' | transloco }}
         </button>
       }
-    </section>
-      } @else {
-    <div class="case-table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">{{ 'workspace.cases.id' | transloco }}</th>
-            <th scope="col">{{ 'workspace.cases.name' | transloco }}</th>
-            <th scope="col">{{ 'workspace.cases.section' | transloco }}</th>
-            <th scope="col">{{ 'workspace.cases.template' | transloco }}</th>
-            <th scope="col">{{ 'workspace.cases.automation' | transloco }}</th>
-            @if (canCreate()) {
-              <th scope="col">{{ 'workspace.cases.actions' | transloco }}</th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (testCase of items(); track testCase.id) {
-            <tr>
-              <td class="case-id">{{ project()?.key }}-{{ testCase.caseNumber }}</td>
-              <td class="case-title">
-                @if (state() === 'active') {
-                  <a
-                    href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/{{ testCase.id }}"
-                    [routerLink]="['/', workspaceSlug, projectSlug, 'cases', testCase.id]"
-                  >
-                    {{ testCase.title }}
-                  </a>
-                } @else {
-                  {{ testCase.title }}
-                }
-              </td>
-              @if (canCreate()) {
-                <td class="case-actions">
-                  @if (state() === 'active') {
-                    <button type="button" (click)="duplicateCase.mutate(testCase.id)">
-                      {{ 'workspace.cases.duplicate' | transloco }}
-                    </button>
-                    <button type="button" (click)="archiveCase.mutate(testCase.id)">
-                      {{ 'workspace.cases.archive' | transloco }}
-                    </button>
-                  } @else {
-                    <button type="button" (click)="restoreCase.mutate(testCase.id)">
-                      {{ 'workspace.cases.restore' | transloco }}
-                    </button>
-                  }
-                </td>
-              }
-              <td>{{ testCase.section.name }}</td>
-              <td>{{ templateTranslationKey(testCase.template) | transloco }}</td>
-              <td>
-                @if (testCase.automationId) {
-                  <span class="automation-id">{{ testCase.automationId }}</span>
-                } @else {
-                  {{ 'workspace.cases.manual' | transloco }}
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
     </div>
 
-    @if (cases.hasNextPage()) {
-      <button
-        class="load-more"
-        type="button"
-        [disabled]="cases.isFetchingNextPage()"
-        (click)="cases.fetchNextPage()"
-      >
-        {{
-          (cases.isFetchingNextPage()
-            ? 'workspace.cases.loadingMore'
-            : 'workspace.cases.loadMore') | transloco
-        }}
-      </button>
+    @if (duplicateCase.isError() || archiveCase.isError() || restoreCase.isError()) {
+      <div class="case-action-error" role="alert">{{ errorTranslationKey() | transloco }}</div>
     }
+
+    @if (cases.isPending()) {
+      <section class="cases-state" aria-live="polite">
+        <span class="loading-indicator" aria-hidden="true"></span>
+        {{ 'workspace.cases.loading' | transloco }}
+      </section>
+    } @else if (cases.isError()) {
+      <section class="cases-state error" role="alert">
+        <p>{{ errorTranslationKey() | transloco }}</p>
+        <button type="button" (click)="cases.refetch()">
+          {{ 'workspace.cases.retry' | transloco }}
+        </button>
+      </section>
+    } @else if (items().length === 0) {
+      <section class="cases-state">
+        <h2>
+          {{
+            (search()
+              ? 'workspace.cases.noMatchesTitle'
+              : state() === 'archived'
+                ? 'workspace.cases.noArchivedTitle'
+                : 'workspace.cases.emptyTitle') | transloco
+          }}
+        </h2>
+        <p>
+          {{
+            (search()
+              ? 'workspace.cases.noMatchesDescription'
+              : state() === 'archived'
+                ? 'workspace.cases.noArchivedDescription'
+                : 'workspace.cases.emptyDescription') | transloco
+          }}
+        </p>
+        @if (search()) {
+          <button type="button" (click)="clearSearch()">
+            {{ 'workspace.cases.clearSearch' | transloco }}
+          </button>
+        }
+      </section>
+    } @else {
+      <div class="case-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">{{ 'workspace.cases.id' | transloco }}</th>
+              <th scope="col">{{ 'workspace.cases.name' | transloco }}</th>
+              <th scope="col">{{ 'workspace.cases.section' | transloco }}</th>
+              <th scope="col">{{ 'workspace.cases.type' | transloco }}</th>
+              <th scope="col">{{ 'workspace.cases.template' | transloco }}</th>
+              <th scope="col">{{ 'workspace.cases.updated' | transloco }}</th>
+              @if (canCreate()) {
+                <th
+                  class="actions-heading"
+                  scope="col"
+                  [attr.aria-label]="'workspace.cases.actions' | transloco"
+                ></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (testCase of items(); track testCase.id) {
+              <tr>
+                <td class="case-id">{{ project()?.key }}-{{ testCase.caseNumber }}</td>
+                <td class="case-title">
+                  @if (state() === 'active') {
+                    <a
+                      href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/{{ testCase.id }}"
+                      [routerLink]="['/', workspaceSlug, projectSlug, 'cases', testCase.id]"
+                    >
+                      {{ testCase.title }}
+                    </a>
+                  } @else {
+                    {{ testCase.title }}
+                  }
+                  @if (testCase.automationId) {
+                    <span class="automation-id">{{ testCase.automationId }}</span>
+                  }
+                </td>
+                <td class="muted-cell">{{ testCase.section.name }}</td>
+                <td>
+                  <span class="type-tag" [class.automated]="testCase.automationId">
+                    {{
+                      (testCase.automationId ? 'workspace.cases.automated' : 'workspace.cases.manual')
+                        | transloco
+                    }}
+                  </span>
+                </td>
+                <td class="muted-cell">{{ templateTranslationKey(testCase.template) | transloco }}</td>
+                <td class="updated-cell">{{ testCase.updatedAt | date: 'mediumDate' }}</td>
+                @if (canCreate()) {
+                  <td class="case-actions">
+                    <details>
+                      <summary [attr.aria-label]="'workspace.cases.openActions' | transloco">•••</summary>
+                      <div>
+                        @if (state() === 'active') {
+                          <button type="button" (click)="duplicateCase.mutate(testCase.id)">
+                            {{ 'workspace.cases.duplicate' | transloco }}
+                          </button>
+                          <button type="button" (click)="archiveCase.mutate(testCase.id)">
+                            {{ 'workspace.cases.archive' | transloco }}
+                          </button>
+                        } @else {
+                          <button type="button" (click)="restoreCase.mutate(testCase.id)">
+                            {{ 'workspace.cases.restore' | transloco }}
+                          </button>
+                        }
+                      </div>
+                    </details>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (cases.hasNextPage()) {
+        <button
+          class="load-more"
+          type="button"
+          [disabled]="cases.isFetchingNextPage()"
+          (click)="cases.fetchNextPage()"
+        >
+          {{
+            (cases.isFetchingNextPage()
+              ? 'workspace.cases.loadingMore'
+              : 'workspace.cases.loadMore') | transloco
+          }}
+        </button>
       }
-    </div>
-  </div>
+    }
+  </section>
 </main>
