@@ -64,7 +64,9 @@ describe('RunList', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.runs.isSuccess()).toBe(true));
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Regression');
-    expect(fixture.nativeElement.textContent).toContain('4 / 10');
+    expect(fixture.nativeElement.textContent).toContain('4 of 10 completed');
+    expect(fixture.nativeElement.querySelector('progress').value).toBe(4);
+    expect(fixture.nativeElement.querySelector('.status-active').textContent).toContain('Active');
 
     await fixture.componentInstance.selectStatus('completed');
     await vi.waitFor(() =>
@@ -81,5 +83,19 @@ describe('RunList', () => {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+  });
+
+  it('calculates progress safely for empty and partially completed runs', () => {
+    const fixture = TestBed.createComponent(RunList);
+    const run = response.items[0];
+    if (!run) throw new Error('Expected the test fixture to contain a run');
+    expect(
+      fixture.componentInstance.progressPercent({
+        ...run,
+        itemCount: 0,
+        completedCount: 0,
+      }),
+    ).toBe(0);
+    expect(fixture.componentInstance.progressPercent(run)).toBe(40);
   });
 });

@@ -1,6 +1,7 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import type { TestRunStatus } from '@caselog/schemas';
+import type { TestRunStatus, TestRunSummary } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
@@ -16,7 +17,7 @@ const STATUS_TRANSLATION_KEYS: Record<TestRunStatus, string> = {
 
 @Component({
   selector: 'app-run-list',
-  imports: [RouterLink, TranslocoPipe],
+  imports: [DatePipe, RouterLink, TranslocoPipe],
   templateUrl: './run-list.html',
   styleUrl: './run-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,6 +65,10 @@ export class RunList {
 
   statusTranslationKey(status: TestRunStatus): string {
     return STATUS_TRANSLATION_KEYS[status];
+  }
+
+  progressPercent(run: TestRunSummary): number {
+    return run.itemCount === 0 ? 0 : Math.round((run.completedCount / run.itemCount) * 100);
   }
 
   private readStatus(): TestRunStatus | undefined {
