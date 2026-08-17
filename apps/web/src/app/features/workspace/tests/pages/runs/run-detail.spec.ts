@@ -201,6 +201,39 @@ describe('RunDetail', () => {
     expect(fixture.nativeElement.textContent).toContain('Authentication');
   });
 
+  it('opens a selected case from the execution queue', async () => {
+    const firstItem = detail.items[0];
+    if (!firstItem) throw new Error('Expected the test fixture to contain a run item');
+    const secondItem = {
+      ...firstItem,
+      id: 'e49b0d11-5dc0-4afd-bec4-c3ac2991cafd',
+      position: 1,
+      caseVersion: {
+        ...firstItem.caseVersion,
+        id: 'd96878f9-c353-4521-89fe-a22a811cfaaa',
+        title: 'Reset password',
+      },
+    };
+    workspaceApi.testRun.mockResolvedValueOnce({
+      ...detail,
+      run: { ...detail.run, itemCount: 2 },
+      items: [firstItem, secondItem],
+    });
+    const fixture = TestBed.createComponent(RunDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    const queueButtons = fixture.nativeElement.querySelectorAll('.queue-items button');
+    queueButtons[1]?.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedItem()?.id).toBe(secondItem.id);
+    expect(fixture.nativeElement.querySelector('.execution-panel h2').textContent).toContain(
+      'Reset password',
+    );
+  });
+
   it('restores and clears an item-scoped execution draft after submission', async () => {
     const draftStore = TestBed.inject(RunDraftStore);
     draftStore.save(draftContext, {

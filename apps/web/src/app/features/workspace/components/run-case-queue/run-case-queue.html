@@ -1,0 +1,41 @@
+<aside [attr.aria-label]="'workspace.runs.detail.queue' | transloco">
+  <header>
+    <p class="eyebrow">{{ 'workspace.runs.detail.queueEyebrow' | transloco }}</p>
+    <h2>{{ 'workspace.runs.detail.queue' | transloco }}</h2>
+    <span>{{ items().length }}</span>
+  </header>
+
+  <div class="queue-items">
+    @for (item of items(); track item.id; let index = $index) {
+      <button
+        type="button"
+        [class.active]="selectedItemId() === item.id"
+        [attr.aria-current]="selectedItemId() === item.id ? 'true' : null"
+        (click)="itemSelected.emit(item.id)"
+      >
+        <span class="position">{{ index + 1 }}</span>
+        <span class="case-title">{{ item.caseVersion.title }}</span>
+        <span class="status-line">
+          <i [style.background-color]="item.status.color"></i>
+          {{ item.status.name }}
+          <small>
+            · {{ item.attemptCount }} {{ 'workspace.runs.detail.attempts' | transloco }}
+          </small>
+        </span>
+      </button>
+    }
+  </div>
+
+  @if (hasNextPage()) {
+    <button
+      class="load-more"
+      type="button"
+      [disabled]="fetchingNextPage()"
+      (click)="loadMore.emit()"
+    >
+      {{
+        (fetchingNextPage() ? 'workspace.runs.loadingMore' : 'workspace.runs.loadMore') | transloco
+      }}
+    </button>
+  }
+</aside>

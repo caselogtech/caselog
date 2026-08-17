@@ -1,0 +1,86 @@
+<section class="progress-report" aria-labelledby="run-progress-title">
+  <div class="progress-heading">
+    <div>
+      <p class="eyebrow">{{ 'workspace.runs.detail.progressEyebrow' | transloco }}</p>
+      <h2 id="run-progress-title">{{ 'workspace.runs.detail.progressTitle' | transloco }}</h2>
+    </div>
+    <strong>{{ report().progressPercent }}%</strong>
+  </div>
+
+  <div
+    class="progress-track"
+    role="progressbar"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    [attr.aria-valuenow]="report().progressPercent"
+    [attr.aria-label]="'workspace.runs.detail.progressTitle' | transloco"
+  >
+    @for (status of report().statuses; track status.status.id) {
+      <span
+        [style.background-color]="status.status.color"
+        [style.width.%]="status.percentage"
+        [attr.title]="status.status.name + ': ' + status.count"
+      ></span>
+    }
+  </div>
+
+  <div class="progress-metrics">
+    <div>
+      <span>{{ 'workspace.runs.detail.completedCases' | transloco }}</span>
+      <strong>{{ report().run.completedCount }}</strong>
+    </div>
+    <div class="failure-metric">
+      <span>{{ 'workspace.runs.detail.failedCases' | transloco }}</span>
+      <strong>{{ report().run.failedCount }}</strong>
+    </div>
+    <div>
+      <span>{{ 'workspace.runs.detail.incompleteCases' | transloco }}</span>
+      <strong>{{ report().incompleteCount }}</strong>
+    </div>
+    <div>
+      <span>{{ 'workspace.runs.detail.passRate' | transloco }}</span>
+      <strong>{{ report().passRate === null ? '—' : report().passRate + '%' }}</strong>
+    </div>
+  </div>
+
+  <div class="progress-breakdowns">
+    <details>
+      <summary>{{ 'workspace.runs.detail.statusBreakdown' | transloco }}</summary>
+      <ul>
+        @for (status of report().statuses; track status.status.id) {
+          <li>
+            <span class="status-dot" [style.background-color]="status.status.color"></span>
+            <span>{{ status.status.name }}</span>
+            <strong>{{ status.count }}</strong>
+          </li>
+        }
+      </ul>
+    </details>
+    <details>
+      <summary>{{ 'workspace.runs.detail.suiteBreakdown' | transloco }}</summary>
+      <ul>
+        @for (suite of report().suites; track suite.suite.id) {
+          <li>
+            <span>{{ suite.suite.name }}</span>
+            <strong>{{ suite.completedCount }} / {{ suite.itemCount }}</strong>
+          </li>
+        }
+      </ul>
+    </details>
+    <details>
+      <summary>{{ 'workspace.runs.detail.assigneeBreakdown' | transloco }}</summary>
+      <ul>
+        @for (assignee of report().assignees; track assignee.assignee?.id ?? 'unassigned') {
+          <li>
+            <span>
+              {{
+                assignee.assignee?.displayName ?? ('workspace.runs.detail.unassigned' | transloco)
+              }}
+            </span>
+            <strong>{{ assignee.completedCount }} / {{ assignee.itemCount }}</strong>
+          </li>
+        }
+      </ul>
+    </details>
+  </div>
+</section>

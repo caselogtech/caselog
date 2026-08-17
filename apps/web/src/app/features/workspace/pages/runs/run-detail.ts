@@ -1,18 +1,17 @@
+import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   effect,
   HostListener,
   inject,
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import type { CreateTestResultRequest, TestRunItemResponse } from '@caselog/schemas';
+import type { CreateTestResultRequest, TestRunItemResponse, TestRunStatus } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
   injectInfiniteQuery,
@@ -21,50 +20,44 @@ import {
   QueryClient,
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
-import { BrowserSession } from '../../../../core/auth/browser-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { RunCaseQueue } from '../../components/run-case-queue/run-case-queue';
+import { RunProgressReport } from '../../components/run-progress-report/run-progress-report';
 import { WorkspaceApi } from '../../data-access/workspace-api';
-import { RunDraftStore, type RunDraftContext } from '../../state/run-draft-store';
+import { RunExecutionSession } from '../../state/run-execution-session';
 
 @Component({
   selector: 'app-run-detail',
-  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe],
+  imports: [
+    DatePipe,
+    ReactiveFormsModule,
+    RouterLink,
+    RunCaseQueue,
+    RunProgressReport,
+    TranslocoPipe,
+  ],
   templateUrl: './run-detail.html',
   styleUrl: './run-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [RunExecutionSession],
 })
 export class RunDetail {
   private readonly route = inject(ActivatedRoute);
-  private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly workspaceApi = inject(WorkspaceApi);
   private readonly workspaceSession = inject(WorkspaceSession);
-  private readonly browserSession = inject(BrowserSession);
   private readonly queryClient = inject(QueryClient);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly draftStore = inject(RunDraftStore);
-  private timerHandle: ReturnType<typeof setInterval> | null = null;
-  private timerStartedAt: number | null = null;
-  private timerBaseSeconds = 0;
-  private activeDraftItemId = '';
-  private suppressDraftSave = false;
+  private readonly execution = inject(RunExecutionSession);
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly runId = this.route.snapshot.paramMap.get('runId') ?? '';
   readonly selectedItemId = signal(this.route.snapshot.queryParamMap.get('item') ?? '');
-  readonly stepStatuses = signal<Record<number, string>>({});
-  readonly timerRunning = signal(false);
-  readonly online = signal(typeof navigator === 'undefined' || navigator.onLine);
-  readonly draftSavedAt = signal<string | null>(null);
-  readonly draftRestored = signal(false);
-  readonly draftStorageError = signal(false);
+  readonly timerRunning = this.execution.timerRunning;
+  readonly online = this.execution.online;
+  readonly draftSavedAt = this.execution.draftSavedAt;
+  readonly draftRestored = this.execution.draftRestored;
+  readonly draftStorageError = this.execution.draftStorageError;
   readonly closeConfirmation = signal(false);
-  readonly resultForm = this.formBuilder.group({
-    comment: ['', Validators.maxLength(50_000)],
-    elapsedSeconds: [
-      0,
-      [Validators.required, Validators.min(0), Validators.max(86_400), Validators.pattern(/^\d+$/)],
-    ],
-  });
+  readonly resultForm = this.execution.form;
 
   readonly detail = injectInfiniteQuery(() => ({
     queryKey: ['test-run', this.workspaceSlug, this.projectSlug, this.runId],
@@ -98,8 +91,8 @@ export class RunDetail {
   readonly lifecycle = injectMutation(() => ({
     mutationFn: (action: 'start' | 'close') => {
       if (action === 'close') {
-        this.pauseTimer();
-        this.persistDraft();
+        this.execution.pauseTimer();
+        this.execution.persist();
       }
       return action === 'start'
         ? this.workspaceApi.startTestRun(this.workspaceSlug, this.projectSlug, this.runId)
@@ -133,44 +126,39 @@ export class RunDetail {
         request,
       ),
     onSuccess: async (_response, { itemId }) => {
-      const context = this.draftContext(itemId);
-      if (context) this.draftStore.remove(context);
-      if (this.selectedItem()?.id === itemId) {
-        this.pauseTimer();
-        this.clearExecutionForm();
-      }
+      this.execution.complete(itemId);
       await this.invalidateRun();
     },
   }));
 
   constructor() {
     effect(() => {
-      const itemId = this.selectedItem()?.id;
-      if (itemId && itemId !== this.activeDraftItemId) {
-        untracked(() => this.restoreDraft(itemId));
-      }
-    });
-    this.resultForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.persistDraft());
-    this.destroyRef.onDestroy(() => {
-      this.persistDraft();
-      this.stopTimerInterval();
+      const item = this.selectedItem();
+      const statusIds = this.metadata()?.statuses.map(({ id }) => id) ?? [];
+      if (!item) return;
+      untracked(() =>
+        this.execution.activate({
+          workspaceSlug: this.workspaceSlug,
+          projectSlug: this.projectSlug,
+          runId: this.runId,
+          itemId: item.id,
+          stepCount: this.steps(item).length,
+          statusIds,
+        }),
+      );
     });
   }
 
   selectItem(itemId: string): void {
-    this.persistDraft();
-    this.pauseTimer();
     this.selectedItemId.set(itemId);
-    this.restoreDraft(itemId);
   }
 
   chooseStepStatus(position: number, statusId: string): void {
-    this.stepStatuses.update((statuses) => ({ ...statuses, [position]: statusId }));
-    this.persistDraft();
+    this.execution.chooseStepStatus(position, statusId);
   }
 
   isStepStatusSelected(position: number, statusId: string): boolean {
-    return this.stepStatuses()[position] === statusId;
+    return this.execution.isStepStatusSelected(position, statusId);
   }
 
   assign(itemId: string, assigneeId: string): void {
@@ -179,55 +167,21 @@ export class RunDetail {
 
   record(statusId: string): void {
     const item = this.selectedItem();
-    if (
-      this.canExecute() &&
-      this.online() &&
-      item &&
-      this.resultForm.valid &&
-      !this.result.isPending()
-    ) {
-      this.pauseTimer();
-      this.persistDraft();
-      const value = this.resultForm.getRawValue();
-      this.result.mutate({
-        itemId: item.id,
-        request: {
-          statusId,
-          comment: value.comment.trim() || undefined,
-          elapsedMs: value.elapsedSeconds > 0 ? value.elapsedSeconds * 1_000 : undefined,
-          stepResults: Object.entries(this.stepStatuses()).map(([position, stepStatusId]) => ({
-            position: Number(position),
-            statusId: stepStatusId,
-          })),
-        },
-      });
-    }
+    if (!this.canExecute() || !this.online() || !item || this.result.isPending()) return;
+    const request = this.execution.createResultRequest(statusId);
+    if (request) this.result.mutate({ itemId: item.id, request });
   }
 
   startTimer(): void {
-    if (
-      this.timerHandle ||
-      !this.canExecute() ||
-      this.resultForm.controls.elapsedSeconds.invalid ||
-      this.resultForm.controls.elapsedSeconds.value >= 86_400
-    ) {
-      return;
-    }
-    this.timerRunning.set(true);
-    this.timerBaseSeconds = this.resultForm.controls.elapsedSeconds.value;
-    this.timerStartedAt = Date.now();
-    this.timerHandle = setInterval(() => this.updateTimer(), 1_000);
+    if (this.canExecute()) this.execution.startTimer();
   }
 
   pauseTimer(): void {
-    this.updateTimer();
-    this.stopTimerInterval();
-    this.timerRunning.set(false);
+    this.execution.pauseTimer();
   }
 
   resetTimer(): void {
-    this.pauseTimer();
-    this.resultForm.controls.elapsedSeconds.setValue(0);
+    this.execution.resetTimer();
   }
 
   steps(item: TestRunItemResponse): Array<{ action: string; expected?: string }> {
@@ -246,6 +200,15 @@ export class RunDetail {
     return content.text ?? content.charter ?? content.gherkin ?? '';
   }
 
+  statusTranslationKey(status: TestRunStatus): string {
+    return {
+      draft: 'workspace.runs.statuses.draft',
+      active: 'workspace.runs.statuses.active',
+      completed: 'workspace.runs.statuses.completed',
+      archived: 'workspace.runs.statuses.archived',
+    }[status];
+  }
+
   errorTranslationKey(): string {
     return apiErrorTranslationKey(
       this.lifecycle.error() ??
@@ -257,13 +220,12 @@ export class RunDetail {
 
   @HostListener('window:online')
   handleOnline(): void {
-    this.online.set(true);
+    this.execution.setOnline(true);
   }
 
   @HostListener('window:offline')
   handleOffline(): void {
-    this.online.set(false);
-    this.persistDraft();
+    this.execution.setOnline(false);
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -303,111 +265,5 @@ export class RunDetail {
         queryKey: ['run-progress', this.workspaceSlug, this.projectSlug, this.runId],
       }),
     ]).then(() => undefined);
-  }
-
-  private persistDraft(): void {
-    if (this.suppressDraftSave) return;
-    const itemId = this.selectedItem()?.id;
-    if (!itemId) return;
-    const context = this.draftContext(itemId);
-    if (!context) return;
-    const value = this.resultForm.getRawValue();
-    const elapsedSeconds = Number.isFinite(value.elapsedSeconds) ? value.elapsedSeconds : 0;
-    const stepStatuses = this.stepStatuses();
-    const hasContent =
-      value.comment.length > 0 || elapsedSeconds > 0 || Object.keys(stepStatuses).length > 0;
-    if (!hasContent) {
-      this.draftStorageError.set(!this.draftStore.remove(context));
-      this.draftSavedAt.set(null);
-      this.draftRestored.set(false);
-      return;
-    }
-    const draft = this.draftStore.save(context, {
-      comment: value.comment,
-      elapsedSeconds,
-      stepStatuses,
-    });
-    this.draftStorageError.set(!draft);
-    if (draft) {
-      this.draftSavedAt.set(draft.savedAt);
-      this.draftRestored.set(false);
-    }
-  }
-
-  private restoreDraft(itemId: string): void {
-    this.activeDraftItemId = itemId;
-    this.suppressDraftSave = true;
-    this.resultForm.reset({ comment: '', elapsedSeconds: 0 }, { emitEvent: false });
-    this.stepStatuses.set({});
-    const context = this.draftContext(itemId);
-    const draft = context ? this.draftStore.load(context) : null;
-    if (draft) {
-      this.resultForm.setValue(
-        { comment: draft.comment, elapsedSeconds: draft.elapsedSeconds },
-        { emitEvent: false },
-      );
-      const allowedStatuses = new Set(this.metadata()?.statuses.map(({ id }) => id) ?? []);
-      const item = this.items().find(({ id }) => id === itemId);
-      const stepCount = item ? this.steps(item).length : 0;
-      this.stepStatuses.set(
-        Object.fromEntries(
-          Object.entries(draft.stepStatuses)
-            .filter(
-              ([position, statusId]) =>
-                Number(position) < stepCount && allowedStatuses.has(statusId),
-            )
-            .map(([position, statusId]) => [Number(position), statusId]),
-        ),
-      );
-    }
-    this.draftSavedAt.set(draft?.savedAt ?? null);
-    this.draftRestored.set(Boolean(draft));
-    this.draftStorageError.set(false);
-    this.suppressDraftSave = false;
-  }
-
-  private clearExecutionForm(): void {
-    this.suppressDraftSave = true;
-    this.resultForm.reset({ comment: '', elapsedSeconds: 0 }, { emitEvent: false });
-    this.stepStatuses.set({});
-    this.draftSavedAt.set(null);
-    this.draftRestored.set(false);
-    this.draftStorageError.set(false);
-    this.suppressDraftSave = false;
-  }
-
-  private draftContext(itemId: string): RunDraftContext | null {
-    const userId = this.browserSession.user()?.id;
-    if (!userId) return null;
-    return {
-      userId,
-      workspaceSlug: this.workspaceSlug,
-      projectSlug: this.projectSlug,
-      runId: this.runId,
-      itemId,
-    };
-  }
-
-  private stopTimerInterval(): void {
-    if (this.timerHandle) {
-      clearInterval(this.timerHandle);
-      this.timerHandle = null;
-    }
-    this.timerStartedAt = null;
-  }
-
-  private updateTimer(): void {
-    if (this.timerStartedAt === null) return;
-    const elapsed = Math.min(
-      this.timerBaseSeconds + Math.floor((Date.now() - this.timerStartedAt) / 1_000),
-      86_400,
-    );
-    if (elapsed !== this.resultForm.controls.elapsedSeconds.value) {
-      this.resultForm.controls.elapsedSeconds.setValue(elapsed);
-    }
-    if (elapsed === 86_400) {
-      this.stopTimerInterval();
-      this.timerRunning.set(false);
-    }
   }
 }
