@@ -1,60 +1,234 @@
 <main class="run-create-page" aria-labelledby="run-create-title">
-  <header>
-    <div>
-      <p class="eyebrow">{{ 'workspace.runs.eyebrow' | transloco }}</p>
-      <h1 id="run-create-title">{{ 'workspace.runs.new.title' | transloco }}</h1>
-      <p>{{ 'workspace.runs.new.description' | transloco }}</p>
-    </div>
-    <a
-      href="/{{ workspaceSlug }}/{{ projectSlug }}/runs"
-      [routerLink]="['/', workspaceSlug, projectSlug, 'runs']"
-    >
-      {{ 'workspace.runs.new.back' | transloco }}
-    </a>
-  </header>
+  <form [formGroup]="form" (ngSubmit)="submit('active')">
+    <section class="run-settings">
+      <header class="settings-header">
+        <a
+          class="back-link"
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'runs']"
+        >
+          <span aria-hidden="true">←</span>
+          {{ 'workspace.runs.new.back' | transloco }}
+        </a>
+        <p class="eyebrow">{{ 'workspace.runs.eyebrow' | transloco }}</p>
+        <h1 id="run-create-title">{{ 'workspace.runs.new.title' | transloco }}</h1>
+        <p class="description">{{ 'workspace.runs.new.description' | transloco }}</p>
+      </header>
 
-  @if (!canCreate()) {
-    <section class="state"><h2>{{ 'workspace.runs.new.readOnly' | transloco }}</h2></section>
-  } @else if (cases.isPending()) {
-    <section class="state">{{ 'workspace.runs.new.loadingCases' | transloco }}</section>
-  } @else if (cases.isError()) {
-    <section class="state error" role="alert">{{ errorTranslationKey() | transloco }}</section>
-  } @else {
-    <form [formGroup]="form" (ngSubmit)="submit()">
-      <label for="run-name">{{ 'workspace.runs.new.name' | transloco }}</label>
-      <input id="run-name" type="text" formControlName="name" />
-      <label for="run-build">{{ 'workspace.runs.new.build' | transloco }}</label>
-      <input id="run-build" type="text" formControlName="build" />
+      @if (!canCreate()) {
+        <div class="notice error" role="alert">
+          {{ 'workspace.runs.new.readOnly' | transloco }}
+        </div>
+      }
 
-      <fieldset>
-        <legend>{{ 'workspace.runs.new.selectCases' | transloco }}</legend>
-        @for (testCase of items(); track testCase.id) {
-          <label class="case-option">
-            <input
-              type="checkbox"
-              [checked]="selectedIds().has(testCase.id)"
-              (change)="toggleCase(testCase.id, $any($event.target).checked)"
-            />
-            <span>{{ testCase.title }}</span>
-            <small>{{ testCase.section.name }}</small>
-          </label>
+      <div class="field">
+        <label for="run-name">{{ 'workspace.runs.new.name' | transloco }}</label>
+        <input
+          id="run-name"
+          type="text"
+          formControlName="name"
+          autocomplete="off"
+          [placeholder]="'workspace.runs.new.namePlaceholder' | transloco"
+        />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <p class="field-error">{{ 'workspace.runs.new.nameInvalid' | transloco }}</p>
         }
-        @if (cases.hasNextPage()) {
-          <button type="button" (click)="cases.fetchNextPage()">
-            {{ 'workspace.runs.new.loadMoreCases' | transloco }}
-          </button>
-        }
-      </fieldset>
+      </div>
 
-      @if (selectedIds().size === 0) {
-        <p class="hint">{{ 'workspace.runs.new.selectAtLeastOne' | transloco }}</p>
+      <div class="field">
+        <label for="run-build">{{ 'workspace.runs.new.build' | transloco }}</label>
+        <input
+          id="run-build"
+          type="text"
+          formControlName="build"
+          autocomplete="off"
+          [placeholder]="'workspace.runs.new.buildPlaceholder' | transloco"
+        />
+        <p class="field-hint">{{ 'workspace.runs.new.buildHint' | transloco }}</p>
+        @if (form.controls.build.touched && form.controls.build.invalid) {
+          <p class="field-error">{{ 'workspace.runs.new.buildInvalid' | transloco }}</p>
+        }
+      </div>
+
+      <div class="snapshot-note">
+        <span aria-hidden="true">◇</span>
+        <p>{{ 'workspace.runs.new.snapshotNote' | transloco }}</p>
+      </div>
+
+      @if (submissionAttempted() && selectedIds().size === 0) {
+        <p class="notice error" role="alert">
+          {{ 'workspace.runs.new.selectAtLeastOne' | transloco }}
+        </p>
       }
       @if (createRun.isError()) {
-        <p class="error" role="alert">{{ errorTranslationKey() | transloco }}</p>
+        <p class="notice error" role="alert">{{ errorTranslationKey() | transloco }}</p>
       }
-      <button type="submit" [disabled]="createRun.isPending()">
-        {{ (createRun.isPending() ? 'workspace.runs.new.creating' : 'workspace.runs.new.submit') | transloco }}
-      </button>
-    </form>
-  }
+
+      <footer class="settings-actions">
+        <button
+          class="secondary-action"
+          type="button"
+          [disabled]="createRun.isPending() || !canCreate()"
+          (click)="submit('draft')"
+        >
+          {{ 'workspace.runs.new.saveDraft' | transloco }}
+        </button>
+        <button
+          class="primary-action"
+          type="submit"
+          [disabled]="createRun.isPending() || !canCreate()"
+        >
+          {{
+            (createRun.isPending()
+              ? 'workspace.runs.new.creating'
+              : 'workspace.runs.new.startRun') | transloco
+          }}
+        </button>
+      </footer>
+    </section>
+
+    <section class="case-selection" aria-labelledby="case-selection-title">
+      <header class="selection-header">
+        <div>
+          <p class="eyebrow">{{ 'workspace.runs.new.repositoryEyebrow' | transloco }}</p>
+          <h2 id="case-selection-title">{{ 'workspace.runs.new.selectCases' | transloco }}</h2>
+        </div>
+        <span class="selected-count">
+          {{ 'workspace.runs.new.selectedCount' | transloco: { count: selectedIds().size } }}
+        </span>
+      </header>
+
+      <div class="selection-toolbar">
+        <div class="case-search">
+          <label class="visually-hidden" for="run-case-search">
+            {{ 'workspace.runs.new.searchLabel' | transloco }}
+          </label>
+          <input
+            id="run-case-search"
+            type="search"
+            [formControl]="searchControl"
+            [placeholder]="'workspace.runs.new.searchPlaceholder' | transloco"
+            (keydown.enter)="$event.preventDefault(); applySearch()"
+          />
+          <button type="button" (click)="applySearch()">
+            {{ 'workspace.runs.new.searchSubmit' | transloco }}
+          </button>
+        </div>
+        @if (search()) {
+          <button class="text-action" type="button" (click)="clearSearch()">
+            {{ 'workspace.runs.new.clearSearch' | transloco }}
+          </button>
+        }
+        @if (selectedIds().size > 0) {
+          <button class="text-action clear-selection" type="button" (click)="clearSelection()">
+            {{ 'workspace.runs.new.clearSelection' | transloco }}
+          </button>
+        }
+      </div>
+
+      @if (cases.isPending()) {
+        <div class="selection-state" aria-live="polite">
+          <span class="loading-indicator" aria-hidden="true"></span>
+          {{ 'workspace.runs.new.loadingCases' | transloco }}
+        </div>
+      } @else if (cases.isError()) {
+        <div class="selection-state error" role="alert">
+          <p>{{ errorTranslationKey() | transloco }}</p>
+          <button class="secondary-action" type="button" (click)="cases.refetch()">
+            {{ 'workspace.runs.retry' | transloco }}
+          </button>
+        </div>
+      } @else if (items().length === 0) {
+        <div class="selection-state">
+          <h3>
+            {{
+              (search()
+                ? 'workspace.runs.new.noMatchesTitle'
+                : 'workspace.runs.new.emptyTitle') | transloco
+            }}
+          </h3>
+          <p>
+            {{
+              (search()
+                ? 'workspace.runs.new.noMatchesDescription'
+                : 'workspace.runs.new.emptyDescription') | transloco
+            }}
+          </p>
+          @if (search()) {
+            <button class="secondary-action" type="button" (click)="clearSearch()">
+              {{ 'workspace.runs.new.clearSearch' | transloco }}
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="case-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="checkbox-cell" scope="col">
+                  <input
+                    type="checkbox"
+                    [checked]="allVisibleSelected()"
+                    [attr.aria-label]="'workspace.runs.new.selectVisible' | transloco"
+                    (change)="toggleVisible($any($event.target).checked)"
+                  />
+                </th>
+                <th scope="col">{{ 'workspace.cases.id' | transloco }}</th>
+                <th scope="col">{{ 'workspace.cases.name' | transloco }}</th>
+                <th scope="col">{{ 'workspace.cases.section' | transloco }}</th>
+                <th scope="col">{{ 'workspace.cases.type' | transloco }}</th>
+                <th scope="col">{{ 'workspace.cases.template' | transloco }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (testCase of items(); track testCase.id) {
+                <tr [class.selected]="selectedIds().has(testCase.id)">
+                  <td class="checkbox-cell">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedIds().has(testCase.id)"
+                      [attr.aria-label]="
+                        'workspace.runs.new.selectCase' | transloco: { title: testCase.title }
+                      "
+                      (change)="toggleCase(testCase.id, $any($event.target).checked)"
+                    />
+                  </td>
+                  <td class="case-id">{{ project()?.key }}-{{ testCase.caseNumber }}</td>
+                  <td class="case-title">{{ testCase.title }}</td>
+                  <td class="muted-cell">{{ testCase.section.name }}</td>
+                  <td>
+                    <span class="type-tag" [class.automated]="testCase.automationId">
+                      {{
+                        (testCase.automationId
+                          ? 'workspace.cases.automated'
+                          : 'workspace.cases.manual') | transloco
+                      }}
+                    </span>
+                  </td>
+                  <td class="muted-cell">
+                    {{ templateTranslationKey(testCase.template) | transloco }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (cases.hasNextPage()) {
+          <button
+            class="load-more secondary-action"
+            type="button"
+            [disabled]="cases.isFetchingNextPage()"
+            (click)="cases.fetchNextPage()"
+          >
+            {{
+              (cases.isFetchingNextPage()
+                ? 'workspace.runs.loadingMore'
+                : 'workspace.runs.new.loadMoreCases') | transloco
+            }}
+          </button>
+        }
+      }
+    </section>
+  </form>
 </main>

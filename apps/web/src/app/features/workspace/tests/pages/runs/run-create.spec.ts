@@ -82,10 +82,56 @@ describe('RunCreate', () => {
     expect(workspaceApi.createTestRun).toHaveBeenCalledWith('acme', 'authentication', {
       name: 'Regression',
       build: undefined,
+      status: 'active',
       caseIds: [CASE_ID],
     });
     await vi.waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(['/', 'acme', 'authentication', 'runs']),
+      expect(navigate).toHaveBeenCalledWith([
+        '/',
+        'acme',
+        'authentication',
+        'runs',
+        'b101eace-107c-4177-8d7c-f4f052785c16',
+      ]),
     );
+  });
+
+  it('can save the selected cases as a draft run', async () => {
+    const fixture = TestBed.createComponent(RunCreate);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.cases.isSuccess()).toBe(true));
+    fixture.componentInstance.form.setValue({ name: 'Release candidate', build: ' 2.4.0-rc.1 ' });
+    fixture.componentInstance.toggleVisible(true);
+    fixture.componentInstance.submit('draft');
+
+    await vi.waitFor(() => expect(workspaceApi.createTestRun).toHaveBeenCalledOnce());
+    expect(workspaceApi.createTestRun).toHaveBeenCalledWith('acme', 'authentication', {
+      name: 'Release candidate',
+      build: '2.4.0-rc.1',
+      status: 'draft',
+      caseIds: [CASE_ID],
+    });
+  });
+
+  it('searches active cases without losing the current selection', async () => {
+    const fixture = TestBed.createComponent(RunCreate);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.cases.isSuccess()).toBe(true));
+    fixture.componentInstance.toggleCase(CASE_ID, true);
+    fixture.componentInstance.searchControl.setValue(' sign in ');
+    fixture.componentInstance.applySearch();
+
+    await vi.waitFor(() =>
+      expect(workspaceApi.listTestCases).toHaveBeenLastCalledWith(
+        'acme',
+        'authentication',
+        undefined,
+        'sign in',
+        undefined,
+        'active',
+        100,
+      ),
+    );
+    expect(fixture.componentInstance.selectedIds().has(CASE_ID)).toBe(true);
   });
 });
