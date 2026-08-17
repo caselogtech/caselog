@@ -183,4 +183,34 @@ describe('WorkspaceApi', () => {
       attachment: { fileName: 'browser-evidence.txt' },
     });
   });
+
+  it('creates a secure download for a recorded result attachment', async () => {
+    authApi.organizationToken.mockResolvedValue(organizationSession);
+    const response = TestBed.inject(WorkspaceApi).testResultAttachmentDownload(
+      'acme-quality',
+      'authentication',
+      'b101eace-107c-4177-8d7c-f4f052785c16',
+      'f230fe74-dd2d-40db-a0a4-21a8597526ef',
+      '4c305be5-9ab8-4ef4-889c-08b666b5d402',
+      '6fe23247-f3b8-44ec-99fb-f7567940c580',
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const request = TestBed.inject(HttpTestingController).expectOne(
+      '/api/v1/projects/authentication/runs/b101eace-107c-4177-8d7c-f4f052785c16/items/f230fe74-dd2d-40db-a0a4-21a8597526ef/results/4c305be5-9ab8-4ef4-889c-08b666b5d402/attachments/6fe23247-f3b8-44ec-99fb-f7567940c580/download',
+    );
+    expect(request.request.method).toBe('POST');
+    request.flush({
+      download: {
+        url: 'https://storage.example.com/evidence.png',
+        expiresAt: '2026-08-02T12:35:00.000Z',
+      },
+    });
+
+    await expect(response).resolves.toMatchObject({
+      download: { url: 'https://storage.example.com/evidence.png' },
+    });
+  });
 });

@@ -304,6 +304,24 @@ export class WorkspaceApi {
     return testResultDetailResponseSchema.parse(response);
   }
 
+  async testResultAttachmentDownload(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+    itemId: string,
+    resultId: string,
+    attachmentId: string,
+  ): Promise<AttachmentDownloadResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/runs/${encodeURIComponent(runId)}/items/${encodeURIComponent(itemId)}/results/${encodeURIComponent(resultId)}/attachments/${encodeURIComponent(attachmentId)}/download`,
+        null,
+      ),
+    );
+    return attachmentDownloadResponseSchema.parse(response);
+  }
+
   private async changeTestRunState(
     workspaceSlug: string,
     projectSlug: string,

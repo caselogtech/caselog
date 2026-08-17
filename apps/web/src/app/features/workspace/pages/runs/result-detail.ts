@@ -1,9 +1,9 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import type { StepResultResponse, TestRunItemResponse } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { injectQuery } from '@tanstack/angular-query-experimental';
+import { injectMutation, injectQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { WorkspaceApi } from '../../data-access/workspace-api';
 
@@ -17,6 +17,7 @@ import { WorkspaceApi } from '../../data-access/workspace-api';
 export class ResultDetail {
   private readonly route = inject(ActivatedRoute);
   private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly document = inject(DOCUMENT);
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
@@ -43,6 +44,19 @@ export class ResultDetail {
       ),
   }));
 
+  readonly downloadAttachment = injectMutation(() => ({
+    mutationFn: (attachmentId: string) =>
+      this.workspaceApi.testResultAttachmentDownload(
+        this.workspaceSlug,
+        this.projectSlug,
+        this.runId,
+        this.itemId,
+        this.resultId,
+        attachmentId,
+      ),
+    onSuccess: ({ download }) => this.openDownload(download.url),
+  }));
+
   steps(item: TestRunItemResponse): Array<{ action: string; expected?: string }> {
     return 'steps' in item.caseVersion.content ? item.caseVersion.content.steps : [];
   }
@@ -65,7 +79,22 @@ export class ResultDetail {
     return `${elapsedMs / 1_000} s`;
   }
 
+  formatFileSize(sizeBytes: number): string {
+    if (sizeBytes < 1_024) return `${sizeBytes} B`;
+    if (sizeBytes < 1_048_576) return `${(sizeBytes / 1_024).toFixed(1)} KB`;
+    return `${(sizeBytes / 1_048_576).toFixed(1)} MB`;
+  }
+
   errorTranslationKey(): string {
-    return apiErrorTranslationKey(this.detail.error());
+    return apiErrorTranslationKey(this.downloadAttachment.error() ?? this.detail.error());
+  }
+
+  private openDownload(url: string): void {
+    const link = this.document.createElement('a');
+    link.href = url;
+    link.rel = 'noopener';
+    this.document.body.append(link);
+    link.click();
+    link.remove();
   }
 }

@@ -28,7 +28,16 @@ const response: TestResultHistoryResponse = {
       executedBy: { id: '882c64fe-a728-40a0-91a9-96c74f585895', displayName: 'Ada' },
       executedAt: '2026-08-02T12:01:00.000Z',
       stepResults: [],
-      attachments: [],
+      attachments: [
+        {
+          id: '6fe23247-f3b8-44ec-99fb-f7567940c580',
+          fileName: 'failed-login.png',
+          contentType: 'image/png',
+          sizeBytes: 2_048,
+          checksumSha256: 'a'.repeat(64),
+          stepPosition: 0,
+        },
+      ],
     },
   ],
   nextCursor: null,
@@ -82,5 +91,11 @@ describe('ResultHistory', () => {
     expect(fixture.nativeElement.textContent).toContain('Sign in');
     expect(fixture.nativeElement.textContent).toContain('Retest passed');
     expect(fixture.nativeElement.textContent).toContain('Ada');
+    expect(fixture.nativeElement.querySelector('.attempt-link')?.getAttribute('href')).toBe(
+      `/acme/authentication/runs/${RUN_ID}/items/${ITEM_ID}/results/${RESULT_ID}`,
+    );
+    expect(fixture.nativeElement.querySelector('.back-link')?.getAttribute('href')).toBe(
+      `/acme/authentication/runs/${RUN_ID}?item=${ITEM_ID}`,
+    );
   });
 });

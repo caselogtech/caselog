@@ -338,18 +338,28 @@
       "retest": "Record another attempt",
       "empty": "No attempts have been recorded for this test case.",
       "attempt": "Attempt {{attempt}}",
+      "attemptColumn": "Attempt",
       "executedAt": "Executed",
       "executor": "Executor",
       "unknownExecutor": "Unknown executor",
       "elapsed": "Elapsed",
-      "steps": "Step outcomes"
+      "evidence": "Evidence",
+      "openAttempt": "Open attempt {{attempt}}"
     },
     "result": {
       "loading": "Loading result…",
       "eyebrow": "Attempt {{attempt}}",
       "backToHistory": "All attempts",
       "retest": "Record another attempt",
-      "notRecorded": "No result recorded for this step"
+      "notRecorded": "No result recorded for this step",
+      "metadata": "Result metadata",
+      "notes": "Execution notes",
+      "attachments": "Evidence",
+      "stepResult": "Result",
+      "evidenceEyebrow": "Attachments",
+      "noAttachments": "No evidence was attached to this attempt.",
+      "stepAttachment": "Step {{position}}",
+      "downloadAttachment": "Download"
     }
   }
 }
