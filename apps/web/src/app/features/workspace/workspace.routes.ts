@@ -40,6 +40,10 @@ export const workspaceRoutes: Routes = [
         loadComponent: () => import('./pages/runs/run-list').then(({ RunList }) => RunList),
       },
       {
+        path: ':project/cases/import',
+        loadComponent: () => import('./pages/cases/csv-import').then(({ CsvImport }) => CsvImport),
+      },
+      {
         path: ':project/cases/new',
         loadComponent: () =>
           import('./pages/cases/case-create').then(({ CaseCreate }) => CaseCreate),

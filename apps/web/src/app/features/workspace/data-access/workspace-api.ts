@@ -6,6 +6,8 @@ import {
   caseAttachmentResponseSchema,
   caseExecutionHistoryResponseSchema,
   createUploadSessionResponseSchema,
+  csvImportPreviewResponseSchema,
+  csvImportResponseSchema,
   createTestCaseResponseSchema,
   createTestRunResponseSchema,
   assignTestRunItemResponseSchema,
@@ -37,6 +39,9 @@ import {
   type AssignTestRunItemResponse,
   type CreateTestResultRequest,
   type CreateTestResultResponse,
+  type CsvImportPreviewResponse,
+  type CsvImportRequest,
+  type CsvImportResponse,
   type OrganizationTokenResponse,
   type ProjectListResponse,
   type ProjectStructureResponse,
@@ -180,6 +185,38 @@ export class WorkspaceApi {
       ),
     );
     return resultIngestionListResponseSchema.parse(response);
+  }
+
+  async previewCsvImport(
+    workspaceSlug: string,
+    projectSlug: string,
+    request: CsvImportRequest,
+  ): Promise<CsvImportPreviewResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/imports/csv/preview`,
+        request,
+      ),
+    );
+    return csvImportPreviewResponseSchema.parse(response);
+  }
+
+  async commitCsvImport(
+    workspaceSlug: string,
+    projectSlug: string,
+    request: CsvImportRequest,
+    idempotencyKey: string,
+  ): Promise<CsvImportResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/imports/csv/commit`,
+        request,
+        { headers: { 'Idempotency-Key': idempotencyKey } },
+      ),
+    );
+    return csvImportResponseSchema.parse(response);
   }
 
   async uploadJUnitResults(

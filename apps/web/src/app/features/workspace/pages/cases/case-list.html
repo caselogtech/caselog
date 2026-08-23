@@ -18,14 +18,24 @@
         }
       </div>
       @if (canCreate() && state() === 'active') {
-        <a
-          class="primary-action"
-          href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/new"
-          [routerLink]="['/', workspaceSlug, projectSlug, 'cases', 'new']"
-        >
-          <span aria-hidden="true">＋</span>
-          {{ 'workspace.cases.create' | transloco }}
-        </a>
+        <div class="header-actions">
+          <a
+            class="secondary-action"
+            href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/import"
+            [routerLink]="['/', workspaceSlug, projectSlug, 'cases', 'import']"
+          >
+            <span aria-hidden="true">↑</span>
+            {{ 'workspace.cases.importCsv' | transloco }}
+          </a>
+          <a
+            class="primary-action"
+            href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/new"
+            [routerLink]="['/', workspaceSlug, projectSlug, 'cases', 'new']"
+          >
+            <span aria-hidden="true">＋</span>
+            {{ 'workspace.cases.create' | transloco }}
+          </a>
+        </div>
       }
     </header>
 
