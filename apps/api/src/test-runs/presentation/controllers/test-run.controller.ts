@@ -50,6 +50,7 @@ import {
   CreateTestRunRequestDto,
   CreateTestRunHeadersDto,
   IdempotencyHeadersDto,
+  JUnitUploadHeadersDto,
   TestRunDetailParamsDto,
   TestRunDetailQueryDto,
   TestRunItemParamsDto,
@@ -130,7 +131,7 @@ export class TestRunController {
   ingestJUnitResults(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestRunDetailParamsDto,
-    @Headers() headers: IdempotencyHeadersDto,
+    @Headers() headers: JUnitUploadHeadersDto,
     @Headers('content-type') contentType: string | undefined,
     @Req() request: FastifyRequest,
   ): Promise<JUnitUploadResponse> {
@@ -141,6 +142,11 @@ export class TestRunController {
       headers['idempotency-key'] as string | undefined,
       contentType,
       request.body,
+      {
+        source: headers['x-caselog-source'],
+        pipeline: headers['x-caselog-pipeline'],
+        branch: headers['x-caselog-branch'],
+      },
     );
   }
 

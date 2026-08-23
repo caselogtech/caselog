@@ -8,12 +8,17 @@ import { TestResultRepository } from './infrastructure/repositories/test-result.
 import { TestRunController } from './presentation/controllers/test-run.controller';
 import { TestRunRepository } from './infrastructure/repositories/test-run.repository';
 import { TestRunService } from './application/services/test-run.service';
+import { ResultIngestionService } from './application/services/result-ingestion.service';
+import { ResultIngestionRepository } from './infrastructure/repositories/result-ingestion.repository';
+import { ResultIngestionController } from './presentation/controllers/result-ingestion.controller';
 
 @Module({
   imports: [AuthModule, AttachmentModule, ReportingModule],
-  controllers: [TestRunController],
+  controllers: [TestRunController, ResultIngestionController],
   providers: [
     JUnitIngestRepository,
+    ResultIngestionRepository,
+    ResultIngestionService,
     TestResultQueryRepository,
     TestResultRepository,
     TestRunRepository,

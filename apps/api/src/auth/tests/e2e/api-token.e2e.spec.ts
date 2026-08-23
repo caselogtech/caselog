@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   auditLogListResponseSchema,
   createApiTokenResponseSchema,
+  resultIngestionListResponseSchema,
   sessionResponseSchema,
   type CreateApiTokenResponse,
 } from '@caselog/schemas';
@@ -290,11 +291,38 @@ describe('organization API tokens', () => {
         authorization: `Bearer ${apiToken.token}`,
         'content-type': 'application/xml',
         'idempotency-key': 'api-token-junit-upload',
+        'x-caselog-source': 'GitHub Actions',
+        'x-caselog-pipeline': 'checkout-regression',
+        'x-caselog-branch': 'main',
       },
       payload: JUNIT_XML,
     });
     expect(upload.statusCode, upload.body).toBe(201);
     expect(upload.json()).toMatchObject({ total: 1, recorded: 1, counts: { passed: 1 } });
+
+    const ingestionHistory = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/token-project/automation/imports',
+      headers: { authorization: `Bearer ${apiToken.token}` },
+    });
+    expect(ingestionHistory.statusCode, ingestionHistory.body).toBe(200);
+    const history = resultIngestionListResponseSchema.parse(ingestionHistory.json());
+    expect(history.items[0]).toMatchObject({
+      run: { id: runId, name: 'CI run' },
+      format: 'junit',
+      status: 'completed',
+      source: 'GitHub Actions',
+      pipeline: 'checkout-regression',
+      branch: 'main',
+      total: 1,
+      recorded: 1,
+      unmatched: 0,
+    });
+    expect(history.summary).toMatchObject({
+      reportsThisWeek: expect.any(Number),
+      matchedPercentThisWeek: 100,
+      unmatchedThisWeek: 0,
+    });
 
     const list = await app.inject({
       method: 'GET',
@@ -302,6 +330,66 @@ describe('organization API tokens', () => {
       headers: { authorization: `Bearer ${organizationToken}` },
     });
     expect(list.json().apiTokens[0].lastUsedAt).toEqual(expect.any(String));
+  });
+
+  it('records malformed JUnit attempts without consuming the idempotency key', async () => {
+    const idempotencyKey = `malformed-${randomUUID()}`;
+    const malformed = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/token-project/runs/${runId}/results/junit`,
+      headers: {
+        authorization: `Bearer ${apiToken.token}`,
+        'content-type': 'application/xml',
+        'idempotency-key': idempotencyKey,
+        'x-caselog-source': 'Jenkins',
+      },
+      payload: '<testsuite><testcase name="broken">',
+    });
+    expect(malformed.statusCode, malformed.body).toBe(400);
+    expect(malformed.json().error.code).toBe('junit_malformed_xml');
+
+    const failures = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/token-project/automation/imports?status=failed',
+      headers: { authorization: `Bearer ${apiToken.token}` },
+    });
+    expect(failures.statusCode, failures.body).toBe(200);
+    expect(resultIngestionListResponseSchema.parse(failures.json()).items[0]).toMatchObject({
+      status: 'failed',
+      source: 'Jenkins',
+      error: { code: 'junit_malformed_xml' },
+    });
+
+    const recovered = await app.inject({
+      method: 'POST',
+      url: `/api/v1/projects/token-project/runs/${runId}/results/junit`,
+      headers: {
+        authorization: `Bearer ${apiToken.token}`,
+        'content-type': 'application/xml',
+        'idempotency-key': idempotencyKey,
+      },
+      payload: JUNIT_XML,
+    });
+    expect(recovered.statusCode, recovered.body).toBe(201);
+
+    const firstCompletedPage = await app.inject({
+      method: 'GET',
+      url: '/api/v1/projects/token-project/automation/imports?status=completed&limit=1',
+      headers: { authorization: `Bearer ${apiToken.token}` },
+    });
+    const firstPage = resultIngestionListResponseSchema.parse(firstCompletedPage.json());
+    expect(firstPage.items).toHaveLength(1);
+    expect(firstPage.nextCursor).toEqual(expect.any(String));
+
+    const secondCompletedPage = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/token-project/automation/imports?status=completed&limit=1&cursor=${firstPage.nextCursor}`,
+      headers: { authorization: `Bearer ${apiToken.token}` },
+    });
+    const secondPage = resultIngestionListResponseSchema.parse(secondCompletedPage.json());
+    expect(secondPage.items).toHaveLength(1);
+    expect(secondPage.items[0]?.id).not.toBe(firstPage.items[0]?.id);
+    expect(secondPage.nextCursor).toBeNull();
   });
 
   it('denies an API token that does not have the endpoint scope', async () => {

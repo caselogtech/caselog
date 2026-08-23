@@ -90,6 +90,19 @@ enum ApiTokenScope {
   @@map("api_token_scope")
 }
 
+enum ResultIngestionFormat {
+  JUNIT @map("junit")
+
+  @@map("result_ingestion_format")
+}
+
+enum ResultIngestionStatus {
+  COMPLETED @map("completed")
+  FAILED    @map("failed")
+
+  @@map("result_ingestion_status")
+}
+
 model Organization {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name           String    @db.VarChar(120)
@@ -107,6 +120,7 @@ model Organization {
   testCaseVersions         TestCaseVersion[]
   resultStatuses           ResultStatus[]
   testRuns                 TestRun[]
+  resultIngestions         TestResultIngestion[]
   runProgressSnapshots     RunProgressSnapshot[]
   projectionRevisions      ProjectionRevision[]
   testRunItems             TestRunItem[]
@@ -181,6 +195,7 @@ model User {
   createdIssueLinks      IssueLink[]             @relation("IssueLinkCreator")
   issueCreationRequests  IssueCreationRequest[]  @relation("IssueCreationRequestCreator")
   sentInvitations        WorkspaceInvitation[]   @relation("InvitationSender")
+  resultIngestions       TestResultIngestion[]   @relation("ResultIngestionInitiator")
 
   @@map("users")
 }
@@ -434,6 +449,7 @@ model Project {
   customFieldDefinitions CustomFieldDefinition[]
   issueLinks             IssueLink[]
   issueCreationRequests  IssueCreationRequest[]
+  resultIngestions       TestResultIngestion[]
 
   @@id([organizationId, id], map: "pk_projects")
   @@unique([organizationId, key], map: "uq_projects_organization_id_key")
@@ -584,15 +600,51 @@ model TestRun {
   closedAt       DateTime? @map("closed_at") @db.Timestamptz(3)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project          Project              @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  organization     Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project          Project               @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
   items            TestRunItem[]
   uploadSessions   UploadSession[]
   progressSnapshot RunProgressSnapshot?
+  resultIngestions TestResultIngestion[]
 
   @@id([organizationId, id], map: "pk_test_runs")
   @@index([organizationId, projectId, status, createdAt], map: "idx_test_runs_organization_id_project_id_status_created_at")
   @@map("test_runs")
+}
+
+model TestResultIngestion {
+  organizationId String                @map("organization_id") @db.Uuid
+  id             String                @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String                @map("project_id") @db.Uuid
+  testRunId      String                @map("test_run_id") @db.Uuid
+  initiatedById  String?               @map("initiated_by_id") @db.Uuid
+  format         ResultIngestionFormat
+  status         ResultIngestionStatus
+  source         String                @db.VarChar(120)
+  pipeline       String?               @db.VarChar(200)
+  branch         String?               @db.VarChar(255)
+  total          Int                   @default(0)
+  recorded       Int                   @default(0)
+  unmatched      Int                   @default(0)
+  truncated      Int                   @default(0)
+  passed         Int                   @default(0)
+  failed         Int                   @default(0)
+  errors         Int                   @default(0)
+  skipped        Int                   @default(0)
+  errorCode      String?               @map("error_code") @db.VarChar(100)
+  errorMessage   String?               @map("error_message") @db.VarChar(1000)
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  completedAt    DateTime              @default(now()) @map("completed_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  testRun      TestRun      @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Cascade)
+  initiatedBy  User?        @relation("ResultIngestionInitiator", fields: [initiatedById], references: [id], onDelete: SetNull)
+
+  @@id([organizationId, id], map: "pk_test_result_ingestions")
+  @@index([organizationId, projectId, createdAt, id], map: "idx_result_ingestions_org_project_created_id")
+  @@index([organizationId, testRunId, createdAt, id], map: "idx_result_ingestions_org_run_created_id")
+  @@map("test_result_ingestions")
 }
 
 model RunProgressSnapshot {

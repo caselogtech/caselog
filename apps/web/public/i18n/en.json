@@ -6,7 +6,8 @@
       "primary": "Primary navigation",
       "projects": "Projects",
       "testCases": "Test cases",
-      "testRuns": "Test runs"
+      "testRuns": "Test runs",
+      "ciImports": "CI imports"
     }
   },
   "errors": {
@@ -36,6 +37,11 @@
     "invalid_step_results": "The step results no longer match this run's frozen case version.",
     "invalid_upload_target": "This upload target no longer exists in the frozen test case version.",
     "invalid_upload": "One or more uploads expired or cannot be used for this result.",
+    "junit_malformed_xml": "The selected file is not valid JUnit XML.",
+    "junit_unsafe_xml": "JUnit reports containing a DOCTYPE are not accepted.",
+    "junit_unsupported_root": "The XML root must be testsuite or testsuites.",
+    "junit_invalid_testcase": "The report contains an invalid JUnit test case.",
+    "junit_upload_limit_exceeded": "The JUnit report exceeds the supported upload limits.",
     "run_status_unavailable": "This project is missing its Untested status. Restore that status before creating a run.",
     "upload_limit_reached": "Too many files are waiting to upload. Finish or remove existing uploads first.",
     "upload_incomplete": "A file did not finish uploading or failed integrity checks. Upload it again.",

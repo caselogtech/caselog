@@ -24,6 +24,13 @@
       >
         {{ 'app.navigation.testRuns' | transloco }}
       </a>
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug() }}/imports"
+        [routerLink]="['/', workspaceSlug, projectSlug(), 'imports']"
+        routerLinkActive="active"
+      >
+        {{ 'app.navigation.ciImports' | transloco }}
+      </a>
     }
     <a
       href="/{{ workspaceSlug }}/projects"

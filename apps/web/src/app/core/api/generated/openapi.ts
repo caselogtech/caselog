@@ -1172,6 +1172,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/automation/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ResultIngestionController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2735,6 +2751,61 @@ export interface components {
                     stepPosition: number | null;
                 }[];
             };
+        };
+        ResultIngestionListResponseDto: {
+            project: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                slug: string;
+                name: string;
+            };
+            summary: {
+                reportsThisWeek: number;
+                matchedPercentThisWeek: number;
+                unmatchedThisWeek: number;
+            };
+            items: {
+                /** Format: uuid */
+                id: string;
+                run: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    build: string | null;
+                };
+                /** @constant */
+                format: "junit";
+                /** @enum {string} */
+                status: "completed" | "failed";
+                source: string;
+                pipeline: string | null;
+                branch: string | null;
+                total: number;
+                recorded: number;
+                unmatched: number;
+                truncated: number;
+                counts: {
+                    passed: number;
+                    failed: number;
+                    error: number;
+                    skipped: number;
+                };
+                error: {
+                    code: string;
+                    message: string;
+                } | null;
+                initiatedBy: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                } | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                completedAt: string;
+            }[];
+            nextCursor: string | null;
         };
         ApiErrorResponseDto: {
             error: {
@@ -5379,6 +5450,9 @@ export interface operations {
             query?: never;
             header: {
                 "idempotency-key": string;
+                "x-caselog-source"?: string;
+                "x-caselog-pipeline"?: string;
+                "x-caselog-branch"?: string;
             };
             path: {
                 projectSlug: string;
@@ -5695,6 +5769,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TestResultDetailResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ResultIngestionController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                status?: "completed" | "failed";
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultIngestionListResponseDto"];
                 };
             };
             /** @description API error */

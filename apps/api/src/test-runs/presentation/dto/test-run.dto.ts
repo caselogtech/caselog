@@ -5,6 +5,7 @@ import {
   createTestRunRequestSchema,
   createTestRunHeadersSchema,
   idempotencyHeadersSchema,
+  junitUploadHeadersSchema,
   testRunListParamsSchema,
   testRunListQuerySchema,
   testRunDetailParamsSchema,
@@ -20,6 +21,7 @@ export class TestRunListQueryDto extends createZodDto(testRunListQuerySchema) {}
 export class CreateTestRunRequestDto extends createZodDto(createTestRunRequestSchema) {}
 export class CreateTestRunHeadersDto extends createZodDto(createTestRunHeadersSchema) {}
 export class IdempotencyHeadersDto extends createZodDto(idempotencyHeadersSchema) {}
+export class JUnitUploadHeadersDto extends createZodDto(junitUploadHeadersSchema) {}
 export class BulkTestResultsRequestDto extends createZodDto(bulkTestResultsRequestSchema) {}
 export class TestRunDetailParamsDto extends createZodDto(testRunDetailParamsSchema) {}
 export class TestRunItemParamsDto extends createZodDto(testRunItemParamsSchema) {}

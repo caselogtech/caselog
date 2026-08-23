@@ -5,8 +5,13 @@ import { TenantDatabaseService } from '../../../core/database/application/servic
 import { bumpProjectionRevision } from '../../../core/database/infrastructure/persistence/projection-revision';
 import { RUN_PROGRESS_PROJECTION } from '../../../reporting/public-api';
 import { Prisma } from '../../../generated/prisma/client';
-import { RunStatus } from '../../../generated/prisma/enums';
+import {
+  ResultIngestionFormat,
+  ResultIngestionStatus,
+  RunStatus,
+} from '../../../generated/prisma/enums';
 import type { ParsedJUnitResult } from '../../domain/parsers/junit-parser';
+import type { ResultIngestionMetadata } from '../../domain/models/result-ingestion';
 import {
   indexRunItems,
   matchableRunItems,
@@ -34,6 +39,7 @@ export class JUnitIngestRepository {
     idempotencyKey: string,
     requestHash: string,
     parsedResults: ParsedJUnitResult[],
+    metadata: ResultIngestionMetadata,
   ): Promise<RunResult<JUnitUploadResponse>> {
     return this.tenantDatabase.run(
       organizationId,
@@ -199,6 +205,25 @@ export class JUnitIngestRepository {
           counts,
           unmatched,
         };
+        await transaction.testResultIngestion.create({
+          data: {
+            organizationId,
+            projectId: context.value.projectId,
+            testRunId: runId,
+            initiatedById: userId,
+            format: ResultIngestionFormat.JUNIT,
+            status: ResultIngestionStatus.COMPLETED,
+            ...metadata,
+            total: response.total,
+            recorded: response.recorded,
+            unmatched: response.unmatched.length,
+            truncated: response.truncated,
+            passed: response.counts.passed,
+            failed: response.counts.failed,
+            errors: response.counts.error,
+            skipped: response.counts.skipped,
+          },
+        });
         await storeIdempotencyResponse(
           transaction,
           organizationId,

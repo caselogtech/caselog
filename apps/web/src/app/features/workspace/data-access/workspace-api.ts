@@ -12,6 +12,7 @@ import {
   createTestResultResponseSchema,
   projectListResponseSchema,
   projectStructureResponseSchema,
+  resultIngestionListResponseSchema,
   runProgressResponseSchema,
   sectionResponseSchema,
   suiteResponseSchema,
@@ -22,6 +23,7 @@ import {
   testRunListResponseSchema,
   testRunDetailResponseSchema,
   testRunLifecycleResponseSchema,
+  junitUploadResponseSchema,
   testResultDetailResponseSchema,
   testResultHistoryResponseSchema,
   type AttachmentDownloadResponse,
@@ -38,6 +40,8 @@ import {
   type OrganizationTokenResponse,
   type ProjectListResponse,
   type ProjectStructureResponse,
+  type ResultIngestionListResponse,
+  type ResultIngestionStatus,
   type RunProgressResponse,
   type SectionResponse,
   type SuiteResponse,
@@ -51,6 +55,7 @@ import {
   type TestResultDetailResponse,
   type TestResultHistoryResponse,
   type TestRunStatus,
+  type JUnitUploadResponse,
   type UpdateTestCaseRequest,
   type UpdateTestCaseResponse,
   updateTestCaseResponseSchema,
@@ -156,6 +161,51 @@ export class WorkspaceApi {
       }),
     );
     return testRunListResponseSchema.parse(response);
+  }
+
+  async listResultIngestions(
+    workspaceSlug: string,
+    projectSlug: string,
+    cursor?: string,
+    status?: ResultIngestionStatus,
+    limit = 25,
+  ): Promise<ResultIngestionListResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/automation/imports`,
+        {
+          params: { limit, ...(cursor ? { cursor } : {}), ...(status ? { status } : {}) },
+        },
+      ),
+    );
+    return resultIngestionListResponseSchema.parse(response);
+  }
+
+  async uploadJUnitResults(
+    workspaceSlug: string,
+    projectSlug: string,
+    runId: string,
+    file: File,
+    metadata: { pipeline?: string; branch?: string } = {},
+  ): Promise<JUnitUploadResponse> {
+    await this.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/runs/${encodeURIComponent(runId)}/results/junit`,
+        file,
+        {
+          headers: {
+            'Content-Type': 'application/xml',
+            'Idempotency-Key': crypto.randomUUID(),
+            'X-Caselog-Source': 'Browser upload',
+            ...(metadata.pipeline ? { 'X-Caselog-Pipeline': metadata.pipeline } : {}),
+            ...(metadata.branch ? { 'X-Caselog-Branch': metadata.branch } : {}),
+          },
+        },
+      ),
+    );
+    return junitUploadResponseSchema.parse(response);
   }
 
   async createTestRun(

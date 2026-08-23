@@ -19,6 +19,7 @@ import {
   type BulkTestResultsRequest,
   type BulkTestResultsResponse,
   type JUnitUploadResponse,
+  type JUnitUploadMetadata,
   type CreateTestResultRequest,
   type CreateTestResultResponse,
   type OrganizationAccessPrincipal,
@@ -48,6 +49,7 @@ import {
   type ParsedJUnitResult,
 } from '../../domain/parsers/junit-parser';
 import { JUnitIngestRepository } from '../../infrastructure/repositories/junit-ingest.repository';
+import { ResultIngestionRepository } from '../../infrastructure/repositories/result-ingestion.repository';
 import { TestResultQueryRepository } from '../../infrastructure/repositories/test-result-query.repository';
 import { TestResultRepository } from '../../infrastructure/repositories/test-result.repository';
 import {
@@ -64,6 +66,8 @@ export class TestRunService {
     @Inject(TestResultRepository) private readonly results: TestResultRepository,
     @Inject(TestResultQueryRepository) private readonly resultQueries: TestResultQueryRepository,
     @Inject(JUnitIngestRepository) private readonly junitResults: JUnitIngestRepository,
+    @Inject(ResultIngestionRepository)
+    private readonly resultIngestions: ResultIngestionRepository,
     @Inject(AttachmentService) private readonly attachments: AttachmentService,
     @Inject(RunProgressRefreshQueue)
     private readonly runProgressRefresh: RunProgressRefreshQueue,
@@ -246,12 +250,20 @@ export class TestRunService {
     idempotencyKey: string | undefined,
     contentType: string | undefined,
     body: unknown,
+    uploadMetadata?: JUnitUploadMetadata,
   ): Promise<JUnitUploadResponse> {
     if (principal.role === 'read_only') throw new AuthorizationDeniedError();
     if (!['application/xml', 'text/xml'].includes(contentType?.split(';')[0]?.trim() ?? '')) {
       throw new UnsupportedMediaTypeError('application/xml');
     }
     const key = this.parseIdempotencyKey(idempotencyKey);
+    const metadata = {
+      source:
+        uploadMetadata?.source ??
+        (principal.tokenType === 'api_token' ? 'API token' : 'Browser upload'),
+      pipeline: uploadMetadata?.pipeline ?? null,
+      branch: uploadMetadata?.branch ?? null,
+    };
     const input = this.junitInput(body);
     const requestDigest = createHash('sha256');
     const parsedResults: ParsedJUnitResult[] = [];
@@ -261,10 +273,20 @@ export class TestRunService {
       }
     } catch (error) {
       if (error instanceof JUnitParseError) {
+        const code =
+          error.code === 'limit_exceeded' ? 'junit_upload_limit_exceeded' : `junit_${error.code}`;
+        await this.recordFailedIngestion(
+          principal,
+          projectSlug,
+          runId,
+          metadata,
+          code,
+          error.message,
+        );
         if (error.code === 'limit_exceeded') {
-          throw new PayloadTooLargeError('junit_upload_limit_exceeded', error.message);
+          throw new PayloadTooLargeError(code, error.message);
         }
-        throw new InvalidPayloadError(`junit_${error.code}`, error.message);
+        throw new InvalidPayloadError(code, error.message);
       }
       throw error;
     }
@@ -277,6 +299,7 @@ export class TestRunService {
       key,
       requestDigest.digest('hex'),
       parsedResults,
+      metadata,
     );
     this.assertFound(result);
     const response = junitUploadResponseSchema.parse(result.value);
@@ -288,6 +311,33 @@ export class TestRunService {
       resultCount: parsedResults.length,
     });
     return response;
+  }
+
+  private async recordFailedIngestion(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    runId: string,
+    metadata: { source: string; pipeline: string | null; branch: string | null },
+    errorCode: string,
+    errorMessage: string,
+  ): Promise<void> {
+    try {
+      await this.resultIngestions.recordFailed(
+        principal.organizationId,
+        principal.sub,
+        projectSlug,
+        runId,
+        metadata,
+        errorCode,
+        errorMessage,
+      );
+    } catch (error) {
+      this.logger.error({
+        event: 'result_ingestion.failure_record_failed',
+        runId,
+        error: error instanceof Error ? error.message : 'Unknown persistence error',
+      });
+    }
   }
 
   async recordResult(

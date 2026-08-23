@@ -13,6 +13,17 @@ export const idempotencyHeadersSchema = z.object({
   'idempotency-key': idempotencyKeySchema,
 });
 export const createTestRunHeadersSchema = idempotencyHeadersSchema;
+const ingestionMetadataValueSchema = (max: number) => z.string().trim().min(1).max(max).optional();
+export const junitUploadMetadataSchema = z.object({
+  source: ingestionMetadataValueSchema(120),
+  pipeline: ingestionMetadataValueSchema(200),
+  branch: ingestionMetadataValueSchema(255),
+});
+export const junitUploadHeadersSchema = idempotencyHeadersSchema.extend({
+  'x-caselog-source': junitUploadMetadataSchema.shape.source,
+  'x-caselog-pipeline': junitUploadMetadataSchema.shape.pipeline,
+  'x-caselog-branch': junitUploadMetadataSchema.shape.branch,
+});
 
 export const testRunListParamsSchema = testCaseListParamsSchema;
 
@@ -300,6 +311,8 @@ export type CreateTestRunRequest = z.input<typeof createTestRunRequestSchema>;
 export type CreateTestRunStatus = z.infer<typeof createTestRunStatusSchema>;
 export type CreateTestRunHeaders = z.infer<typeof createTestRunHeadersSchema>;
 export type IdempotencyHeaders = z.infer<typeof idempotencyHeadersSchema>;
+export type JUnitUploadMetadata = z.infer<typeof junitUploadMetadataSchema>;
+export type JUnitUploadHeaders = z.infer<typeof junitUploadHeadersSchema>;
 export type CreateTestRunResponse = z.infer<typeof createTestRunResponseSchema>;
 export type TestRunDetailParams = z.infer<typeof testRunDetailParamsSchema>;
 export type TestRunItemParams = z.infer<typeof testRunItemParamsSchema>;

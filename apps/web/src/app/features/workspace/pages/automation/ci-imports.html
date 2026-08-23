@@ -1,0 +1,316 @@
+<main class="imports-page" aria-labelledby="imports-title">
+  <header class="imports-header">
+    <div>
+      <p class="eyebrow">{{ 'workspace.automation.eyebrow' | transloco }}</p>
+      <h1 id="imports-title">{{ 'workspace.automation.title' | transloco }}</h1>
+      <p class="description">
+        @if (project(); as currentProject) {
+          <strong>{{ currentProject.name }}</strong>
+          <span aria-hidden="true"> · </span>
+        }
+        {{ 'workspace.automation.description' | transloco }}
+      </p>
+    </div>
+    @if (canUpload()) {
+      <a class="primary-action" href="#upload-report">
+        <span aria-hidden="true">↑</span>
+        {{ 'workspace.automation.uploadReport' | transloco }}
+      </a>
+    }
+  </header>
+
+  @if (summary(); as currentSummary) {
+    <section class="summary-grid" [attr.aria-label]="'workspace.automation.summary' | transloco">
+      <article>
+        <span>{{ 'workspace.automation.reportsThisWeek' | transloco }}</span>
+        <strong>{{ currentSummary.reportsThisWeek }}</strong>
+        <small>{{ 'workspace.automation.reportsHint' | transloco }}</small>
+      </article>
+      <article>
+        <span>{{ 'workspace.automation.autoMatched' | transloco }}</span>
+        <strong>{{ currentSummary.matchedPercentThisWeek }}%</strong>
+        <small>{{ 'workspace.automation.autoMatchedHint' | transloco }}</small>
+      </article>
+      <article [class.warning]="currentSummary.unmatchedThisWeek > 0">
+        <span>{{ 'workspace.automation.unmatchedResults' | transloco }}</span>
+        <strong>{{ currentSummary.unmatchedThisWeek }}</strong>
+        <small>{{ 'workspace.automation.unmatchedHint' | transloco }}</small>
+      </article>
+    </section>
+  }
+
+  <section id="upload-report" class="upload-panel" aria-labelledby="upload-title">
+    <div class="upload-copy">
+      <p class="section-kicker">{{ 'workspace.automation.manualUpload' | transloco }}</p>
+      <h2 id="upload-title">{{ 'workspace.automation.dropTitle' | transloco }}</h2>
+      <p>{{ 'workspace.automation.dropDescription' | transloco }}</p>
+    </div>
+
+    @if (!canUpload()) {
+      <div class="permission-state">
+        <strong>{{ 'workspace.automation.readOnlyTitle' | transloco }}</strong>
+        <span>{{ 'workspace.automation.readOnlyDescription' | transloco }}</span>
+      </div>
+    } @else if (activeRuns.isPending()) {
+      <div class="compact-state">{{ 'workspace.automation.loadingRuns' | transloco }}</div>
+    } @else if (activeRuns.isError()) {
+      <div class="compact-state error" role="alert">
+        <span>{{ activeRunsErrorTranslationKey() | transloco }}</span>
+        <button type="button" class="secondary-action" (click)="activeRuns.refetch()">
+          {{ 'workspace.automation.retry' | transloco }}
+        </button>
+      </div>
+    } @else if (activeRuns.data()?.items?.length === 0) {
+      <div class="permission-state">
+        <strong>{{ 'workspace.automation.noActiveRunsTitle' | transloco }}</strong>
+        <span>{{ 'workspace.automation.noActiveRunsDescription' | transloco }}</span>
+        <a
+          class="secondary-action"
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/new"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'runs', 'new']"
+        >
+          {{ 'workspace.automation.createRun' | transloco }}
+        </a>
+      </div>
+    } @else {
+      <div class="upload-fields">
+        <label>
+          <span>{{ 'workspace.automation.targetRun' | transloco }}</span>
+          <select [value]="effectiveRunId()" (change)="selectRun($any($event.target).value)">
+            @for (run of activeRuns.data()?.items ?? []; track run.id) {
+              <option [value]="run.id">
+                {{ run.name }}{{ run.build ? ' · ' + run.build : '' }}
+              </option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>{{ 'workspace.automation.pipeline' | transloco }}</span>
+          <input
+            type="text"
+            maxlength="200"
+            [formControl]="pipelineControl"
+            [placeholder]="'workspace.automation.pipelinePlaceholder' | transloco"
+          />
+        </label>
+        <label>
+          <span>{{ 'workspace.automation.branch' | transloco }}</span>
+          <input
+            type="text"
+            maxlength="255"
+            [formControl]="branchControl"
+            [placeholder]="'workspace.automation.branchPlaceholder' | transloco"
+          />
+        </label>
+      </div>
+
+      <div
+        class="dropzone"
+        [class.drag-active]="dragActive()"
+        (dragover)="allowDrop($event)"
+        (dragleave)="dragActive.set(false)"
+        (drop)="handleDrop($event)"
+      >
+        <span class="upload-mark" aria-hidden="true">
+          {{ 'workspace.automation.fileBadge' | transloco }}
+        </span>
+        @if (selectedFile(); as file) {
+          <strong>{{ file.name }}</strong>
+          <span>{{ file.size / 1024 | number: '1.0-0' }} KB</span>
+        } @else {
+          <strong>{{ 'workspace.automation.dropPrompt' | transloco }}</strong>
+          <span>{{ 'workspace.automation.fileLimits' | transloco }}</span>
+        }
+        <label class="secondary-action file-picker">
+          {{
+            (selectedFile()
+              ? 'workspace.automation.chooseAnother'
+              : 'workspace.automation.browseFiles') | transloco
+          }}
+          <input type="file" accept=".xml,application/xml,text/xml" (change)="handleFileInput($event)" />
+        </label>
+      </div>
+
+      @if (fileError()) {
+        <p class="inline-message error" role="alert">
+          {{
+            (fileError() === 'size'
+              ? 'workspace.automation.fileTooLarge'
+              : 'workspace.automation.invalidFileType') | transloco
+          }}
+        </p>
+      }
+      @if (upload.isError()) {
+        <p class="inline-message error" role="alert">
+          {{ uploadErrorTranslationKey() | transloco }}
+        </p>
+      }
+      @if (lastUpload(); as result) {
+        <p class="inline-message success" role="status">
+          {{
+            'workspace.automation.uploadComplete'
+              | transloco
+                : {
+                    recorded: result.recorded,
+                    total: result.total,
+                    unmatched: result.unmatched.length,
+                  }
+          }}
+        </p>
+      }
+
+      <div class="upload-actions">
+        <button
+          type="button"
+          class="primary-action"
+          [disabled]="!selectedFile() || !effectiveRunId() || upload.isPending()"
+          (click)="uploadReport()"
+        >
+          {{
+            (upload.isPending()
+              ? 'workspace.automation.uploading'
+              : 'workspace.automation.uploadSelected') | transloco
+          }}
+        </button>
+      </div>
+    }
+  </section>
+
+  <section class="history" aria-labelledby="history-title">
+    <div class="history-heading">
+      <div>
+        <p class="section-kicker">{{ 'workspace.automation.historyEyebrow' | transloco }}</p>
+        <h2 id="history-title">{{ 'workspace.automation.history' | transloco }}</h2>
+      </div>
+      <nav class="status-tabs" [attr.aria-label]="'workspace.automation.statusFilter' | transloco">
+        <button type="button" [class.active]="!status()" (click)="selectStatus()">
+          {{ 'workspace.automation.all' | transloco }}
+        </button>
+        <button
+          type="button"
+          [class.active]="status() === 'completed'"
+          (click)="selectStatus('completed')"
+        >
+          {{ 'workspace.automation.completed' | transloco }}
+        </button>
+        <button
+          type="button"
+          [class.active]="status() === 'failed'"
+          (click)="selectStatus('failed')"
+        >
+          {{ 'workspace.automation.failed' | transloco }}
+        </button>
+      </nav>
+    </div>
+
+    @if (imports.isPending()) {
+      <div class="state" aria-live="polite">
+        <span class="loading-indicator" aria-hidden="true"></span>
+        {{ 'workspace.automation.loading' | transloco }}
+      </div>
+    } @else if (imports.isError()) {
+      <div class="state error" role="alert">
+        <p>{{ errorTranslationKey() | transloco }}</p>
+        <button class="secondary-action" type="button" (click)="imports.refetch()">
+          {{ 'workspace.automation.retry' | transloco }}
+        </button>
+      </div>
+    } @else if (items().length === 0) {
+      <div class="state">
+        <h3>{{ 'workspace.automation.emptyTitle' | transloco }}</h3>
+        <p>
+          {{
+            (status()
+              ? 'workspace.automation.emptyFilteredDescription'
+              : 'workspace.automation.emptyDescription') | transloco
+          }}
+        </p>
+        @if (status()) {
+          <button class="secondary-action" type="button" (click)="selectStatus()">
+            {{ 'workspace.automation.clearFilter' | transloco }}
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="imports-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">{{ 'workspace.automation.source' | transloco }}</th>
+              <th scope="col">{{ 'workspace.automation.pipeline' | transloco }}</th>
+              <th scope="col">{{ 'workspace.automation.branch' | transloco }}</th>
+              <th scope="col">{{ 'workspace.automation.format' | transloco }}</th>
+              <th scope="col">{{ 'workspace.automation.results' | transloco }}</th>
+              <th scope="col">{{ 'workspace.automation.status' | transloco }}</th>
+              <th scope="col">{{ 'workspace.automation.imported' | transloco }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr>
+                <td>
+                  <a
+                    class="source-link"
+                    href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ item.run.id }}"
+                    [routerLink]="['/', workspaceSlug, projectSlug, 'runs', item.run.id]"
+                  >
+                    {{ item.source }}
+                  </a>
+                  <small>{{ item.run.name }}</small>
+                </td>
+                <td>{{ item.pipeline ?? '—' }}</td>
+                <td class="branch-cell">{{ item.branch ?? '—' }}</td>
+                <td>
+                  <span class="format-tag">{{ 'workspace.automation.junitXml' | transloco }}</span>
+                </td>
+                <td class="results-cell">
+                  <strong>{{ item.recorded }} / {{ item.total }}</strong>
+                  <small>
+                    {{
+                      'workspace.automation.matchedPercent'
+                        | transloco: { percent: matchedPercent(item) }
+                    }}
+                  </small>
+                </td>
+                <td>
+                  @if (item.status === 'failed') {
+                    <span class="status-tag status-failed">
+                      {{ 'workspace.automation.parseError' | transloco }}
+                    </span>
+                  } @else if (item.unmatched > 0) {
+                    <span class="status-tag status-unmatched">
+                      {{
+                        'workspace.automation.unmatchedCount'
+                          | transloco: { count: item.unmatched }
+                      }}
+                    </span>
+                  } @else {
+                    <span class="status-tag status-matched">
+                      {{ 'workspace.automation.matched' | transloco }}
+                    </span>
+                  }
+                </td>
+                <td class="date-cell">{{ item.completedAt | date: 'medium' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (imports.hasNextPage()) {
+        <button
+          class="load-more secondary-action"
+          type="button"
+          [disabled]="imports.isFetchingNextPage()"
+          (click)="imports.fetchNextPage()"
+        >
+          {{
+            (imports.isFetchingNextPage()
+              ? 'workspace.automation.loadingMore'
+              : 'workspace.automation.loadMore') | transloco
+          }}
+        </button>
+      }
+    }
+  </section>
+</main>

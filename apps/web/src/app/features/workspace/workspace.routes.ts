@@ -13,6 +13,11 @@ export const workspaceRoutes: Routes = [
       ),
     children: [
       {
+        path: ':project/imports',
+        loadComponent: () =>
+          import('./pages/automation/ci-imports').then(({ CiImports }) => CiImports),
+      },
+      {
         path: ':project/runs/new',
         loadComponent: () => import('./pages/runs/run-create').then(({ RunCreate }) => RunCreate),
       },
