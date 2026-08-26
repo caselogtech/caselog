@@ -10,7 +10,8 @@ Caselog is a **feature-first modular monolith**.
 
 - The backend is one deployable application backed by one database.
 - Business capabilities are isolated in modules such as `auth`, `projects`,
-  `test-cases`, `test-runs`, and `attachments`.
+  `test-cases`, `test-runs`, `releases`, `quality-evidence`, and
+  `release-readiness`.
 - Each backend module follows a layered structure internally.
 - External systems are integrated through ports and adapters.
 - Multi-tenancy is a system invariant, not an optional check.
@@ -125,6 +126,55 @@ configuration, and health checks. `common` contains small, stable primitives tha
 not belong to a specific feature. Neither directory may become a collection of
 unrelated helpers.
 
+### Capability ownership
+
+Entities are grouped by behavior and invariants, not one module per database table.
+Implemented modules and accepted target modules share this normative ownership map;
+an accepted target row reserves its boundary but does not claim that code already exists:
+
+| Module | Owns |
+|---|---|
+| `auth` | identities, sessions, workspace lifecycle, org-scoped token exchange |
+| `members` | membership and invitation workflows |
+| `projects` | project lifecycle and project defaults |
+| `test-cases` | suites, sections, cases, immutable case versions |
+| `test-runs` | runs, run items, manual/automated results, JUnit ingestion history |
+| `attachments` | logical attachments, physical blobs, upload lifecycle and storage accounting |
+| `integrations` | provider connections, normalized external issues, defect links and sync |
+| `releases` | environments, releases, immutable release candidates and candidate/run links |
+| `quality-evidence` | immutable normalized evidence, producer identity, trust and freshness |
+| `release-readiness` | metric definitions, versioned policies, gates, evaluations, decisions and waivers |
+| `reporting` | read projections that do not own source-domain decisions |
+| `audit` | immutable security and administrative audit events |
+
+The release-readiness capability follows ADR 0010–0012. In particular, a named
+release is not the unit of evaluation: an immutable release candidate is. Test runs
+and integrations remain the systems of record for their data; readiness consumes
+their stable public contracts and records only the normalized evidence required to
+reproduce a decision.
+
+Creating `releases`, `quality-evidence`, or `release-readiness` does not permit a
+custom directory layout. Each module uses the mandatory structure above from its
+first file. Future `deployments` becomes a separate module only when deployment
+lifecycle, providers, and policies form an independently cohesive capability.
+
+### Cross-module commands, queries, and events
+
+- A synchronous command or query crosses a module boundary through the provider
+  exported by the owner module's `public-api.ts`.
+- A source module publishes a stable integration event when consumers need to react
+  without creating a reverse dependency. The event contract belongs to the publisher's
+  public API.
+- Events are facts in past tense, contain tenant and source revision identifiers, and
+  are idempotent for every consumer. They do not instruct an unknown consumer what to do.
+- Durable cross-module events use the transactional outbox/job boundary. A feature
+  never imports pg-boss, another feature's worker, or a consumer-specific job name.
+- Eventual consumers expose revision/freshness information and use the same
+  self-healing read rule as reporting projections. A delayed worker must not silently
+  return a current-looking stale readiness decision.
+- A module never both imports another module's internals and asks that module to call
+  back into its own internals. `forwardRef()` remains forbidden.
+
 ## 3. Backend layer responsibilities
 
 ### Presentation
@@ -191,6 +241,26 @@ Parsing, matching, status mapping, calculations, and state transitions should be
 implemented as small, typed pure functions when they do not require I/O or dependency
 injection. Do not create a class solely for the sake of OOP.
 
+### Release evidence and decision data
+
+Release readiness has stricter persistence rules than ordinary mutable entities:
+
+- `Release` owns a product-version lifecycle; `ReleaseCandidate` identifies the exact
+  commit/build being assessed.
+- release lifecycle and readiness classification are separate types and columns;
+- normalized evidence is append-only and belongs to one candidate;
+- a correction supersedes an observation instead of mutating evidence already used;
+- editing a release policy creates an immutable policy version;
+- gate evaluations and readiness decisions are appended, never replaced;
+- every decision references the exact candidate, policy version, evaluator version,
+  metric-definition version, gate evaluations, and evidence set;
+- an approval or waiver records an explicit exception and never rewrites the computed
+  decision;
+- deterministic gates make blocking decisions; AI may summarize evidence but cannot
+  silently change a gate outcome.
+
+ADR 0010 and ADR 0011 define the complete identity and auditability decisions.
+
 ### Ports and adapters
 
 Ports live in `application/ports/`; their infrastructure implementations live in
@@ -211,6 +281,9 @@ abstraction at a real external or replaceable boundary.
 - A source mutation invalidates a projection in the same tenant transaction before it
   enqueues refresh work. Projection reads compare revisions and rebuild synchronously if a
   job was delayed or missed, so background processing cannot make the API return stale data.
+- Readiness evaluation follows the same rule. Evidence ingestion, policy-version changes,
+  candidate/run links, and relevant source revisions schedule evaluation for affected active
+  candidates. Historical decisions are not recomputed in place.
 
 ## 4. Multi-tenancy
 
@@ -260,8 +333,8 @@ app/
       pages/
       components/
       data-access/
+      domain/
       state/
-      models/
       tests/
 ```
 
@@ -270,10 +343,10 @@ app/
   explicitly supported contract, `public-api.ts`. All implementation files belong
   to the standard directories.
 - Cross-feature imports resolve through `public-api.ts`; direct imports from another
-  feature's `pages`, `components`, `data-access`, `state`, or `models` are forbidden.
+  feature's `pages`, `components`, `data-access`, `domain`, or `state` are forbidden.
 - `pages/` contains route-level components and `components/` contains feature UI.
-- `data-access/` owns server communication, `state/` owns feature state, and
-  `models/` owns frontend-only types and mapping.
+- `data-access/` owns server communication, `domain/` owns frontend-only view models and
+  mapping, and `state/` owns feature state.
 - A feature must not import another feature's internals.
 - `core` and `shared` must not import features.
 - Route configuration composes features at the application level.
@@ -318,6 +391,11 @@ Before merging, the author and reviewer verify:
 6. Is the new class, interface, or dependency genuinely necessary?
 7. Does every new file follow the mandatory module directory structure?
 8. Does this change require an ADR?
+9. If this is release evidence, which immutable candidate and producer revision does it
+   describe?
+10. Can a historical readiness decision be reproduced after policies and source data change?
+11. Does a cross-module reaction use a stable public event without introducing a dependency
+   cycle?
 
 Rules that can be checked automatically should gradually become lint rules,
 architecture tests, and CI checks. A documented boundary remains mandatory before an

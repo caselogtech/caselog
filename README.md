@@ -1,8 +1,19 @@
 # Caselog
 
-Open-source test management for manual and automated testing.
+Open-source release readiness with built-in manual and automated test management.
 
-The repository is under active development.
+Caselog is being built to answer one question for an immutable release candidate:
+**can it be promoted safely, why, and what is blocking it?** Native test runs and
+external evidence feed deterministic, explainable policies that can be inspected by a
+person and enforced by CI.
+
+The repository is under active development. The test-management foundation and backend
+release-candidate lifecycle are usable in development. Quality evidence, versioned
+policies, readiness decisions, and their product UI are the next product-defining scope.
+
+Caselog is intended to run as a complete self-hosted OSS product. A future managed
+service may operate the same application artifacts and features for teams that do not
+want to run it themselves.
 
 ## Architecture
 
@@ -47,8 +58,9 @@ pnpm openapi:generate
 
 ## CLI
 
-The publishable `@caselog/cli` package provides streaming, idempotent JUnit uploads
-for CI pipelines. See [apps/cli/README.md](apps/cli/README.md) for usage.
+The `@caselog/cli` workspace provides streaming, idempotent JUnit uploads for CI
+pipelines. It will also become the machine-facing candidate/readiness workflow as that
+domain is implemented. See [apps/cli/README.md](apps/cli/README.md) for current usage.
 
 ## CSV imports
 
@@ -61,4 +73,6 @@ array of steps or one `action => expected result` pair per line.
 
 ## License
 
-Server and web application code are licensed under AGPL-3.0-only. The Caselog name and marks are reserved.
+The intended server and web license is AGPL-3.0-only, with the Caselog name and marks
+reserved. The root license and trademark files have not been published yet, so the
+public licensing package is not complete.
