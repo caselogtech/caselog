@@ -1,0 +1,11 @@
+DROP TRIGGER "readiness_gates_guard_update" ON "readiness_gates";
+DROP FUNCTION "caselog"."guard_readiness_gate_mutation"();
+DROP TRIGGER "release_policy_versions_guard_update" ON "release_policy_versions";
+DROP FUNCTION "caselog"."guard_release_policy_version_update"();
+DROP TABLE "readiness_gates";
+DROP TABLE "release_policy_versions";
+DROP TABLE "release_policies";
+DROP TYPE "readiness_evidence_behavior";
+DROP TYPE "readiness_gate_impact";
+DROP TYPE "readiness_gate_operator";
+DROP TYPE "release_policy_version_state";

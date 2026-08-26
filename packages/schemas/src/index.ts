@@ -236,6 +236,22 @@ export type {
   EvidenceIngestRequest,
   EvidenceIngestResponse,
 } from './evidence.js';
+export type {
+  CreateReadinessPolicyRequest,
+  CreateReadinessPolicyVersionRequest,
+  AssignCandidatePolicyRequest,
+  CandidatePolicyAssignment,
+  CandidatePolicyAssignmentResponse,
+  CandidateReadinessResponse,
+  GateEvaluation,
+  ReadinessDecision,
+  ReadinessDecisionListQuery,
+  ReadinessDecisionListResponse,
+  ReadinessDecisionResponse,
+  ReadinessGateInput,
+  ReadinessPolicy,
+  ReadinessPolicyResponse,
+} from './readiness.js';
 export {
   candidateTestRunListResponseSchema,
   candidateTestRunParamsSchema,

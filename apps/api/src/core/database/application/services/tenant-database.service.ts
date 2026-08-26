@@ -4,7 +4,11 @@ import type { Prisma, PrismaClient } from '../../../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 
 export type TenantTransaction = Prisma.TransactionClient;
-export type TenantTransactionOptions = { maxWait?: number; timeout?: number };
+export type TenantTransactionOptions = {
+  maxWait?: number;
+  timeout?: number;
+  isolationLevel?: Prisma.TransactionIsolationLevel;
+};
 
 export async function runInTenant<T>(
   prisma: PrismaClient,

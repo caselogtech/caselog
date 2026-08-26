@@ -21,6 +21,14 @@ describe('workspace purge repository', () => {
 
   afterAll(async () => {
     if (organizationId) {
+      await admin.currentReadinessDecision.deleteMany({ where: { organizationId } });
+      await admin.gateEvaluation.deleteMany({ where: { organizationId } });
+      await admin.readinessDecision.deleteMany({ where: { organizationId } });
+      await admin.currentCandidatePolicyAssignment.deleteMany({ where: { organizationId } });
+      await admin.candidatePolicyAssignment.deleteMany({ where: { organizationId } });
+      await admin.readinessGate.deleteMany({ where: { organizationId } });
+      await admin.releasePolicyVersion.deleteMany({ where: { organizationId } });
+      await admin.releasePolicy.deleteMany({ where: { organizationId } });
       await admin.currentEvidenceObservation.deleteMany({ where: { organizationId } });
       await admin.evidenceObservation.deleteMany({ where: { organizationId } });
       await admin.candidateEvidenceRevision.deleteMany({ where: { organizationId } });
@@ -88,6 +96,41 @@ describe('workspace purge repository', () => {
         slug: 'purge-environment',
       },
     });
+    const releasePolicy = await admin.releasePolicy.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        key: 'default-readiness',
+        name: 'Default readiness policy',
+      },
+    });
+    const releasePolicyVersion = await admin.releasePolicyVersion.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        policyId: releasePolicy.id,
+        version: 1,
+      },
+    });
+    const readinessGate = await admin.readinessGate.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        policyVersionId: releasePolicyVersion.id,
+        key: 'required-pass-rate',
+        position: 0,
+        metricKey: 'test.pass_rate',
+        metricVersion: '1.0.0',
+        testRunRole: 'REQUIRED',
+        operator: 'GTE',
+        expectedValueType: 'PERCENTAGE',
+        expectedPercentage: '95',
+        impact: 'BLOCKING',
+        missingEvidenceBehavior: 'BLOCK',
+        staleEvidenceBehavior: 'WARN',
+        minimumTrust: 'VERIFIED',
+      },
+    });
     const release = await admin.release.create({
       data: {
         organizationId,
@@ -113,6 +156,29 @@ describe('workspace purge repository', () => {
         sequence: 1,
         sourceRevision: 'purge-revision',
         identityHash: 'b'.repeat(64),
+      },
+    });
+    await admin.releasePolicyVersion.update({
+      where: {
+        organizationId_id: { organizationId, id: releasePolicyVersion.id },
+      },
+      data: { state: 'PUBLISHED', publishedAt: new Date() },
+    });
+    const policyAssignment = await admin.candidatePolicyAssignment.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        policyId: releasePolicy.id,
+        policyVersionId: releasePolicyVersion.id,
+      },
+    });
+    await admin.currentCandidatePolicyAssignment.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        assignmentId: policyAssignment.id,
       },
     });
     const run = await admin.testRun.create({
@@ -203,6 +269,55 @@ describe('workspace purge repository', () => {
         evidenceRevision: 1,
       },
     });
+    const readinessDecision = await admin.readinessDecision.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        assignmentId: policyAssignment.id,
+        policyVersionId: releasePolicyVersion.id,
+        evidenceRevision: 1,
+        evaluatorVersion: '1.0.0',
+        trigger: 'MANUAL',
+        status: 'READY',
+        evaluatedAt: new Date(),
+      },
+    });
+    await admin.gateEvaluation.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        decisionId: readinessDecision.id,
+        policyVersionId: releasePolicyVersion.id,
+        gateId: readinessGate.id,
+        position: 0,
+        result: 'PASSED',
+        diagnostic: 'NONE',
+        metricKey: 'test.pass_rate',
+        metricVersion: '1.0.0',
+        dimensions: { testRunRole: 'required' },
+        operator: 'GTE',
+        expectedValueType: 'PERCENTAGE',
+        expectedPercentage: '95',
+        actualPercentage: '100',
+        selectedObservationId: evidenceObservation.id,
+        explanationCode: 'comparison_passed',
+        evaluatorVersion: '1.0.0',
+        evaluatedAt: new Date(),
+      },
+    });
+    await admin.currentReadinessDecision.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        assignmentId: policyAssignment.id,
+        decisionId: readinessDecision.id,
+        targetEvidenceRevision: 1,
+        state: 'CURRENT',
+      },
+    });
     const repository = new WorkspacePurgeRepository(application as never);
 
     await expect(
@@ -235,6 +350,20 @@ describe('workspace purge repository', () => {
     await expect(admin.attachmentBlob.count({ where: { organizationId } })).resolves.toBe(0);
     await expect(admin.usageCounter.count({ where: { organizationId } })).resolves.toBe(0);
     await expect(admin.environment.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.releasePolicy.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.releasePolicyVersion.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.readinessGate.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(
+      admin.candidatePolicyAssignment.count({ where: { organizationId } }),
+    ).resolves.toBe(0);
+    await expect(
+      admin.currentCandidatePolicyAssignment.count({ where: { organizationId } }),
+    ).resolves.toBe(0);
+    await expect(admin.readinessDecision.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.gateEvaluation.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.currentReadinessDecision.count({ where: { organizationId } })).resolves.toBe(
+      0,
+    );
     await expect(admin.release.count({ where: { organizationId } })).resolves.toBe(0);
     await expect(admin.releaseCandidate.count({ where: { organizationId } })).resolves.toBe(0);
     await expect(admin.candidateTestRun.count({ where: { organizationId } })).resolves.toBe(0);

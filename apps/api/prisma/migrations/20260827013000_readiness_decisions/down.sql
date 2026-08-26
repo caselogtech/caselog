@@ -1,0 +1,12 @@
+REVOKE ALL ON FUNCTION "caselog"."reject_readiness_history_update"() FROM caselog_app;
+DROP TRIGGER "gate_evaluations_immutable" ON "gate_evaluations";
+DROP TRIGGER "readiness_decisions_immutable" ON "readiness_decisions";
+DROP FUNCTION "caselog"."reject_readiness_history_update"();
+DROP TABLE "current_readiness_decisions";
+DROP TABLE "gate_evaluations";
+DROP TABLE "readiness_decisions";
+DROP TYPE "readiness_projection_state";
+DROP TYPE "readiness_evaluation_trigger";
+DROP TYPE "readiness_decision_status";
+DROP TYPE "gate_evaluation_diagnostic";
+DROP TYPE "gate_evaluation_result";

@@ -8,7 +8,7 @@ const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch'
 export function createOpenApiDocument(app: NestFastifyApplication): OpenAPIObject {
   const config = new DocumentBuilder()
     .setTitle('Caselog API')
-    .setDescription('Public API for Caselog test management workflows.')
+    .setDescription('Public API for Caselog release-readiness and test-management workflows.')
     .setVersion('1.0.0')
     .setOpenAPIVersion('3.1.0')
     .addBearerAuth(

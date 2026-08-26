@@ -1380,6 +1380,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/release-policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReadinessPolicyController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/release-policies/{policyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReadinessPolicyController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/release-policies/{policyId}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReadinessPolicyController_createVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/release-policies/{policyId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReadinessPolicyController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/readiness-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CandidatePolicyAssignmentController_current"];
+        put: operations["CandidatePolicyAssignmentController_assign"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReadinessDecisionController_current"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/readiness/evaluations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReadinessDecisionController_evaluate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/readiness/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReadinessDecisionController_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/readiness-decisions/{decisionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReadinessDecisionDetailController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3458,6 +3602,404 @@ export interface components {
             suiteId: string;
             parentId: string | null;
             position: number;
+        };
+        CreateReadinessPolicyRequestDto: {
+            key: string;
+            name: string;
+            /** @default null */
+            description: string | null;
+            gates: {
+                key: string;
+                /** @enum {string} */
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                /** @constant */
+                metricVersion: "1.0.0";
+                dimensions: {
+                    /** @enum {string} */
+                    testRunRole: "required" | "informational";
+                };
+                /** @enum {string} */
+                operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                expected: {
+                    /** @constant */
+                    type: "percentage";
+                    value: string;
+                } | {
+                    /** @constant */
+                    type: "integer";
+                    value: number;
+                };
+                /** @enum {string} */
+                impact: "warning" | "blocking";
+                /**
+                 * @default unknown
+                 * @enum {string}
+                 */
+                missingEvidenceBehavior: "unknown" | "warn" | "block";
+                /**
+                 * @default unknown
+                 * @enum {string}
+                 */
+                staleEvidenceBehavior: "unknown" | "warn" | "block";
+                /**
+                 * @default authenticated
+                 * @enum {string}
+                 */
+                minimumTrust: "verified" | "authenticated" | "unverified";
+            }[];
+        };
+        ReadinessPolicyResponseDto: {
+            policy: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                projectId: string;
+                key: string;
+                name: string;
+                description: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                versions: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                    /** @enum {string} */
+                    state: "draft" | "published" | "retired";
+                    /** Format: date-time */
+                    createdAt: string;
+                    publishedAt: string | null;
+                    retiredAt: string | null;
+                    gates: {
+                        key: string;
+                        /** @enum {string} */
+                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                        /** @constant */
+                        metricVersion: "1.0.0";
+                        dimensions: {
+                            /** @enum {string} */
+                            testRunRole: "required" | "informational";
+                        };
+                        /** @enum {string} */
+                        operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                        expected: {
+                            /** @constant */
+                            type: "percentage";
+                            value: string;
+                        } | {
+                            /** @constant */
+                            type: "integer";
+                            value: number;
+                        };
+                        /** @enum {string} */
+                        impact: "warning" | "blocking";
+                        /**
+                         * @default unknown
+                         * @enum {string}
+                         */
+                        missingEvidenceBehavior: "unknown" | "warn" | "block";
+                        /**
+                         * @default unknown
+                         * @enum {string}
+                         */
+                        staleEvidenceBehavior: "unknown" | "warn" | "block";
+                        /**
+                         * @default authenticated
+                         * @enum {string}
+                         */
+                        minimumTrust: "verified" | "authenticated" | "unverified";
+                        /** Format: uuid */
+                        id: string;
+                        position: number;
+                    }[];
+                }[];
+            };
+        };
+        CreateReadinessPolicyVersionRequestDto: {
+            gates: {
+                key: string;
+                /** @enum {string} */
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                /** @constant */
+                metricVersion: "1.0.0";
+                dimensions: {
+                    /** @enum {string} */
+                    testRunRole: "required" | "informational";
+                };
+                /** @enum {string} */
+                operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                expected: {
+                    /** @constant */
+                    type: "percentage";
+                    value: string;
+                } | {
+                    /** @constant */
+                    type: "integer";
+                    value: number;
+                };
+                /** @enum {string} */
+                impact: "warning" | "blocking";
+                /**
+                 * @default unknown
+                 * @enum {string}
+                 */
+                missingEvidenceBehavior: "unknown" | "warn" | "block";
+                /**
+                 * @default unknown
+                 * @enum {string}
+                 */
+                staleEvidenceBehavior: "unknown" | "warn" | "block";
+                /**
+                 * @default authenticated
+                 * @enum {string}
+                 */
+                minimumTrust: "verified" | "authenticated" | "unverified";
+            }[];
+        };
+        AssignCandidatePolicyRequestDto: {
+            /** Format: uuid */
+            policyId: string;
+        };
+        CandidatePolicyAssignmentResponseDto: {
+            assignment: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                candidateId: string;
+                policy: {
+                    /** Format: uuid */
+                    id: string;
+                    key: string;
+                    name: string;
+                };
+                policyVersion: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                };
+                /** Format: date-time */
+                assignedAt: string;
+            };
+        };
+        CandidateReadinessResponseDto: {
+            /** Format: uuid */
+            candidateId: string;
+            assignment: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                candidateId: string;
+                policy: {
+                    /** Format: uuid */
+                    id: string;
+                    key: string;
+                    name: string;
+                };
+                policyVersion: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                };
+                /** Format: date-time */
+                assignedAt: string;
+            };
+            /** @enum {string} */
+            state: "pending" | "current" | "stale" | "failed";
+            targetEvidenceRevision: number;
+            currentEvidenceRevision: number;
+            failureCode: string | null;
+            decision: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                candidateId: string;
+                /** Format: uuid */
+                assignmentId: string;
+                policyVersion: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                };
+                evidenceRevision: number;
+                evaluatorVersion: string;
+                /** @enum {string} */
+                trigger: "manual" | "evidence_changed" | "policy_assigned" | "reconciliation";
+                /** @enum {string} */
+                status: "ready" | "at_risk" | "blocked" | "unknown";
+                /** Format: date-time */
+                evaluatedAt: string;
+                gates: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    gateId: string;
+                    gateKey: string;
+                    position: number;
+                    /** @enum {string} */
+                    result: "passed" | "warning" | "failed" | "unknown";
+                    /** @enum {string} */
+                    diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
+                    /** @enum {string} */
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                    metricVersion: string;
+                    dimensions: {
+                        /** @enum {string} */
+                        testRunRole: "required" | "informational";
+                    };
+                    /** @enum {string} */
+                    operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                    expected: {
+                        /** @constant */
+                        type: "percentage";
+                        value: string;
+                    } | {
+                        /** @constant */
+                        type: "integer";
+                        value: number;
+                    };
+                    actual: ({
+                        /** @constant */
+                        type: "percentage";
+                        value: string;
+                    } | {
+                        /** @constant */
+                        type: "integer";
+                        value: number;
+                    }) | null;
+                    selectedObservationId: string | null;
+                    explanationCode: string;
+                }[];
+            } | null;
+        };
+        ReadinessDecisionListResponseDto: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                candidateId: string;
+                /** Format: uuid */
+                assignmentId: string;
+                policyVersion: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                };
+                evidenceRevision: number;
+                evaluatorVersion: string;
+                /** @enum {string} */
+                trigger: "manual" | "evidence_changed" | "policy_assigned" | "reconciliation";
+                /** @enum {string} */
+                status: "ready" | "at_risk" | "blocked" | "unknown";
+                /** Format: date-time */
+                evaluatedAt: string;
+                gates: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    gateId: string;
+                    gateKey: string;
+                    position: number;
+                    /** @enum {string} */
+                    result: "passed" | "warning" | "failed" | "unknown";
+                    /** @enum {string} */
+                    diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
+                    /** @enum {string} */
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                    metricVersion: string;
+                    dimensions: {
+                        /** @enum {string} */
+                        testRunRole: "required" | "informational";
+                    };
+                    /** @enum {string} */
+                    operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                    expected: {
+                        /** @constant */
+                        type: "percentage";
+                        value: string;
+                    } | {
+                        /** @constant */
+                        type: "integer";
+                        value: number;
+                    };
+                    actual: ({
+                        /** @constant */
+                        type: "percentage";
+                        value: string;
+                    } | {
+                        /** @constant */
+                        type: "integer";
+                        value: number;
+                    }) | null;
+                    selectedObservationId: string | null;
+                    explanationCode: string;
+                }[];
+            }[];
+            nextCursor: string | null;
+        };
+        ReadinessDecisionResponseDto: {
+            decision: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                candidateId: string;
+                /** Format: uuid */
+                assignmentId: string;
+                policyVersion: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                };
+                evidenceRevision: number;
+                evaluatorVersion: string;
+                /** @enum {string} */
+                trigger: "manual" | "evidence_changed" | "policy_assigned" | "reconciliation";
+                /** @enum {string} */
+                status: "ready" | "at_risk" | "blocked" | "unknown";
+                /** Format: date-time */
+                evaluatedAt: string;
+                gates: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    gateId: string;
+                    gateKey: string;
+                    position: number;
+                    /** @enum {string} */
+                    result: "passed" | "warning" | "failed" | "unknown";
+                    /** @enum {string} */
+                    diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
+                    /** @enum {string} */
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                    metricVersion: string;
+                    dimensions: {
+                        /** @enum {string} */
+                        testRunRole: "required" | "informational";
+                    };
+                    /** @enum {string} */
+                    operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                    expected: {
+                        /** @constant */
+                        type: "percentage";
+                        value: string;
+                    } | {
+                        /** @constant */
+                        type: "integer";
+                        value: number;
+                    };
+                    actual: ({
+                        /** @constant */
+                        type: "percentage";
+                        value: string;
+                    } | {
+                        /** @constant */
+                        type: "integer";
+                        value: number;
+                    }) | null;
+                    selectedObservationId: string | null;
+                    explanationCode: string;
+                }[];
+            };
         };
         ApiErrorResponseDto: {
             error: {
@@ -7017,6 +7559,338 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SectionResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessPolicyController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReadinessPolicyRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessPolicyResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessPolicyController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                policyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessPolicyResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessPolicyController_createVersion: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                policyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReadinessPolicyVersionRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessPolicyResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessPolicyController_publish: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                policyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessPolicyResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CandidatePolicyAssignmentController_current: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidatePolicyAssignmentResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CandidatePolicyAssignmentController_assign: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignCandidatePolicyRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidatePolicyAssignmentResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessDecisionController_current: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateReadinessResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessDecisionController_evaluate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateReadinessResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessDecisionController_history: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessDecisionListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessDecisionDetailController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                decisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessDecisionResponseDto"];
                 };
             };
             /** @description API error */

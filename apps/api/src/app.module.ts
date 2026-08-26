@@ -18,6 +18,7 @@ import { StorageModule } from './core/storage/storage.module';
 import { ProjectModule } from './projects/project.module';
 import { ReportingModule } from './reporting/reporting.module';
 import { ReleaseModule } from './releases/public-api';
+import { ReleaseReadinessModule } from './release-readiness/public-api';
 import { TestCaseModule } from './test-cases/test-case.module';
 import { TestRunModule } from './test-runs/test-run.module';
 import { QualityEvidenceModule } from './quality-evidence/public-api';
@@ -43,6 +44,7 @@ import { QualityEvidenceModule } from './quality-evidence/public-api';
     ReleaseModule,
     TestCaseModule,
     TestRunModule,
+    ReleaseReadinessModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
