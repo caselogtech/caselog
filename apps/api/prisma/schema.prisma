@@ -38,6 +38,29 @@ enum RunStatus {
   @@map("run_status")
 }
 
+enum EnvironmentState {
+  ACTIVE   @map("active")
+  ARCHIVED @map("archived")
+
+  @@map("environment_state")
+}
+
+enum ReleaseState {
+  DRAFT     @map("draft")
+  ACTIVE    @map("active")
+  RELEASED  @map("released")
+  CANCELLED @map("cancelled")
+
+  @@map("release_state")
+}
+
+enum CandidateTestRunRole {
+  REQUIRED      @map("required")
+  INFORMATIONAL @map("informational")
+
+  @@map("candidate_test_run_role")
+}
+
 enum CustomFieldType {
   TEXT        @map("text")
   SELECT      @map("select")
@@ -141,6 +164,11 @@ model Organization {
   invitations              WorkspaceInvitation[]
   slugRedirects            OrganizationSlugRedirect[]
   storageMaintenanceCursor StorageMaintenanceCursor?
+  environments             Environment[]
+  releases                 Release[]
+  releaseCandidates        ReleaseCandidate[]
+  candidateTestRuns        CandidateTestRun[]
+  releaseLifecycleEvents   ReleaseLifecycleEvent[]
 
   @@index([deletedAt, purgeStartedAt, id], map: "idx_organizations_workspace_purge")
   @@map("organizations")
@@ -196,6 +224,11 @@ model User {
   issueCreationRequests  IssueCreationRequest[]  @relation("IssueCreationRequestCreator")
   sentInvitations        WorkspaceInvitation[]   @relation("InvitationSender")
   resultIngestions       TestResultIngestion[]   @relation("ResultIngestionInitiator")
+  createdEnvironments    Environment[]           @relation("EnvironmentCreator")
+  createdReleases        Release[]               @relation("ReleaseCreator")
+  createdCandidates      ReleaseCandidate[]      @relation("ReleaseCandidateCreator")
+  linkedCandidateRuns    CandidateTestRun[]      @relation("CandidateTestRunCreator")
+  releaseLifecycleEvents ReleaseLifecycleEvent[] @relation("ReleaseLifecycleActor")
 
   @@map("users")
 }
@@ -450,6 +483,11 @@ model Project {
   issueLinks             IssueLink[]
   issueCreationRequests  IssueCreationRequest[]
   resultIngestions       TestResultIngestion[]
+  environments           Environment[]
+  releases               Release[]
+  releaseCandidates      ReleaseCandidate[]
+  candidateTestRuns      CandidateTestRun[]
+  releaseLifecycleEvents ReleaseLifecycleEvent[]
 
   @@id([organizationId, id], map: "pk_projects")
   @@unique([organizationId, key], map: "uq_projects_organization_id_key")
@@ -606,10 +644,139 @@ model TestRun {
   uploadSessions   UploadSession[]
   progressSnapshot RunProgressSnapshot?
   resultIngestions TestResultIngestion[]
+  candidateLink    CandidateTestRun?
 
   @@id([organizationId, id], map: "pk_test_runs")
+  @@unique([organizationId, projectId, id], map: "uq_test_runs_organization_project_id")
   @@index([organizationId, projectId, status, createdAt], map: "idx_test_runs_organization_id_project_id_status_created_at")
   @@map("test_runs")
+}
+
+model Environment {
+  organizationId String           @map("organization_id") @db.Uuid
+  id             String           @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String           @map("project_id") @db.Uuid
+  name           String           @db.VarChar(120)
+  slug           String           @db.VarChar(50)
+  description    String?          @db.Text
+  state          EnvironmentState @default(ACTIVE)
+  createdById    String?          @map("created_by_id") @db.Uuid
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  createdBy    User?        @relation("EnvironmentCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  releases     Release[]
+
+  @@id([organizationId, id], map: "pk_environments")
+  @@unique([organizationId, projectId, id], map: "uq_environments_organization_project_id")
+  @@unique([organizationId, projectId, slug], map: "uq_environments_organization_project_slug")
+  @@index([organizationId, projectId, state, createdAt], map: "idx_environments_org_project_state_created")
+  @@map("environments")
+}
+
+model Release {
+  organizationId    String       @map("organization_id") @db.Uuid
+  id                String       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId         String       @map("project_id") @db.Uuid
+  environmentId     String?      @map("environment_id") @db.Uuid
+  key               String       @db.VarChar(50)
+  name              String       @db.VarChar(200)
+  state             ReleaseState @default(DRAFT)
+  targetDate        DateTime?    @map("target_date") @db.Timestamptz(3)
+  externalReference String?      @map("external_reference") @db.VarChar(2048)
+  createdById       String?      @map("created_by_id") @db.Uuid
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  activatedAt       DateTime?    @map("activated_at") @db.Timestamptz(3)
+  releasedAt        DateTime?    @map("released_at") @db.Timestamptz(3)
+  cancelledAt       DateTime?    @map("cancelled_at") @db.Timestamptz(3)
+
+  organization    Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project         Project                 @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  environment     Environment?            @relation(fields: [organizationId, projectId, environmentId], references: [organizationId, projectId, id], onDelete: Restrict)
+  createdBy       User?                   @relation("ReleaseCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  candidates      ReleaseCandidate[]
+  lifecycleEvents ReleaseLifecycleEvent[]
+
+  @@id([organizationId, id], map: "pk_releases")
+  @@unique([organizationId, projectId, id], map: "uq_releases_organization_project_id")
+  @@unique([organizationId, projectId, key], map: "uq_releases_organization_project_key")
+  @@index([organizationId, projectId, state, createdAt], map: "idx_releases_org_project_state_created")
+  @@map("releases")
+}
+
+model ReleaseCandidate {
+  organizationId  String   @map("organization_id") @db.Uuid
+  id              String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId       String   @map("project_id") @db.Uuid
+  releaseId       String   @map("release_id") @db.Uuid
+  sequence        Int
+  sourceRevision  String?  @map("source_revision") @db.VarChar(255)
+  buildIdentifier String?  @map("build_identifier") @db.VarChar(255)
+  artifactDigest  String?  @map("artifact_digest") @db.VarChar(255)
+  branch          String?  @db.VarChar(255)
+  version         String?  @db.VarChar(120)
+  sourceUrl       String?  @map("source_url") @db.VarChar(2048)
+  identityHash    String   @map("identity_hash") @db.Char(64)
+  createdById     String?  @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project            @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  release      Release            @relation(fields: [organizationId, projectId, releaseId], references: [organizationId, projectId, id], onDelete: Restrict)
+  createdBy    User?              @relation("ReleaseCandidateCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  testRuns     CandidateTestRun[]
+
+  @@id([organizationId, id], map: "pk_release_candidates")
+  @@unique([organizationId, projectId, id], map: "uq_release_candidates_organization_project_id")
+  @@unique([organizationId, projectId, identityHash], map: "uq_release_candidates_organization_project_identity")
+  @@unique([organizationId, releaseId, sequence], map: "uq_release_candidates_organization_release_sequence")
+  @@index([organizationId, releaseId, createdAt], map: "idx_release_candidates_org_release_created")
+  @@map("release_candidates")
+}
+
+model CandidateTestRun {
+  organizationId String               @map("organization_id") @db.Uuid
+  projectId      String               @map("project_id") @db.Uuid
+  candidateId    String               @map("candidate_id") @db.Uuid
+  testRunId      String               @map("test_run_id") @db.Uuid
+  role           CandidateTestRunRole @default(REQUIRED)
+  createdById    String?              @map("created_by_id") @db.Uuid
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project          @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  candidate    ReleaseCandidate @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict)
+  testRun      TestRun          @relation(fields: [organizationId, projectId, testRunId], references: [organizationId, projectId, id], onDelete: Restrict)
+  createdBy    User?            @relation("CandidateTestRunCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@id([organizationId, candidateId, testRunId], map: "pk_candidate_test_runs")
+  @@unique([organizationId, testRunId], map: "uq_candidate_test_runs_organization_test_run")
+  @@unique([organizationId, projectId, testRunId], map: "uq_candidate_test_runs_org_project_run")
+  @@index([organizationId, candidateId, createdAt], map: "idx_candidate_test_runs_org_candidate_created")
+  @@map("candidate_test_runs")
+}
+
+model ReleaseLifecycleEvent {
+  organizationId String        @map("organization_id") @db.Uuid
+  id             String        @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String        @map("project_id") @db.Uuid
+  releaseId      String        @map("release_id") @db.Uuid
+  fromState      ReleaseState? @map("from_state")
+  toState        ReleaseState  @map("to_state")
+  actorId        String?       @map("actor_id") @db.Uuid
+  occurredAt     DateTime      @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  release      Release      @relation(fields: [organizationId, projectId, releaseId], references: [organizationId, projectId, id], onDelete: Restrict)
+  actor        User?        @relation("ReleaseLifecycleActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@id([organizationId, id], map: "pk_release_lifecycle_events")
+  @@index([organizationId, releaseId, occurredAt, id], map: "idx_release_lifecycle_events_org_release_time")
+  @@map("release_lifecycle_events")
 }
 
 model TestResultIngestion {

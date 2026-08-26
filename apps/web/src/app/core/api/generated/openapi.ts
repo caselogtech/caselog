@@ -804,6 +804,358 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/environments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EnvironmentController_list"];
+        put?: never;
+        post: operations["EnvironmentController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/environments/{environmentId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["EnvironmentController_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/environments/{environmentId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["EnvironmentController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/releases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReleaseController_list"];
+        put?: never;
+        post: operations["ReleaseController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/releases/{releaseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReleaseController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/releases/{releaseId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReleaseController_activate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/releases/{releaseId}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReleaseController_release"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/releases/{releaseId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReleaseController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/releases/{releaseId}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReleaseCandidateController_list"];
+        put?: never;
+        post: operations["ReleaseCandidateController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/test-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CandidateTestRunController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/test-runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["CandidateTestRunController_link"];
+        post?: never;
+        delete: operations["CandidateTestRunController_unlink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TestRunController_list"];
+        put?: never;
+        post: operations["TestRunController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/results/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TestRunController_bulkRecordResults"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/results/junit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TestRunController_ingestJUnitResults"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TestRunController_detail"];
+        put?: never;
+        post?: never;
+        delete: operations["TestRunController_archive"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TestRunController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TestRunController_close"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TestRunController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/assignee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["TestRunController_assign"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TestRunController_resultHistory"];
+        put?: never;
+        post: operations["TestRunController_recordResult"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/results/{resultId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TestRunController_resultDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/automation/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ResultIngestionController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectSlug}/cases": {
         parameters: {
             query?: never;
@@ -1005,182 +1357,6 @@ export interface paths {
         };
         get?: never;
         put: operations["ProjectStructureController_moveSection"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["TestRunController_list"];
-        put?: never;
-        post: operations["TestRunController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}/results/bulk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["TestRunController_bulkRecordResults"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}/results/junit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["TestRunController_ingestJUnitResults"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["TestRunController_detail"];
-        put?: never;
-        post?: never;
-        delete: operations["TestRunController_archive"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["TestRunController_start"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}/close": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["TestRunController_close"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["TestRunController_restore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/assignee": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["TestRunController_assign"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/results": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["TestRunController_resultHistory"];
-        put?: never;
-        post: operations["TestRunController_recordResult"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/results/{resultId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["TestRunController_resultDetail"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{projectSlug}/automation/imports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ResultIngestionController_list"];
-        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2034,295 +2210,279 @@ export interface components {
             }[];
             nextCursor: string | null;
         };
-        TestCaseListResponseDto: {
-            project: {
-                /** Format: uuid */
-                id: string;
-                key: string;
-                slug: string;
-                name: string;
-            };
+        EnvironmentListResponseDto: {
             items: {
                 /** Format: uuid */
                 id: string;
-                caseNumber: string;
-                title: string;
+                name: string;
+                slug: string;
+                description: string | null;
                 /** @enum {string} */
-                template: "steps" | "text" | "exploratory" | "bdd";
-                automationId: string | null;
-                section: {
-                    /** Format: uuid */
-                    id: string;
-                    name: string;
-                };
+                state: "active" | "archived";
+                /** Format: date-time */
+                createdAt: string;
                 /** Format: date-time */
                 updatedAt: string;
             }[];
-            nextCursor: string | null;
         };
-        CreateTestCaseRequestDto: {
-            title: string;
-            /** Format: uuid */
-            sectionId: string;
-            automationId?: string | "";
-            preconditions?: string;
-            expectedResult?: string;
-            /** @enum {string} */
-            template: "steps" | "text" | "exploratory" | "bdd";
-            content: {
-                steps: {
-                    action: string;
-                    expected?: string;
-                }[];
-            } | {
-                text: string;
-            } | {
-                charter: string;
-            } | {
-                gherkin: string;
-            };
+        CreateEnvironmentRequestDto: {
+            name: string;
+            slug: string;
+            description?: string | "";
         };
-        CreateTestCaseResponseDto: {
-            testCase: {
+        CreateEnvironmentResponseDto: {
+            environment: {
                 /** Format: uuid */
                 id: string;
-                caseNumber: string;
-                title: string;
-                /** @enum {string} */
-                template: "steps" | "text" | "exploratory" | "bdd";
-                automationId: string | null;
-                section: {
-                    /** Format: uuid */
-                    id: string;
-                    name: string;
-                };
-                /** Format: date-time */
-                updatedAt: string;
-            };
-            version: {
-                /** Format: uuid */
-                id: string;
-                /** @constant */
-                version: 1;
-            };
-        };
-        TestCaseDetailResponseDto: {
-            project: {
-                /** Format: uuid */
-                id: string;
-                key: string;
-                slug: string;
                 name: string;
-            };
-            testCase: {
-                /** Format: uuid */
-                id: string;
-                caseNumber: string;
-                automationId: string | null;
-                section: {
-                    /** Format: uuid */
-                    id: string;
-                    name: string;
-                    /** Format: uuid */
-                    suiteId: string;
-                    suiteName: string;
-                };
-                currentVersion: {
-                    /** Format: uuid */
-                    id: string;
-                    version: number;
-                    title: string;
-                    /** @enum {string} */
-                    template: "steps" | "text" | "exploratory" | "bdd";
-                    preconditions: string | null;
-                    expectedResult: string | null;
-                    content: {
-                        steps: {
-                            action: string;
-                            expected?: string;
-                        }[];
-                    } | {
-                        text: string;
-                    } | {
-                        charter: string;
-                    } | {
-                        gherkin: string;
-                    };
-                    /** Format: date-time */
-                    createdAt: string;
-                    createdBy: {
-                        /** Format: uuid */
-                        id: string;
-                        displayName: string;
-                    } | null;
-                };
-                versions: {
-                    /** Format: uuid */
-                    id: string;
-                    version: number;
-                    title: string;
-                    /** @enum {string} */
-                    template: "steps" | "text" | "exploratory" | "bdd";
-                    preconditions: string | null;
-                    expectedResult: string | null;
-                    /** Format: date-time */
-                    createdAt: string;
-                    createdBy: {
-                        /** Format: uuid */
-                        id: string;
-                        displayName: string;
-                    } | null;
-                }[];
+                slug: string;
+                description: string | null;
+                /** @enum {string} */
+                state: "active" | "archived";
                 /** Format: date-time */
                 createdAt: string;
                 /** Format: date-time */
                 updatedAt: string;
             };
         };
-        UpdateTestCaseRequestDto: {
-            title: string;
+        EnvironmentLifecycleResponseDto: {
             /** Format: uuid */
-            sectionId: string;
-            automationId?: string | "";
-            preconditions?: string;
-            expectedResult?: string;
-            baseVersion: number;
-            /** @enum {string} */
-            template: "steps" | "text" | "exploratory" | "bdd";
-            content: {
-                steps: {
-                    action: string;
-                    expected?: string;
-                }[];
-            } | {
-                text: string;
-            } | {
-                charter: string;
-            } | {
-                gherkin: string;
-            };
-        };
-        UpdateTestCaseResponseDto: {
-            testCase: {
-                /** Format: uuid */
-                id: string;
-                caseNumber: string;
-                title: string;
-                /** @enum {string} */
-                template: "steps" | "text" | "exploratory" | "bdd";
-                automationId: string | null;
-                section: {
-                    /** Format: uuid */
-                    id: string;
-                    name: string;
-                };
-                /** Format: date-time */
-                updatedAt: string;
-            };
-            version: {
-                /** Format: uuid */
-                id: string;
-                version: number;
-            };
-        };
-        TestCaseVersionResponseDto: {
-            /** Format: uuid */
-            id: string;
-            version: number;
-            title: string;
-            /** @enum {string} */
-            template: "steps" | "text" | "exploratory" | "bdd";
-            preconditions: string | null;
-            expectedResult: string | null;
-            content: {
-                steps: {
-                    action: string;
-                    expected?: string;
-                }[];
-            } | {
-                text: string;
-            } | {
-                charter: string;
-            } | {
-                gherkin: string;
-            };
-            /** Format: date-time */
-            createdAt: string;
-            createdBy: {
-                /** Format: uuid */
-                id: string;
-                displayName: string;
-            } | null;
-        };
-        RestoreTestCaseVersionRequestDto: {
-            baseVersion: number;
-        };
-        TestCaseLifecycleResponseDto: {
-            /** Format: uuid */
-            testCaseId: string;
+            environmentId: string;
             /** @enum {string} */
             state: "active" | "archived";
         };
-        ProjectStructureResponseDto: {
-            project: {
+        ReleaseListResponseDto: {
+            items: {
                 /** Format: uuid */
                 id: string;
                 key: string;
-                slug: string;
                 name: string;
-            };
-            suites: {
-                /** Format: uuid */
-                id: string;
-                name: string;
-                position: number;
-                sections: {
+                /** @enum {string} */
+                state: "draft" | "active" | "released" | "cancelled";
+                environment: {
                     /** Format: uuid */
                     id: string;
-                    parentId: string | null;
                     name: string;
-                    depth: number;
-                    position: number;
+                    slug: string;
+                    /** @enum {string} */
+                    state: "active" | "archived";
+                } | null;
+                targetDate: string | null;
+                externalReference: string | null;
+                candidateCount: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                activatedAt: string | null;
+                releasedAt: string | null;
+                cancelledAt: string | null;
+            }[];
+            nextCursor: string | null;
+        };
+        CreateReleaseRequestDto: {
+            key: string;
+            name: string;
+            /** Format: uuid */
+            environmentId?: string;
+            /** Format: date-time */
+            targetDate?: string;
+            externalReference?: string | "";
+        };
+        CreateReleaseResponseDto: {
+            release: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                name: string;
+                /** @enum {string} */
+                state: "draft" | "active" | "released" | "cancelled";
+                environment: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    slug: string;
+                    /** @enum {string} */
+                    state: "active" | "archived";
+                } | null;
+                targetDate: string | null;
+                externalReference: string | null;
+                candidateCount: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                activatedAt: string | null;
+                releasedAt: string | null;
+                cancelledAt: string | null;
+            };
+        };
+        ReleaseDetailResponseDto: {
+            release: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                name: string;
+                /** @enum {string} */
+                state: "draft" | "active" | "released" | "cancelled";
+                environment: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    slug: string;
+                    /** @enum {string} */
+                    state: "active" | "archived";
+                } | null;
+                targetDate: string | null;
+                externalReference: string | null;
+                candidateCount: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                activatedAt: string | null;
+                releasedAt: string | null;
+                cancelledAt: string | null;
+            };
+            candidates: {
+                /** Format: uuid */
+                id: string;
+                sequence: number;
+                label: string;
+                sourceRevision: string | null;
+                buildIdentifier: string | null;
+                artifactDigest: string | null;
+                branch: string | null;
+                version: string | null;
+                sourceUrl: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                testRuns: {
+                    /** Format: uuid */
+                    testRunId: string;
+                    name: string;
+                    /** @enum {string} */
+                    status: "draft" | "active" | "completed" | "archived";
+                    /** @enum {string} */
+                    role: "required" | "informational";
+                    /** Format: date-time */
+                    linkedAt: string;
                 }[];
             }[];
+            history: {
+                /** Format: uuid */
+                id: string;
+                fromState: ("draft" | "active" | "released" | "cancelled") | null;
+                /** @enum {string} */
+                toState: "draft" | "active" | "released" | "cancelled";
+                /** Format: date-time */
+                occurredAt: string;
+            }[];
         };
-        CreateSuiteRequestDto: {
-            name: string;
-        };
-        SuiteResponseDto: {
+        ReleaseLifecycleResponseDto: {
             /** Format: uuid */
-            id: string;
-            name: string;
-            position: number;
+            releaseId: string;
+            /** @enum {string} */
+            state: "draft" | "active" | "released" | "cancelled";
+            /** Format: date-time */
+            updatedAt: string;
         };
-        UpdateSuiteRequestDto: {
-            name: string;
+        ReleaseCandidateListResponseDto: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                sequence: number;
+                label: string;
+                sourceRevision: string | null;
+                buildIdentifier: string | null;
+                artifactDigest: string | null;
+                branch: string | null;
+                version: string | null;
+                sourceUrl: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                testRuns: {
+                    /** Format: uuid */
+                    testRunId: string;
+                    name: string;
+                    /** @enum {string} */
+                    status: "draft" | "active" | "completed" | "archived";
+                    /** @enum {string} */
+                    role: "required" | "informational";
+                    /** Format: date-time */
+                    linkedAt: string;
+                }[];
+            }[];
+            nextCursor: string | null;
         };
-        MoveSuiteRequestDto: {
-            position: number;
+        CreateReleaseCandidateRequestDto: {
+            sourceRevision?: string | "";
+            buildIdentifier?: string | "";
+            artifactDigest?: string | "";
+            branch?: string | "";
+            version?: string | "";
+            /** Format: uri */
+            sourceUrl?: string;
         };
-        CreateSectionRequestDto: {
-            name: string;
-            parentId?: string | null;
+        CreateReleaseCandidateResponseDto: {
+            candidate: {
+                /** Format: uuid */
+                id: string;
+                sequence: number;
+                label: string;
+                sourceRevision: string | null;
+                buildIdentifier: string | null;
+                artifactDigest: string | null;
+                branch: string | null;
+                version: string | null;
+                sourceUrl: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                testRuns: {
+                    /** Format: uuid */
+                    testRunId: string;
+                    name: string;
+                    /** @enum {string} */
+                    status: "draft" | "active" | "completed" | "archived";
+                    /** @enum {string} */
+                    role: "required" | "informational";
+                    /** Format: date-time */
+                    linkedAt: string;
+                }[];
+            };
         };
-        SectionResponseDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            suiteId: string;
-            parentId: string | null;
-            name: string;
-            depth: number;
-            position: number;
+        CandidateTestRunListResponseDto: {
+            items: {
+                /** Format: uuid */
+                testRunId: string;
+                name: string;
+                /** @enum {string} */
+                status: "draft" | "active" | "completed" | "archived";
+                /** @enum {string} */
+                role: "required" | "informational";
+                /** Format: date-time */
+                linkedAt: string;
+            }[];
         };
-        UpdateSectionRequestDto: {
-            name: string;
+        LinkCandidateTestRunRequestDto: {
+            /**
+             * @default required
+             * @enum {string}
+             */
+            role: "required" | "informational";
         };
-        MoveSectionRequestDto: {
-            /** Format: uuid */
-            suiteId: string;
-            parentId: string | null;
-            position: number;
+        CandidateTestRunResponseDto: {
+            link: {
+                /** Format: uuid */
+                testRunId: string;
+                name: string;
+                /** @enum {string} */
+                status: "draft" | "active" | "completed" | "archived";
+                /** @enum {string} */
+                role: "required" | "informational";
+                /** Format: date-time */
+                linkedAt: string;
+            };
         };
         TestRunListResponseDto: {
             project: {
@@ -2806,6 +2966,296 @@ export interface components {
                 completedAt: string;
             }[];
             nextCursor: string | null;
+        };
+        TestCaseListResponseDto: {
+            project: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                slug: string;
+                name: string;
+            };
+            items: {
+                /** Format: uuid */
+                id: string;
+                caseNumber: string;
+                title: string;
+                /** @enum {string} */
+                template: "steps" | "text" | "exploratory" | "bdd";
+                automationId: string | null;
+                section: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                };
+                /** Format: date-time */
+                updatedAt: string;
+            }[];
+            nextCursor: string | null;
+        };
+        CreateTestCaseRequestDto: {
+            title: string;
+            /** Format: uuid */
+            sectionId: string;
+            automationId?: string | "";
+            preconditions?: string;
+            expectedResult?: string;
+            /** @enum {string} */
+            template: "steps" | "text" | "exploratory" | "bdd";
+            content: {
+                steps: {
+                    action: string;
+                    expected?: string;
+                }[];
+            } | {
+                text: string;
+            } | {
+                charter: string;
+            } | {
+                gherkin: string;
+            };
+        };
+        CreateTestCaseResponseDto: {
+            testCase: {
+                /** Format: uuid */
+                id: string;
+                caseNumber: string;
+                title: string;
+                /** @enum {string} */
+                template: "steps" | "text" | "exploratory" | "bdd";
+                automationId: string | null;
+                section: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                };
+                /** Format: date-time */
+                updatedAt: string;
+            };
+            version: {
+                /** Format: uuid */
+                id: string;
+                /** @constant */
+                version: 1;
+            };
+        };
+        TestCaseDetailResponseDto: {
+            project: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                slug: string;
+                name: string;
+            };
+            testCase: {
+                /** Format: uuid */
+                id: string;
+                caseNumber: string;
+                automationId: string | null;
+                section: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    /** Format: uuid */
+                    suiteId: string;
+                    suiteName: string;
+                };
+                currentVersion: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                    title: string;
+                    /** @enum {string} */
+                    template: "steps" | "text" | "exploratory" | "bdd";
+                    preconditions: string | null;
+                    expectedResult: string | null;
+                    content: {
+                        steps: {
+                            action: string;
+                            expected?: string;
+                        }[];
+                    } | {
+                        text: string;
+                    } | {
+                        charter: string;
+                    } | {
+                        gherkin: string;
+                    };
+                    /** Format: date-time */
+                    createdAt: string;
+                    createdBy: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                    } | null;
+                };
+                versions: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                    title: string;
+                    /** @enum {string} */
+                    template: "steps" | "text" | "exploratory" | "bdd";
+                    preconditions: string | null;
+                    expectedResult: string | null;
+                    /** Format: date-time */
+                    createdAt: string;
+                    createdBy: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                    } | null;
+                }[];
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            };
+        };
+        UpdateTestCaseRequestDto: {
+            title: string;
+            /** Format: uuid */
+            sectionId: string;
+            automationId?: string | "";
+            preconditions?: string;
+            expectedResult?: string;
+            baseVersion: number;
+            /** @enum {string} */
+            template: "steps" | "text" | "exploratory" | "bdd";
+            content: {
+                steps: {
+                    action: string;
+                    expected?: string;
+                }[];
+            } | {
+                text: string;
+            } | {
+                charter: string;
+            } | {
+                gherkin: string;
+            };
+        };
+        UpdateTestCaseResponseDto: {
+            testCase: {
+                /** Format: uuid */
+                id: string;
+                caseNumber: string;
+                title: string;
+                /** @enum {string} */
+                template: "steps" | "text" | "exploratory" | "bdd";
+                automationId: string | null;
+                section: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                };
+                /** Format: date-time */
+                updatedAt: string;
+            };
+            version: {
+                /** Format: uuid */
+                id: string;
+                version: number;
+            };
+        };
+        TestCaseVersionResponseDto: {
+            /** Format: uuid */
+            id: string;
+            version: number;
+            title: string;
+            /** @enum {string} */
+            template: "steps" | "text" | "exploratory" | "bdd";
+            preconditions: string | null;
+            expectedResult: string | null;
+            content: {
+                steps: {
+                    action: string;
+                    expected?: string;
+                }[];
+            } | {
+                text: string;
+            } | {
+                charter: string;
+            } | {
+                gherkin: string;
+            };
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: {
+                /** Format: uuid */
+                id: string;
+                displayName: string;
+            } | null;
+        };
+        RestoreTestCaseVersionRequestDto: {
+            baseVersion: number;
+        };
+        TestCaseLifecycleResponseDto: {
+            /** Format: uuid */
+            testCaseId: string;
+            /** @enum {string} */
+            state: "active" | "archived";
+        };
+        ProjectStructureResponseDto: {
+            project: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                slug: string;
+                name: string;
+            };
+            suites: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                position: number;
+                sections: {
+                    /** Format: uuid */
+                    id: string;
+                    parentId: string | null;
+                    name: string;
+                    depth: number;
+                    position: number;
+                }[];
+            }[];
+        };
+        CreateSuiteRequestDto: {
+            name: string;
+        };
+        SuiteResponseDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            position: number;
+        };
+        UpdateSuiteRequestDto: {
+            name: string;
+        };
+        MoveSuiteRequestDto: {
+            position: number;
+        };
+        CreateSectionRequestDto: {
+            name: string;
+            parentId?: string | null;
+        };
+        SectionResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            suiteId: string;
+            parentId: string | null;
+            name: string;
+            depth: number;
+            position: number;
+        };
+        UpdateSectionRequestDto: {
+            name: string;
+        };
+        MoveSectionRequestDto: {
+            /** Format: uuid */
+            suiteId: string;
+            parentId: string | null;
+            position: number;
         };
         ApiErrorResponseDto: {
             error: {
@@ -4746,6 +5196,974 @@ export interface operations {
             };
         };
     };
+    EnvironmentController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvironmentListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    EnvironmentController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEnvironmentRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateEnvironmentResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    EnvironmentController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                environmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvironmentLifecycleResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    EnvironmentController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                environmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvironmentLifecycleResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                state?: "draft" | "active" | "released" | "cancelled";
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReleaseRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateReleaseResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                releaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseDetailResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseController_activate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                releaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseLifecycleResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseController_release: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                releaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseLifecycleResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                releaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseLifecycleResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseCandidateController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+                releaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseCandidateListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseCandidateController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                releaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReleaseCandidateRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateReleaseCandidateResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CandidateTestRunController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateTestRunListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CandidateTestRunController_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkCandidateTestRunRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateTestRunResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CandidateTestRunController_unlink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                status?: "draft" | "active" | "completed" | "archived";
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestRunListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTestRunRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateTestRunResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_bulkRecordResults: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkTestResultsRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkTestResultsResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_ingestJUnitResults: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+                "x-caselog-source"?: string;
+                "x-caselog-pipeline"?: string;
+                "x-caselog-branch"?: string;
+            };
+            path: {
+                projectSlug: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/xml": string;
+                "text/xml": string;
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JUnitUploadResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_detail: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestRunDetailResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestRunLifecycleResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_close: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestRunLifecycleResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestRunLifecycleResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignTestRunItemRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignTestRunItemResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_resultHistory: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestResultHistoryResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_recordResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTestResultRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateTestResultResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    TestRunController_resultDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                runId: string;
+                itemId: string;
+                resultId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestResultDetailResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ResultIngestionController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                status?: "completed" | "failed";
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultIngestionListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
     TestCaseController_list: {
         parameters: {
             query?: {
@@ -5325,484 +6743,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SectionResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_list: {
-        parameters: {
-            query?: {
-                cursor?: string;
-                limit?: number;
-                status?: "draft" | "active" | "completed" | "archived";
-            };
-            header?: never;
-            path: {
-                projectSlug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestRunListResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_create: {
-        parameters: {
-            query?: never;
-            header: {
-                "idempotency-key": string;
-            };
-            path: {
-                projectSlug: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTestRunRequestDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateTestRunResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_bulkRecordResults: {
-        parameters: {
-            query?: never;
-            header: {
-                "idempotency-key": string;
-            };
-            path: {
-                projectSlug: string;
-                runId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkTestResultsRequestDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkTestResultsResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_ingestJUnitResults: {
-        parameters: {
-            query?: never;
-            header: {
-                "idempotency-key": string;
-                "x-caselog-source"?: string;
-                "x-caselog-pipeline"?: string;
-                "x-caselog-branch"?: string;
-            };
-            path: {
-                projectSlug: string;
-                runId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/xml": string;
-                "text/xml": string;
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JUnitUploadResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_detail: {
-        parameters: {
-            query?: {
-                cursor?: string;
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestRunDetailResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_archive: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_start: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestRunLifecycleResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_close: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestRunLifecycleResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_restore: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestRunLifecycleResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_assign: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-                itemId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssignTestRunItemRequestDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssignTestRunItemResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_resultHistory: {
-        parameters: {
-            query?: {
-                cursor?: string;
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-                itemId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestResultHistoryResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_recordResult: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-                itemId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTestResultRequestDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateTestResultResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    TestRunController_resultDetail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectSlug: string;
-                runId: string;
-                itemId: string;
-                resultId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestResultDetailResponseDto"];
-                };
-            };
-            /** @description API error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponseDto"];
-                };
-            };
-        };
-    };
-    ResultIngestionController_list: {
-        parameters: {
-            query?: {
-                cursor?: string;
-                limit?: number;
-                status?: "completed" | "failed";
-            };
-            header?: never;
-            path: {
-                projectSlug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultIngestionListResponseDto"];
                 };
             };
             /** @description API error */

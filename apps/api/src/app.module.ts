@@ -17,6 +17,7 @@ import { MembersModule } from './members/members.module';
 import { StorageModule } from './core/storage/storage.module';
 import { ProjectModule } from './projects/project.module';
 import { ReportingModule } from './reporting/reporting.module';
+import { ReleaseModule } from './releases/public-api';
 import { TestCaseModule } from './test-cases/test-case.module';
 import { TestRunModule } from './test-runs/test-run.module';
 
@@ -37,6 +38,7 @@ import { TestRunModule } from './test-runs/test-run.module';
     MembersModule,
     ProjectModule,
     ReportingModule,
+    ReleaseModule,
     TestCaseModule,
     TestRunModule,
   ],

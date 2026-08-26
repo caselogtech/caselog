@@ -21,6 +21,12 @@ describe('workspace purge repository', () => {
 
   afterAll(async () => {
     if (organizationId) {
+      await admin.releaseLifecycleEvent.deleteMany({ where: { organizationId } });
+      await admin.candidateTestRun.deleteMany({ where: { organizationId } });
+      await admin.releaseCandidate.deleteMany({ where: { organizationId } });
+      await admin.release.deleteMany({ where: { organizationId } });
+      await admin.environment.deleteMany({ where: { organizationId } });
+      await admin.testRun.deleteMany({ where: { organizationId } });
       await admin.suite.deleteMany({ where: { organizationId } });
       await admin.project.deleteMany({ where: { organizationId } });
       await admin.attachmentBlob.deleteMany({ where: { organizationId } });
@@ -65,6 +71,55 @@ describe('workspace purge repository', () => {
       },
     });
     organizationId = organization.id;
+    const project = await admin.project.findFirstOrThrow({
+      where: { organizationId, slug: 'purge-project' },
+    });
+    const environment = await admin.environment.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        name: 'Purge environment',
+        slug: 'purge-environment',
+      },
+    });
+    const release = await admin.release.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        environmentId: environment.id,
+        key: 'PURGE-1',
+        name: 'Purge release',
+      },
+    });
+    await admin.releaseLifecycleEvent.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        releaseId: release.id,
+        toState: 'DRAFT',
+      },
+    });
+    const candidate = await admin.releaseCandidate.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        releaseId: release.id,
+        sequence: 1,
+        sourceRevision: 'purge-revision',
+        identityHash: 'b'.repeat(64),
+      },
+    });
+    const run = await admin.testRun.create({
+      data: { organizationId, projectId: project.id, name: 'Purge run' },
+    });
+    await admin.candidateTestRun.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        testRunId: run.id,
+      },
+    });
     const repository = new WorkspacePurgeRepository(application as never);
 
     await expect(
@@ -96,6 +151,11 @@ describe('workspace purge repository', () => {
     await expect(admin.auditLog.count({ where: { organizationId } })).resolves.toBe(0);
     await expect(admin.attachmentBlob.count({ where: { organizationId } })).resolves.toBe(0);
     await expect(admin.usageCounter.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.environment.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.release.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.releaseCandidate.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.candidateTestRun.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.releaseLifecycleEvent.count({ where: { organizationId } })).resolves.toBe(0);
     organizationId = undefined;
   });
 });

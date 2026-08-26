@@ -11,6 +11,8 @@ import { TestRunService } from './application/services/test-run.service';
 import { ResultIngestionService } from './application/services/result-ingestion.service';
 import { ResultIngestionRepository } from './infrastructure/repositories/result-ingestion.repository';
 import { ResultIngestionController } from './presentation/controllers/result-ingestion.controller';
+import { TestRunReferenceRepository } from './infrastructure/repositories/test-run-reference.repository';
+import { TestRunReferenceService } from './application/services/test-run-reference.service';
 
 @Module({
   imports: [AuthModule, AttachmentModule, ReportingModule],
@@ -23,6 +25,9 @@ import { ResultIngestionController } from './presentation/controllers/result-ing
     TestResultRepository,
     TestRunRepository,
     TestRunService,
+    TestRunReferenceRepository,
+    TestRunReferenceService,
   ],
+  exports: [TestRunReferenceService],
 })
 export class TestRunModule {}
