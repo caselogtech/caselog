@@ -804,6 +804,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EvidenceController_list"];
+        put?: never;
+        post: operations["EvidenceController_ingest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectSlug}/environments": {
         parameters: {
             query?: never;
@@ -1397,7 +1413,7 @@ export interface components {
                 id: string;
                 name: string;
                 tokenPrefix: string;
-                scopes: ("results:write" | "runs:read")[];
+                scopes: ("results:write" | "runs:read" | "evidence:write")[];
                 /** Format: date-time */
                 expiresAt: string;
                 lastUsedAt: string | null;
@@ -1412,7 +1428,7 @@ export interface components {
         };
         CreateApiTokenRequestDto: {
             name: string;
-            scopes: ("results:write" | "runs:read")[];
+            scopes: ("results:write" | "runs:read" | "evidence:write")[];
             /** Format: date-time */
             expiresAt: string;
         };
@@ -1423,7 +1439,7 @@ export interface components {
                 id: string;
                 name: string;
                 tokenPrefix: string;
-                scopes: ("results:write" | "runs:read")[];
+                scopes: ("results:write" | "runs:read" | "evidence:write")[];
                 /** Format: date-time */
                 expiresAt: string;
                 lastUsedAt: string | null;
@@ -2209,6 +2225,192 @@ export interface components {
                 };
             }[];
             nextCursor: string | null;
+        };
+        EvidenceListResponseDto: {
+            /** Format: uuid */
+            candidateId: string;
+            candidateRevision: number;
+            items: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                projectId: string;
+                /** Format: uuid */
+                candidateId: string;
+                /** @enum {string} */
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                metricVersion: string;
+                value: {
+                    /** @constant */
+                    type: "percentage";
+                    value: string | null;
+                } | {
+                    /** @constant */
+                    type: "integer";
+                    value: number | null;
+                };
+                /** @enum {string} */
+                state: "available" | "incomplete";
+                dimensions: {
+                    /** @enum {string} */
+                    testRunRole: "required" | "informational";
+                };
+                /** Format: date-time */
+                observedAt: string;
+                expiresAt: string | null;
+                /** @enum {string} */
+                freshness: "current" | "stale";
+                producer: {
+                    /** Format: uuid */
+                    id: string;
+                    type: string;
+                    key: string;
+                    schemaVersion: number;
+                    /** @enum {string} */
+                    trust: "verified" | "authenticated" | "unverified";
+                };
+                source: {
+                    type: string;
+                    id: string;
+                    revision: string;
+                    url: string | null;
+                };
+                details: {
+                    runCount: number;
+                    totalItems: number;
+                    finalItems: number;
+                    executedFinalItems: number;
+                    passedItems: number;
+                    failedItems: number;
+                    skippedItems: number;
+                    incompleteRunIds: string[];
+                    runRevisions: {
+                        /** Format: uuid */
+                        testRunId: string;
+                        revision: number;
+                    }[];
+                    runRevisionsTruncated: boolean;
+                } | {
+                    [key: string]: (string | number | boolean | null) | (string | number | boolean | null)[];
+                };
+                supersedesObservationId: string | null;
+                isCurrent: boolean;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            nextCursor: string | null;
+        };
+        EvidenceIngestRequestDto: {
+            /** Format: uuid */
+            candidateId: string;
+            /** @enum {string} */
+            metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+            /** @constant */
+            metricVersion: "1.0.0";
+            value: {
+                /** @constant */
+                type: "percentage";
+                value: string | null;
+            } | {
+                /** @constant */
+                type: "integer";
+                value: number | null;
+            };
+            /** @enum {string} */
+            state: "available" | "incomplete";
+            dimensions: {
+                /** @enum {string} */
+                testRunRole: "required" | "informational";
+            };
+            /** Format: date-time */
+            observedAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            source: {
+                type: string;
+                id: string;
+                revision: string;
+                /** @default null */
+                url: string | null;
+            };
+            /** @default {} */
+            details: {
+                [key: string]: (string | number | boolean | null) | (string | number | boolean | null)[];
+            };
+            /** @default null */
+            supersedesObservationId: string | null;
+        };
+        EvidenceIngestResponseDto: {
+            observation: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                projectId: string;
+                /** Format: uuid */
+                candidateId: string;
+                /** @enum {string} */
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                metricVersion: string;
+                value: {
+                    /** @constant */
+                    type: "percentage";
+                    value: string | null;
+                } | {
+                    /** @constant */
+                    type: "integer";
+                    value: number | null;
+                };
+                /** @enum {string} */
+                state: "available" | "incomplete";
+                dimensions: {
+                    /** @enum {string} */
+                    testRunRole: "required" | "informational";
+                };
+                /** Format: date-time */
+                observedAt: string;
+                expiresAt: string | null;
+                /** @enum {string} */
+                freshness: "current" | "stale";
+                producer: {
+                    /** Format: uuid */
+                    id: string;
+                    type: string;
+                    key: string;
+                    schemaVersion: number;
+                    /** @enum {string} */
+                    trust: "verified" | "authenticated" | "unverified";
+                };
+                source: {
+                    type: string;
+                    id: string;
+                    revision: string;
+                    url: string | null;
+                };
+                details: {
+                    runCount: number;
+                    totalItems: number;
+                    finalItems: number;
+                    executedFinalItems: number;
+                    passedItems: number;
+                    failedItems: number;
+                    skippedItems: number;
+                    incompleteRunIds: string[];
+                    runRevisions: {
+                        /** Format: uuid */
+                        testRunId: string;
+                        revision: number;
+                    }[];
+                    runRevisionsTruncated: boolean;
+                } | {
+                    [key: string]: (string | number | boolean | null) | (string | number | boolean | null)[];
+                };
+                supersedesObservationId: string | null;
+                isCurrent: boolean;
+                /** Format: date-time */
+                createdAt: string;
+            };
+            candidateRevision: number;
+            replayed: boolean;
         };
         EnvironmentListResponseDto: {
             items: {
@@ -5183,6 +5385,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseExecutionHistoryResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    EvidenceController_list: {
+        parameters: {
+            query: {
+                candidateId: string;
+                metricKey?: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                currentOnly?: "true" | "false";
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    EvidenceController_ingest: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvidenceIngestRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceIngestResponseDto"];
                 };
             };
             /** @description API error */

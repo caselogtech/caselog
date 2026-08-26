@@ -12,11 +12,13 @@ import {
 } from '../../../generated/prisma/enums';
 import type { ParsedJUnitResult } from '../../domain/parsers/junit-parser';
 import type { ResultIngestionMetadata } from '../../domain/models/result-ingestion';
+import { testRunEvidenceSourceChangedEvent } from '../../application/events/test-run-integration-event';
 import {
   indexRunItems,
   matchableRunItems,
   matchExternalRunItem,
 } from '../persistence/test-result.persistence';
+import { appendTestRunIntegrationEvent } from '../persistence/test-run-event.persistence';
 import {
   claimIdempotency,
   findIdempotency,
@@ -186,7 +188,24 @@ export class JUnitIngestRepository {
               AND item.test_run_id = ${runId}::uuid
               AND item.id = changes.id
           `;
-          await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
+          const sourceRevision = await bumpProjectionRevision(
+            transaction,
+            organizationId,
+            RUN_PROGRESS_PROJECTION,
+            runId,
+          );
+          await appendTestRunIntegrationEvent(
+            transaction,
+            testRunEvidenceSourceChangedEvent({
+              organizationId,
+              actorId: userId,
+              projectId: context.value.projectId,
+              testRunId: runId,
+              revision: sourceRevision,
+              reason: 'results_changed',
+              occurredAt: executedAt,
+            }),
+          );
         }
 
         const counts: JUnitUploadResponse['counts'] = {

@@ -12,12 +12,14 @@ import { bumpProjectionRevision } from '../../../core/database/infrastructure/pe
 import { RUN_PROGRESS_PROJECTION } from '../../../reporting/public-api';
 import { Prisma } from '../../../generated/prisma/client';
 import { AttachmentTargetType, RunStatus } from '../../../generated/prisma/enums';
+import { testRunEvidenceSourceChangedEvent } from '../../application/events/test-run-integration-event';
 import {
   indexRunItems,
   matchableRunItems,
   matchExternalRunItem,
   resultAttachments,
 } from '../persistence/test-result.persistence';
+import { appendTestRunIntegrationEvent } from '../persistence/test-run-event.persistence';
 import {
   claimIdempotency,
   findIdempotency,
@@ -132,7 +134,12 @@ export class TestResultRepository {
         where: { organizationId_id: { organizationId, id: itemId } },
         data: { statusId: status.id },
       });
-      await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
+      const sourceRevision = await bumpProjectionRevision(
+        transaction,
+        organizationId,
+        RUN_PROGRESS_PROJECTION,
+        runId,
+      );
       if (request.stepResults && request.stepResults.length > 0) {
         await transaction.testStepResult.createMany({
           data: request.stepResults.map((step) => ({
@@ -222,6 +229,18 @@ export class TestResultRepository {
         },
       });
       const attachments = await resultAttachments(transaction, [result.id]);
+      await appendTestRunIntegrationEvent(
+        transaction,
+        testRunEvidenceSourceChangedEvent({
+          organizationId,
+          actorId: userId,
+          projectId: context.value.projectId,
+          testRunId: runId,
+          revision: sourceRevision,
+          reason: 'results_changed',
+          occurredAt: result.executedAt,
+        }),
+      );
       return {
         kind: 'found',
         value: {
@@ -390,7 +409,24 @@ export class TestResultRepository {
           AND item.test_run_id = ${runId}::uuid
           AND item.id = changes.id
       `;
-      await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
+      const sourceRevision = await bumpProjectionRevision(
+        transaction,
+        organizationId,
+        RUN_PROGRESS_PROJECTION,
+        runId,
+      );
+      await appendTestRunIntegrationEvent(
+        transaction,
+        testRunEvidenceSourceChangedEvent({
+          organizationId,
+          actorId: userId,
+          projectId: context.value.projectId,
+          testRunId: runId,
+          revision: sourceRevision,
+          reason: 'results_changed',
+          occurredAt: executedAt,
+        }),
+      );
 
       const responseResults = results.map(({ itemId, resultId, attempt, statusId }) => {
         const status = statusById.get(statusId);

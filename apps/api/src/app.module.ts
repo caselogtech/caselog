@@ -20,6 +20,7 @@ import { ReportingModule } from './reporting/reporting.module';
 import { ReleaseModule } from './releases/public-api';
 import { TestCaseModule } from './test-cases/test-case.module';
 import { TestRunModule } from './test-runs/test-run.module';
+import { QualityEvidenceModule } from './quality-evidence/public-api';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { TestRunModule } from './test-runs/test-run.module';
     MembersModule,
     ProjectModule,
     ReportingModule,
+    QualityEvidenceModule,
     ReleaseModule,
     TestCaseModule,
     TestRunModule,

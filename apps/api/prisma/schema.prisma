@@ -61,6 +61,28 @@ enum CandidateTestRunRole {
   @@map("candidate_test_run_role")
 }
 
+enum EvidenceTrustLevel {
+  VERIFIED      @map("verified")
+  AUTHENTICATED @map("authenticated")
+  UNVERIFIED    @map("unverified")
+
+  @@map("evidence_trust_level")
+}
+
+enum EvidenceValueType {
+  PERCENTAGE @map("percentage")
+  INTEGER    @map("integer")
+
+  @@map("evidence_value_type")
+}
+
+enum EvidenceObservationState {
+  AVAILABLE  @map("available")
+  INCOMPLETE @map("incomplete")
+
+  @@map("evidence_observation_state")
+}
+
 enum CustomFieldType {
   TEXT        @map("text")
   SELECT      @map("select")
@@ -109,6 +131,7 @@ enum AccountTokenPurpose {
 enum ApiTokenScope {
   RESULTS_WRITE @map("results:write")
   RUNS_READ     @map("runs:read")
+  EVIDENCE_WRITE @map("evidence:write")
 
   @@map("api_token_scope")
 }
@@ -135,40 +158,46 @@ model Organization {
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
   purgeStartedAt DateTime? @map("purge_started_at") @db.Timestamptz(3)
 
-  memberships              Membership[]
-  projects                 Project[]
-  suites                   Suite[]
-  sections                 Section[]
-  testCases                TestCase[]
-  testCaseVersions         TestCaseVersion[]
-  resultStatuses           ResultStatus[]
-  testRuns                 TestRun[]
-  resultIngestions         TestResultIngestion[]
-  runProgressSnapshots     RunProgressSnapshot[]
-  projectionRevisions      ProjectionRevision[]
-  testRunItems             TestRunItem[]
-  testResults              TestResult[]
-  testStepResults          TestStepResult[]
-  uploadSessions           UploadSession[]
-  attachmentBlobs          AttachmentBlob[]
-  attachments              Attachment[]
-  customFieldDefinitions   CustomFieldDefinition[]
-  customFieldValues        CustomFieldValue[]
-  usageCounter             UsageCounter?
-  idempotencyRecords       IdempotencyRecord[]
-  apiTokens                ApiToken[]
-  integrationConnections   IntegrationConnection[]
-  issueLinks               IssueLink[]
-  issueCreationRequests    IssueCreationRequest[]
-  auditLogs                AuditLog[]
-  invitations              WorkspaceInvitation[]
-  slugRedirects            OrganizationSlugRedirect[]
-  storageMaintenanceCursor StorageMaintenanceCursor?
-  environments             Environment[]
-  releases                 Release[]
-  releaseCandidates        ReleaseCandidate[]
-  candidateTestRuns        CandidateTestRun[]
-  releaseLifecycleEvents   ReleaseLifecycleEvent[]
+  memberships                 Membership[]
+  projects                    Project[]
+  suites                      Suite[]
+  sections                    Section[]
+  testCases                   TestCase[]
+  testCaseVersions            TestCaseVersion[]
+  resultStatuses              ResultStatus[]
+  testRuns                    TestRun[]
+  resultIngestions            TestResultIngestion[]
+  runProgressSnapshots        RunProgressSnapshot[]
+  projectionRevisions         ProjectionRevision[]
+  testRunItems                TestRunItem[]
+  testResults                 TestResult[]
+  testStepResults             TestStepResult[]
+  uploadSessions              UploadSession[]
+  attachmentBlobs             AttachmentBlob[]
+  attachments                 Attachment[]
+  customFieldDefinitions      CustomFieldDefinition[]
+  customFieldValues           CustomFieldValue[]
+  usageCounter                UsageCounter?
+  idempotencyRecords          IdempotencyRecord[]
+  apiTokens                   ApiToken[]
+  integrationConnections      IntegrationConnection[]
+  issueLinks                  IssueLink[]
+  issueCreationRequests       IssueCreationRequest[]
+  auditLogs                   AuditLog[]
+  invitations                 WorkspaceInvitation[]
+  slugRedirects               OrganizationSlugRedirect[]
+  storageMaintenanceCursor    StorageMaintenanceCursor?
+  environments                Environment[]
+  releases                    Release[]
+  releaseCandidates           ReleaseCandidate[]
+  candidateTestRuns           CandidateTestRun[]
+  releaseLifecycleEvents      ReleaseLifecycleEvent[]
+  integrationEvents           IntegrationEvent[]
+  integrationEventReceipts    IntegrationEventReceipt[]
+  evidenceProducers           EvidenceProducer[]
+  evidenceObservations        EvidenceObservation[]
+  candidateEvidenceRevisions  CandidateEvidenceRevision[]
+  currentEvidenceObservations CurrentEvidenceObservation[]
 
   @@index([deletedAt, purgeStartedAt, id], map: "idx_organizations_workspace_purge")
   @@map("organizations")
@@ -472,22 +501,25 @@ model Project {
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  suites                 Suite[]
-  sections               Section[]
-  testCases              TestCase[]
-  resultStatuses         ResultStatus[]
-  testRuns               TestRun[]
-  uploadSessions         UploadSession[]
-  customFieldDefinitions CustomFieldDefinition[]
-  issueLinks             IssueLink[]
-  issueCreationRequests  IssueCreationRequest[]
-  resultIngestions       TestResultIngestion[]
-  environments           Environment[]
-  releases               Release[]
-  releaseCandidates      ReleaseCandidate[]
-  candidateTestRuns      CandidateTestRun[]
-  releaseLifecycleEvents ReleaseLifecycleEvent[]
+  organization                Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  suites                      Suite[]
+  sections                    Section[]
+  testCases                   TestCase[]
+  resultStatuses              ResultStatus[]
+  testRuns                    TestRun[]
+  uploadSessions              UploadSession[]
+  customFieldDefinitions      CustomFieldDefinition[]
+  issueLinks                  IssueLink[]
+  issueCreationRequests       IssueCreationRequest[]
+  resultIngestions            TestResultIngestion[]
+  environments                Environment[]
+  releases                    Release[]
+  releaseCandidates           ReleaseCandidate[]
+  candidateTestRuns           CandidateTestRun[]
+  releaseLifecycleEvents      ReleaseLifecycleEvent[]
+  evidenceObservations        EvidenceObservation[]
+  candidateEvidenceRevisions  CandidateEvidenceRevision[]
+  currentEvidenceObservations CurrentEvidenceObservation[]
 
   @@id([organizationId, id], map: "pk_projects")
   @@unique([organizationId, key], map: "uq_projects_organization_id_key")
@@ -723,11 +755,14 @@ model ReleaseCandidate {
   createdById     String?  @map("created_by_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project      Project            @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
-  release      Release            @relation(fields: [organizationId, projectId, releaseId], references: [organizationId, projectId, id], onDelete: Restrict)
-  createdBy    User?              @relation("ReleaseCandidateCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  testRuns     CandidateTestRun[]
+  organization         Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project              Project                      @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  release              Release                      @relation(fields: [organizationId, projectId, releaseId], references: [organizationId, projectId, id], onDelete: Restrict)
+  createdBy            User?                        @relation("ReleaseCandidateCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  testRuns             CandidateTestRun[]
+  evidenceObservations EvidenceObservation[]
+  evidenceRevision     CandidateEvidenceRevision?
+  currentEvidence      CurrentEvidenceObservation[]
 
   @@id([organizationId, id], map: "pk_release_candidates")
   @@unique([organizationId, projectId, id], map: "uq_release_candidates_organization_project_id")
@@ -777,6 +812,145 @@ model ReleaseLifecycleEvent {
   @@id([organizationId, id], map: "pk_release_lifecycle_events")
   @@index([organizationId, releaseId, occurredAt, id], map: "idx_release_lifecycle_events_org_release_time")
   @@map("release_lifecycle_events")
+}
+
+model IntegrationEvent {
+  organizationId String   @map("organization_id") @db.Uuid
+  id             String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventName      String   @map("event_name") @db.VarChar(120)
+  schemaVersion  Int      @map("schema_version")
+  sourceType     String   @map("source_type") @db.VarChar(80)
+  sourceId       String   @map("source_id") @db.VarChar(200)
+  sourceRevision String   @map("source_revision") @db.VarChar(200)
+  payload        Json
+  occurredAt     DateTime @map("occurred_at") @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  receipts     IntegrationEventReceipt[]
+
+  @@id([organizationId, id], map: "pk_integration_events")
+  @@unique([organizationId, eventName, sourceType, sourceId, sourceRevision], map: "uq_integration_events_source_revision")
+  @@index([organizationId, createdAt, id], map: "idx_integration_events_org_created_id")
+  @@map("integration_events")
+}
+
+model IntegrationEventReceipt {
+  organizationId String   @map("organization_id") @db.Uuid
+  consumerName   String   @map("consumer_name") @db.VarChar(120)
+  eventId        String   @map("event_id") @db.Uuid
+  consumedAt     DateTime @default(now()) @map("consumed_at") @db.Timestamptz(3)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  event        IntegrationEvent @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Cascade)
+
+  @@id([organizationId, consumerName, eventId], map: "pk_integration_event_receipts")
+  @@index([organizationId, eventId, consumerName], map: "idx_integration_event_receipts_org_event_consumer")
+  @@map("integration_event_receipts")
+}
+
+model EvidenceProducer {
+  organizationId String             @map("organization_id") @db.Uuid
+  id             String             @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  producerType   String             @map("producer_type") @db.VarChar(80)
+  producerKey    String             @map("producer_key") @db.VarChar(120)
+  schemaVersion  Int                @map("schema_version")
+  trustLevel     EvidenceTrustLevel @map("trust_level")
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization       Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  observations       EvidenceObservation[]
+  currentObservations CurrentEvidenceObservation[]
+
+  @@id([organizationId, id], map: "pk_evidence_producers")
+  @@unique([organizationId, producerType, producerKey], map: "uq_evidence_producers_org_type_key")
+  @@map("evidence_producers")
+}
+
+model EvidenceObservation {
+  organizationId          String                   @map("organization_id") @db.Uuid
+  id                      String                   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId               String                   @map("project_id") @db.Uuid
+  candidateId             String                   @map("candidate_id") @db.Uuid
+  metricKey               String                   @map("metric_key") @db.VarChar(80)
+  metricVersion           String                   @map("metric_version") @db.VarChar(20)
+  producerId              String                   @map("producer_id") @db.Uuid
+  producerSchemaVersion   Int                      @map("producer_schema_version")
+  valueType               EvidenceValueType        @map("value_type")
+  state                   EvidenceObservationState
+  percentageValue         Decimal?                 @map("percentage_value") @db.Decimal(12, 9)
+  integerValue            Int?                     @map("integer_value")
+  dimensions              Json
+  dimensionsHash          String                   @map("dimensions_hash") @db.Char(64)
+  observedAt              DateTime                 @map("observed_at") @db.Timestamptz(3)
+  expiresAt               DateTime?                @map("expires_at") @db.Timestamptz(3)
+  trustLevel              EvidenceTrustLevel       @map("trust_level")
+  sourceType              String                   @map("source_type") @db.VarChar(80)
+  sourceId                String                   @map("source_id") @db.VarChar(200)
+  sourceRevision          String                   @map("source_revision") @db.VarChar(200)
+  sourceUrl               String?                  @map("source_url") @db.VarChar(2048)
+  idempotencyKey          String                   @map("idempotency_key") @db.VarChar(200)
+  requestHash             String?                  @map("request_hash") @db.Char(64)
+  supersedesObservationId String?                  @map("supersedes_observation_id") @db.Uuid
+  payload                 Json                     @default("{}")
+  createdAt               DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization                @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project                     @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  candidate    ReleaseCandidate            @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict)
+  producer     EvidenceProducer            @relation(fields: [organizationId, producerId], references: [organizationId, id], onDelete: Restrict)
+  supersedes   EvidenceObservation?        @relation("EvidenceSupersession", fields: [organizationId, supersedesObservationId], references: [organizationId, id], onDelete: Cascade)
+  supersededBy EvidenceObservation?        @relation("EvidenceSupersession")
+  currentFor   CurrentEvidenceObservation?
+
+  @@id([organizationId, id], map: "pk_evidence_observations")
+  @@unique([organizationId, candidateId, id], map: "uq_evidence_observations_org_candidate_id")
+  @@unique([organizationId, producerId, idempotencyKey], map: "uq_evidence_observations_producer_idempotency")
+  @@unique([organizationId, supersedesObservationId], map: "uq_evidence_observations_supersedes")
+  @@index([organizationId, projectId, candidateId, createdAt, id], map: "idx_evidence_observations_org_project_candidate_created")
+  @@index([organizationId, candidateId, metricKey, dimensionsHash, createdAt], map: "idx_evidence_observations_org_candidate_metric_dimensions")
+  @@map("evidence_observations")
+}
+
+model CandidateEvidenceRevision {
+  organizationId String   @map("organization_id") @db.Uuid
+  projectId      String   @map("project_id") @db.Uuid
+  candidateId    String   @map("candidate_id") @db.Uuid
+  revision       Int      @default(0)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project          @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  candidate    ReleaseCandidate @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict)
+
+  @@id([organizationId, candidateId], map: "pk_candidate_evidence_revisions")
+  @@unique([organizationId, projectId, candidateId], map: "uq_candidate_evidence_revisions_org_project_candidate")
+  @@map("candidate_evidence_revisions")
+}
+
+model CurrentEvidenceObservation {
+  organizationId   String   @map("organization_id") @db.Uuid
+  projectId        String   @map("project_id") @db.Uuid
+  candidateId      String   @map("candidate_id") @db.Uuid
+  producerId       String   @map("producer_id") @db.Uuid
+  metricKey        String   @map("metric_key") @db.VarChar(80)
+  dimensionsHash   String   @map("dimensions_hash") @db.Char(64)
+  observationId    String   @map("observation_id") @db.Uuid
+  evidenceRevision Int      @map("evidence_revision")
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project             @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  candidate    ReleaseCandidate    @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict)
+  producer     EvidenceProducer    @relation(fields: [organizationId, producerId], references: [organizationId, id], onDelete: Restrict)
+  observation  EvidenceObservation @relation(fields: [organizationId, candidateId, observationId], references: [organizationId, candidateId, id], onDelete: Cascade)
+
+  @@id([organizationId, candidateId, producerId, metricKey, dimensionsHash], map: "pk_current_evidence_observations")
+  @@unique([organizationId, observationId], map: "uq_current_evidence_observations_observation")
+  @@unique([organizationId, candidateId, observationId], map: "uq_current_evidence_org_candidate_observation")
+  @@index([organizationId, projectId, candidateId, evidenceRevision], map: "idx_current_evidence_org_project_candidate_revision")
+  @@map("current_evidence_observations")
 }
 
 model TestResultIngestion {

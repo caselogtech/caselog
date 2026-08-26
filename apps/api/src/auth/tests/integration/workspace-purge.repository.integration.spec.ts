@@ -21,6 +21,12 @@ describe('workspace purge repository', () => {
 
   afterAll(async () => {
     if (organizationId) {
+      await admin.currentEvidenceObservation.deleteMany({ where: { organizationId } });
+      await admin.evidenceObservation.deleteMany({ where: { organizationId } });
+      await admin.candidateEvidenceRevision.deleteMany({ where: { organizationId } });
+      await admin.evidenceProducer.deleteMany({ where: { organizationId } });
+      await admin.integrationEventReceipt.deleteMany({ where: { organizationId } });
+      await admin.integrationEvent.deleteMany({ where: { organizationId } });
       await admin.releaseLifecycleEvent.deleteMany({ where: { organizationId } });
       await admin.candidateTestRun.deleteMany({ where: { organizationId } });
       await admin.releaseCandidate.deleteMany({ where: { organizationId } });
@@ -120,6 +126,83 @@ describe('workspace purge repository', () => {
         testRunId: run.id,
       },
     });
+    const integrationEvent = await admin.integrationEvent.create({
+      data: {
+        organizationId,
+        eventName: 'workspace.purge_tested',
+        schemaVersion: 1,
+        sourceType: 'workspace',
+        sourceId: organizationId,
+        sourceRevision: 'purge-test',
+        payload: { organizationId },
+        occurredAt: new Date(),
+      },
+    });
+    await admin.integrationEventReceipt.create({
+      data: {
+        organizationId,
+        consumerName: 'workspace-purge-test',
+        eventId: integrationEvent.id,
+      },
+    });
+    const evidenceProducer = await admin.evidenceProducer.create({
+      data: {
+        organizationId,
+        producerType: 'native_test_runs',
+        producerKey: 'workspace-purge-test',
+        schemaVersion: 1,
+        trustLevel: 'VERIFIED',
+      },
+    });
+    const evidenceObservation = await admin.evidenceObservation.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        metricKey: 'test.pass_rate',
+        metricVersion: '1.0.0',
+        producerId: evidenceProducer.id,
+        producerSchemaVersion: 1,
+        valueType: 'PERCENTAGE',
+        state: 'AVAILABLE',
+        percentageValue: '100',
+        dimensions: { testRunRole: 'required' },
+        dimensionsHash: 'd'.repeat(64),
+        observedAt: new Date(),
+        trustLevel: 'VERIFIED',
+        sourceType: 'release_candidate_test_runs',
+        sourceId: candidate.id,
+        sourceRevision: 'purge-test',
+        idempotencyKey: 'purge-test',
+        payload: {
+          runCount: 1,
+          totalItems: 1,
+          finalItems: 1,
+          executedFinalItems: 1,
+          passedItems: 1,
+          failedItems: 0,
+          skippedItems: 0,
+          incompleteRunIds: [],
+          runRevisions: [],
+          runRevisionsTruncated: false,
+        },
+      },
+    });
+    await admin.candidateEvidenceRevision.create({
+      data: { organizationId, projectId: project.id, candidateId: candidate.id, revision: 1 },
+    });
+    await admin.currentEvidenceObservation.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        producerId: evidenceProducer.id,
+        metricKey: 'test.pass_rate',
+        dimensionsHash: 'd'.repeat(64),
+        observationId: evidenceObservation.id,
+        evidenceRevision: 1,
+      },
+    });
     const repository = new WorkspacePurgeRepository(application as never);
 
     await expect(
@@ -156,6 +239,18 @@ describe('workspace purge repository', () => {
     await expect(admin.releaseCandidate.count({ where: { organizationId } })).resolves.toBe(0);
     await expect(admin.candidateTestRun.count({ where: { organizationId } })).resolves.toBe(0);
     await expect(admin.releaseLifecycleEvent.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.integrationEvent.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.integrationEventReceipt.count({ where: { organizationId } })).resolves.toBe(
+      0,
+    );
+    await expect(admin.evidenceProducer.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.evidenceObservation.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(
+      admin.candidateEvidenceRevision.count({ where: { organizationId } }),
+    ).resolves.toBe(0);
+    await expect(
+      admin.currentEvidenceObservation.count({ where: { organizationId } }),
+    ).resolves.toBe(0);
     organizationId = undefined;
   });
 });

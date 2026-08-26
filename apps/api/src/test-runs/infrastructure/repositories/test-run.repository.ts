@@ -16,6 +16,8 @@ import { bumpProjectionRevision } from '../../../core/database/infrastructure/pe
 import { RUN_PROGRESS_PROJECTION } from '../../../reporting/public-api';
 import { RunStatus } from '../../../generated/prisma/enums';
 import { appendAuditLog } from '../../../audit/public-api';
+import { testRunEvidenceSourceChangedEvent } from '../../application/events/test-run-integration-event';
+import { appendTestRunIntegrationEvent } from '../persistence/test-run-event.persistence';
 import {
   claimIdempotency,
   countRunItems,
@@ -421,12 +423,13 @@ export class TestRunRepository {
         nextStatus = RunStatus.COMPLETED;
       }
 
+      const changedAt = new Date();
       const run = nextStatus
         ? await transaction.testRun.update({
             where: { organizationId_id: { organizationId, id: runId } },
             data: {
               status: nextStatus,
-              ...(action === 'close' ? { closedAt: new Date() } : {}),
+              ...(action === 'close' ? { closedAt: changedAt } : {}),
             },
             select: {
               id: true,
@@ -452,7 +455,24 @@ export class TestRunRepository {
             nextStatus: nextStatus.toLowerCase(),
           },
         });
-        await bumpProjectionRevision(transaction, organizationId, RUN_PROGRESS_PROJECTION, runId);
+        const sourceRevision = await bumpProjectionRevision(
+          transaction,
+          organizationId,
+          RUN_PROGRESS_PROJECTION,
+          runId,
+        );
+        await appendTestRunIntegrationEvent(
+          transaction,
+          testRunEvidenceSourceChangedEvent({
+            organizationId,
+            actorId,
+            projectId: context.value.projectId,
+            testRunId: runId,
+            revision: sourceRevision,
+            reason: 'lifecycle_changed',
+            occurredAt: changedAt,
+          }),
+        );
       }
       const counts = await countRunItems(transaction, [run.id]);
       return { kind: 'found', value: toRunSummary(run, counts.get(run.id)) };

@@ -11,7 +11,9 @@ import {
   storeIdempotencyResponse,
 } from '../../../core/database/infrastructure/persistence/idempotency';
 import { Prisma } from '../../../generated/prisma/client';
+import { candidateCreatedEvent } from '../../application/events/release-integration-event';
 import type { NormalizedCandidateIdentity } from '../../domain/models/release-candidate-identity';
+import { appendReleaseIntegrationEvent } from '../persistence/release-event.persistence';
 import { toReleaseCandidate } from '../persistence/release.mapper';
 import type { IdempotentCreateResult, ProjectResult } from './release.repository.types';
 
@@ -152,6 +154,22 @@ export class ReleaseCandidateRepository {
           select: CANDIDATE_SELECTION,
         });
         const value = toReleaseCandidate(record);
+        await appendReleaseIntegrationEvent(
+          transaction,
+          candidateCreatedEvent(
+            { organizationId, actorId, occurredAt: record.createdAt },
+            {
+              id: record.id,
+              projectId: project.id,
+              releaseId,
+              sequence: record.sequence,
+              identityHash: input.identityHash,
+              sourceRevision: input.sourceRevision ?? null,
+              buildIdentifier: input.buildIdentifier ?? null,
+              artifactDigest: input.artifactDigest ?? null,
+            },
+          ),
+        );
         await appendAuditLog(transaction, {
           organizationId,
           actorId,

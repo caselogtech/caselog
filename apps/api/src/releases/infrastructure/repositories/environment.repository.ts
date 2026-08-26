@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   CreateEnvironmentRequest,
@@ -12,6 +13,11 @@ import {
   storeIdempotencyResponse,
 } from '../../../core/database/infrastructure/persistence/idempotency';
 import { EnvironmentState, Prisma, ReleaseState } from '../../../generated/prisma/client';
+import {
+  environmentCreatedEvent,
+  environmentStateChangedEvent,
+} from '../../application/events/release-integration-event';
+import { appendReleaseIntegrationEvent } from '../persistence/release-event.persistence';
 import { toEnvironmentSummary } from '../persistence/release.mapper';
 import type { IdempotentCreateResult, ProjectResult } from './release.repository.types';
 
@@ -79,6 +85,19 @@ export class EnvironmentRepository {
           data: { organizationId, projectId, createdById: actorId, ...request },
         });
         const value = toEnvironmentSummary(record);
+        await appendReleaseIntegrationEvent(
+          transaction,
+          environmentCreatedEvent(
+            { organizationId, actorId, occurredAt: record.createdAt },
+            {
+              id: record.id,
+              projectId,
+              name: record.name,
+              slug: record.slug,
+              createdAt: record.createdAt,
+            },
+          ),
+        );
         await appendAuditLog(transaction, {
           organizationId,
           actorId,
@@ -159,10 +178,24 @@ export class EnvironmentRepository {
         });
         if (openReleases > 0) return { kind: 'open_releases' };
       }
-      await transaction.environment.update({
+      const updated = await transaction.environment.update({
         where: { organizationId_id: { organizationId, id: environmentId } },
         data: { state: target },
+        select: { updatedAt: true },
       });
+      await appendReleaseIntegrationEvent(
+        transaction,
+        environmentStateChangedEvent(
+          { organizationId, actorId, occurredAt: updated.updatedAt },
+          {
+            environmentId,
+            projectId: projects.id,
+            fromState: environment.state,
+            toState: publicTarget,
+            sourceRevision: randomUUID(),
+          },
+        ),
+      );
       await appendAuditLog(transaction, {
         organizationId,
         actorId,

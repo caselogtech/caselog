@@ -1549,6 +1549,16 @@ describe('authentication API', () => {
     });
     expect(incompleteResult.statusCode, incompleteResult.body).toBe(409);
     expect(incompleteResult.json().error.code).toBe('upload_incomplete');
+    const countEvidenceSourceChangedEvents = () =>
+      admin.integrationEvent.count({
+        where: {
+          organizationId,
+          eventName: 'test_runs.evidence_source_changed',
+          sourceType: 'test_run',
+          sourceId: runId,
+        },
+      });
+    const eventsBeforeManualResults = await countEvidenceSourceChangedEvents();
     const results = await Promise.all(
       statuses.map(({ id }, index) =>
         app.inject({
@@ -1575,6 +1585,7 @@ describe('authentication API', () => {
     expect(results.map(({ statusCode }) => statusCode)).toEqual([201, 201]);
     expect(results.map((result) => result.json().result.attempt).sort()).toEqual([1, 2]);
     expect(results.every((result) => result.json().result.stepResults.length === 1)).toBe(true);
+    await expect(countEvidenceSourceChangedEvents()).resolves.toBe(eventsBeforeManualResults + 2);
     const resultWithAttachment = results.find(
       (result) => result.json().result.attachments.length === 1,
     );
@@ -1799,6 +1810,7 @@ describe('authentication API', () => {
           ],
         },
       });
+    const eventsBeforeBulkResults = await countEvidenceSourceChangedEvents();
     const [bulk, bulkReplay] = await Promise.all([bulkRequest(), bulkRequest()]);
     expect(bulk.statusCode, bulk.body).toBe(201);
     expect(bulk.json().results).toEqual([
@@ -1812,6 +1824,7 @@ describe('authentication API', () => {
     expect(bulk.json().unmatched).toEqual([]);
     expect(bulkReplay.statusCode, bulkReplay.body).toBe(201);
     expect(bulkReplay.json()).toEqual(bulk.json());
+    await expect(countEvidenceSourceChangedEvents()).resolves.toBe(eventsBeforeBulkResults + 1);
     await expect(
       admin.testResult.count({ where: { organizationId, testRunItemId: bulkItem.id } }),
     ).resolves.toBe(1);
@@ -2064,6 +2077,7 @@ describe('authentication API', () => {
         },
         payload,
       });
+    const eventsBeforeJUnitResults = await countEvidenceSourceChangedEvents();
     const [junitUpload, junitReplay] = await Promise.all([junitRequest(), junitRequest()]);
     expect(junitUpload.statusCode, junitUpload.body).toBe(201);
     expect(junitUpload.json()).toEqual({
@@ -2083,6 +2097,7 @@ describe('authentication API', () => {
     });
     expect(junitReplay.statusCode, junitReplay.body).toBe(201);
     expect(junitReplay.json()).toEqual(junitUpload.json());
+    await expect(countEvidenceSourceChangedEvents()).resolves.toBe(eventsBeforeJUnitResults + 1);
     await expect(
       admin.testResult.count({ where: { organizationId, testRunItemId: createdRunItemId } }),
     ).resolves.toBe(6);

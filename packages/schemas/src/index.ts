@@ -228,6 +228,14 @@ export {
   type WorkspaceInvitationResponse,
 } from './invitation.js';
 export { organizationIdSchema, type OrganizationId } from './organization.js';
+export type {
+  EvidenceListQuery,
+  EvidenceListResponse,
+  EvidenceMetricKey,
+  EvidenceObservation,
+  EvidenceIngestRequest,
+  EvidenceIngestResponse,
+} from './evidence.js';
 export {
   candidateTestRunListResponseSchema,
   candidateTestRunParamsSchema,

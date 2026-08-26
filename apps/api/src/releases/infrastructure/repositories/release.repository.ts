@@ -15,7 +15,12 @@ import {
   storeIdempotencyResponse,
 } from '../../../core/database/infrastructure/persistence/idempotency';
 import { EnvironmentState, Prisma, ReleaseState } from '../../../generated/prisma/client';
+import {
+  releaseCreatedEvent,
+  releaseStateChangedEvent,
+} from '../../application/events/release-integration-event';
 import { canTransitionRelease } from '../../domain/policies/release-lifecycle.policy';
+import { appendReleaseIntegrationEvent } from '../persistence/release-event.persistence';
 import { RELEASE_STATE, toReleaseCandidate, toReleaseSummary } from '../persistence/release.mapper';
 import type { IdempotentCreateResult, ProjectResult } from './release.repository.types';
 
@@ -179,7 +184,7 @@ export class ReleaseRepository {
           select: RELEASE_SELECTION,
         });
         const value = toReleaseSummary(record);
-        await transaction.releaseLifecycleEvent.create({
+        const lifecycleEvent = await transaction.releaseLifecycleEvent.create({
           data: {
             organizationId,
             projectId,
@@ -188,6 +193,20 @@ export class ReleaseRepository {
             toState: ReleaseState.DRAFT,
           },
         });
+        await appendReleaseIntegrationEvent(
+          transaction,
+          releaseCreatedEvent(
+            { organizationId, actorId, occurredAt: lifecycleEvent.occurredAt },
+            {
+              id: record.id,
+              projectId,
+              environmentId: request.environmentId ?? null,
+              key: record.key,
+              name: record.name,
+              sourceRevision: lifecycleEvent.id,
+            },
+          ),
+        );
         await appendAuditLog(transaction, {
           organizationId,
           actorId,
@@ -293,7 +312,7 @@ export class ReleaseRepository {
         },
         select: { updatedAt: true },
       });
-      await transaction.releaseLifecycleEvent.create({
+      const lifecycleEvent = await transaction.releaseLifecycleEvent.create({
         data: {
           organizationId,
           projectId: project.id,
@@ -304,6 +323,19 @@ export class ReleaseRepository {
           occurredAt: now,
         },
       });
+      await appendReleaseIntegrationEvent(
+        transaction,
+        releaseStateChangedEvent(
+          { organizationId, actorId, occurredAt: now },
+          {
+            releaseId,
+            projectId: project.id,
+            fromState: from,
+            toState: target,
+            sourceRevision: lifecycleEvent.id,
+          },
+        ),
+      );
       await appendAuditLog(transaction, {
         organizationId,
         actorId,

@@ -13,6 +13,8 @@ import { ResultIngestionRepository } from './infrastructure/repositories/result-
 import { ResultIngestionController } from './presentation/controllers/result-ingestion.controller';
 import { TestRunReferenceRepository } from './infrastructure/repositories/test-run-reference.repository';
 import { TestRunReferenceService } from './application/services/test-run-reference.service';
+import { TestRunEvidenceSourceService } from './application/services/test-run-evidence-source.service';
+import { TestRunEvidenceSourceRepository } from './infrastructure/repositories/test-run-evidence-source.repository';
 
 @Module({
   imports: [AuthModule, AttachmentModule, ReportingModule],
@@ -27,7 +29,9 @@ import { TestRunReferenceService } from './application/services/test-run-referen
     TestRunService,
     TestRunReferenceRepository,
     TestRunReferenceService,
+    TestRunEvidenceSourceRepository,
+    TestRunEvidenceSourceService,
   ],
-  exports: [TestRunReferenceService],
+  exports: [TestRunReferenceService, TestRunEvidenceSourceService],
 })
 export class TestRunModule {}

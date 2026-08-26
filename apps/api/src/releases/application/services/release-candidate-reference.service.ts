@@ -15,4 +15,11 @@ export class ReleaseCandidateReferenceService {
     if (!reference) throw new ResourceNotFoundError('release_candidate');
     return reference;
   }
+
+  resolveForTestRun(
+    organizationId: string,
+    testRunId: string,
+  ): Promise<ReleaseCandidateReference | null> {
+    return this.references.findByTestRun(organizationId, testRunId);
+  }
 }

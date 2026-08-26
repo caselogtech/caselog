@@ -5,12 +5,14 @@ export async function bumpProjectionRevision(
   organizationId: string,
   projection: string,
   sourceId: string,
-): Promise<void> {
-  await transaction.projectionRevision.upsert({
+): Promise<number> {
+  const record = await transaction.projectionRevision.upsert({
     where: {
       organizationId_projection_sourceId: { organizationId, projection, sourceId },
     },
     create: { organizationId, projection, sourceId, revision: 1 },
     update: { revision: { increment: 1 } },
+    select: { revision: true },
   });
+  return record.revision;
 }

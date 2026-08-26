@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   CandidateTestRun,
@@ -10,8 +11,14 @@ import {
   type TenantTransaction,
 } from '../../../core/database/application/services/tenant-database.service';
 import type { TestRunReference } from '../../../test-runs/public-api';
-import { CandidateTestRunRole, Prisma } from '../../../generated/prisma/client';
+import { CandidateTestRunRole, type Prisma } from '../../../generated/prisma/client';
 import type { RunStatus } from '../../../generated/prisma/enums';
+import {
+  candidateTestRunLinkedEvent,
+  candidateTestRunRoleChangedEvent,
+  candidateTestRunUnlinkedEvent,
+} from '../../application/events/release-integration-event';
+import { appendReleaseIntegrationEvent } from '../persistence/release-event.persistence';
 import { LINK_ROLE, RUN_STATUS } from '../persistence/release.mapper';
 import type { ProjectResult } from './release.repository.types';
 
@@ -119,6 +126,23 @@ export class CandidateTestRunRepository {
             select: LINK_SELECTION,
           });
       if (!existing || existing.role !== databaseRole) {
+        const occurredAt = new Date();
+        const integrationEvent = existing
+          ? candidateTestRunRoleChangedEvent
+          : candidateTestRunLinkedEvent;
+        await appendReleaseIntegrationEvent(
+          transaction,
+          integrationEvent(
+            { organizationId, actorId, occurredAt },
+            {
+              projectId: context.projectId,
+              candidateId,
+              testRunId: run.id,
+              role,
+              sourceRevision: randomUUID(),
+            },
+          ),
+        );
         await appendAuditLog(transaction, {
           organizationId,
           actorId,
@@ -153,10 +177,40 @@ export class CandidateTestRunRepository {
       if (context.releaseState !== 'draft' && context.releaseState !== 'active') {
         return { kind: 'release_finalized' };
       }
-      const deleted = await transaction.candidateTestRun.deleteMany({
-        where: { candidateId, testRunId: runId },
+      const existing = await transaction.candidateTestRun.findUnique({
+        where: {
+          organizationId_candidateId_testRunId: {
+            organizationId,
+            candidateId,
+            testRunId: runId,
+          },
+        },
+        select: { role: true },
       });
-      if (deleted.count > 0) {
+      if (existing) {
+        const occurredAt = new Date();
+        await transaction.candidateTestRun.delete({
+          where: {
+            organizationId_candidateId_testRunId: {
+              organizationId,
+              candidateId,
+              testRunId: runId,
+            },
+          },
+        });
+        await appendReleaseIntegrationEvent(
+          transaction,
+          candidateTestRunUnlinkedEvent(
+            { organizationId, actorId, occurredAt },
+            {
+              projectId: context.projectId,
+              candidateId,
+              testRunId: runId,
+              role: LINK_ROLE[existing.role],
+              sourceRevision: randomUUID(),
+            },
+          ),
+        );
         await appendAuditLog(transaction, {
           organizationId,
           actorId,

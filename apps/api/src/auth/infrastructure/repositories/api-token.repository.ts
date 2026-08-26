@@ -12,11 +12,13 @@ import { appendAuditLog } from '../../../audit/public-api';
 const SCOPE_TO_DATABASE: Record<ApiTokenScopeValue, ApiTokenScope> = {
   'results:write': 'RESULTS_WRITE',
   'runs:read': 'RUNS_READ',
+  'evidence:write': 'EVIDENCE_WRITE',
 };
 
 const SCOPE_FROM_DATABASE: Record<ApiTokenScope, ApiTokenScopeValue> = {
   RESULTS_WRITE: 'results:write',
   RUNS_READ: 'runs:read',
+  EVIDENCE_WRITE: 'evidence:write',
 };
 
 type ApiTokenRecord = {
