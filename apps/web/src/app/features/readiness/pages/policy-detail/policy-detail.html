@@ -1,0 +1,57 @@
+<main class="policy-detail-page" aria-labelledby="policy-detail-title">
+  @if (policyQuery.isPending()) {
+    <section class="loading-state" [attr.aria-label]="'readiness.policies.detailLoading' | transloco">
+      <app-loading-skeleton preset="title" [label]="'readiness.policies.detailLoading' | transloco" />
+      <app-loading-skeleton preset="block" [label]="'readiness.policies.detailLoading' | transloco" />
+    </section>
+  } @else if (policyQuery.isError()) {
+    <app-page-state
+      [title]="'readiness.policies.detailErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="policyQuery.refetch()">
+        {{ 'readiness.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (policy(); as model) {
+    <header>
+      <a
+        appButton="quiet"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies']"
+      >
+        <span aria-hidden="true">←</span>
+        {{ 'readiness.policies.backToPolicies' | transloco }}
+      </a>
+
+      <div class="title-row">
+        <div>
+          <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>
+          <h1 id="policy-detail-title">{{ model.name }}</h1>
+          <code>{{ model.key }}</code>
+          @if (model.description) {
+            <p class="description">{{ model.description }}</p>
+          }
+        </div>
+        @if (latestVersion(); as latest) {
+          <div class="latest-version">
+            <app-status-badge
+              [tone]="stateTone(latest.state)"
+              [label]="stateLabel(latest.state) | transloco"
+            />
+            <span>{{ 'readiness.policies.version' | transloco: { version: latest.version } }}</span>
+          </div>
+        }
+      </div>
+    </header>
+
+    <section class="versions-section" aria-labelledby="policy-versions-title">
+      <div class="section-heading">
+        <p class="eyebrow">{{ 'readiness.policies.versionsEyebrow' | transloco }}</p>
+        <h2 id="policy-versions-title">{{ 'readiness.policies.versionsTitle' | transloco }}</h2>
+        <p>{{ 'readiness.policies.versionsDescription' | transloco }}</p>
+      </div>
+      <app-policy-version-list [versions]="versions()" />
+    </section>
+  }
+</main>

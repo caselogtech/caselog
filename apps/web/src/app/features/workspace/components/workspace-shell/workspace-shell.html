@@ -115,6 +115,15 @@
           {{ 'app.navigation.testRuns' | transloco }}
         </a>
         <a
+          href="/{{ workspaceSlug }}/{{ projectSlug() }}/release-policies"
+          [routerLink]="['/', workspaceSlug, projectSlug(), 'release-policies']"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          (click)="closeNavigation(false)"
+        >
+          {{ 'app.navigation.releasePolicies' | transloco }}
+        </a>
+        <a
           href="/{{ workspaceSlug }}/{{ projectSlug() }}/cases"
           [routerLink]="['/', workspaceSlug, projectSlug(), 'cases']"
           routerLinkActive="active"

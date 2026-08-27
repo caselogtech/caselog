@@ -138,6 +138,55 @@
       "archived": "Archived"
     }
   },
+  "policies": {
+    "eyebrow": "Deterministic readiness",
+    "title": "Release policies",
+    "description": "Define versioned, deterministic gates for release-candidate decisions.",
+    "loading": "Loading release policies…",
+    "loadErrorTitle": "Unable to load release policies",
+    "emptyTitle": "No release policies",
+    "emptyDescription": "Create and publish a release policy before assigning one to a candidate.",
+    "loadedCount": "{{count}} policies loaded",
+    "policy": "Policy",
+    "publishedVersion": "Published version",
+    "draftVersion": "Draft version",
+    "updated": "Updated",
+    "notPublished": "Not published",
+    "noDraft": "No draft",
+    "version": "Version {{version}}",
+    "gateCount": "{{count}} gates",
+    "openPolicy": "Open policy {{name}}",
+    "loadMore": "Load more policies",
+    "loadingMore": "Loading more policies…",
+    "detailLoading": "Loading release policy…",
+    "detailErrorTitle": "Unable to load this release policy",
+    "backToPolicies": "Release policies",
+    "versionsEyebrow": "Immutable configuration history",
+    "versionsTitle": "Policy versions",
+    "versionsDescription": "Published and retired versions remain unchanged so historical decisions keep their exact inputs.",
+    "created": "Created",
+    "published": "Published",
+    "retired": "Retired",
+    "notAvailable": "Not available",
+    "states": {
+      "draft": "Draft",
+      "published": "Published",
+      "retired": "Retired"
+    },
+    "gates": {
+      "title": "Gates",
+      "role": "Test-run role",
+      "comparison": "Comparison",
+      "missing": "Missing evidence",
+      "stale": "Stale evidence",
+      "minimumTrust": "Minimum trust",
+      "behaviors": {
+        "unknown": "Keep unknown",
+        "warn": "Warn",
+        "block": "Block"
+      }
+    }
+  },
   "evidence": {
     "eyebrow": "Auditable observations",
     "title": "Evidence for this candidate",

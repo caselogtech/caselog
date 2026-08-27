@@ -1,0 +1,81 @@
+<div class="catalog">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">{{ 'readiness.policies.policy' | transloco }}</th>
+        <th scope="col">{{ 'readiness.policies.publishedVersion' | transloco }}</th>
+        <th scope="col">{{ 'readiness.policies.draftVersion' | transloco }}</th>
+        <th scope="col">{{ 'readiness.policies.updated' | transloco }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (policy of policies(); track policy.id) {
+        <tr>
+          <td class="policy-cell">
+            <span class="mobile-label">{{ 'readiness.policies.policy' | transloco }}</span>
+            <a
+              [attr.aria-label]="'readiness.policies.openPolicy' | transloco: { name: policy.name }"
+              href="/{{ workspaceSlug() }}/{{ projectSlug() }}/release-policies/{{ policy.id }}"
+              [routerLink]="['/', workspaceSlug(), projectSlug(), 'release-policies', policy.id]"
+            >
+              {{ policy.name }}
+            </a>
+            <code>{{ policy.key }}</code>
+            @if (policy.description) {
+              <small>{{ policy.description }}</small>
+            }
+          </td>
+          <td>
+            <span class="mobile-label">
+              {{ 'readiness.policies.publishedVersion' | transloco }}
+            </span>
+            @if (policy.publishedVersion; as version) {
+              <app-status-badge
+                tone="success"
+                [label]="'readiness.policies.version' | transloco: { version: version.version }"
+              />
+              <small>{{ 'readiness.policies.gateCount' | transloco: { count: version.gateCount } }}</small>
+            } @else {
+              <span class="muted">{{ 'readiness.policies.notPublished' | transloco }}</span>
+            }
+          </td>
+          <td>
+            <span class="mobile-label">
+              {{ 'readiness.policies.draftVersion' | transloco }}
+            </span>
+            @if (policy.draftVersion; as version) {
+              <app-status-badge
+                tone="pending"
+                [label]="'readiness.policies.version' | transloco: { version: version.version }"
+              />
+              <small>{{ 'readiness.policies.gateCount' | transloco: { count: version.gateCount } }}</small>
+            } @else {
+              <span class="muted">{{ 'readiness.policies.noDraft' | transloco }}</span>
+            }
+          </td>
+          <td class="date-cell">
+            <span class="mobile-label">{{ 'readiness.policies.updated' | transloco }}</span>
+            {{ policy.updatedAt | date: 'mediumDate' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @if (hasNextPage()) {
+    <div class="load-more">
+      <button
+        appButton="secondary"
+        type="button"
+        [disabled]="fetchingNextPage()"
+        (click)="loadMore.emit()"
+      >
+        {{
+          (fetchingNextPage()
+            ? 'readiness.policies.loadingMore'
+            : 'readiness.policies.loadMore') | transloco
+        }}
+      </button>
+    </div>
+  }
+</div>

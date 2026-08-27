@@ -1,0 +1,44 @@
+<main class="policy-list-page" aria-labelledby="policy-list-title">
+  <header class="page-header">
+    <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>
+    <h1 id="policy-list-title">{{ 'readiness.policies.title' | transloco }}</h1>
+    <p class="description">{{ 'readiness.policies.description' | transloco }}</p>
+  </header>
+
+  @if (!policies.isPending() && !policies.isError()) {
+    <div class="catalog-summary">
+      <span>{{ 'readiness.policies.loadedCount' | transloco: { count: items().length } }}</span>
+    </div>
+  }
+
+  @if (policies.isPending()) {
+    <section class="loading-state" [attr.aria-label]="'readiness.policies.loading' | transloco">
+      @for (row of [1, 2, 3, 4]; track row) {
+        <app-loading-skeleton preset="row" [label]="'readiness.policies.loading' | transloco" />
+      }
+    </section>
+  } @else if (policies.isError()) {
+    <app-page-state
+      [title]="'readiness.policies.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="policies.refetch()">
+        {{ 'readiness.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (items().length === 0) {
+    <app-page-state
+      [title]="'readiness.policies.emptyTitle' | transloco"
+      [message]="'readiness.policies.emptyDescription' | transloco"
+    />
+  } @else {
+    <app-policy-catalog
+      [policies]="items()"
+      [workspaceSlug]="workspaceSlug"
+      [projectSlug]="projectSlug"
+      [hasNextPage]="policies.hasNextPage()"
+      [fetchingNextPage]="policies.isFetchingNextPage()"
+      (loadMore)="policies.fetchNextPage()"
+    />
+  }
+</main>

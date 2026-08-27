@@ -1,0 +1,44 @@
+<div class="versions">
+  @for (version of versions(); track version.id; let first = $first) {
+    <app-disclosure
+      [open]="first"
+      [label]="'readiness.policies.version' | transloco: { version: version.version }"
+    >
+      <div class="version-heading">
+        <app-status-badge
+          [tone]="stateTone(version.state)"
+          [label]="stateLabel(version.state) | transloco"
+        />
+        <span>{{ 'readiness.policies.gateCount' | transloco: { count: version.gates.length } }}</span>
+      </div>
+      <dl>
+        <div>
+          <dt>{{ 'readiness.policies.created' | transloco }}</dt>
+          <dd>{{ version.createdAt | date: 'medium' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.policies.published' | transloco }}</dt>
+          <dd>
+            {{
+              version.publishedAt
+                ? (version.publishedAt | date: 'medium')
+                : ('readiness.policies.notAvailable' | transloco)
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.policies.retired' | transloco }}</dt>
+          <dd>
+            {{
+              version.retiredAt
+                ? (version.retiredAt | date: 'medium')
+                : ('readiness.policies.notAvailable' | transloco)
+            }}
+          </dd>
+        </div>
+      </dl>
+      <h3>{{ 'readiness.policies.gates.title' | transloco }}</h3>
+      <app-policy-gate-list [gates]="version.gates" />
+    </app-disclosure>
+  }
+</div>

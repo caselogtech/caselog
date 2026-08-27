@@ -1,0 +1,41 @@
+<ol>
+  @for (gate of gates(); track gate.id) {
+    <li>
+      <header>
+        <span class="position">{{ gate.position + 1 }}</span>
+        <div>
+          <strong>{{ metricLabel(gate.metricKey) | transloco }}</strong>
+          <code>{{ gate.key }}</code>
+        </div>
+        <app-status-badge
+          [tone]="impactTone(gate.impact)"
+          [label]="impactLabel(gate.impact) | transloco"
+        />
+      </header>
+      <dl>
+        <div>
+          <dt>{{ 'readiness.policies.gates.comparison' | transloco }}</dt>
+          <dd class="comparison">
+            {{ operatorLabel(gate.operator) }} {{ expectedValue(gate) }}
+          </dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.policies.gates.role' | transloco }}</dt>
+          <dd>{{ roleLabel(gate.dimensions.testRunRole) | transloco }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.policies.gates.missing' | transloco }}</dt>
+          <dd>{{ behaviorLabel(gate.missingEvidenceBehavior) | transloco }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.policies.gates.stale' | transloco }}</dt>
+          <dd>{{ behaviorLabel(gate.staleEvidenceBehavior) | transloco }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.policies.gates.minimumTrust' | transloco }}</dt>
+          <dd>{{ trustLabel(gate.minimumTrust) | transloco }}</dd>
+        </div>
+      </dl>
+    </li>
+  }
+</ol>

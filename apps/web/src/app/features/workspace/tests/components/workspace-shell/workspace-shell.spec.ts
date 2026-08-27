@@ -25,6 +25,7 @@ describe('WorkspaceShell', () => {
               component: WorkspaceShell,
               children: [
                 { path: ':project/releases', component: EmptyPage },
+                { path: ':project/release-policies', component: EmptyPage },
                 { path: ':project/cases', component: EmptyPage },
                 { path: 'projects', component: EmptyPage },
               ],
@@ -53,7 +54,14 @@ describe('WorkspaceShell', () => {
       Array.from(shell.querySelectorAll('.project-navigation a')).map((link) =>
         link.textContent?.trim(),
       ),
-    ).toEqual(['Releases', 'Test runs', 'Test cases', 'CI imports', 'Project settings']);
+    ).toEqual([
+      'Releases',
+      'Test runs',
+      'Release policies',
+      'Test cases',
+      'CI imports',
+      'Project settings',
+    ]);
     expect(
       shell.querySelector('.project-navigation a[aria-current="page"]')?.textContent?.trim(),
     ).toBe('Test cases');

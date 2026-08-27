@@ -18,6 +18,13 @@ export const workspaceRoutes: Routes = [
           import('../releases/public-api').then(({ releasesRoutes }) => releasesRoutes),
       },
       {
+        path: ':project/release-policies',
+        loadChildren: () =>
+          import('../readiness/public-api').then(
+            ({ readinessPolicyRoutes }) => readinessPolicyRoutes,
+          ),
+      },
+      {
         path: ':project/settings',
         loadChildren: () =>
           import('../project-settings/public-api').then(
