@@ -82,6 +82,11 @@ describe('CandidateReadiness', () => {
     expect(text).toContain('junit-ingest');
     expect(text).toContain('Regression');
     expect(fixture.componentInstance.gateRows()).toHaveLength(1);
+    const explorerLink = Array.from(
+      fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
+    ).find((link) => link.textContent?.includes('Open evidence explorer'));
+    expect(explorerLink?.getAttribute('href')).toContain('/acme/checkout/evidence');
+    expect(explorerLink?.getAttribute('href')).toContain(candidateId);
   });
 
   it('requests a manual evaluation for eligible roles', async () => {

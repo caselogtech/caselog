@@ -278,6 +278,7 @@
     "expires": "Expires",
     "source": "Source",
     "noExpiry": "No expiry",
+    "openExplorer": "Open evidence explorer",
     "loadMore": "Load more evidence",
     "loadingMore": "Loading more evidence…",
     "trust": {
@@ -292,6 +293,83 @@
     "revision": {
       "current": "Current",
       "superseded": "Superseded"
+    },
+    "explorer": {
+      "eyebrow": "Quality evidence",
+      "title": "Evidence explorer",
+      "description": "Inspect normalized observations and their provenance for one immutable release candidate. Filters are evaluated by the server across the full history.",
+      "currentView": "Current evidence",
+      "historyView": "Full history",
+      "activeFilters": "{{count}} active filters",
+      "candidateRequiredTitle": "Choose a release candidate",
+      "candidateRequiredDescription": "Open this page from Candidate Readiness or enter an exact candidate ID. Evidence is candidate-scoped so observations from different immutable artifacts are never mixed.",
+      "loading": "Loading evidence observations…",
+      "loadErrorTitle": "Unable to load evidence observations",
+      "candidateRevision": "Evidence revision",
+      "loadedCount": "Observations on page",
+      "candidateId": "Candidate ID",
+      "historyNoticeTitle": "Append-only evidence history",
+      "historyNoticeDescription": "Superseded observations remain visible for audit and historical decision reconstruction. They are not current inputs for new evaluations.",
+      "emptyTitle": "No matching observations",
+      "emptyDescription": "No evidence matches this candidate and filter set. Clear filters or verify that the producer has delivered evidence for the candidate.",
+      "pagination": "Evidence history pages",
+      "firstPage": "First page",
+      "nextPage": "Next page",
+      "observationState": "Observation state",
+      "runRole": "Test-run role",
+      "provenance": "Provenance and raw normalized details",
+      "observationId": "Observation ID",
+      "sourceRevision": "Source revision",
+      "createdAt": "Stored at",
+      "supersedes": "Supersedes observation",
+      "none": "None",
+      "details": "Normalized details",
+      "states": {
+        "available": "Available",
+        "incomplete": "Incomplete"
+      },
+      "filters": {
+        "candidate": "Candidate ID",
+        "candidateHint": "Required immutable release-candidate UUID.",
+        "candidateInvalid": "Enter a valid release-candidate UUID.",
+        "view": "Evidence scope",
+        "current": "Current observations",
+        "history": "Current and superseded history",
+        "allMetrics": "All metrics",
+        "state": "Observation state",
+        "anyState": "Any state",
+        "anyTrust": "Any trust level",
+        "anyFreshness": "Any freshness",
+        "exactHint": "Exact server-owned key.",
+        "sourceType": "Source type",
+        "observedAfter": "Observed on or after",
+        "observedBefore": "Observed on or before",
+        "dateRangeInvalid": "The end date must not precede the start date.",
+        "reset": "Reset filters",
+        "apply": "Apply filters"
+      },
+      "diagnostics": {
+        "healthy": {
+          "label": "Usable evidence",
+          "description": "This is a current, available, non-stale observation from an authenticated or verified producer. Individual policies may still require a higher trust level."
+        },
+        "incomplete": {
+          "label": "Incomplete evidence",
+          "description": "The producer recorded an explicit incomplete observation, so a deterministic value is not available for this metric and dimension set."
+        },
+        "stale": {
+          "label": "Stale evidence",
+          "description": "This observation has passed its server-owned expiry time and cannot silently satisfy a freshness-sensitive gate."
+        },
+        "unverified": {
+          "label": "Unverified evidence",
+          "description": "The producer is explicitly unverified. A policy requiring authenticated or verified evidence will not accept this observation."
+        },
+        "superseded": {
+          "label": "Superseded evidence",
+          "description": "A later observation replaced this fact for current evaluation. It remains immutable and visible for historical reconstruction."
+        }
+      }
     }
   },
   "history": {

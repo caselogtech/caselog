@@ -1,0 +1,138 @@
+<form [formGroup]="form" (ngSubmit)="apply()">
+  <div class="filter-grid">
+    <app-form-field
+      class="candidate-field"
+      controlId="evidence-candidate"
+      [label]="'readiness.evidence.explorer.filters.candidate' | transloco"
+      [hint]="'readiness.evidence.explorer.filters.candidateHint' | transloco"
+      [error]="form.controls.candidateId.touched && form.controls.candidateId.invalid ? ('readiness.evidence.explorer.filters.candidateInvalid' | transloco) : undefined"
+      [required]="true"
+    >
+      <input
+        appControl
+        id="evidence-candidate"
+        class="mono"
+        type="text"
+        formControlName="candidateId"
+        autocomplete="off"
+        [attr.aria-invalid]="form.controls.candidateId.touched && form.controls.candidateId.invalid"
+      />
+    </app-form-field>
+
+    <app-form-field
+      controlId="evidence-view"
+      [label]="'readiness.evidence.explorer.filters.view' | transloco"
+    >
+      <select appControl id="evidence-view" formControlName="currentOnly">
+        <option value="true">{{ 'readiness.evidence.explorer.filters.current' | transloco }}</option>
+        <option value="false">{{ 'readiness.evidence.explorer.filters.history' | transloco }}</option>
+      </select>
+    </app-form-field>
+
+    <app-form-field
+      controlId="evidence-metric"
+      [label]="'readiness.evidence.metric' | transloco"
+    >
+      <select appControl id="evidence-metric" formControlName="metricKey">
+        <option value="">{{ 'readiness.evidence.explorer.filters.allMetrics' | transloco }}</option>
+        @for (metricKey of metrics; track metricKey) {
+          <option [value]="metricKey">{{ metric(metricKey) | transloco }}</option>
+        }
+      </select>
+    </app-form-field>
+
+    <app-form-field
+      controlId="evidence-state"
+      [label]="'readiness.evidence.explorer.filters.state' | transloco"
+    >
+      <select appControl id="evidence-state" formControlName="state">
+        <option value="">{{ 'readiness.evidence.explorer.filters.anyState' | transloco }}</option>
+        @for (state of states; track state) {
+          <option [value]="state">{{ stateLabel(state) | transloco }}</option>
+        }
+      </select>
+    </app-form-field>
+
+    <app-form-field
+      controlId="evidence-trust"
+      [label]="'readiness.evidence.trustLabel' | transloco"
+    >
+      <select appControl id="evidence-trust" formControlName="trust">
+        <option value="">{{ 'readiness.evidence.explorer.filters.anyTrust' | transloco }}</option>
+        @for (trust of trustLevels; track trust) {
+          <option [value]="trust">{{ trustLabel(trust) | transloco }}</option>
+        }
+      </select>
+    </app-form-field>
+
+    <app-form-field
+      controlId="evidence-freshness"
+      [label]="'readiness.evidence.freshnessLabel' | transloco"
+    >
+      <select appControl id="evidence-freshness" formControlName="freshness">
+        <option value="">{{ 'readiness.evidence.explorer.filters.anyFreshness' | transloco }}</option>
+        @for (freshness of freshnessValues; track freshness) {
+          <option [value]="freshness">{{ freshnessLabel(freshness) | transloco }}</option>
+        }
+      </select>
+    </app-form-field>
+
+    <app-form-field
+      controlId="evidence-producer"
+      [label]="'readiness.evidence.producer' | transloco"
+      [hint]="'readiness.evidence.explorer.filters.exactHint' | transloco"
+    >
+      <input
+        appControl
+        id="evidence-producer"
+        type="text"
+        formControlName="producerKey"
+        autocomplete="off"
+      />
+    </app-form-field>
+
+    <app-form-field
+      controlId="evidence-source-type"
+      [label]="'readiness.evidence.explorer.filters.sourceType' | transloco"
+      [hint]="'readiness.evidence.explorer.filters.exactHint' | transloco"
+    >
+      <input
+        appControl
+        id="evidence-source-type"
+        type="text"
+        formControlName="sourceType"
+        autocomplete="off"
+      />
+    </app-form-field>
+
+    <app-form-field
+      controlId="evidence-observed-after"
+      [label]="'readiness.evidence.explorer.filters.observedAfter' | transloco"
+    >
+      <input appControl id="evidence-observed-after" type="date" formControlName="observedAfter" />
+    </app-form-field>
+
+    <app-form-field
+      controlId="evidence-observed-before"
+      [label]="'readiness.evidence.explorer.filters.observedBefore' | transloco"
+      [error]="form.hasError('invalidDateRange') && form.controls.observedBefore.touched ? ('readiness.evidence.explorer.filters.dateRangeInvalid' | transloco) : undefined"
+    >
+      <input
+        appControl
+        id="evidence-observed-before"
+        type="date"
+        formControlName="observedBefore"
+        [attr.aria-invalid]="form.hasError('invalidDateRange') && form.controls.observedBefore.touched"
+      />
+    </app-form-field>
+  </div>
+
+  <div class="filter-actions">
+    <button appButton="quiet" type="button" (click)="reset()">
+      {{ 'readiness.evidence.explorer.filters.reset' | transloco }}
+    </button>
+    <button appButton="primary" type="submit">
+      {{ 'readiness.evidence.explorer.filters.apply' | transloco }}
+    </button>
+  </div>
+</form>

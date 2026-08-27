@@ -15,6 +15,7 @@
       "projects": "Projects",
       "releases": "Releases",
       "releasePolicies": "Release policies",
+      "evidence": "Evidence",
       "testCases": "Test cases",
       "testRuns": "Test runs",
       "ciImports": "CI imports",

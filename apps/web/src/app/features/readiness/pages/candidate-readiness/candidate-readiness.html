@@ -226,6 +226,14 @@
               <p class="eyebrow">{{ 'readiness.evidence.eyebrow' | transloco }}</p>
               <h2 id="candidate-evidence-title">{{ 'readiness.evidence.title' | transloco }}</h2>
             </div>
+            <a
+              appButton="secondary"
+              href="/{{ workspaceSlug }}/{{ projectSlug }}/evidence?candidateId={{ candidateId }}&view=history"
+              [routerLink]="['/', workspaceSlug, projectSlug, 'evidence']"
+              [queryParams]="{ candidateId, view: 'history' }"
+            >
+              {{ 'readiness.evidence.openExplorer' | transloco }}
+            </a>
           </div>
           @if (evidence.isPending()) {
             <app-loading-skeleton preset="block" [label]="'readiness.evidence.loading' | transloco" />

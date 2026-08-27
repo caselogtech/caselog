@@ -27,7 +27,11 @@ import {
   type ReadinessWaiverResponse,
   type RevokeReadinessWaiverRequest,
 } from '@caselog/schemas/readiness';
-import { evidenceListResponseSchema, type EvidenceListResponse } from '@caselog/schemas/evidence';
+import {
+  evidenceListResponseSchema,
+  type EvidenceListQuery,
+  type EvidenceListResponse,
+} from '@caselog/schemas/evidence';
 import { lastValueFrom } from 'rxjs';
 import { WorkspaceAccess } from '../../workspace/public-api';
 
@@ -176,6 +180,30 @@ export class ReadinessApi {
           limit,
           ...(cursor ? { cursor } : {}),
         },
+      }),
+    );
+    return evidenceListResponseSchema.parse(response);
+  }
+
+  async exploreEvidence(
+    workspaceSlug: string,
+    projectSlug: string,
+    query: EvidenceListQuery,
+  ): Promise<EvidenceListResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const params: Record<string, string | number | boolean> = {
+      candidateId: query.candidateId,
+      currentOnly: query.currentOnly,
+      limit: query.limit,
+    };
+    for (const [key, value] of Object.entries(query)) {
+      if (!['candidateId', 'currentOnly', 'limit'].includes(key) && value !== undefined) {
+        params[key] = value;
+      }
+    }
+    const response = await lastValueFrom(
+      this.http.get<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/evidence`, {
+        params,
       }),
     );
     return evidenceListResponseSchema.parse(response);

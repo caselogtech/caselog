@@ -26,6 +26,7 @@ describe('WorkspaceShell', () => {
               children: [
                 { path: ':project/releases', component: EmptyPage },
                 { path: ':project/release-policies', component: EmptyPage },
+                { path: ':project/evidence', component: EmptyPage },
                 { path: ':project/cases', component: EmptyPage },
                 { path: 'projects', component: EmptyPage },
               ],
@@ -58,6 +59,7 @@ describe('WorkspaceShell', () => {
       'Releases',
       'Test runs',
       'Release policies',
+      'Evidence',
       'Test cases',
       'CI imports',
       'Project settings',

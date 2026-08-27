@@ -1,0 +1,106 @@
+<div class="observation-list">
+  @for (observation of observations(); track observation.id) {
+    @let diagnosis = diagnostic(observation);
+    @let trustStatus = trust(observation);
+    @let freshnessStatus = freshness(observation);
+    <article>
+      <header>
+        <div class="observation-identity">
+          <p class="metric">{{ metric(observation) | transloco }}</p>
+          <p class="value mono">{{ value(observation) }}</p>
+          <span class="version mono">{{ observation.metricVersion }}</span>
+        </div>
+        <div class="status-stack">
+          <app-status-badge [label]="diagnosis.labelKey | transloco" [tone]="diagnosis.tone" />
+          <app-status-badge
+            [label]="revisionLabel(observation) | transloco"
+            [tone]="revisionTone(observation)"
+          />
+        </div>
+      </header>
+
+      <p class="diagnostic-description">{{ diagnosis.descriptionKey | transloco }}</p>
+
+      <dl class="summary-grid">
+        <div>
+          <dt>{{ 'readiness.evidence.explorer.observationState' | transloco }}</dt>
+          <dd>
+            <app-status-badge
+              [label]="stateLabel(observation.state) | transloco"
+              [tone]="stateTone(observation.state)"
+            />
+          </dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.evidence.explorer.runRole' | transloco }}</dt>
+          <dd>{{ roleLabel(observation.dimensions.testRunRole) | transloco }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.evidence.producer' | transloco }}</dt>
+          <dd>
+            <span class="mono">{{ observation.producer.key }}</span>
+            <small>{{ observation.producer.type }} · v{{ observation.producer.schemaVersion }}</small>
+          </dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.evidence.trustLabel' | transloco }}</dt>
+          <dd><app-status-badge [label]="trustStatus.labelKey | transloco" [tone]="trustStatus.tone" /></dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.evidence.freshnessLabel' | transloco }}</dt>
+          <dd>
+            <app-status-badge
+              [label]="freshnessStatus.labelKey | transloco"
+              [tone]="freshnessStatus.tone"
+            />
+          </dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.evidence.observed' | transloco }}</dt>
+          <dd>{{ observation.observedAt | date: 'medium' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.evidence.expires' | transloco }}</dt>
+          <dd>
+            {{ observation.expiresAt ? (observation.expiresAt | date: 'medium') : ('readiness.evidence.noExpiry' | transloco) }}
+          </dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.evidence.source' | transloco }}</dt>
+          <dd>
+            @if (observation.source.url) {
+              <a href="{{ observation.source.url }}" target="_blank" rel="noopener noreferrer">
+                {{ observation.source.type }} · {{ observation.source.id }}
+              </a>
+            } @else {
+              {{ observation.source.type }} · {{ observation.source.id }}
+            }
+          </dd>
+        </div>
+      </dl>
+
+      <app-disclosure [label]="'readiness.evidence.explorer.provenance' | transloco">
+        <dl class="provenance-grid">
+          <div>
+            <dt>{{ 'readiness.evidence.explorer.observationId' | transloco }}</dt>
+            <dd class="mono">{{ observation.id }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'readiness.evidence.explorer.sourceRevision' | transloco }}</dt>
+            <dd class="mono">{{ observation.source.revision }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'readiness.evidence.explorer.createdAt' | transloco }}</dt>
+            <dd>{{ observation.createdAt | date: 'medium' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'readiness.evidence.explorer.supersedes' | transloco }}</dt>
+            <dd class="mono">{{ observation.supersedesObservationId ?? ('readiness.evidence.explorer.none' | transloco) }}</dd>
+          </div>
+        </dl>
+        <h3>{{ 'readiness.evidence.explorer.details' | transloco }}</h3>
+        <pre>{{ observation.details | json }}</pre>
+      </app-disclosure>
+    </article>
+  }
+</div>

@@ -25,6 +25,13 @@ export const workspaceRoutes: Routes = [
           ),
       },
       {
+        path: ':project/evidence',
+        loadChildren: () =>
+          import('../readiness/public-api').then(
+            ({ readinessEvidenceRoutes }) => readinessEvidenceRoutes,
+          ),
+      },
+      {
         path: ':project/settings',
         loadChildren: () =>
           import('../project-settings/public-api').then(

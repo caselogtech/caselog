@@ -1,0 +1,142 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+.evidence-explorer-page {
+  margin-inline: auto;
+  max-width: calc(var(--content-width) + 2 * var(--content-gutter));
+  padding: var(--space-5) var(--content-gutter) 48px;
+}
+
+.page-header {
+  align-items: flex-end;
+  display: flex;
+  gap: var(--space-4);
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
+}
+
+.page-header > div:first-child {
+  max-width: 760px;
+}
+
+.eyebrow {
+  color: var(--color-accent-700);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 var(--space-1);
+  text-transform: uppercase;
+}
+
+h1,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 3vw, 2.4rem);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin-bottom: 0;
+}
+
+.description {
+  color: var(--text-2);
+  margin: var(--space-2) 0 0;
+}
+
+.header-badges {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+}
+
+.header-badges > span {
+  color: var(--text-2);
+  font-size: var(--font-size-xs);
+}
+
+.loading-state {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+app-page-state,
+app-callout,
+app-evidence-observation-list {
+  display: block;
+  margin-top: var(--space-5);
+}
+
+.result-summary {
+  border-bottom: 2px solid var(--border);
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: auto auto minmax(0, 1fr);
+  margin-top: var(--space-5);
+  padding-bottom: var(--space-4);
+}
+
+.result-summary > div {
+  min-width: 0;
+}
+
+.result-summary span,
+.result-summary strong {
+  display: block;
+}
+
+.result-summary span {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.result-summary strong {
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+.pagination {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  margin-top: var(--space-5);
+}
+
+@media (max-width: 700px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .result-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .result-summary > div:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .result-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .result-summary > div:last-child {
+    grid-column: auto;
+  }
+
+  .pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

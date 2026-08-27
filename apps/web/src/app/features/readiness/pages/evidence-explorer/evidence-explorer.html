@@ -1,0 +1,89 @@
+<main class="evidence-explorer-page" aria-labelledby="evidence-explorer-title">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">{{ 'readiness.evidence.explorer.eyebrow' | transloco }}</p>
+      <h1 id="evidence-explorer-title">{{ 'readiness.evidence.explorer.title' | transloco }}</h1>
+      <p class="description">{{ 'readiness.evidence.explorer.description' | transloco }}</p>
+    </div>
+    @if (hasCandidate()) {
+      <div class="header-badges">
+        <app-status-badge
+          [label]="(filters().currentOnly ? 'readiness.evidence.explorer.currentView' : 'readiness.evidence.explorer.historyView') | transloco"
+          [tone]="filters().currentOnly ? 'success' : 'neutral'"
+        />
+        @if (activeFilterCount() > 0) {
+          <span>{{ 'readiness.evidence.explorer.activeFilters' | transloco: { count: activeFilterCount() } }}</span>
+        }
+      </div>
+    }
+  </header>
+
+  <app-evidence-filters [value]="filters()" (filtersApplied)="applyFilters($event)" />
+
+  @if (!hasCandidate()) {
+    <app-page-state
+      [title]="'readiness.evidence.explorer.candidateRequiredTitle' | transloco"
+      [message]="'readiness.evidence.explorer.candidateRequiredDescription' | transloco"
+    />
+  } @else if (evidence.isPending()) {
+    <section class="loading-state" [attr.aria-label]="'readiness.evidence.explorer.loading' | transloco">
+      @for (row of [1, 2, 3]; track row) {
+        <app-loading-skeleton preset="block" [label]="'readiness.evidence.explorer.loading' | transloco" />
+      }
+    </section>
+  } @else if (evidence.isError()) {
+    <app-page-state
+      [title]="'readiness.evidence.explorer.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="evidence.refetch()">
+        {{ 'readiness.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (evidence.data(); as response) {
+    <div class="result-summary">
+      <div>
+        <span>{{ 'readiness.evidence.explorer.candidateRevision' | transloco }}</span>
+        <strong class="mono">{{ response.candidateRevision }}</strong>
+      </div>
+      <div>
+        <span>{{ 'readiness.evidence.explorer.loadedCount' | transloco }}</span>
+        <strong class="mono">{{ response.items.length }}</strong>
+      </div>
+      <div>
+        <span>{{ 'readiness.evidence.explorer.candidateId' | transloco }}</span>
+        <strong class="mono">{{ response.candidateId }}</strong>
+      </div>
+    </div>
+
+    @if (!filters().currentOnly) {
+      <app-callout [title]="'readiness.evidence.explorer.historyNoticeTitle' | transloco">
+        <p>{{ 'readiness.evidence.explorer.historyNoticeDescription' | transloco }}</p>
+      </app-callout>
+    }
+
+    @if (response.items.length === 0) {
+      <app-page-state
+        [title]="'readiness.evidence.explorer.emptyTitle' | transloco"
+        [message]="'readiness.evidence.explorer.emptyDescription' | transloco"
+      />
+    } @else {
+      <app-evidence-observation-list [observations]="response.items" />
+    }
+
+    @if (cursor() || response.nextCursor) {
+      <nav class="pagination" [attr.aria-label]="'readiness.evidence.explorer.pagination' | transloco">
+        @if (cursor()) {
+          <button appButton="secondary" type="button" (click)="firstPage()">
+            {{ 'readiness.evidence.explorer.firstPage' | transloco }}
+          </button>
+        }
+        @if (response.nextCursor) {
+          <button appButton="secondary" type="button" (click)="nextPage()">
+            {{ 'readiness.evidence.explorer.nextPage' | transloco }}
+          </button>
+        }
+      </nav>
+    }
+  }
+</main>

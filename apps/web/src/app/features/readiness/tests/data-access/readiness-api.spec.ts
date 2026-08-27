@@ -9,6 +9,7 @@ import {
   decisionId,
   evidence,
   history,
+  observationId,
   policy,
   policyId,
   policyList,
@@ -85,6 +86,37 @@ describe('ReadinessApi', () => {
     expect(evidenceRequest.request.params.get('currentOnly')).toBe('false');
     expect(evidenceRequest.request.params.get('limit')).toBe('100');
     evidenceRequest.flush(evidence);
+    await expect(observations).resolves.toMatchObject({ candidateRevision: 12 });
+  });
+
+  it('passes evidence explorer filters to the server without client-side approximation', async () => {
+    const api = TestBed.inject(ReadinessApi);
+    const http = TestBed.inject(HttpTestingController);
+    const observations = api.exploreEvidence('acme', 'checkout', {
+      candidateId,
+      metricKey: 'test.pass_rate',
+      producerKey: 'caselog.test-runs',
+      sourceType: 'release_candidate_test_runs',
+      trust: 'verified',
+      freshness: 'current',
+      state: 'available',
+      observedAfter: '2026-08-20T00:00:00.000Z',
+      observedBefore: '2026-08-27T23:59:59.999Z',
+      currentOnly: false,
+      cursor: observationId,
+      limit: 25,
+    });
+    await Promise.resolve();
+    const request = http.expectOne(
+      (candidate) => candidate.url === '/api/v1/projects/checkout/evidence',
+    );
+    expect(request.request.params.get('candidateId')).toBe(candidateId);
+    expect(request.request.params.get('producerKey')).toBe('caselog.test-runs');
+    expect(request.request.params.get('trust')).toBe('verified');
+    expect(request.request.params.get('freshness')).toBe('current');
+    expect(request.request.params.get('currentOnly')).toBe('false');
+    expect(request.request.params.get('cursor')).toBe(observationId);
+    request.flush(evidence);
     await expect(observations).resolves.toMatchObject({ candidateRevision: 12 });
   });
 
