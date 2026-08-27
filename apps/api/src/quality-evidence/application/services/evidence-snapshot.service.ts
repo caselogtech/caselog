@@ -1,5 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { CandidateEvidenceSnapshot } from '../ports/candidate-evidence-snapshot';
+import type {
+  CandidateEvidenceRevision,
+  CandidateEvidenceSnapshot,
+} from '../ports/candidate-evidence-snapshot';
 import { EvidenceSnapshotRepository } from '../../infrastructure/repositories/evidence-snapshot.repository';
 
 @Injectable()
@@ -15,5 +18,13 @@ export class EvidenceSnapshotService {
     candidateId: string,
   ): Promise<CandidateEvidenceSnapshot> {
     return this.snapshots.load(organizationId, projectId, candidateId);
+  }
+
+  revisions(
+    organizationId: string,
+    projectId: string,
+    candidateIds: string[],
+  ): Promise<CandidateEvidenceRevision[]> {
+    return this.snapshots.revisions(organizationId, projectId, candidateIds);
   }
 }

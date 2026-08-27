@@ -18,3 +18,8 @@ export type CandidateEvidenceSnapshot = {
   revision: number;
   observations: CandidateEvidenceSnapshotObservation[];
 };
+
+export type CandidateEvidenceRevision = {
+  candidateId: string;
+  revision: number;
+};

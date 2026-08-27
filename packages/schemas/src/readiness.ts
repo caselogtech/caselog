@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { projectSlugSchema } from './project.js';
+import { releaseListQuerySchema, releaseSummarySchema } from './release.js';
 
 export const readinessMetricKeySchema = z.enum([
   'test.pass_rate',
@@ -112,6 +113,10 @@ export const readinessPolicyProjectParamsSchema = z.object({ projectSlug: projec
 export const readinessPolicyParamsSchema = readinessPolicyProjectParamsSchema.extend({
   policyId: z.uuid(),
 });
+export const readinessPolicyListQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+});
 export const readinessPolicyWriteHeadersSchema = z.object({
   'idempotency-key': z
     .string()
@@ -180,6 +185,69 @@ export const readinessPolicySchema = z.object({
   versions: z.array(readinessPolicyVersionSchema),
 });
 export const readinessPolicyResponseSchema = z.object({ policy: readinessPolicySchema });
+export const readinessPolicyVersionSummarySchema = z.object({
+  id: z.uuid(),
+  version: z.number().int().positive(),
+  state: readinessPolicyVersionStateSchema,
+  gateCount: z.number().int().nonnegative(),
+  createdAt: z.iso.datetime(),
+  publishedAt: z.iso.datetime().nullable(),
+});
+export const readinessPolicySummarySchema = readinessPolicySchema
+  .pick({
+    id: true,
+    projectId: true,
+    key: true,
+    name: true,
+    description: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    draftVersion: readinessPolicyVersionSummarySchema.nullable(),
+    publishedVersion: readinessPolicyVersionSummarySchema.nullable(),
+  });
+export const readinessPolicyListResponseSchema = z.object({
+  items: z.array(readinessPolicySummarySchema),
+  nextCursor: z.uuid().nullable(),
+});
+
+export const releaseReadinessListQuerySchema = releaseListQuerySchema;
+export const releaseReadinessCandidateSummarySchema = z.object({
+  id: z.uuid(),
+  releaseId: z.uuid(),
+  sequence: z.number().int().positive(),
+  label: z.string().regex(/^RC-[1-9]\d*$/),
+  createdAt: z.iso.datetime(),
+});
+export const releaseReadinessSummarySchema = z.object({
+  state: readinessProjectionStateSchema,
+  decisionId: z.uuid().nullable(),
+  computedStatus: readinessDecisionStatusSchema.nullable(),
+  effectiveDisposition: readinessEffectiveDispositionSchema.nullable(),
+  policy: z.object({
+    id: z.uuid(),
+    key: z.string(),
+    name: z.string(),
+    version: z.number().int().positive(),
+  }),
+  evidenceRevision: z.number().int().nonnegative().nullable(),
+  targetEvidenceRevision: z.number().int().nonnegative(),
+  currentEvidenceRevision: z.number().int().nonnegative(),
+  evaluatorVersion: z.string(),
+  evaluatedAt: z.iso.datetime().nullable(),
+  failureCode: z.string().nullable(),
+});
+export const releaseReadinessListResponseSchema = z.object({
+  items: z.array(
+    z.object({
+      release: releaseSummarySchema,
+      latestCandidate: releaseReadinessCandidateSummarySchema.nullable(),
+      readiness: releaseReadinessSummarySchema.nullable(),
+    }),
+  ),
+  nextCursor: z.uuid().nullable(),
+});
 
 export const candidatePolicyAssignmentSchema = z.object({
   id: z.uuid(),
@@ -278,6 +346,15 @@ export type CreateReadinessPolicyVersionRequest = z.infer<
 >;
 export type ReadinessPolicy = z.infer<typeof readinessPolicySchema>;
 export type ReadinessPolicyResponse = z.infer<typeof readinessPolicyResponseSchema>;
+export type ReadinessPolicyListQuery = z.infer<typeof readinessPolicyListQuerySchema>;
+export type ReadinessPolicySummary = z.infer<typeof readinessPolicySummarySchema>;
+export type ReadinessPolicyListResponse = z.infer<typeof readinessPolicyListResponseSchema>;
+export type ReleaseReadinessListQuery = z.infer<typeof releaseReadinessListQuerySchema>;
+export type ReleaseReadinessCandidateSummary = z.infer<
+  typeof releaseReadinessCandidateSummarySchema
+>;
+export type ReleaseReadinessSummary = z.infer<typeof releaseReadinessSummarySchema>;
+export type ReleaseReadinessListResponse = z.infer<typeof releaseReadinessListResponseSchema>;
 export type AssignCandidatePolicyRequest = z.infer<typeof assignCandidatePolicyRequestSchema>;
 export type CandidatePolicyAssignment = z.infer<typeof candidatePolicyAssignmentSchema>;
 export type CandidatePolicyAssignmentResponse = z.infer<

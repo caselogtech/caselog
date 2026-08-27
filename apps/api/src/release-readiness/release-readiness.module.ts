@@ -9,6 +9,7 @@ import { ReadinessEvaluationQueue } from './application/services/readiness-evalu
 import { ReadinessEvaluationRequestService } from './application/services/readiness-evaluation-request.service';
 import { ReadinessEventConsumerService } from './application/services/readiness-event-consumer.service';
 import { ReadinessPolicyService } from './application/services/readiness-policy.service';
+import { ReleaseReadinessSummaryService } from './application/services/release-readiness-summary.service';
 import { ReadinessReconciliationService } from './application/services/readiness-reconciliation.service';
 import { ReadinessWaiverService } from './application/services/readiness-waiver.service';
 import { CandidatePolicyAssignmentRepository } from './infrastructure/repositories/candidate-policy-assignment.repository';
@@ -26,6 +27,7 @@ import {
   ReadinessDecisionDetailController,
 } from './presentation/controllers/readiness-decision.controller';
 import { ReadinessPolicyController } from './presentation/controllers/readiness-policy.controller';
+import { ReleaseReadinessSummaryController } from './presentation/controllers/release-readiness-summary.controller';
 import { ReadinessWaiverController } from './presentation/controllers/readiness-waiver.controller';
 import { ReadinessEvaluationWorker } from './presentation/workers/readiness-evaluation.worker';
 
@@ -37,10 +39,12 @@ import { ReadinessEvaluationWorker } from './presentation/workers/readiness-eval
     ReadinessDecisionController,
     ReadinessDecisionDetailController,
     ReadinessWaiverController,
+    ReleaseReadinessSummaryController,
   ],
   providers: [
     ReadinessPolicyRepository,
     ReadinessPolicyService,
+    ReleaseReadinessSummaryService,
     CandidatePolicyAssignmentRepository,
     CandidatePolicyAssignmentService,
     ReadinessDecisionRepository,

@@ -23,6 +23,7 @@ import { canTransitionRelease } from '../../domain/policies/release-lifecycle.po
 import { appendReleaseIntegrationEvent } from '../persistence/release-event.persistence';
 import { RELEASE_STATE, toReleaseCandidate, toReleaseSummary } from '../persistence/release.mapper';
 import type { IdempotentCreateResult, ProjectResult } from './release.repository.types';
+import type { ReleaseOverviewReference } from '../../application/ports/release-overview-reference';
 
 const STATE: Record<PublicReleaseState, ReleaseState> = {
   draft: ReleaseState.DRAFT,
@@ -51,6 +52,15 @@ const RELEASE_SELECTION = {
   cancelledAt: true,
   environment: { select: { id: true, name: true, slug: true, state: true } },
   _count: { select: { candidates: true } },
+} satisfies Prisma.ReleaseSelect;
+
+const RELEASE_OVERVIEW_SELECTION = {
+  ...RELEASE_SELECTION,
+  candidates: {
+    orderBy: { sequence: 'desc' as const },
+    take: 1,
+    select: { id: true, projectId: true, releaseId: true, sequence: true, createdAt: true },
+  },
 } satisfies Prisma.ReleaseSelect;
 
 const CANDIDATE_SELECTION = {
@@ -121,6 +131,54 @@ export class ReleaseRepository {
         kind: 'found',
         value: {
           items: page.map(toReleaseSummary),
+          nextCursor: hasNext ? (page.at(-1)?.id ?? null) : null,
+        },
+      };
+    });
+  }
+
+  listOverview(
+    organizationId: string,
+    projectSlug: string,
+    query: ReleaseListQuery,
+  ): Promise<ProjectResult<ReleaseOverviewReference>> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) return { kind: 'project_not_found' };
+      const records = await transaction.release.findMany({
+        where: { projectId: project.id, state: query.state ? STATE[query.state] : undefined },
+        cursor: query.cursor
+          ? { organizationId_id: { organizationId, id: query.cursor } }
+          : undefined,
+        skip: query.cursor ? 1 : undefined,
+        take: query.limit + 1,
+        orderBy: { id: 'asc' },
+        select: RELEASE_OVERVIEW_SELECTION,
+      });
+      const hasNext = records.length > query.limit;
+      const page = records.slice(0, query.limit);
+      return {
+        kind: 'found',
+        value: {
+          items: page.map((record) => {
+            const latest = record.candidates[0];
+            return {
+              release: toReleaseSummary(record),
+              latestCandidate: latest
+                ? {
+                    id: latest.id,
+                    projectId: latest.projectId,
+                    releaseId: latest.releaseId,
+                    sequence: latest.sequence,
+                    label: `RC-${latest.sequence}`,
+                    createdAt: latest.createdAt.toISOString(),
+                  }
+                : null,
+            };
+          }),
           nextCursor: hasNext ? (page.at(-1)?.id ?? null) : null,
         },
       };

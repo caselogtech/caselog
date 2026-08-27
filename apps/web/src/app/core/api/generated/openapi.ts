@@ -1387,7 +1387,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ReadinessPolicyController_list"];
         put?: never;
         post: operations["ReadinessPolicyController_create"];
         delete?: never;
@@ -1550,6 +1550,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ReadinessWaiverController_revoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/release-readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReleaseReadinessSummaryController_list"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3635,6 +3651,44 @@ export interface components {
             parentId: string | null;
             position: number;
         };
+        ReadinessPolicyListResponseDto: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                projectId: string;
+                key: string;
+                name: string;
+                description: string | null;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                draftVersion: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                    /** @enum {string} */
+                    state: "draft" | "published" | "retired";
+                    gateCount: number;
+                    /** Format: date-time */
+                    createdAt: string;
+                    publishedAt: string | null;
+                } | null;
+                publishedVersion: {
+                    /** Format: uuid */
+                    id: string;
+                    version: number;
+                    /** @enum {string} */
+                    state: "draft" | "published" | "retired";
+                    gateCount: number;
+                    /** Format: date-time */
+                    createdAt: string;
+                    publishedAt: string | null;
+                } | null;
+            }[];
+            nextCursor: string | null;
+        };
         CreateReadinessPolicyRequestDto: {
             key: string;
             name: string;
@@ -4230,6 +4284,67 @@ export interface components {
         };
         RevokeReadinessWaiverRequestDto: {
             reason: string;
+        };
+        ReleaseReadinessListResponseDto: {
+            items: {
+                release: {
+                    /** Format: uuid */
+                    id: string;
+                    key: string;
+                    name: string;
+                    /** @enum {string} */
+                    state: "draft" | "active" | "released" | "cancelled";
+                    environment: {
+                        /** Format: uuid */
+                        id: string;
+                        name: string;
+                        slug: string;
+                        /** @enum {string} */
+                        state: "active" | "archived";
+                    } | null;
+                    targetDate: string | null;
+                    externalReference: string | null;
+                    candidateCount: number;
+                    /** Format: date-time */
+                    createdAt: string;
+                    /** Format: date-time */
+                    updatedAt: string;
+                    activatedAt: string | null;
+                    releasedAt: string | null;
+                    cancelledAt: string | null;
+                };
+                latestCandidate: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    releaseId: string;
+                    sequence: number;
+                    label: string;
+                    /** Format: date-time */
+                    createdAt: string;
+                } | null;
+                readiness: {
+                    /** @enum {string} */
+                    state: "pending" | "current" | "stale" | "failed";
+                    decisionId: string | null;
+                    computedStatus: ("ready" | "at_risk" | "blocked" | "unknown") | null;
+                    effectiveDisposition: ("ready" | "at_risk" | "blocked" | "unknown" | "approved_with_waiver") | null;
+                    policy: {
+                        /** Format: uuid */
+                        id: string;
+                        key: string;
+                        name: string;
+                        version: number;
+                    };
+                    evidenceRevision: number | null;
+                    targetEvidenceRevision: number;
+                    currentEvidenceRevision: number;
+                    evaluatorVersion: string;
+                    evaluatedAt: string | null;
+                    failureCode: string | null;
+                } | null;
+            }[];
+            nextCursor: string | null;
         };
         ApiErrorResponseDto: {
             error: {
@@ -7802,6 +7917,39 @@ export interface operations {
             };
         };
     };
+    ReadinessPolicyController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessPolicyListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
     ReadinessPolicyController_create: {
         parameters: {
             query?: never;
@@ -8230,6 +8378,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReadinessWaiverResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseReadinessSummaryController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                state?: "draft" | "active" | "released" | "cancelled";
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseReadinessListResponseDto"];
                 };
             };
             /** @description API error */

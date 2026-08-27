@@ -4,6 +4,7 @@ import { TestRunModule } from '../test-runs/public-api';
 import { EnvironmentService } from './application/services/environment.service';
 import { ReleaseCandidateService } from './application/services/release-candidate.service';
 import { ReleaseCandidateReferenceService } from './application/services/release-candidate-reference.service';
+import { ReleaseOverviewReferenceService } from './application/services/release-overview-reference.service';
 import { ReleaseService } from './application/services/release.service';
 import { EnvironmentRepository } from './infrastructure/repositories/environment.repository';
 import { CandidateTestRunRepository } from './infrastructure/repositories/candidate-test-run.repository';
@@ -33,7 +34,8 @@ import { ReleaseController } from './presentation/controllers/release.controller
     ReleaseCandidateService,
     ReleaseCandidateReferenceRepository,
     ReleaseCandidateReferenceService,
+    ReleaseOverviewReferenceService,
   ],
-  exports: [ReleaseCandidateReferenceService],
+  exports: [ReleaseCandidateReferenceService, ReleaseOverviewReferenceService],
 })
 export class ReleaseModule {}

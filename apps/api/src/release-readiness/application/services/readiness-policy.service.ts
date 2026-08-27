@@ -5,9 +5,14 @@ import type {
   CreateReadinessPolicyVersionRequest,
   OrganizationAccessPrincipal,
   ReadinessGateInput,
+  ReadinessPolicyListQuery,
+  ReadinessPolicyListResponse,
   ReadinessPolicyResponse,
 } from '@caselog/schemas';
-import { readinessPolicyResponseSchema } from '@caselog/schemas/readiness';
+import {
+  readinessPolicyListResponseSchema,
+  readinessPolicyResponseSchema,
+} from '@caselog/schemas/readiness';
 import {
   InvalidPayloadError,
   ResourceConflictError,
@@ -25,6 +30,22 @@ export class ReadinessPolicyService {
     @Inject(ReadinessPolicyRepository)
     private readonly policies: ReadinessPolicyRepository,
   ) {}
+
+  async list(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    query: ReadinessPolicyListQuery,
+  ): Promise<ReadinessPolicyListResponse> {
+    const result = await this.policies.list(principal.organizationId, projectSlug, query);
+    if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
+    if (result.kind === 'cursor_not_found') {
+      throw new ResourceNotFoundError('release_policy_cursor');
+    }
+    if (result.kind !== 'found') {
+      throw new Error(`Unhandled readiness policy list result: ${result.kind}`);
+    }
+    return readinessPolicyListResponseSchema.parse(result.value);
+  }
 
   async create(
     principal: OrganizationAccessPrincipal,

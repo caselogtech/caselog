@@ -3,6 +3,7 @@ export { EvidenceSnapshotService } from './application/services/evidence-snapsho
 export type {
   CandidateEvidenceSnapshot,
   CandidateEvidenceSnapshotObservation,
+  CandidateEvidenceRevision,
 } from './application/ports/candidate-evidence-snapshot';
 export {
   QUALITY_EVIDENCE_INTEGRATION_EVENT,

@@ -2,6 +2,7 @@ import {
   createReadinessPolicyRequestSchema,
   createReadinessPolicyVersionRequestSchema,
   readinessPolicyParamsSchema,
+  readinessPolicyListQuerySchema,
   readinessPolicyProjectParamsSchema,
   readinessPolicyWriteHeadersSchema,
 } from '@caselog/schemas/readiness';
@@ -11,6 +12,7 @@ export class ReadinessPolicyProjectParamsDto extends createZodDto(
   readinessPolicyProjectParamsSchema,
 ) {}
 export class ReadinessPolicyParamsDto extends createZodDto(readinessPolicyParamsSchema) {}
+export class ReadinessPolicyListQueryDto extends createZodDto(readinessPolicyListQuerySchema) {}
 export class ReadinessPolicyWriteHeadersDto extends createZodDto(
   readinessPolicyWriteHeadersSchema,
 ) {}

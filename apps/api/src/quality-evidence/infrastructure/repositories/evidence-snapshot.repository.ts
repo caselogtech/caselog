@@ -1,13 +1,37 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import { Prisma } from '../../../generated/prisma/client';
-import type { CandidateEvidenceSnapshot } from '../../application/ports/candidate-evidence-snapshot';
+import type {
+  CandidateEvidenceRevision,
+  CandidateEvidenceSnapshot,
+} from '../../application/ports/candidate-evidence-snapshot';
 
 @Injectable()
 export class EvidenceSnapshotRepository {
   constructor(
     @Inject(TenantDatabaseService) private readonly tenantDatabase: TenantDatabaseService,
   ) {}
+
+  async revisions(
+    organizationId: string,
+    projectId: string,
+    candidateIds: string[],
+  ): Promise<CandidateEvidenceRevision[]> {
+    if (candidateIds.length === 0) return [];
+    const records = await this.tenantDatabase.run(organizationId, (transaction) =>
+      transaction.candidateEvidenceRevision.findMany({
+        where: { projectId, candidateId: { in: candidateIds } },
+        select: { candidateId: true, revision: true },
+      }),
+    );
+    const revisionByCandidate = new Map(
+      records.map(({ candidateId, revision }) => [candidateId, revision]),
+    );
+    return candidateIds.map((candidateId) => ({
+      candidateId,
+      revision: revisionByCandidate.get(candidateId) ?? 0,
+    }));
+  }
 
   load(
     organizationId: string,

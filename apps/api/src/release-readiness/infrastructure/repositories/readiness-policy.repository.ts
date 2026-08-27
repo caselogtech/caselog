@@ -2,6 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import type {
   CreateReadinessPolicyRequest,
   CreateReadinessPolicyVersionRequest,
+  ReadinessPolicyListQuery,
+  ReadinessPolicyListResponse,
   ReadinessPolicyResponse,
 } from '@caselog/schemas';
 import { appendAuditLog } from '../../../audit/public-api';
@@ -17,8 +19,10 @@ import {
 import { Prisma, ReleasePolicyVersionState } from '../../../generated/prisma/client';
 import {
   READINESS_POLICY_SELECTION,
+  READINESS_POLICY_SUMMARY_SELECTION,
   readinessGateData,
   toReadinessPolicyResponse,
+  toReadinessPolicySummary,
 } from '../persistence/readiness-policy.persistence';
 
 export type ReadinessPolicyWriteResult =
@@ -38,11 +42,61 @@ export type ReadinessPolicyDetailResult =
   | { kind: 'found'; value: ReadinessPolicyResponse }
   | { kind: 'project_not_found' | 'policy_not_found' };
 
+export type ReadinessPolicyListResult =
+  | { kind: 'found'; value: ReadinessPolicyListResponse }
+  | { kind: 'project_not_found' | 'cursor_not_found' };
+
 @Injectable()
 export class ReadinessPolicyRepository {
   constructor(
     @Inject(TenantDatabaseService) private readonly tenantDatabase: TenantDatabaseService,
   ) {}
+
+  list(
+    organizationId: string,
+    projectSlug: string,
+    query: ReadinessPolicyListQuery,
+  ): Promise<ReadinessPolicyListResult> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const project = await transaction.project.findUnique({
+        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
+        select: { id: true },
+      });
+      if (!project) return { kind: 'project_not_found' };
+      const cursor = query.cursor
+        ? await transaction.releasePolicy.findFirst({
+            where: { projectId: project.id, id: query.cursor },
+            select: { id: true, createdAt: true },
+          })
+        : null;
+      if (query.cursor && !cursor) return { kind: 'cursor_not_found' };
+      const records = await transaction.releasePolicy.findMany({
+        where: {
+          projectId: project.id,
+          ...(cursor
+            ? {
+                OR: [
+                  { createdAt: { lt: cursor.createdAt } },
+                  { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+                ],
+              }
+            : {}),
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: query.limit + 1,
+        select: READINESS_POLICY_SUMMARY_SELECTION,
+      });
+      const hasMore = records.length > query.limit;
+      const page = records.slice(0, query.limit);
+      return {
+        kind: 'found',
+        value: {
+          items: page.map(toReadinessPolicySummary),
+          nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null,
+        },
+      };
+    });
+  }
 
   async create(
     organizationId: string,

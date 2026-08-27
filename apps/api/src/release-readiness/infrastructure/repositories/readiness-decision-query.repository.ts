@@ -4,6 +4,7 @@ import type {
   ReadinessDecisionListQuery,
   ReadinessDecisionListResponse,
   ReadinessDecisionResponse,
+  ReleaseReadinessSummary,
 } from '@caselog/schemas';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import {
@@ -15,6 +16,10 @@ import {
   toCandidateReadinessResponse,
   toReadinessDecision,
 } from '../persistence/readiness-decision.persistence';
+import {
+  RELEASE_READINESS_SUMMARY_SELECTION,
+  toReleaseReadinessSummary,
+} from '../persistence/release-readiness-summary.persistence';
 
 export type CurrentReadinessResult =
   | { kind: 'found'; value: CandidateReadinessResponse }
@@ -33,6 +38,30 @@ export class ReadinessDecisionQueryRepository {
   constructor(
     @Inject(TenantDatabaseService) private readonly tenantDatabase: TenantDatabaseService,
   ) {}
+
+  async summaries(input: {
+    organizationId: string;
+    projectId: string;
+    candidateIds: string[];
+    evidenceRevisions: ReadonlyMap<string, number>;
+  }): Promise<Array<{ candidateId: string; readiness: ReleaseReadinessSummary }>> {
+    if (input.candidateIds.length === 0) return [];
+    const records = await this.tenantDatabase.run(input.organizationId, (transaction) =>
+      transaction.currentReadinessDecision.findMany({
+        where: { projectId: input.projectId, candidateId: { in: input.candidateIds } },
+        select: RELEASE_READINESS_SUMMARY_SELECTION,
+      }),
+    );
+    const now = new Date();
+    return records.map((record) => ({
+      candidateId: record.candidateId,
+      readiness: toReleaseReadinessSummary(
+        record,
+        input.evidenceRevisions.get(record.candidateId) ?? 0,
+        now,
+      ),
+    }));
+  }
 
   current(
     organizationId: string,

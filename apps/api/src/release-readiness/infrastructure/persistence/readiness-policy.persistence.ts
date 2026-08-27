@@ -1,6 +1,7 @@
 import type {
   ReadinessGateInput,
   ReadinessPolicy,
+  ReadinessPolicySummary,
   ReadinessPolicyResponse,
 } from '@caselog/schemas';
 import {
@@ -55,6 +56,32 @@ export const READINESS_POLICY_SELECTION = {
 
 export type ReadinessPolicyRecord = Prisma.ReleasePolicyGetPayload<{
   select: typeof READINESS_POLICY_SELECTION;
+}>;
+
+export const READINESS_POLICY_SUMMARY_SELECTION = {
+  id: true,
+  projectId: true,
+  key: true,
+  name: true,
+  description: true,
+  createdAt: true,
+  updatedAt: true,
+  versions: {
+    where: { state: { in: ['DRAFT', 'PUBLISHED'] as const } },
+    orderBy: { version: 'desc' as const },
+    select: {
+      id: true,
+      version: true,
+      state: true,
+      createdAt: true,
+      publishedAt: true,
+      _count: { select: { gates: true } },
+    },
+  },
+} satisfies Prisma.ReleasePolicySelect;
+
+export type ReadinessPolicySummaryRecord = Prisma.ReleasePolicyGetPayload<{
+  select: typeof READINESS_POLICY_SUMMARY_SELECTION;
 }>;
 
 const TEST_RUN_ROLE = {
@@ -117,6 +144,35 @@ export function readinessGateData(input: {
 
 export function toReadinessPolicyResponse(record: ReadinessPolicyRecord): ReadinessPolicyResponse {
   return { policy: toReadinessPolicy(record) };
+}
+
+export function toReadinessPolicySummary(
+  record: ReadinessPolicySummaryRecord,
+): ReadinessPolicySummary {
+  const version = (state: 'DRAFT' | 'PUBLISHED') => {
+    const current = record.versions.find((item) => item.state === state);
+    return current
+      ? {
+          id: current.id,
+          version: current.version,
+          state: current.state.toLowerCase() as 'draft' | 'published',
+          gateCount: current._count.gates,
+          createdAt: current.createdAt.toISOString(),
+          publishedAt: current.publishedAt?.toISOString() ?? null,
+        }
+      : null;
+  };
+  return {
+    id: record.id,
+    projectId: record.projectId,
+    key: record.key,
+    name: record.name,
+    description: record.description,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+    draftVersion: version('DRAFT'),
+    publishedVersion: version('PUBLISHED'),
+  };
 }
 
 function toReadinessPolicy(record: ReadinessPolicyRecord): ReadinessPolicy {

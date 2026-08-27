@@ -1,5 +1,19 @@
-import { Body, Controller, Get, Headers, Inject, Param, Post, UseGuards } from '@nestjs/common';
-import type { OrganizationAccessPrincipal, ReadinessPolicyResponse } from '@caselog/schemas';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Inject,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import type {
+  OrganizationAccessPrincipal,
+  ReadinessPolicyListResponse,
+  ReadinessPolicyResponse,
+} from '@caselog/schemas';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import {
   CurrentOrganization,
@@ -12,11 +26,15 @@ import { ReadinessPolicyService } from '../../application/services/readiness-pol
 import {
   CreateReadinessPolicyRequestDto,
   CreateReadinessPolicyVersionRequestDto,
+  ReadinessPolicyListQueryDto,
   ReadinessPolicyParamsDto,
   ReadinessPolicyProjectParamsDto,
   ReadinessPolicyWriteHeadersDto,
 } from '../dto/readiness-policy.dto';
-import { ReadinessPolicyResponseDto } from '../dto/readiness-policy-response.dto';
+import {
+  ReadinessPolicyListResponseDto,
+  ReadinessPolicyResponseDto,
+} from '../dto/readiness-policy-response.dto';
 
 @Controller('projects/:projectSlug/release-policies')
 @UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
@@ -26,6 +44,16 @@ export class ReadinessPolicyController {
     @Inject(ReadinessPolicyService)
     private readonly policies: ReadinessPolicyService,
   ) {}
+
+  @Get()
+  @ApiOkResponse({ type: ReadinessPolicyListResponseDto })
+  list(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: ReadinessPolicyProjectParamsDto,
+    @Query() query: ReadinessPolicyListQueryDto,
+  ): Promise<ReadinessPolicyListResponse> {
+    return this.policies.list(principal, params.projectSlug, query);
+  }
 
   @Post()
   @RequireOrganizationAccess('lead')

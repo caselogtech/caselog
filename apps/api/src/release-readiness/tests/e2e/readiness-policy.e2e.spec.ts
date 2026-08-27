@@ -4,6 +4,8 @@ import {
   candidateReadinessResponseSchema,
   readinessDecisionListResponseSchema,
   readinessDecisionResponseSchema,
+  releaseReadinessListResponseSchema,
+  readinessPolicyListResponseSchema,
   readinessPolicyResponseSchema,
 } from '@caselog/schemas/readiness';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -27,6 +29,7 @@ describe('release readiness policy API', () => {
   let projectSlug = '';
   let projectId = '';
   let policyId = '';
+  let releaseId = '';
   let firstVersionId = '';
   let candidateId = '';
   const emails: string[] = [];
@@ -94,6 +97,7 @@ describe('release readiness policy API', () => {
         name: 'August release',
       },
     });
+    releaseId = release.id;
     const candidate = await admin.releaseCandidate.create({
       data: {
         organizationId,
@@ -201,6 +205,54 @@ describe('release readiness policy API', () => {
     expect(unpublishedAssignment.json().error.code).toBe('release_policy_not_published');
   });
 
+  it('lists compact policy summaries for readers with stable cursor pagination', async () => {
+    const secondResponse = await app.inject({
+      method: 'POST',
+      url: policyCollectionUrl(),
+      headers: authHeaders(organizationToken, 'readiness-policy-secondary'),
+      payload: {
+        key: 'secondary-readiness',
+        name: 'Secondary readiness',
+        gates: firstGates(),
+      },
+    });
+    expect(secondResponse.statusCode, secondResponse.body).toBe(201);
+    const secondPolicyId = readinessPolicyResponseSchema.parse(secondResponse.json()).policy.id;
+
+    const firstPageResponse = await app.inject({
+      method: 'GET',
+      url: `${policyCollectionUrl()}?limit=1`,
+      headers: { authorization: `Bearer ${readOnlyToken}` },
+    });
+    expect(firstPageResponse.statusCode, firstPageResponse.body).toBe(200);
+    const firstPage = readinessPolicyListResponseSchema.parse(firstPageResponse.json());
+    expect(firstPage.items).toHaveLength(1);
+    expect(firstPage.items[0]?.draftVersion).toMatchObject({ version: 1, gateCount: 3 });
+    expect(firstPage.items[0]?.publishedVersion).toBeNull();
+    expect(firstPage.nextCursor).not.toBeNull();
+
+    const secondPageResponse = await app.inject({
+      method: 'GET',
+      url: `${policyCollectionUrl()}?limit=1&cursor=${firstPage.nextCursor}`,
+      headers: { authorization: `Bearer ${readOnlyToken}` },
+    });
+    expect(secondPageResponse.statusCode, secondPageResponse.body).toBe(200);
+    const secondPage = readinessPolicyListResponseSchema.parse(secondPageResponse.json());
+    expect(secondPage.items).toHaveLength(1);
+    expect(secondPage.nextCursor).toBeNull();
+    expect(new Set([...firstPage.items, ...secondPage.items].map(({ id }) => id))).toEqual(
+      new Set([policyId, secondPolicyId]),
+    );
+
+    const unknownCursor = await app.inject({
+      method: 'GET',
+      url: `${policyCollectionUrl()}?cursor=${randomUUID()}`,
+      headers: { authorization: `Bearer ${readOnlyToken}` },
+    });
+    expect(unknownCursor.statusCode, unknownCursor.body).toBe(404);
+    expect(unknownCursor.json().error.details).toMatchObject({ resource: 'release_policy_cursor' });
+  });
+
   it('publishes immutable versions and replaces the active version explicitly', async () => {
     const published = await publish('readiness-publish-v1');
     expect(published.versions[0]).toMatchObject({
@@ -279,6 +331,31 @@ describe('release readiness policy API', () => {
         data: { assignedAt: new Date() },
       }),
     ).rejects.toThrow(/immutable/);
+  });
+
+  it('returns the latest candidate and its server-owned readiness summary', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/${projectSlug}/release-readiness`,
+      headers: { authorization: `Bearer ${readOnlyToken}` },
+    });
+    expect(response.statusCode, response.body).toBe(200);
+    const overview = releaseReadinessListResponseSchema.parse(response.json());
+    expect(overview.nextCursor).toBeNull();
+    expect(overview.items).toHaveLength(1);
+    expect(overview.items[0]).toMatchObject({
+      release: { id: releaseId },
+      latestCandidate: { id: candidateId, releaseId, sequence: 1, label: 'RC-1' },
+      readiness: {
+        state: 'pending',
+        decisionId: null,
+        computedStatus: null,
+        effectiveDisposition: null,
+        policy: { id: policyId, version: 2 },
+        currentEvidenceRevision: 0,
+        evidenceRevision: null,
+      },
+    });
   });
 
   it('returns policy history to readers and isolates persistence by tenant context', async () => {
@@ -365,10 +442,39 @@ describe('release readiness policy API', () => {
     });
     expect(stale.decision?.id).toBe(blocked.decision?.id);
 
+    const staleOverviewResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/${projectSlug}/release-readiness`,
+      headers: { authorization: `Bearer ${readOnlyToken}` },
+    });
+    const staleOverview = releaseReadinessListResponseSchema.parse(staleOverviewResponse.json());
+    expect(staleOverview.items[0]?.readiness).toMatchObject({
+      state: 'stale',
+      computedStatus: 'blocked',
+      effectiveDisposition: 'blocked',
+      currentEvidenceRevision: 1,
+      evidenceRevision: 0,
+    });
+
     const ready = await evaluateCandidate();
     expect(ready).toMatchObject({ state: 'current', currentEvidenceRevision: 1 });
     expect(ready.decision).toMatchObject({ evidenceRevision: 1, status: 'ready' });
     expect(ready.decision?.gates.every(({ result }) => result === 'passed')).toBe(true);
+
+    const readyOverviewResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/${projectSlug}/release-readiness`,
+      headers: { authorization: `Bearer ${readOnlyToken}` },
+    });
+    const readyOverview = releaseReadinessListResponseSchema.parse(readyOverviewResponse.json());
+    expect(readyOverview.items[0]?.readiness).toMatchObject({
+      state: 'current',
+      decisionId: ready.decision?.id,
+      computedStatus: 'ready',
+      effectiveDisposition: 'ready',
+      currentEvidenceRevision: 1,
+      evidenceRevision: 1,
+    });
 
     const firstPageResponse = await app.inject({
       method: 'GET',
