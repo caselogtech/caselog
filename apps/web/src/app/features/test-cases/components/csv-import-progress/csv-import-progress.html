@@ -1,0 +1,26 @@
+<ol class="wizard-progress" [attr.aria-label]="'workspace.cases.csvImport.progress' | transloco">
+  @for (step of [1, 2, 3]; track step) {
+    <li [class.active]="currentStep() === step" [class.complete]="currentStep() > step">
+      <span class="step-number">
+        @if (currentStep() > step) {
+          <span aria-hidden="true">✓</span>
+        } @else {
+          {{ step }}
+        }
+      </span>
+      <span>
+        @switch (step) {
+          @case (1) {
+            {{ 'workspace.cases.csvImport.steps.file' | transloco }}
+          }
+          @case (2) {
+            {{ 'workspace.cases.csvImport.steps.mapping' | transloco }}
+          }
+          @default {
+            {{ 'workspace.cases.csvImport.steps.review' | transloco }}
+          }
+        }
+      </span>
+    </li>
+  }
+</ol>

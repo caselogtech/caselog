@@ -1,0 +1,49 @@
+<section class="upload-panel" aria-labelledby="upload-csv-title">
+  <div class="upload-copy">
+    <p class="section-kicker">{{ 'workspace.cases.csvImport.fileEyebrow' | transloco }}</p>
+    <h2 id="upload-csv-title">{{ 'workspace.cases.csvImport.fileTitle' | transloco }}</h2>
+    <p>{{ 'workspace.cases.csvImport.fileDescription' | transloco }}</p>
+  </div>
+
+  <div
+    class="dropzone"
+    [class.drag-active]="dragActive()"
+    (dragover)="allowDrop($event)"
+    (dragleave)="dragActive.set(false)"
+    (drop)="handleDrop($event)"
+  >
+    <span class="csv-mark" aria-hidden="true">
+      {{ 'workspace.cases.csvImport.fileBadge' | transloco }}
+    </span>
+    <strong>{{ 'workspace.cases.csvImport.dropPrompt' | transloco }}</strong>
+    <span>{{ 'workspace.cases.csvImport.fileLimits' | transloco }}</span>
+    <label class="app-button app-button-primary file-picker">
+      {{
+        (reading() ? 'workspace.cases.csvImport.reading' : 'workspace.cases.csvImport.browse')
+          | transloco
+      }}
+      <input
+        type="file"
+        accept=".csv,text/csv,application/csv"
+        [disabled]="reading()"
+        (change)="handleFileInput($event)"
+      />
+    </label>
+  </div>
+
+  @if (hasError()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'workspace.cases.csvImport.fileErrorTitle' | transloco"
+    >
+      <p>{{ errorMessage() }}</p>
+    </app-callout>
+  }
+
+  <div class="format-help">
+    <h3>{{ 'workspace.cases.csvImport.formatTitle' | transloco }}</h3>
+    <p>{{ 'workspace.cases.csvImport.formatDescription' | transloco }}</p>
+    <code>{{ 'workspace.cases.csvImport.formatExample' | transloco }}</code>
+  </div>
+</section>

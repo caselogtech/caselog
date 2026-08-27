@@ -1,0 +1,130 @@
+:host {
+  display: block;
+}
+
+.upload-panel {
+  background: var(--surface-2);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+}
+
+.section-kicker {
+  color: var(--color-accent-700);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 var(--space-1);
+  text-transform: uppercase;
+}
+
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h2 {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-1);
+}
+
+.upload-copy > p:last-child,
+.format-help p {
+  color: var(--text-2);
+  margin-bottom: 0;
+}
+
+.dropzone {
+  align-items: center;
+  border: 2px dashed var(--color-neutral-400);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.dropzone.drag-active {
+  background: var(--color-accent-100);
+  border-color: var(--accent);
+}
+
+.dropzone > span:not(.csv-mark) {
+  color: var(--text-2);
+  font-size: var(--font-size-sm);
+}
+
+.csv-mark {
+  align-items: center;
+  background: var(--color-accent-100);
+  border: 1px solid var(--color-accent-200);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-700);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  height: 48px;
+  justify-content: center;
+  width: 54px;
+}
+
+.file-picker {
+  cursor: pointer;
+  margin-top: var(--space-1);
+}
+
+.file-picker input {
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+}
+
+app-callout {
+  display: block;
+  margin-top: var(--space-4);
+}
+
+app-callout p {
+  margin: 0;
+}
+
+.format-help {
+  background: var(--surface-1);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+}
+
+.format-help h3 {
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-1);
+}
+
+.format-help code {
+  background: var(--color-neutral-200);
+  border-radius: 4px;
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-3);
+  padding: var(--space-2);
+}
+
+@media (max-width: 560px) {
+  .upload-panel {
+    padding: var(--space-4);
+  }
+
+  .dropzone {
+    padding-inline: var(--space-3);
+  }
+}

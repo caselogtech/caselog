@@ -4,7 +4,7 @@ import {
   DestroyRef,
   inject,
   input,
-  OnInit,
+  type OnInit,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';

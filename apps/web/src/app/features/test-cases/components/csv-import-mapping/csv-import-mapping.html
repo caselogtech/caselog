@@ -1,0 +1,177 @@
+<section class="mapping-panel" aria-labelledby="mapping-title">
+  <div class="panel-heading">
+    <div>
+      <p class="section-kicker">{{ 'workspace.cases.csvImport.mappingEyebrow' | transloco }}</p>
+      <h2 id="mapping-title">{{ 'workspace.cases.csvImport.mappingTitle' | transloco }}</h2>
+      <p>{{ 'workspace.cases.csvImport.mappingDescription' | transloco }}</p>
+    </div>
+    <div class="selected-file">
+      <span aria-hidden="true">{{ 'workspace.cases.csvImport.fileBadge' | transloco }}</span>
+      <div>
+        <strong>{{ file().name }}</strong>
+        <small>{{ columns().length }} {{ 'workspace.cases.csvImport.columns' | transloco }}</small>
+      </div>
+      <button appButton="quiet" type="button" (click)="replaceFile.emit()">
+        {{ 'workspace.cases.csvImport.replaceFile' | transloco }}
+      </button>
+    </div>
+  </div>
+
+  @if (fileError() || previewError()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'workspace.cases.csvImport.mappingErrorTitle' | transloco"
+    >
+      <p>{{ errorMessage() }}</p>
+    </app-callout>
+  }
+
+  <form [formGroup]="form()" (ngSubmit)="preview.emit()" novalidate>
+    <div class="mapping-grid">
+      <fieldset class="mapping-card required-fields">
+        <legend>
+          {{ 'workspace.cases.csvImport.requiredFields' | transloco }}
+          <small>{{ 'workspace.cases.csvImport.requiredHint' | transloco }}</small>
+        </legend>
+        <label>
+          <span>{{ 'workspace.cases.csvImport.titleColumn' | transloco }}</span>
+          <select appControl formControlName="title">
+            <option value="">{{ 'workspace.cases.csvImport.selectColumn' | transloco }}</option>
+            @for (column of columns(); track column) {
+              <option [value]="column">{{ column }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>{{ 'workspace.cases.csvImport.contentColumn' | transloco }}</span>
+          <select appControl formControlName="content">
+            <option value="">{{ 'workspace.cases.csvImport.selectColumn' | transloco }}</option>
+            @for (column of columns(); track column) {
+              <option [value]="column">{{ column }}</option>
+            }
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset class="mapping-card defaults">
+        <legend>
+          {{ 'workspace.cases.csvImport.defaults' | transloco }}
+          <small>{{ 'workspace.cases.csvImport.defaultsHint' | transloco }}</small>
+        </legend>
+        <label>
+          <span>{{ 'workspace.cases.csvImport.defaultSection' | transloco }}</span>
+          <select appControl formControlName="defaultSectionId">
+            @for (suite of suites(); track suite.id) {
+              <optgroup [label]="suite.name">
+                @for (section of suite.sections; track section.id) {
+                  <option [value]="section.id">{{ section.name }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+        </label>
+        <label>
+          <span>{{ 'workspace.cases.csvImport.defaultTemplate' | transloco }}</span>
+          <select appControl formControlName="defaultTemplate">
+            <option value="steps">{{ 'workspace.cases.templates.steps' | transloco }}</option>
+            <option value="text">{{ 'workspace.cases.templates.text' | transloco }}</option>
+            <option value="exploratory">
+              {{ 'workspace.cases.templates.exploratory' | transloco }}
+            </option>
+            <option value="bdd">{{ 'workspace.cases.templates.bdd' | transloco }}</option>
+          </select>
+        </label>
+      </fieldset>
+    </div>
+
+    <fieldset class="mapping-card optional-fields">
+      <legend>
+        {{ 'workspace.cases.csvImport.optionalFields' | transloco }}
+        <small>{{ 'workspace.cases.csvImport.optionalHint' | transloco }}</small>
+      </legend>
+      <div class="optional-grid">
+        <label>
+          <span>{{ 'workspace.cases.csvImport.sectionColumn' | transloco }}</span>
+          <select appControl formControlName="sectionId">
+            <option value="">{{ 'workspace.cases.csvImport.useDefault' | transloco }}</option>
+            @for (column of columns(); track column) {
+              <option [value]="column">{{ column }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>{{ 'workspace.cases.csvImport.templateColumn' | transloco }}</span>
+          <select appControl formControlName="template">
+            <option value="">{{ 'workspace.cases.csvImport.useDefault' | transloco }}</option>
+            @for (column of columns(); track column) {
+              <option [value]="column">{{ column }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>{{ 'workspace.cases.csvImport.automationColumn' | transloco }}</span>
+          <select appControl formControlName="automationId">
+            <option value="">{{ 'workspace.cases.csvImport.notMapped' | transloco }}</option>
+            @for (column of columns(); track column) {
+              <option [value]="column">{{ column }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>{{ 'workspace.cases.csvImport.preconditionsColumn' | transloco }}</span>
+          <select appControl formControlName="preconditions">
+            <option value="">{{ 'workspace.cases.csvImport.notMapped' | transloco }}</option>
+            @for (column of columns(); track column) {
+              <option [value]="column">{{ column }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>{{ 'workspace.cases.csvImport.expectedColumn' | transloco }}</span>
+          <select appControl formControlName="expectedResult">
+            <option value="">{{ 'workspace.cases.csvImport.notMapped' | transloco }}</option>
+            @for (column of columns(); track column) {
+              <option [value]="column">{{ column }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>{{ 'workspace.cases.csvImport.delimiter' | transloco }}</span>
+          <select
+            appControl
+            [value]="delimiter()"
+            (change)="delimiterChange.emit($any($event.target).value)"
+          >
+            <option value=",">{{ 'workspace.cases.csvImport.comma' | transloco }}</option>
+            <option value=";">{{ 'workspace.cases.csvImport.semicolon' | transloco }}</option>
+            <option [value]="'\t'">{{ 'workspace.cases.csvImport.tab' | transloco }}</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    @if (form().touched && form().invalid) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'workspace.cases.csvImport.mappingInvalidTitle' | transloco"
+      >
+        <p>{{ 'workspace.cases.csvImport.mappingRequired' | transloco }}</p>
+      </app-callout>
+    }
+
+    <div class="panel-actions">
+      <button appButton="secondary" type="button" (click)="replaceFile.emit()">
+        {{ 'workspace.cases.csvImport.cancel' | transloco }}
+      </button>
+      <button appButton="primary" type="submit" [disabled]="previewing()">
+        {{
+          (previewing()
+            ? 'workspace.cases.csvImport.previewing'
+            : 'workspace.cases.csvImport.preview') | transloco
+        }}
+      </button>
+    </div>
+  </form>
+</section>

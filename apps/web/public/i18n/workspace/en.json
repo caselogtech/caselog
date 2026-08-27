@@ -133,9 +133,9 @@
       "bdd": "BDD"
     },
     "csvImport": {
-      "eyebrow": "Test case repository",
       "title": "Import test cases",
       "description": "Map a CSV file, validate every row, and create versioned test cases atomically.",
+      "breadcrumbs": "CSV import location",
       "back": "Back to test cases",
       "progress": "CSV import progress",
       "steps": {
@@ -144,6 +144,7 @@
         "review": "Review and import"
       },
       "loading": "Loading project sections…",
+      "structureErrorTitle": "Unable to prepare CSV import",
       "readOnlyTitle": "CSV import is unavailable",
       "readOnlyDescription": "Your workspace role does not allow test case creation.",
       "noSectionsTitle": "No sections available",
@@ -156,6 +157,7 @@
       "fileLimits": "One .csv file, up to 5 MB and 1,000 data rows",
       "reading": "Reading file…",
       "browse": "Browse files",
+      "fileErrorTitle": "Unable to read the CSV file",
       "formatTitle": "Expected format",
       "formatDescription": "The file needs a header and columns for a title and test content. Comma, semicolon and tab delimiters are supported.",
       "formatExample": "Title,Automation ID,Content",
@@ -169,6 +171,7 @@
       "mappingEyebrow": "Column mapping",
       "mappingTitle": "Match columns to Caselog fields",
       "mappingDescription": "Required fields must be mapped. Defaults are used when an optional row value is absent.",
+      "mappingErrorTitle": "Unable to validate this mapping",
       "columns": "columns detected",
       "replaceFile": "Replace",
       "requiredFields": "Required mapping",
@@ -194,6 +197,7 @@
       "semicolon": "Semicolon",
       "tab": "Tab",
       "mappingRequired": "Select the title and content columns and provide row defaults.",
+      "mappingInvalidTitle": "Complete the required mapping",
       "cancel": "Cancel import",
       "preview": "Validate and preview",
       "previewing": "Validating rows…",
@@ -206,6 +210,9 @@
       "invalidRows": "Invalid",
       "fixRowsTitle": "The import cannot be committed yet",
       "fixRowsDescription": "Correct the indicated source rows or adjust the mapping, then validate again.",
+      "atomicTitle": "Ready for atomic import",
+      "atomicDescription": "No data has been written yet. Committing creates every validated row as one operation; if any row fails, none are created.",
+      "commitErrorTitle": "Unable to commit the CSV import",
       "row": "Row",
       "rowStatus": "Status",
       "validation": "Validation",

@@ -1,12 +1,22 @@
 <main class="csv-import-page" aria-labelledby="csv-import-title">
+  <nav class="breadcrumbs" [attr.aria-label]="'workspace.cases.csvImport.breadcrumbs' | transloco">
+    <a
+      href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
+      [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
+    >
+      {{ 'workspace.cases.titleFallback' | transloco }}
+    </a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'workspace.cases.csvImport.title' | transloco }}</span>
+  </nav>
+
   <header class="page-header">
     <div>
-      <p class="eyebrow">{{ 'workspace.cases.csvImport.eyebrow' | transloco }}</p>
       <h1 id="csv-import-title">{{ 'workspace.cases.csvImport.title' | transloco }}</h1>
       <p>{{ 'workspace.cases.csvImport.description' | transloco }}</p>
     </div>
     <a
-      class="back-link"
+      appButton="secondary"
       href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
       [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
     >
@@ -14,405 +24,98 @@
     </a>
   </header>
 
-  <ol class="wizard-progress" [attr.aria-label]="'workspace.cases.csvImport.progress' | transloco">
-    <li [class.active]="!selectedFile()" [class.complete]="selectedFile()">
-      <span class="step-number">1</span>
-      {{ 'workspace.cases.csvImport.steps.file' | transloco }}
-    </li>
-    <li
-      [class.active]="selectedFile() && !previewData() && !importResult()"
-      [class.complete]="previewData() || importResult()"
-    >
-      <span class="step-number">2</span>
-      {{ 'workspace.cases.csvImport.steps.mapping' | transloco }}
-    </li>
-    <li [class.active]="previewData() || importResult()" [class.complete]="importResult()">
-      <span class="step-number">3</span>
-      {{ 'workspace.cases.csvImport.steps.review' | transloco }}
-    </li>
-  </ol>
+  <app-csv-import-progress [currentStep]="currentStep()" />
 
   @if (structure.isPending()) {
-    <section class="page-state" aria-live="polite">
-      <span class="loading-indicator" aria-hidden="true"></span>
-      {{ 'workspace.cases.csvImport.loading' | transloco }}
+    <section class="import-loading" [attr.aria-label]="'workspace.cases.csvImport.loading' | transloco">
+      <app-loading-skeleton
+        preset="title"
+        [label]="'workspace.cases.csvImport.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="block"
+        [label]="'workspace.cases.csvImport.loading' | transloco"
+      />
     </section>
   } @else if (structure.isError()) {
-    <section class="page-state error" role="alert">
-      <p>{{ errorTranslationKey() | transloco }}</p>
-      <button type="button" class="secondary-action" (click)="structure.refetch()">
+    <app-page-state
+      [title]="'workspace.cases.csvImport.structureErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="structure.refetch()">
         {{ 'workspace.cases.retry' | transloco }}
       </button>
-    </section>
+    </app-page-state>
   } @else if (!canImport()) {
-    <section class="page-state">
-      <h2>{{ 'workspace.cases.csvImport.readOnlyTitle' | transloco }}</h2>
-      <p>{{ 'workspace.cases.csvImport.readOnlyDescription' | transloco }}</p>
-    </section>
-  } @else if (sections().length === 0) {
-    <section class="page-state">
-      <h2>{{ 'workspace.cases.csvImport.noSectionsTitle' | transloco }}</h2>
-      <p>{{ 'workspace.cases.csvImport.noSectionsDescription' | transloco }}</p>
-    </section>
-  } @else if (importResult(); as result) {
-    <section class="result-panel" aria-labelledby="import-complete-title">
-      <div class="success-mark" aria-hidden="true">✓</div>
-      <p class="section-kicker">{{ 'workspace.cases.csvImport.completeEyebrow' | transloco }}</p>
-      <h2 id="import-complete-title">
-        {{ 'workspace.cases.csvImport.completeTitle' | transloco: { count: result.imported } }}
-      </h2>
-      <p>{{ 'workspace.cases.csvImport.completeDescription' | transloco }}</p>
-
-      <div class="result-list">
-        @for (testCase of result.testCases; track testCase.id) {
-          <a
-            href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/{{ testCase.id }}"
-            [routerLink]="['/', workspaceSlug, projectSlug, 'cases', testCase.id]"
-          >
-            <span>{{ structure.data()?.project?.key }}-{{ testCase.caseNumber }}</span>
-            <strong>{{ testCase.title }}</strong>
-          </a>
-        }
-      </div>
-
-      <div class="panel-actions">
-        <a
-          class="primary-action"
-          href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
-          [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
-        >
-          {{ 'workspace.cases.csvImport.viewCases' | transloco }}
-        </a>
-        <button type="button" class="secondary-action" (click)="reset()">
-          {{ 'workspace.cases.csvImport.importAnother' | transloco }}
-        </button>
-      </div>
-    </section>
-  } @else if (previewData(); as previewResult) {
-    <section class="preview-panel" aria-labelledby="preview-title">
-      <div class="panel-heading">
-        <div>
-          <p class="section-kicker">{{ 'workspace.cases.csvImport.previewEyebrow' | transloco }}</p>
-          <h2 id="preview-title">{{ 'workspace.cases.csvImport.previewTitle' | transloco }}</h2>
-          <p>{{ selectedFile()?.name }}</p>
-        </div>
-        <button type="button" class="secondary-action" (click)="editMapping()">
-          {{ 'workspace.cases.csvImport.editMapping' | transloco }}
-        </button>
-      </div>
-
-      <div class="summary-grid" [attr.aria-label]="'workspace.cases.csvImport.summary' | transloco">
-        <article>
-          <span>{{ 'workspace.cases.csvImport.totalRows' | transloco }}</span>
-          <strong>{{ previewResult.summary.total }}</strong>
-        </article>
-        <article class="valid">
-          <span>{{ 'workspace.cases.csvImport.validRows' | transloco }}</span>
-          <strong>{{ previewResult.summary.valid }}</strong>
-        </article>
-        <article [class.invalid]="previewResult.summary.invalid > 0">
-          <span>{{ 'workspace.cases.csvImport.invalidRows' | transloco }}</span>
-          <strong>{{ previewResult.summary.invalid }}</strong>
-        </article>
-      </div>
-
-      @if (previewResult.summary.invalid > 0) {
-        <div class="validation-notice" role="alert">
-          <strong>{{ 'workspace.cases.csvImport.fixRowsTitle' | transloco }}</strong>
-          <span>{{ 'workspace.cases.csvImport.fixRowsDescription' | transloco }}</span>
-        </div>
-      }
-      @if (commit.isError()) {
-        <div class="validation-notice error" role="alert">
-          {{ errorTranslationKey() | transloco }}
-        </div>
-      }
-
-      <div class="preview-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">{{ 'workspace.cases.csvImport.row' | transloco }}</th>
-              <th scope="col">{{ 'workspace.cases.csvImport.rowStatus' | transloco }}</th>
-              <th scope="col">{{ 'workspace.cases.name' | transloco }}</th>
-              <th scope="col">{{ 'workspace.cases.section' | transloco }}</th>
-              <th scope="col">{{ 'workspace.cases.template' | transloco }}</th>
-              <th scope="col">{{ 'workspace.cases.csvImport.validation' | transloco }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of previewResult.rows; track row.rowNumber) {
-              <tr [class.invalid-row]="!row.valid">
-                <td class="row-number">{{ row.rowNumber }}</td>
-                <td>
-                  <span class="status-tag" [class.valid]="row.valid" [class.invalid]="!row.valid">
-                    {{
-                      (row.valid
-                        ? 'workspace.cases.csvImport.valid'
-                        : 'workspace.cases.csvImport.invalid') | transloco
-                    }}
-                  </span>
-                </td>
-                <td>{{ row.value?.title ?? '—' }}</td>
-                <td>{{ row.value ? sectionName(row.value.sectionId) : '—' }}</td>
-                <td>
-                  @if (row.value) {
-                    {{ templateTranslationKey(row.value.template) | transloco }}
-                  } @else {
-                    —
-                  }
-                </td>
-                <td class="issues-cell">
-                  @if (row.issues.length === 0) {
-                    <span class="muted">{{ 'workspace.cases.csvImport.noIssues' | transloco }}</span>
-                  } @else {
-                    @for (issue of row.issues; track issue.field + issue.message) {
-                      <span><strong>{{ issue.field }}</strong>: {{ issue.message }}</span>
-                    }
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <div class="panel-actions end">
-        <button type="button" class="secondary-action" (click)="editMapping()">
-          {{ 'workspace.cases.csvImport.backToMapping' | transloco }}
-        </button>
-        <button
-          type="button"
-          class="primary-action"
-          [disabled]="previewResult.summary.total === 0 || previewResult.summary.invalid > 0 || commit.isPending()"
-          (click)="commitImport()"
-        >
-          {{
-            (commit.isPending()
-              ? 'workspace.cases.csvImport.importing'
-              : 'workspace.cases.csvImport.commit')
-              | transloco: { count: previewResult.summary.valid }
-          }}
-        </button>
-      </div>
-    </section>
-  } @else if (selectedFile()) {
-    <section class="mapping-panel" aria-labelledby="mapping-title">
-      <div class="panel-heading">
-        <div>
-          <p class="section-kicker">{{ 'workspace.cases.csvImport.mappingEyebrow' | transloco }}</p>
-          <h2 id="mapping-title">{{ 'workspace.cases.csvImport.mappingTitle' | transloco }}</h2>
-          <p>{{ 'workspace.cases.csvImport.mappingDescription' | transloco }}</p>
-        </div>
-        <div class="selected-file">
-          <span aria-hidden="true">{{ 'workspace.cases.csvImport.fileBadge' | transloco }}</span>
-          <div>
-            <strong>{{ selectedFile()?.name }}</strong>
-            <small>{{ columns().length }} {{ 'workspace.cases.csvImport.columns' | transloco }}</small>
-          </div>
-          <button type="button" (click)="reset()">
-            {{ 'workspace.cases.csvImport.replaceFile' | transloco }}
-          </button>
-        </div>
-      </div>
-
-      @if (fileError()) {
-        <div class="validation-notice error" role="alert">
-          {{ fileErrorTranslationKey() | transloco }}
-        </div>
-      }
-      @if (preview.isError()) {
-        <div class="validation-notice error" role="alert">
-          {{ errorTranslationKey() | transloco }}
-        </div>
-      }
-
-      <form [formGroup]="mappingForm" (ngSubmit)="previewImport()" novalidate>
-        <div class="mapping-grid">
-          <div class="mapping-card required-fields">
-            <div class="card-heading">
-              <h3>{{ 'workspace.cases.csvImport.requiredFields' | transloco }}</h3>
-              <span>{{ 'workspace.cases.csvImport.requiredHint' | transloco }}</span>
-            </div>
-            <label>
-              <span>{{ 'workspace.cases.csvImport.titleColumn' | transloco }}</span>
-              <select formControlName="title">
-                <option value="">{{ 'workspace.cases.csvImport.selectColumn' | transloco }}</option>
-                @for (column of columns(); track column) {
-                  <option [value]="column">{{ column }}</option>
-                }
-              </select>
-            </label>
-            <label>
-              <span>{{ 'workspace.cases.csvImport.contentColumn' | transloco }}</span>
-              <select formControlName="content">
-                <option value="">{{ 'workspace.cases.csvImport.selectColumn' | transloco }}</option>
-                @for (column of columns(); track column) {
-                  <option [value]="column">{{ column }}</option>
-                }
-              </select>
-            </label>
-          </div>
-
-          <div class="mapping-card defaults">
-            <div class="card-heading">
-              <h3>{{ 'workspace.cases.csvImport.defaults' | transloco }}</h3>
-              <span>{{ 'workspace.cases.csvImport.defaultsHint' | transloco }}</span>
-            </div>
-            <label>
-              <span>{{ 'workspace.cases.csvImport.defaultSection' | transloco }}</span>
-              <select formControlName="defaultSectionId">
-                @for (suite of structure.data()?.suites ?? []; track suite.id) {
-                  <optgroup [label]="suite.name">
-                    @for (section of suite.sections; track section.id) {
-                      <option [value]="section.id">{{ section.name }}</option>
-                    }
-                  </optgroup>
-                }
-              </select>
-            </label>
-            <label>
-              <span>{{ 'workspace.cases.csvImport.defaultTemplate' | transloco }}</span>
-              <select formControlName="defaultTemplate">
-                <option value="steps">{{ 'workspace.cases.templates.steps' | transloco }}</option>
-                <option value="text">{{ 'workspace.cases.templates.text' | transloco }}</option>
-                <option value="exploratory">
-                  {{ 'workspace.cases.templates.exploratory' | transloco }}
-                </option>
-                <option value="bdd">{{ 'workspace.cases.templates.bdd' | transloco }}</option>
-              </select>
-            </label>
-          </div>
-        </div>
-
-        <div class="mapping-card optional-fields">
-          <div class="card-heading">
-            <h3>{{ 'workspace.cases.csvImport.optionalFields' | transloco }}</h3>
-            <span>{{ 'workspace.cases.csvImport.optionalHint' | transloco }}</span>
-          </div>
-          <div class="optional-grid">
-            <label>
-              <span>{{ 'workspace.cases.csvImport.sectionColumn' | transloco }}</span>
-              <select formControlName="sectionId">
-                <option value="">{{ 'workspace.cases.csvImport.useDefault' | transloco }}</option>
-                @for (column of columns(); track column) {
-                  <option [value]="column">{{ column }}</option>
-                }
-              </select>
-            </label>
-            <label>
-              <span>{{ 'workspace.cases.csvImport.templateColumn' | transloco }}</span>
-              <select formControlName="template">
-                <option value="">{{ 'workspace.cases.csvImport.useDefault' | transloco }}</option>
-                @for (column of columns(); track column) {
-                  <option [value]="column">{{ column }}</option>
-                }
-              </select>
-            </label>
-            <label>
-              <span>{{ 'workspace.cases.csvImport.automationColumn' | transloco }}</span>
-              <select formControlName="automationId">
-                <option value="">{{ 'workspace.cases.csvImport.notMapped' | transloco }}</option>
-                @for (column of columns(); track column) {
-                  <option [value]="column">{{ column }}</option>
-                }
-              </select>
-            </label>
-            <label>
-              <span>{{ 'workspace.cases.csvImport.preconditionsColumn' | transloco }}</span>
-              <select formControlName="preconditions">
-                <option value="">{{ 'workspace.cases.csvImport.notMapped' | transloco }}</option>
-                @for (column of columns(); track column) {
-                  <option [value]="column">{{ column }}</option>
-                }
-              </select>
-            </label>
-            <label>
-              <span>{{ 'workspace.cases.csvImport.expectedColumn' | transloco }}</span>
-              <select formControlName="expectedResult">
-                <option value="">{{ 'workspace.cases.csvImport.notMapped' | transloco }}</option>
-                @for (column of columns(); track column) {
-                  <option [value]="column">{{ column }}</option>
-                }
-              </select>
-            </label>
-            <label>
-              <span>{{ 'workspace.cases.csvImport.delimiter' | transloco }}</span>
-              <select [value]="delimiter()" (change)="changeDelimiter($any($event.target).value)">
-                <option value=",">{{ 'workspace.cases.csvImport.comma' | transloco }}</option>
-                <option value=";">{{ 'workspace.cases.csvImport.semicolon' | transloco }}</option>
-                <option [value]="'\t'">{{ 'workspace.cases.csvImport.tab' | transloco }}</option>
-              </select>
-            </label>
-          </div>
-        </div>
-
-        @if (mappingForm.touched && mappingForm.invalid) {
-          <div class="validation-notice error" role="alert">
-            {{ 'workspace.cases.csvImport.mappingRequired' | transloco }}
-          </div>
-        }
-
-        <div class="panel-actions end">
-          <button type="button" class="secondary-action" (click)="reset()">
-            {{ 'workspace.cases.csvImport.cancel' | transloco }}
-          </button>
-          <button type="submit" class="primary-action" [disabled]="preview.isPending()">
-            {{
-              (preview.isPending()
-                ? 'workspace.cases.csvImport.previewing'
-                : 'workspace.cases.csvImport.preview') | transloco
-            }}
-          </button>
-        </div>
-      </form>
-    </section>
-  } @else {
-    <section class="upload-panel" aria-labelledby="upload-csv-title">
-      <div class="upload-copy">
-        <p class="section-kicker">{{ 'workspace.cases.csvImport.fileEyebrow' | transloco }}</p>
-        <h2 id="upload-csv-title">{{ 'workspace.cases.csvImport.fileTitle' | transloco }}</h2>
-        <p>{{ 'workspace.cases.csvImport.fileDescription' | transloco }}</p>
-      </div>
-
-      <div
-        class="dropzone"
-        [class.drag-active]="dragActive()"
-        (dragover)="allowDrop($event)"
-        (dragleave)="dragActive.set(false)"
-        (drop)="handleDrop($event)"
+    <app-page-state
+      [title]="'workspace.cases.csvImport.readOnlyTitle' | transloco"
+      [message]="'workspace.cases.csvImport.readOnlyDescription' | transloco"
+    >
+      <a
+        actions
+        appButton="secondary"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
       >
-        <span class="csv-mark" aria-hidden="true">
-          {{ 'workspace.cases.csvImport.fileBadge' | transloco }}
-        </span>
-        <strong>{{ 'workspace.cases.csvImport.dropPrompt' | transloco }}</strong>
-        <span>{{ 'workspace.cases.csvImport.fileLimits' | transloco }}</span>
-        <label class="primary-action file-picker">
-          {{
-            (readingFile()
-              ? 'workspace.cases.csvImport.reading'
-              : 'workspace.cases.csvImport.browse') | transloco
-          }}
-          <input
-            type="file"
-            accept=".csv,text/csv,application/csv"
-            [disabled]="readingFile()"
-            (change)="handleFileInput($event)"
-          />
-        </label>
-      </div>
-
-      @if (fileError()) {
-        <div class="validation-notice error" role="alert">
-          {{ fileErrorTranslationKey() | transloco }}
-        </div>
-      }
-
-      <div class="format-help">
-        <h3>{{ 'workspace.cases.csvImport.formatTitle' | transloco }}</h3>
-        <p>{{ 'workspace.cases.csvImport.formatDescription' | transloco }}</p>
-        <code>{{ 'workspace.cases.csvImport.formatExample' | transloco }}</code>
-      </div>
-    </section>
+        {{ 'workspace.cases.csvImport.back' | transloco }}
+      </a>
+    </app-page-state>
+  } @else if (sections().length === 0) {
+    <app-page-state
+      [title]="'workspace.cases.csvImport.noSectionsTitle' | transloco"
+      [message]="'workspace.cases.csvImport.noSectionsDescription' | transloco"
+    >
+      <a
+        actions
+        appButton="secondary"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
+      >
+        {{ 'workspace.cases.csvImport.back' | transloco }}
+      </a>
+    </app-page-state>
+  } @else if (importResult(); as result) {
+    <app-csv-import-result
+      [result]="result"
+      [projectKey]="structure.data()?.project?.key ?? ''"
+      [workspaceSlug]="workspaceSlug"
+      [projectSlug]="projectSlug"
+      (importAnother)="reset()"
+    />
+  } @else if (previewData(); as previewResult) {
+    <app-csv-import-preview
+      [result]="previewResult"
+      [fileName]="selectedFile()?.name ?? ''"
+      [suites]="structure.data()?.suites ?? []"
+      [commitPending]="commit.isPending()"
+      [commitFailed]="commit.isError()"
+      [errorMessage]="errorTranslationKey() | transloco"
+      (editMapping)="editMapping()"
+      (commit)="commitImport()"
+    />
+  } @else if (selectedFile(); as file) {
+    <app-csv-import-mapping
+      [form]="mappingForm"
+      [file]="file"
+      [columns]="columns()"
+      [suites]="structure.data()?.suites ?? []"
+      [delimiter]="delimiter()"
+      [fileError]="!!fileError()"
+      [previewError]="preview.isError()"
+      [errorMessage]="
+        fileError() ? (fileErrorTranslationKey() | transloco) : (errorTranslationKey() | transloco)
+      "
+      [previewing]="preview.isPending()"
+      (replaceFile)="reset()"
+      (delimiterChange)="changeDelimiter($event)"
+      (preview)="previewImport()"
+    />
+  } @else {
+    <app-csv-import-file
+      [reading]="readingFile()"
+      [hasError]="!!fileError()"
+      [errorMessage]="fileErrorTranslationKey() | transloco"
+      (fileSelected)="selectFile($event)"
+    />
   }
 </main>

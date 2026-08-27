@@ -7,41 +7,36 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NonNullableFormBuilder } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   csvImportRequestSchema,
   type CsvImportPreviewResponse,
   type CsvImportRequest,
   type CsvImportResponse,
-  type TestCaseTemplate,
 } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { Button, LoadingSkeleton, PageState } from '../../../../shared/ui/public-api';
+import { CsvImportFile } from '../../components/csv-import-file/csv-import-file';
+import { CsvImportMapping } from '../../components/csv-import-mapping/csv-import-mapping';
+import { createCsvImportMappingForm } from '../../components/csv-import-mapping/csv-import-mapping-form';
+import { CsvImportPreview } from '../../components/csv-import-preview/csv-import-preview';
+import { CsvImportProgress } from '../../components/csv-import-progress/csv-import-progress';
+import { CsvImportResult } from '../../components/csv-import-result/csv-import-result';
 import { TestCaseImportsApi } from '../../data-access/test-case-imports-api';
 import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
+import { CSV_DELIMITERS, parseCsvHeader, type CsvDelimiter } from '../../domain/csv-header';
 import {
-  CSV_DELIMITERS,
-  detectCsvDelimiter,
-  parseCsvHeader,
-  type CsvDelimiter,
-} from '../../domain/csv-header';
+  type CsvFileError,
+  type CsvSourceResult,
+  readCsvSource,
+  suggestedCsvMapping,
+} from '../../domain/csv-import-source';
 
-const MAX_CSV_BYTES = 5_000_000;
-const COLUMN_ALIASES = {
-  title: ['title', 'name', 'testcase', 'testcasetitle'],
-  content: ['content', 'description', 'steps', 'teststeps'],
-  sectionId: ['sectionid', 'sectionuuid'],
-  template: ['template', 'type'],
-  automationId: ['automationid', 'automation', 'automatedid'],
-  preconditions: ['preconditions', 'precondition'],
-  expectedResult: ['expectedresult', 'expected', 'outcome'],
-} as const;
-
-type FileError = 'type' | 'size' | 'empty' | 'read' | 'header';
-const FILE_ERROR_TRANSLATIONS: Record<FileError, string> = {
+const FILE_ERROR_TRANSLATIONS: Record<CsvFileError, string> = {
   type: 'workspace.cases.csvImport.fileErrors.type',
   size: 'workspace.cases.csvImport.fileErrors.size',
   empty: 'workspace.cases.csvImport.fileErrors.empty',
@@ -51,7 +46,18 @@ const FILE_ERROR_TRANSLATIONS: Record<FileError, string> = {
 
 @Component({
   selector: 'app-csv-import',
-  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe],
+  imports: [
+    Button,
+    CsvImportFile,
+    CsvImportMapping,
+    CsvImportPreview,
+    CsvImportProgress,
+    CsvImportResult,
+    LoadingSkeleton,
+    PageState,
+    RouterLink,
+    TranslocoPipe,
+  ],
   templateUrl: './csv-import.html',
   styleUrl: './csv-import.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -71,24 +77,18 @@ export class CsvImport {
   readonly csv = signal('');
   readonly delimiter = signal<CsvDelimiter>(',');
   readonly columns = signal<string[]>([]);
-  readonly fileError = signal<FileError | null>(null);
+  readonly fileError = signal<CsvFileError | null>(null);
   readonly readingFile = signal(false);
-  readonly dragActive = signal(false);
   readonly previewData = signal<CsvImportPreviewResponse | null>(null);
   readonly previewedRequest = signal<CsvImportRequest | null>(null);
   readonly idempotencyKey = signal<string | null>(null);
   readonly importResult = signal<CsvImportResponse | null>(null);
 
-  readonly mappingForm = this.formBuilder.group({
-    title: ['', Validators.required],
-    content: ['', Validators.required],
-    sectionId: [''],
-    template: [''],
-    automationId: [''],
-    preconditions: [''],
-    expectedResult: [''],
-    defaultSectionId: ['', Validators.required],
-    defaultTemplate: this.formBuilder.control<TestCaseTemplate>('steps'),
+  readonly mappingForm = createCsvImportMappingForm(this.formBuilder);
+  readonly currentStep = computed<1 | 2 | 3>(() => {
+    if (this.previewData() || this.importResult()) return 3;
+    if (this.selectedFile()) return 2;
+    return 1;
   });
 
   readonly structure = injectQuery(() => ({
@@ -146,61 +146,22 @@ export class CsvImport {
   async selectFile(file: File | undefined): Promise<void> {
     this.resetFileState();
     if (!file) return;
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      this.fileError.set('type');
-      return;
-    }
-    if (file.size > MAX_CSV_BYTES) {
-      this.fileError.set('size');
-      return;
-    }
-    if (file.size === 0) {
-      this.fileError.set('empty');
-      return;
-    }
-
     this.readingFile.set(true);
-    let csv: string;
+    let source: CsvSourceResult;
     try {
-      csv = await file.text();
-    } catch {
-      this.fileError.set('read');
-      return;
+      source = await readCsvSource(file);
     } finally {
       this.readingFile.set(false);
     }
-    if (!csv.trim()) {
-      this.fileError.set('empty');
+    if (!source.success) {
+      this.fileError.set(source.error);
       return;
     }
-    try {
-      const delimiter = detectCsvDelimiter(csv);
-      const columns = parseCsvHeader(csv, delimiter);
-      this.selectedFile.set(file);
-      this.csv.set(csv);
-      this.delimiter.set(delimiter);
-      this.columns.set(columns);
-      this.applySuggestedMapping(columns);
-    } catch {
-      this.fileError.set('header');
-    }
-  }
-
-  handleFileInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    void this.selectFile(input.files?.[0]);
-    input.value = '';
-  }
-
-  handleDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragActive.set(false);
-    if (this.canImport()) void this.selectFile(event.dataTransfer?.files[0]);
-  }
-
-  allowDrop(event: DragEvent): void {
-    event.preventDefault();
-    if (this.canImport()) this.dragActive.set(true);
+    this.selectedFile.set(file);
+    this.csv.set(source.csv);
+    this.delimiter.set(source.delimiter);
+    this.columns.set(source.columns);
+    this.applySuggestedMapping(source.columns);
   }
 
   changeDelimiter(value: string): void {
@@ -249,14 +210,6 @@ export class CsvImport {
     this.resetFileState();
   }
 
-  sectionName(sectionId: string): string {
-    return this.sections().find((section) => section.id === sectionId)?.name ?? sectionId;
-  }
-
-  templateTranslationKey(template: TestCaseTemplate): string {
-    return `workspace.cases.templates.${template}`;
-  }
-
   errorTranslationKey(): string {
     return apiErrorTranslationKey(
       this.commit.error() ?? this.preview.error() ?? this.structure.error(),
@@ -289,23 +242,7 @@ export class CsvImport {
   }
 
   private applySuggestedMapping(columns: string[]): void {
-    const columnByName = new Map(columns.map((column) => [normalizeColumn(column), column]));
-    const match = (field: keyof typeof COLUMN_ALIASES): string => {
-      for (const alias of COLUMN_ALIASES[field]) {
-        const column = columnByName.get(alias);
-        if (column) return column;
-      }
-      return '';
-    };
-    this.mappingForm.patchValue({
-      title: match('title'),
-      content: match('content'),
-      sectionId: match('sectionId'),
-      template: match('template'),
-      automationId: match('automationId'),
-      preconditions: match('preconditions'),
-      expectedResult: match('expectedResult'),
-    });
+    this.mappingForm.patchValue(suggestedCsvMapping(columns));
   }
 
   private clearPreview(): void {
@@ -322,7 +259,6 @@ export class CsvImport {
     this.csv.set('');
     this.columns.set([]);
     this.fileError.set(null);
-    this.dragActive.set(false);
     this.clearPreview();
     this.mappingForm.reset({
       title: '',
@@ -336,8 +272,4 @@ export class CsvImport {
       defaultTemplate: 'steps',
     });
   }
-}
-
-function normalizeColumn(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
 }

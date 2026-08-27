@@ -1,0 +1,33 @@
+<section class="result-panel" aria-labelledby="import-complete-title">
+  <div class="success-mark" aria-hidden="true">✓</div>
+  <p class="section-kicker">{{ 'workspace.cases.csvImport.completeEyebrow' | transloco }}</p>
+  <h2 id="import-complete-title">
+    {{ 'workspace.cases.csvImport.completeTitle' | transloco: { count: result().imported } }}
+  </h2>
+  <p>{{ 'workspace.cases.csvImport.completeDescription' | transloco }}</p>
+
+  <div class="result-list">
+    @for (testCase of result().testCases; track testCase.id) {
+      <a
+        href="/{{ workspaceSlug() }}/{{ projectSlug() }}/cases/{{ testCase.id }}"
+        [routerLink]="['/', workspaceSlug(), projectSlug(), 'cases', testCase.id]"
+      >
+        <span>{{ projectKey() }}-{{ testCase.caseNumber }}</span>
+        <strong>{{ testCase.title }}</strong>
+      </a>
+    }
+  </div>
+
+  <div class="panel-actions">
+    <a
+      appButton="primary"
+      href="/{{ workspaceSlug() }}/{{ projectSlug() }}/cases"
+      [routerLink]="['/', workspaceSlug(), projectSlug(), 'cases']"
+    >
+      {{ 'workspace.cases.csvImport.viewCases' | transloco }}
+    </a>
+    <button appButton="secondary" type="button" (click)="importAnother.emit()">
+      {{ 'workspace.cases.csvImport.importAnother' | transloco }}
+    </button>
+  </div>
+</section>

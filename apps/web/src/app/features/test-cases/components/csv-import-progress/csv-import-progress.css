@@ -1,0 +1,53 @@
+:host {
+  display: block;
+}
+
+.wizard-progress {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  list-style: none;
+  margin: var(--space-5) 0 var(--space-4);
+  padding: 0;
+}
+
+.wizard-progress li {
+  align-items: center;
+  border-bottom: 2px solid var(--color-neutral-400);
+  color: var(--text-3);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  gap: var(--space-2);
+  padding: 0 var(--space-2) var(--space-3);
+}
+
+.step-number {
+  align-items: center;
+  background: var(--color-neutral-200);
+  border-radius: 50%;
+  display: inline-flex;
+  flex: none;
+  font-size: var(--font-size-xs);
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+.wizard-progress li.active,
+.wizard-progress li.complete {
+  border-color: var(--accent);
+  color: var(--text-1);
+}
+
+.wizard-progress li.active .step-number,
+.wizard-progress li.complete .step-number {
+  background: var(--accent);
+  color: var(--surface-2);
+}
+
+@media (max-width: 560px) {
+  .wizard-progress li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
