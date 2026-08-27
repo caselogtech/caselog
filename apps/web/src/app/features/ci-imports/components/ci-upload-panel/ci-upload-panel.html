@@ -1,0 +1,176 @@
+<section id="upload-report" class="upload-panel" aria-labelledby="upload-title">
+  <header>
+    <p>{{ 'workspace.automation.manualUpload' | transloco }}</p>
+    <h2 id="upload-title">{{ 'workspace.automation.dropTitle' | transloco }}</h2>
+    <span>{{ 'workspace.automation.dropDescription' | transloco }}</span>
+  </header>
+
+  @if (!canUpload()) {
+    <app-callout tone="neutral" [title]="'workspace.automation.readOnlyTitle' | transloco">
+      <p>{{ 'workspace.automation.readOnlyDescription' | transloco }}</p>
+    </app-callout>
+  } @else if (runsLoading()) {
+    <div class="runs-loading">
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspace.automation.loadingRuns' | transloco"
+      />
+    </div>
+  } @else if (runsFailed()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'workspace.automation.runsErrorTitle' | transloco"
+    >
+      <p>{{ runsErrorMessage() }}</p>
+      <button appButton="secondary" type="button" (click)="retryRuns.emit()">
+        {{ 'workspace.automation.retry' | transloco }}
+      </button>
+    </app-callout>
+  } @else if (activeRuns().length === 0) {
+    <app-callout tone="warning" [title]="'workspace.automation.noActiveRunsTitle' | transloco">
+      <p>{{ 'workspace.automation.noActiveRunsDescription' | transloco }}</p>
+      <a
+        appButton="secondary"
+        href="/{{ workspaceSlug() }}/{{ projectSlug() }}/runs/new"
+        [routerLink]="['/', workspaceSlug(), projectSlug(), 'runs', 'new']"
+      >
+        {{ 'workspace.automation.createRun' | transloco }}
+      </a>
+    </app-callout>
+  } @else {
+    <div class="upload-fields">
+      <app-form-field
+        controlId="ci-target-run"
+        [label]="'workspace.automation.targetRun' | transloco"
+      >
+        <select
+          appControl
+          id="ci-target-run"
+          [value]="effectiveRunId()"
+          (change)="selectRun($any($event.target).value)"
+        >
+          @for (run of activeRuns(); track run.id) {
+            <option [value]="run.id">
+              {{ run.name }}{{ run.build ? ' · ' + run.build : '' }}
+            </option>
+          }
+        </select>
+      </app-form-field>
+      <app-form-field
+        controlId="ci-pipeline"
+        [label]="'workspace.automation.pipeline' | transloco"
+      >
+        <input
+          appControl
+          id="ci-pipeline"
+          type="text"
+          maxlength="200"
+          [formControl]="pipelineControl"
+          [placeholder]="'workspace.automation.pipelinePlaceholder' | transloco"
+        />
+      </app-form-field>
+      <app-form-field
+        controlId="ci-branch"
+        [label]="'workspace.automation.branch' | transloco"
+      >
+        <input
+          appControl
+          id="ci-branch"
+          type="text"
+          maxlength="255"
+          [formControl]="branchControl"
+          [placeholder]="'workspace.automation.branchPlaceholder' | transloco"
+        />
+      </app-form-field>
+    </div>
+
+    <div
+      class="dropzone"
+      [class.drag-active]="dragActive()"
+      (dragover)="allowDrop($event)"
+      (dragleave)="dragActive.set(false)"
+      (drop)="handleDrop($event)"
+    >
+      <span class="upload-mark" aria-hidden="true">
+        {{ 'workspace.automation.fileBadge' | transloco }}
+      </span>
+      @if (selectedFile(); as file) {
+        <strong>{{ file.name }}</strong>
+        <span>{{ file.size / 1024 | number: '1.0-0' }} KB</span>
+      } @else {
+        <strong>{{ 'workspace.automation.dropPrompt' | transloco }}</strong>
+        <span>{{ 'workspace.automation.fileLimits' | transloco }}</span>
+      }
+      <label class="app-button app-button-secondary file-picker">
+        {{
+          (selectedFile() ? 'workspace.automation.chooseAnother' : 'workspace.automation.browseFiles')
+            | transloco
+        }}
+        <input
+          type="file"
+          accept=".xml,application/xml,text/xml"
+          (change)="handleFileInput($event)"
+        />
+      </label>
+    </div>
+
+    @if (fileError()) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'workspace.automation.fileErrorTitle' | transloco"
+      >
+        <p>
+          {{
+            (fileError() === 'size'
+              ? 'workspace.automation.fileTooLarge'
+              : 'workspace.automation.invalidFileType') | transloco
+          }}
+        </p>
+      </app-callout>
+    }
+    @if (uploadFailed()) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'workspace.automation.uploadErrorTitle' | transloco"
+      >
+        <p>{{ uploadErrorMessage() }}</p>
+      </app-callout>
+    }
+    @if (result(); as uploadResult) {
+      <app-callout
+        tone="success"
+        liveRole="status"
+        [title]="'workspace.automation.uploadSuccessTitle' | transloco"
+      >
+        <p>
+          {{
+            'workspace.automation.uploadComplete'
+              | transloco
+                : {
+                    recorded: uploadResult.recorded,
+                    total: uploadResult.total,
+                    unmatched: uploadResult.unmatched.length,
+                  }
+          }}
+        </p>
+      </app-callout>
+    }
+
+    <div class="upload-actions">
+      <button
+        appButton="primary"
+        type="button"
+        [disabled]="!selectedFile() || !effectiveRunId() || uploadPending()"
+        (click)="uploadReport()"
+      >
+        {{
+          (uploadPending() ? 'workspace.automation.uploading' : 'workspace.automation.uploadSelected')
+            | transloco
+        }}
+      </button>
+    </div>
+  }
+</section>

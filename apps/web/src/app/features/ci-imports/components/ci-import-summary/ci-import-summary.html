@@ -1,0 +1,17 @@
+<section class="summary-grid" [attr.aria-label]="'workspace.automation.summary' | transloco">
+  <article>
+    <span>{{ 'workspace.automation.reportsThisWeek' | transloco }}</span>
+    <strong>{{ summary().reportsThisWeek }}</strong>
+    <small>{{ 'workspace.automation.reportsHint' | transloco }}</small>
+  </article>
+  <article>
+    <span>{{ 'workspace.automation.autoMatched' | transloco }}</span>
+    <strong>{{ summary().matchedPercentThisWeek }}%</strong>
+    <small>{{ 'workspace.automation.autoMatchedHint' | transloco }}</small>
+  </article>
+  <article [class.warning]="summary().unmatchedThisWeek > 0">
+    <span>{{ 'workspace.automation.unmatchedResults' | transloco }}</span>
+    <strong>{{ summary().unmatchedThisWeek }}</strong>
+    <small>{{ 'workspace.automation.unmatchedHint' | transloco }}</small>
+  </article>
+</section>

@@ -1,9 +1,11 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
 import type { ResultIngestionListResponse, TestRunListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { TestRunsApi } from '../../../../test-runs/public-api';
+import { CiUploadPanel } from '../../../components/ci-upload-panel/ci-upload-panel';
 import { CiImportsApi } from '../../../data-access/ci-imports-api';
 import { CiImports } from '../../../pages/ci-imports/ci-imports';
 
@@ -134,17 +136,18 @@ describe('CiImports', () => {
     const fixture = TestBed.createComponent(CiImports);
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.activeRuns.isSuccess()).toBe(true));
+    fixture.detectChanges();
+    const uploadPanel = fixture.debugElement.query(By.directive(CiUploadPanel))
+      .componentInstance as CiUploadPanel;
 
-    fixture.componentInstance.selectFile(
-      new File(['not xml'], 'results.txt', { type: 'text/plain' }),
-    );
-    expect(fixture.componentInstance.fileError()).toBe('type');
+    uploadPanel.selectFile(new File(['not xml'], 'results.txt', { type: 'text/plain' }));
+    expect(uploadPanel.fileError()).toBe('type');
 
     const report = new File(['<testsuite/>'], 'results.xml', { type: 'application/xml' });
-    fixture.componentInstance.pipelineControl.setValue('checkout-regression');
-    fixture.componentInstance.branchControl.setValue('main');
-    fixture.componentInstance.selectFile(report);
-    fixture.componentInstance.uploadReport();
+    uploadPanel.pipelineControl.setValue('checkout-regression');
+    uploadPanel.branchControl.setValue('main');
+    uploadPanel.selectFile(report);
+    uploadPanel.uploadReport();
 
     await vi.waitFor(() => expect(fixture.componentInstance.upload.isSuccess()).toBe(true));
     expect(workspaceApi.uploadJUnitResults).toHaveBeenCalledWith(

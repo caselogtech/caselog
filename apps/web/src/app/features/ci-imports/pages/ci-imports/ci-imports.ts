@@ -1,8 +1,6 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import type { JUnitUploadResponse, ResultIngestion, ResultIngestionStatus } from '@caselog/schemas';
+import { ActivatedRoute, Router } from '@angular/router';
+import type { JUnitUploadResponse, ResultIngestionStatus } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
   injectInfiniteQuery,
@@ -11,14 +9,19 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { Button } from '../../../../shared/ui/public-api';
 import { TestRunsApi } from '../../../test-runs/public-api';
+import { CiImportHistory } from '../../components/ci-import-history/ci-import-history';
+import { CiImportSummary } from '../../components/ci-import-summary/ci-import-summary';
+import {
+  CiUploadPanel,
+  type CiUploadRequest,
+} from '../../components/ci-upload-panel/ci-upload-panel';
 import { CiImportsApi } from '../../data-access/ci-imports-api';
-
-const MAX_BROWSER_UPLOAD_BYTES = 250 * 1024 * 1024;
 
 @Component({
   selector: 'app-ci-imports',
-  imports: [DatePipe, DecimalPipe, ReactiveFormsModule, RouterLink, TranslocoPipe],
+  imports: [Button, CiImportHistory, CiImportSummary, CiUploadPanel, TranslocoPipe],
   templateUrl: './ci-imports.html',
   styleUrl: './ci-imports.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,13 +36,7 @@ export class CiImports {
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly status = signal<ResultIngestionStatus | undefined>(this.readStatus());
-  readonly selectedRunId = signal('');
-  readonly selectedFile = signal<File | null>(null);
-  readonly fileError = signal<'type' | 'size' | null>(null);
-  readonly dragActive = signal(false);
   readonly lastUpload = signal<JUnitUploadResponse | null>(null);
-  readonly pipelineControl = new FormControl('', { nonNullable: true });
-  readonly branchControl = new FormControl('', { nonNullable: true });
   readonly canUpload = computed(() => this.workspaceSession.role() !== 'read_only');
 
   readonly imports = injectInfiniteQuery(() => ({
@@ -66,19 +63,17 @@ export class CiImports {
   readonly project = computed(
     () => this.imports.data()?.pages[0]?.project ?? this.activeRuns.data()?.project ?? null,
   );
-  readonly effectiveRunId = computed(
-    () => this.selectedRunId() || this.activeRuns.data()?.items[0]?.id || '',
-  );
-
   readonly upload = injectMutation(() => ({
-    mutationFn: ({ runId, file }: { runId: string; file: File }) =>
-      this.ciImportsApi.uploadJUnitResults(this.workspaceSlug, this.projectSlug, runId, file, {
-        pipeline: this.pipelineControl.value.trim() || undefined,
-        branch: this.branchControl.value.trim() || undefined,
-      }),
+    mutationFn: ({ runId, file, metadata }: CiUploadRequest) =>
+      this.ciImportsApi.uploadJUnitResults(
+        this.workspaceSlug,
+        this.projectSlug,
+        runId,
+        file,
+        metadata,
+      ),
     onSuccess: async (response) => {
       this.lastUpload.set(response);
-      this.selectedFile.set(null);
       await this.imports.refetch();
     },
   }));
@@ -93,53 +88,9 @@ export class CiImports {
     });
   }
 
-  selectRun(value: string): void {
-    this.selectedRunId.set(value);
-  }
-
-  selectFile(file: File | undefined): void {
+  resetUpload(): void {
     this.lastUpload.set(null);
     this.upload.reset();
-    if (!file) {
-      this.selectedFile.set(null);
-      return;
-    }
-    if (file.size > MAX_BROWSER_UPLOAD_BYTES) {
-      this.selectedFile.set(null);
-      this.fileError.set('size');
-      return;
-    }
-    if (!file.name.toLowerCase().endsWith('.xml')) {
-      this.selectedFile.set(null);
-      this.fileError.set('type');
-      return;
-    }
-    this.fileError.set(null);
-    this.selectedFile.set(file);
-  }
-
-  handleFileInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.selectFile(input.files?.[0]);
-    input.value = '';
-  }
-
-  handleDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragActive.set(false);
-    this.selectFile(event.dataTransfer?.files[0]);
-  }
-
-  allowDrop(event: DragEvent): void {
-    event.preventDefault();
-    if (this.canUpload()) this.dragActive.set(true);
-  }
-
-  uploadReport(): void {
-    const runId = this.effectiveRunId();
-    const file = this.selectedFile();
-    if (!this.canUpload() || !runId || !file || this.upload.isPending()) return;
-    this.upload.mutate({ runId, file });
   }
 
   errorTranslationKey(): string {
@@ -152,10 +103,6 @@ export class CiImports {
 
   activeRunsErrorTranslationKey(): string {
     return apiErrorTranslationKey(this.activeRuns.error());
-  }
-
-  matchedPercent(item: ResultIngestion): number {
-    return item.total === 0 ? 0 : Math.round((item.recorded / item.total) * 100);
   }
 
   private readStatus(): ResultIngestionStatus | undefined {

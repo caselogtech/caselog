@@ -1,0 +1,159 @@
+<section class="history" aria-labelledby="ci-history-title">
+  <header>
+    <div>
+      <p>{{ 'workspace.automation.historyEyebrow' | transloco }}</p>
+      <h2 id="ci-history-title">{{ 'workspace.automation.history' | transloco }}</h2>
+    </div>
+    <nav class="status-tabs" [attr.aria-label]="'workspace.automation.statusFilter' | transloco">
+      <button
+        appButton="quiet"
+        type="button"
+        [class.active]="!status()"
+        [attr.aria-pressed]="!status()"
+        (click)="statusChanged.emit(undefined)"
+      >
+        {{ 'workspace.automation.all' | transloco }}
+      </button>
+      <button
+        appButton="quiet"
+        type="button"
+        [class.active]="status() === 'completed'"
+        [attr.aria-pressed]="status() === 'completed'"
+        (click)="statusChanged.emit('completed')"
+      >
+        {{ 'workspace.automation.completed' | transloco }}
+      </button>
+      <button
+        appButton="quiet"
+        type="button"
+        [class.active]="status() === 'failed'"
+        [attr.aria-pressed]="status() === 'failed'"
+        (click)="statusChanged.emit('failed')"
+      >
+        {{ 'workspace.automation.failed' | transloco }}
+      </button>
+    </nav>
+  </header>
+
+  @if (loading()) {
+    <div class="history-loading">
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspace.automation.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspace.automation.loading' | transloco"
+      />
+    </div>
+  } @else if (failed()) {
+    <app-page-state
+      [title]="'workspace.automation.loadErrorTitle' | transloco"
+      [message]="errorMessage()"
+    >
+      <button actions appButton="secondary" type="button" (click)="retry.emit()">
+        {{ 'workspace.automation.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (items().length === 0) {
+    <app-page-state
+      [title]="'workspace.automation.emptyTitle' | transloco"
+      [message]="
+        (status()
+          ? 'workspace.automation.emptyFilteredDescription'
+          : 'workspace.automation.emptyDescription') | transloco
+      "
+    >
+      @if (status()) {
+        <button actions appButton="secondary" type="button" (click)="statusChanged.emit(undefined)">
+          {{ 'workspace.automation.clearFilter' | transloco }}
+        </button>
+      }
+    </app-page-state>
+  } @else {
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">{{ 'workspace.automation.source' | transloco }}</th>
+            <th scope="col">{{ 'workspace.automation.pipeline' | transloco }}</th>
+            <th scope="col">{{ 'workspace.automation.branch' | transloco }}</th>
+            <th scope="col">{{ 'workspace.automation.format' | transloco }}</th>
+            <th scope="col">{{ 'workspace.automation.results' | transloco }}</th>
+            <th scope="col">{{ 'workspace.automation.status' | transloco }}</th>
+            <th scope="col">{{ 'workspace.automation.imported' | transloco }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr>
+              <td class="source-cell">
+                <span class="mobile-label">{{ 'workspace.automation.source' | transloco }}</span>
+                <a
+                  href="/{{ workspaceSlug() }}/{{ projectSlug() }}/runs/{{ item.run.id }}"
+                  [routerLink]="['/', workspaceSlug(), projectSlug(), 'runs', item.run.id]"
+                >
+                  {{ item.source }}
+                </a>
+                <small>{{ item.run.name }}</small>
+              </td>
+              <td>
+                <span class="mobile-label">{{ 'workspace.automation.pipeline' | transloco }}</span>
+                {{ item.pipeline ?? '—' }}
+              </td>
+              <td class="branch-cell">
+                <span class="mobile-label">{{ 'workspace.automation.branch' | transloco }}</span>
+                {{ item.branch ?? '—' }}
+              </td>
+              <td>
+                <span class="mobile-label">{{ 'workspace.automation.format' | transloco }}</span>
+                {{ 'workspace.automation.junitXml' | transloco }}
+              </td>
+              <td class="results-cell">
+                <span class="mobile-label">{{ 'workspace.automation.results' | transloco }}</span>
+                <strong>{{ item.recorded }} / {{ item.total }}</strong>
+                <small>
+                  {{
+                    'workspace.automation.matchedPercent'
+                      | transloco: { percent: matchedPercent(item) }
+                  }}
+                </small>
+              </td>
+              <td>
+                <span class="mobile-label">{{ 'workspace.automation.status' | transloco }}</span>
+                <app-status-badge
+                  [tone]="statusTone(item)"
+                  [label]="
+                    statusLabelKey(item)
+                      | transloco: { count: item.unmatched }
+                  "
+                />
+              </td>
+              <td class="date-cell">
+                <span class="mobile-label">{{ 'workspace.automation.imported' | transloco }}</span>
+                {{ item.completedAt | date: 'medium' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (hasNextPage()) {
+      <div class="load-more">
+        <button
+          appButton="secondary"
+          type="button"
+          [disabled]="fetchingNextPage()"
+          (click)="loadMore.emit()"
+        >
+          {{
+            (fetchingNextPage()
+              ? 'workspace.automation.loadingMore'
+              : 'workspace.automation.loadMore') | transloco
+          }}
+        </button>
+      </div>
+    }
+  }
+</section>
