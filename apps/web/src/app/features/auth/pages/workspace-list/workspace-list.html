@@ -53,4 +53,53 @@
       }
     </ul>
   }
+
+  @if (deletedWorkspaces.isPending()) {
+    <section class="recovery-loading" aria-live="polite">
+      {{ 'workspace.list.loadingDeleted' | transloco }}
+    </section>
+  } @else if (deletedWorkspaces.isError() || restoreWorkspace.isError()) {
+    <section class="state-panel error recovery-state" role="alert">
+      <p>{{ restoreErrorTranslationKey() | transloco }}</p>
+      @if (deletedWorkspaces.isError()) {
+        <button class="secondary-link" type="button" (click)="deletedWorkspaces.refetch()">
+          {{ 'workspace.list.retry' | transloco }}
+        </button>
+      }
+    </section>
+  } @else if (deletedWorkspaces.data()?.workspaces?.length) {
+    <section class="recovery-section" aria-labelledby="deleted-workspaces-title">
+      <header>
+        <h2 id="deleted-workspaces-title">{{ 'workspace.list.deletedTitle' | transloco }}</h2>
+        <p>{{ 'workspace.list.deletedDescription' | transloco }}</p>
+      </header>
+      <ul class="workspace-list">
+        @for (workspace of deletedWorkspaces.data()?.workspaces; track workspace.id) {
+          <li class="workspace-card deleted">
+            <div>
+              <h2>{{ workspace.name }}</h2>
+              <p>
+                {{
+                  'workspace.list.recoverableUntil'
+                    | transloco: { date: formatRecoveryUntil(workspace.recoverableUntil) }
+                }}
+              </p>
+            </div>
+            <button
+              class="secondary-link"
+              type="button"
+              [disabled]="restoreWorkspace.isPending()"
+              (click)="restoreWorkspace.mutate(workspace.id)"
+            >
+              {{
+                (restoreWorkspace.isPending()
+                  ? 'workspace.list.restoring'
+                  : 'workspace.list.restore') | transloco
+              }}
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
 </main>

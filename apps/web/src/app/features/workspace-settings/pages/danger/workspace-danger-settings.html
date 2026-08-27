@@ -1,0 +1,110 @@
+<section aria-labelledby="workspace-danger-title">
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">{{ 'workspaceSettings.danger.eyebrow' | transloco }}</p>
+      <h2 id="workspace-danger-title">{{ 'workspaceSettings.danger.title' | transloco }}</h2>
+      <p>{{ 'workspaceSettings.danger.description' | transloco }}</p>
+    </div>
+  </header>
+
+  @if (settings.isPending()) {
+    <div class="loading-state" [attr.aria-label]="'workspaceSettings.danger.loading' | transloco">
+      <app-loading-skeleton
+        preset="block"
+        [label]="'workspaceSettings.danger.loading' | transloco"
+      />
+    </div>
+  } @else if (settings.isError()) {
+    <app-page-state
+      [title]="'workspaceSettings.danger.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="settings.refetch()">
+        {{ 'workspaceSettings.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (settings.data()?.workspace; as workspace) {
+    @if (!canDelete()) {
+      <app-callout [title]="'workspaceSettings.danger.ownerOnlyTitle' | transloco">
+        <p>{{ 'workspaceSettings.danger.ownerOnlyDescription' | transloco }}</p>
+      </app-callout>
+    }
+
+    @if (deleteWorkspace.isError()) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'workspaceSettings.danger.deleteErrorTitle' | transloco"
+      >
+        <p>{{ errorTranslationKey() | transloco }}</p>
+      </app-callout>
+    }
+
+    <article class="danger-panel">
+      <header>
+        <h3>{{ 'workspaceSettings.danger.deleteTitle' | transloco }}</h3>
+        <app-status-badge
+          tone="danger"
+          [label]="'workspaceSettings.danger.ownerOnly' | transloco"
+        />
+      </header>
+
+      <div class="danger-body">
+        <p>
+          {{
+            'workspaceSettings.danger.deleteDescription'
+              | transloco: { name: workspace.name }
+          }}
+        </p>
+
+        @if (canDelete()) {
+          <form [formGroup]="form" (ngSubmit)="submit()">
+            <app-form-field
+              controlId="workspace-delete-confirmation"
+              [label]="
+                'workspaceSettings.danger.confirmationLabel'
+                  | transloco: { name: workspace.name }
+              "
+              [error]="
+                form.controls.confirmation.touched && !confirmationMatches()
+                  ? ('workspaceSettings.danger.confirmationInvalid'
+                    | transloco: { name: workspace.name })
+                  : undefined
+              "
+              [required]="true"
+            >
+              <input
+                appControl
+                id="workspace-delete-confirmation"
+                type="text"
+                formControlName="confirmation"
+                autocomplete="off"
+                [attr.aria-invalid]="
+                  form.controls.confirmation.touched && !confirmationMatches()
+                "
+                aria-describedby="workspace-delete-confirmation-description"
+              />
+            </app-form-field>
+
+            <button
+              appButton="danger"
+              type="submit"
+              [disabled]="deleteWorkspace.isPending() || !confirmationMatches()"
+            >
+              {{
+                (deleteWorkspace.isPending()
+                  ? 'workspaceSettings.danger.deleting'
+                  : 'workspaceSettings.danger.delete') | transloco
+              }}
+            </button>
+          </form>
+        }
+      </div>
+    </article>
+
+    <aside>
+      <strong>{{ 'workspaceSettings.danger.recoveryTitle' | transloco }}</strong>
+      <p>{{ 'workspaceSettings.danger.recoveryDescription' | transloco }}</p>
+    </aside>
+  }
+</section>

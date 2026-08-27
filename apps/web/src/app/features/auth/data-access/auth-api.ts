@@ -9,6 +9,7 @@ import {
   sessionResponseSchema,
   workspaceInvitationPreviewSchema,
   workspaceListResponseSchema,
+  workspaceSettingsResponseSchema,
   workspaceSlugAvailabilityResponseSchema,
   type AcceptWorkspaceInvitationResponse,
   type CreateWorkspaceRequest,
@@ -24,6 +25,7 @@ import {
   type ResetPasswordRequest,
   type SessionResponse,
   type WorkspaceListResponse,
+  type WorkspaceSettingsResponse,
   type WorkspaceInvitationPreview,
   type WorkspaceSlugAvailabilityResponse,
 } from '@caselog/schemas';
@@ -110,9 +112,23 @@ export class AuthApi {
     return sessionResponseSchema.parse(response);
   }
 
-  async listWorkspaces(): Promise<WorkspaceListResponse> {
-    const response = await lastValueFrom(this.http.get<unknown>('/api/v1/auth/workspaces'));
+  async listWorkspaces(status: 'active' | 'deleted' = 'active'): Promise<WorkspaceListResponse> {
+    const response = await lastValueFrom(
+      this.http.get<unknown>('/api/v1/auth/workspaces', {
+        params: status === 'active' ? {} : { status },
+      }),
+    );
     return workspaceListResponseSchema.parse(response);
+  }
+
+  async restoreWorkspace(workspaceId: string): Promise<WorkspaceSettingsResponse> {
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/auth/workspaces/${encodeURIComponent(workspaceId)}/restore`,
+        {},
+      ),
+    );
+    return workspaceSettingsResponseSchema.parse(response);
   }
 
   async workspaceSlugAvailability(slug: string): Promise<WorkspaceSlugAvailabilityResponse> {

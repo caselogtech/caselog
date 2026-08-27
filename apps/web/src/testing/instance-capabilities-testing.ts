@@ -14,6 +14,8 @@ export function instanceCapabilitiesTestingValue(overrides: Partial<InstanceCapa
   return {
     value: value.asReadonly(),
     loaded: computed(() => true),
+    deployment: computed(() => value().deployment),
+    instanceName: computed(() => value().instanceName),
     publicRegistrationEnabled: computed(() => value().registrationMode === 'public'),
     workspaceCreationEnabled: computed(() => value().workspaceCreationEnabled),
     managedTermsRequired: computed(() => value().deployment === 'managed'),

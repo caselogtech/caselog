@@ -1,0 +1,153 @@
+<section aria-labelledby="workspace-general-title">
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">{{ 'workspaceSettings.general.eyebrow' | transloco }}</p>
+      <h2 id="workspace-general-title">{{ 'workspaceSettings.general.title' | transloco }}</h2>
+      <p>{{ 'workspaceSettings.general.description' | transloco }}</p>
+    </div>
+  </header>
+
+  @if (settings.isPending()) {
+    <div class="loading-state" [attr.aria-label]="'workspaceSettings.general.loading' | transloco">
+      <app-loading-skeleton
+        preset="block"
+        [label]="'workspaceSettings.general.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspaceSettings.general.loading' | transloco"
+      />
+    </div>
+  } @else if (settings.isError()) {
+    <app-page-state
+      [title]="'workspaceSettings.general.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="settings.refetch()">
+        {{ 'workspaceSettings.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else {
+    @if (!canManage()) {
+      <app-callout [title]="'workspaceSettings.general.readOnlyTitle' | transloco">
+        <p>{{ 'workspaceSettings.general.readOnlyDescription' | transloco }}</p>
+      </app-callout>
+    }
+
+    @if (saved()) {
+      <app-callout
+        tone="success"
+        liveRole="status"
+        [title]="'workspaceSettings.general.savedTitle' | transloco"
+      >
+        <p>{{ 'workspaceSettings.general.savedDescription' | transloco }}</p>
+      </app-callout>
+    }
+
+    @if (updateSettings.isError()) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'workspaceSettings.general.saveErrorTitle' | transloco"
+      >
+        <p>{{ errorTranslationKey() | transloco }}</p>
+      </app-callout>
+    }
+
+    <div class="settings-grid">
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="field-grid">
+          <app-form-field
+            controlId="workspace-settings-name"
+            [label]="'workspaceSettings.general.name' | transloco"
+            [error]="
+              form.controls.name.touched && form.controls.name.invalid
+                ? ('workspaceSettings.general.nameInvalid' | transloco)
+                : undefined
+            "
+            [required]="true"
+          >
+            <input
+              appControl
+              id="workspace-settings-name"
+              type="text"
+              formControlName="name"
+              autocomplete="organization"
+              [readOnly]="!canManage()"
+              [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+              aria-describedby="workspace-settings-name-description"
+            />
+          </app-form-field>
+
+          <app-form-field
+            controlId="workspace-settings-slug"
+            [label]="'workspaceSettings.general.slug' | transloco"
+            [hint]="'workspaceSettings.general.slugHint' | transloco"
+            [error]="
+              form.controls.slug.touched && form.controls.slug.invalid
+                ? ('workspaceSettings.general.slugInvalid' | transloco)
+                : undefined
+            "
+            [required]="true"
+          >
+            <input
+              appControl
+              id="workspace-settings-slug"
+              class="mono"
+              type="text"
+              formControlName="slug"
+              autocomplete="off"
+              [readOnly]="!canManage()"
+              [attr.aria-invalid]="form.controls.slug.touched && form.controls.slug.invalid"
+              aria-describedby="workspace-settings-slug-description"
+            />
+          </app-form-field>
+
+          <app-form-field
+            controlId="workspace-settings-language"
+            [label]="'workspaceSettings.general.language' | transloco"
+            [hint]="'workspaceSettings.general.languageHint' | transloco"
+          >
+            <input
+              appControl
+              id="workspace-settings-language"
+              type="text"
+              [value]="'workspaceSettings.general.english' | transloco"
+              disabled
+              aria-describedby="workspace-settings-language-description"
+            />
+          </app-form-field>
+        </div>
+
+        @if (canManage()) {
+          <footer>
+            <button
+              appButton="secondary"
+              type="button"
+              [disabled]="updateSettings.isPending() || form.pristine"
+              (click)="discard()"
+            >
+              {{ 'workspaceSettings.general.discard' | transloco }}
+            </button>
+            <button
+              appButton="primary"
+              type="submit"
+              [disabled]="updateSettings.isPending() || form.invalid || form.pristine"
+            >
+              {{
+                (updateSettings.isPending()
+                  ? 'workspaceSettings.general.saving'
+                  : 'workspaceSettings.general.save') | transloco
+              }}
+            </button>
+          </footer>
+        }
+      </form>
+
+      <aside>
+        <strong>{{ 'workspaceSettings.general.slugChangeTitle' | transloco }}</strong>
+        <p>{{ 'workspaceSettings.general.slugChangeDescription' | transloco }}</p>
+      </aside>
+    </div>
+  }
+</section>

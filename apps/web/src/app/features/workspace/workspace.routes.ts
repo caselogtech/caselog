@@ -13,6 +13,13 @@ export const workspaceRoutes: Routes = [
       ),
     children: [
       {
+        path: 'settings',
+        loadChildren: () =>
+          import('../workspace-settings/public-api').then(
+            ({ workspaceSettingsRoutes }) => workspaceSettingsRoutes,
+          ),
+      },
+      {
         path: ':project/releases',
         loadChildren: () =>
           import('../releases/public-api').then(({ releasesRoutes }) => releasesRoutes),

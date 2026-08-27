@@ -68,6 +68,8 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.validation_failed',
   'errors.workspace_limit_reached',
   'errors.workspace_creation_disabled',
+  'errors.workspace_confirmation_mismatch',
+  'errors.workspace_recovery_window_expired',
   'errors.workspace_slug_taken',
 ]);
 

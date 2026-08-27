@@ -12,13 +12,19 @@
     "description": "Select a workspace or create a new one.",
     "create": "Create workspace",
     "loading": "Loading workspaces…",
+    "loadingDeleted": "Checking for recoverable workspaces…",
     "retry": "Try again",
     "emptyTitle": "Create your first workspace",
     "emptyDescription": "A workspace keeps your projects, test cases, runs, and team access together.",
     "emptyDisabledTitle": "No workspace access",
     "emptyDisabledDescription": "Workspace creation is disabled on this instance. Ask an existing workspace owner for an invitation.",
     "getStarted": "Get started",
-    "open": "Open workspace"
+    "open": "Open workspace",
+    "deletedTitle": "Recoverable workspaces",
+    "deletedDescription": "Only workspaces still inside their server-owned recovery window appear here.",
+    "recoverableUntil": "Recovery available until {{date}}",
+    "restore": "Restore workspace",
+    "restoring": "Restoring…"
   },
   "create": {
     "title": "Create a workspace",

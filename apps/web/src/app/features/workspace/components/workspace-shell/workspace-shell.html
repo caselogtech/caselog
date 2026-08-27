@@ -178,11 +178,26 @@
       >
         {{ 'app.navigation.projects' | transloco }}
       </a>
+      <a
+        href="/{{ workspaceSlug }}/settings/general"
+        [routerLink]="['/', workspaceSlug, 'settings', 'general']"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        (click)="closeNavigation(false)"
+      >
+        {{ 'app.navigation.workspaceSettings' | transloco }}
+      </a>
     </nav>
 
     <div class="instance-context">
-      <strong>{{ 'app.navigation.selfHosted' | transloco }}</strong>
-      <span>{{ 'app.navigation.localDeployment' | transloco }}</span>
+      <strong>{{ capabilities.instanceName() }}</strong>
+      <span>
+        {{
+          (capabilities.deployment() === 'managed'
+            ? 'app.navigation.managedDeployment'
+            : 'app.navigation.selfHostedDeployment') | transloco
+        }}
+      </span>
     </div>
   </aside>
 

@@ -3,7 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, withRouterConfig } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { BrowserSession } from '../../../../../core/auth/browser-session';
+import { InstanceCapabilities } from '../../../../../core/instance/instance-capabilities';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { instanceCapabilitiesTestingValue } from '../../../../../../testing/instance-capabilities-testing';
 import { WorkspaceShell } from '../../../components/workspace-shell/workspace-shell';
 
 @Component({ template: '' })
@@ -28,12 +30,14 @@ describe('WorkspaceShell', () => {
                 { path: ':project/release-policies', component: EmptyPage },
                 { path: ':project/evidence', component: EmptyPage },
                 { path: ':project/cases', component: EmptyPage },
+                { path: 'settings/general', component: EmptyPage },
                 { path: 'projects', component: EmptyPage },
               ],
             },
           ],
           withRouterConfig({ paramsInheritanceStrategy: 'always' }),
         ),
+        { provide: InstanceCapabilities, useValue: instanceCapabilitiesTestingValue() },
       ],
     }).compileComponents();
   });
@@ -69,6 +73,21 @@ describe('WorkspaceShell', () => {
     ).toBe('Test cases');
     expect(shell.querySelector('.context-switchers')?.textContent).toContain('Checkout');
     expect(shell.querySelector('.avatar')?.textContent?.trim()).toBe('DO');
+    expect(shell.querySelector('.workspace-navigation')?.textContent).toContain(
+      'Workspace settings',
+    );
+    expect(shell.querySelector('.instance-context')?.textContent).toContain('Test Caselog');
+  });
+
+  it('treats workspace settings as workspace context instead of a project slug', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/acme/settings/general');
+
+    const shell = harness.routeNativeElement as HTMLElement;
+    expect(shell.querySelector('.project-navigation')).toBeNull();
+    expect(
+      shell.querySelector('.workspace-navigation a[aria-current="page"]')?.textContent?.trim(),
+    ).toBe('Workspace settings');
   });
 
   it('opens and dismisses the responsive navigation with Escape', async () => {

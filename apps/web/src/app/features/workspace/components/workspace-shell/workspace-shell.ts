@@ -22,6 +22,7 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { filter, map, startWith } from 'rxjs';
 import { BrowserSession } from '../../../../core/auth/browser-session';
+import { InstanceCapabilities } from '../../../../core/instance/instance-capabilities';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { BrandMark } from '../../../../shared/ui/public-api';
 
@@ -37,6 +38,7 @@ export class WorkspaceShell {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly browserSession = inject(BrowserSession);
+  readonly capabilities = inject(InstanceCapabilities);
   readonly workspaceSession = inject(WorkspaceSession);
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -54,7 +56,9 @@ export class WorkspaceShell {
   readonly projectSlug = computed(() => {
     const segments = this.currentUrl().split('?')[0]?.split('/').filter(Boolean) ?? [];
     const project = segments[1];
-    return project && project !== 'projects' ? decodeURIComponent(project) : '';
+    return project && !['projects', 'settings'].includes(project)
+      ? decodeURIComponent(project)
+      : '';
   });
   readonly workspaceName = computed(
     () => this.workspaceSession.organization()?.name ?? this.workspaceSlug,

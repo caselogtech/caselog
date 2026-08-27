@@ -13,6 +13,8 @@ export class InstanceCapabilities {
 
   readonly value = this.state.asReadonly();
   readonly loaded = computed(() => this.state() !== null);
+  readonly deployment = computed(() => this.state()?.deployment ?? 'self_hosted');
+  readonly instanceName = computed(() => this.state()?.instanceName ?? 'Caselog');
   readonly publicRegistrationEnabled = computed(() => this.state()?.registrationMode === 'public');
   readonly workspaceCreationEnabled = computed(
     () => this.state()?.workspaceCreationEnabled === true,

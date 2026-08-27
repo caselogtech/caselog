@@ -1,0 +1,112 @@
+.section-header {
+  margin-bottom: var(--space-4);
+}
+
+.eyebrow {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--space-1);
+  text-transform: uppercase;
+}
+
+h2 {
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+.section-header p:last-child {
+  color: var(--text-2);
+  margin: var(--space-1) 0 0;
+}
+
+app-callout {
+  display: block;
+  margin-bottom: var(--space-4);
+  max-width: 880px;
+}
+
+app-callout p {
+  margin: 0;
+}
+
+.danger-panel {
+  background: var(--surface-2);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 38%, transparent);
+  border-radius: var(--radius);
+  max-width: 880px;
+  overflow: hidden;
+}
+
+.danger-panel > header {
+  align-items: center;
+  background: var(--color-danger-surface);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-danger) 38%, transparent);
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+}
+
+h3 {
+  color: var(--color-danger-text);
+  font-size: var(--font-size-md);
+  margin: 0;
+}
+
+.danger-body {
+  padding: var(--space-5);
+}
+
+.danger-body > p {
+  color: var(--text-2);
+  margin: 0 0 var(--space-4);
+  max-width: 760px;
+}
+
+form {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+  max-width: 440px;
+}
+
+app-form-field {
+  width: 100%;
+}
+
+aside {
+  background: var(--color-warning-surface);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
+  border-left: 4px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-4);
+  max-width: 880px;
+  padding: var(--space-4);
+}
+
+aside strong {
+  color: var(--color-warning-text);
+  font-size: var(--font-size-sm);
+}
+
+aside p {
+  color: var(--text-2);
+  font-size: var(--font-size-sm);
+  margin: var(--space-1) 0 0;
+}
+
+.loading-state {
+  max-width: 880px;
+}
+
+@media (max-width: 600px) {
+  .danger-body {
+    padding: var(--space-4);
+  }
+
+  form button {
+    width: 100%;
+  }
+}
