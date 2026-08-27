@@ -100,7 +100,7 @@ export class ReadinessDecisionQueryRepository {
       return {
         kind: 'found',
         value: {
-          items: hydrated.map(toReadinessDecision),
+          items: hydrated.map((decision) => toReadinessDecision(decision)),
           nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null,
         },
       };

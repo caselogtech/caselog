@@ -6,6 +6,9 @@ import type {
 } from '@caselog/schemas';
 import { EvidenceValueType, type Prisma } from '../../../generated/prisma/client';
 import type { ReadinessGate } from '../../domain/models/readiness-policy';
+import { effectiveReadinessDisposition } from '../../domain/policies/readiness-waiver.policy';
+import type { ReadinessWaiverRecord } from './readiness-waiver.persistence';
+import { toReadinessWaiver } from './readiness-waiver.persistence';
 
 export const READINESS_GATE_FOR_EVALUATION_SELECTION = {
   id: true,
@@ -74,6 +77,7 @@ export type ReadinessEvaluationContext = {
 export type HydratedReadinessDecisionRecord = ReadinessDecisionScalarRecord & {
   policyVersion: { id: string; version: number };
   gateEvaluations: Array<GateEvaluationScalarRecord & { gateKey: string }>;
+  waivers: ReadinessWaiverRecord[];
 };
 
 export type CurrentReadinessRecord = {
@@ -128,7 +132,11 @@ export function toCandidateReadinessResponse(
   };
 }
 
-export function toReadinessDecision(record: HydratedReadinessDecisionRecord): ReadinessDecision {
+export function toReadinessDecision(
+  record: HydratedReadinessDecisionRecord,
+  at = new Date(),
+): ReadinessDecision {
+  const waivers = record.waivers.map((waiver) => toReadinessWaiver(waiver, at));
   return {
     id: record.id,
     candidateId: record.candidateId,
@@ -138,6 +146,17 @@ export function toReadinessDecision(record: HydratedReadinessDecisionRecord): Re
     evaluatorVersion: record.evaluatorVersion,
     trigger: record.trigger.toLowerCase() as ReadinessDecision['trigger'],
     status: record.status.toLowerCase() as ReadinessDecision['status'],
+    effectiveDisposition: effectiveReadinessDisposition({
+      computedStatus: record.status,
+      gates: record.gateEvaluations.map((gate) => ({ id: gate.id, result: gate.result })),
+      waivers: record.waivers.map((waiver) => ({
+        scope: waiver.scope,
+        gateEvaluationId: waiver.gateEvaluationId,
+        expiresAt: waiver.expiresAt,
+        revokedAt: waiver.revocation?.revokedAt ?? null,
+      })),
+      at,
+    }),
     evaluatedAt: record.evaluatedAt.toISOString(),
     gates: record.gateEvaluations.map((gate) => ({
       id: gate.id,
@@ -163,6 +182,7 @@ export function toReadinessDecision(record: HydratedReadinessDecisionRecord): Re
       selectedObservationId: gate.selectedObservationId,
       explanationCode: gate.explanationCode,
     })),
+    waivers,
   };
 }
 

@@ -21,6 +21,14 @@ export const gateEvaluationDiagnosticSchema = z.enum([
   'untrusted',
 ]);
 export const readinessDecisionStatusSchema = z.enum(['ready', 'at_risk', 'blocked', 'unknown']);
+export const readinessEffectiveDispositionSchema = z.enum([
+  'ready',
+  'at_risk',
+  'blocked',
+  'unknown',
+  'approved_with_waiver',
+]);
+export const readinessWaiverStatusSchema = z.enum(['active', 'expired', 'revoked']);
 export const readinessEvaluationTriggerSchema = z.enum([
   'manual',
   'evidence_changed',
@@ -111,6 +119,7 @@ export const readinessPolicyWriteHeadersSchema = z.object({
     .max(200)
     .regex(/^[A-Za-z0-9._:-]+$/),
 });
+export const readinessWaiverWriteHeadersSchema = readinessPolicyWriteHeadersSchema;
 export const candidateReadinessParamsSchema = z.object({
   projectSlug: projectSlugSchema,
   candidateId: z.uuid(),
@@ -119,11 +128,33 @@ export const readinessDecisionParamsSchema = z.object({
   projectSlug: projectSlugSchema,
   decisionId: z.uuid(),
 });
+export const readinessWaiverParamsSchema = readinessDecisionParamsSchema.extend({
+  waiverId: z.uuid(),
+});
 export const readinessDecisionListQuerySchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(25),
 });
 export const assignCandidatePolicyRequestSchema = z.object({ policyId: z.uuid() }).strict();
+export const readinessWaiverScopeSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('decision') }).strict(),
+  z.object({ type: z.literal('gate_evaluation'), gateEvaluationId: z.uuid() }).strict(),
+]);
+export const createReadinessWaiverRequestSchema = z
+  .object({
+    scope: readinessWaiverScopeSchema,
+    reason: z.string().trim().min(1).max(2_000),
+    expiresAt: z.iso.datetime().nullable().default(null),
+    externalApprovalReference: z.string().trim().min(1).max(500).nullable().default(null),
+  })
+  .strict();
+export const revokeReadinessWaiverRequestSchema = z
+  .object({ reason: z.string().trim().min(1).max(1_000) })
+  .strict();
+export const readinessWaiverListQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+});
 
 export const readinessGateSchema = readinessGateInputSchema.safeExtend({
   id: z.uuid(),
@@ -184,6 +215,24 @@ export const gateEvaluationSchema = z.object({
   selectedObservationId: z.uuid().nullable(),
   explanationCode: z.string(),
 });
+export const readinessWaiverRevocationSchema = z.object({
+  id: z.uuid(),
+  reason: z.string(),
+  revokedById: z.uuid(),
+  revokedAt: z.iso.datetime(),
+});
+export const readinessWaiverSchema = z.object({
+  id: z.uuid(),
+  decisionId: z.uuid(),
+  scope: readinessWaiverScopeSchema,
+  reason: z.string(),
+  externalApprovalReference: z.string().nullable(),
+  expiresAt: z.iso.datetime().nullable(),
+  status: readinessWaiverStatusSchema,
+  createdById: z.uuid(),
+  createdAt: z.iso.datetime(),
+  revocation: readinessWaiverRevocationSchema.nullable(),
+});
 export const readinessDecisionSchema = z.object({
   id: z.uuid(),
   candidateId: z.uuid(),
@@ -193,8 +242,10 @@ export const readinessDecisionSchema = z.object({
   evaluatorVersion: z.string(),
   trigger: readinessEvaluationTriggerSchema,
   status: readinessDecisionStatusSchema,
+  effectiveDisposition: readinessEffectiveDispositionSchema,
   evaluatedAt: z.iso.datetime(),
   gates: z.array(gateEvaluationSchema),
+  waivers: z.array(readinessWaiverSchema),
 });
 export const candidateReadinessResponseSchema = z.object({
   candidateId: z.uuid(),
@@ -209,6 +260,14 @@ export const candidateReadinessResponseSchema = z.object({
 export const readinessDecisionResponseSchema = z.object({ decision: readinessDecisionSchema });
 export const readinessDecisionListResponseSchema = z.object({
   items: z.array(readinessDecisionSchema),
+  nextCursor: z.uuid().nullable(),
+});
+export const readinessWaiverResponseSchema = z.object({
+  waiver: readinessWaiverSchema,
+  effectiveDisposition: readinessEffectiveDispositionSchema,
+});
+export const readinessWaiverListResponseSchema = z.object({
+  items: z.array(readinessWaiverSchema),
   nextCursor: z.uuid().nullable(),
 });
 
@@ -230,3 +289,11 @@ export type CandidateReadinessResponse = z.infer<typeof candidateReadinessRespon
 export type ReadinessDecisionListQuery = z.infer<typeof readinessDecisionListQuerySchema>;
 export type ReadinessDecisionResponse = z.infer<typeof readinessDecisionResponseSchema>;
 export type ReadinessDecisionListResponse = z.infer<typeof readinessDecisionListResponseSchema>;
+export type ReadinessEffectiveDisposition = z.infer<typeof readinessEffectiveDispositionSchema>;
+export type ReadinessWaiverScope = z.infer<typeof readinessWaiverScopeSchema>;
+export type CreateReadinessWaiverRequest = z.infer<typeof createReadinessWaiverRequestSchema>;
+export type RevokeReadinessWaiverRequest = z.infer<typeof revokeReadinessWaiverRequestSchema>;
+export type ReadinessWaiver = z.infer<typeof readinessWaiverSchema>;
+export type ReadinessWaiverResponse = z.infer<typeof readinessWaiverResponseSchema>;
+export type ReadinessWaiverListQuery = z.infer<typeof readinessWaiverListQuerySchema>;
+export type ReadinessWaiverListResponse = z.infer<typeof readinessWaiverListResponseSchema>;

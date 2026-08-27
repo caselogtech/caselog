@@ -7,6 +7,7 @@ import {
   READINESS_DECISION_SCALAR_SELECTION,
   type ReadinessDecisionScalarRecord,
 } from './readiness-decision.persistence';
+import { READINESS_WAIVER_SELECTION } from './readiness-waiver.persistence';
 
 export async function loadReadinessAssignment(
   transaction: TenantTransaction,
@@ -61,6 +62,11 @@ export async function hydrateReadinessDecisions(
     where: { id: { in: [...new Set(evaluations.map(({ gateId }) => gateId))] } },
     select: { id: true, key: true },
   });
+  const waivers = await transaction.readinessWaiver.findMany({
+    where: { decisionId: { in: decisions.map(({ id }) => id) } },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: READINESS_WAIVER_SELECTION,
+  });
   const versionById = new Map(versions.map((version) => [version.id, version]));
   const gateKeyById = new Map(gates.map((gate) => [gate.id, gate.key]));
   return decisions.map((decision) => {
@@ -76,6 +82,7 @@ export async function hydrateReadinessDecisions(
           if (!gateKey) throw new Error(`Readiness gate ${evaluation.gateId} disappeared`);
           return { ...evaluation, gateKey };
         }),
+      waivers: waivers.filter(({ decisionId }) => decisionId === decision.id),
     };
   });
 }

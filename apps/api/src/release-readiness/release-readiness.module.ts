@@ -10,6 +10,7 @@ import { ReadinessEvaluationRequestService } from './application/services/readin
 import { ReadinessEventConsumerService } from './application/services/readiness-event-consumer.service';
 import { ReadinessPolicyService } from './application/services/readiness-policy.service';
 import { ReadinessReconciliationService } from './application/services/readiness-reconciliation.service';
+import { ReadinessWaiverService } from './application/services/readiness-waiver.service';
 import { CandidatePolicyAssignmentRepository } from './infrastructure/repositories/candidate-policy-assignment.repository';
 import { ReadinessDecisionRepository } from './infrastructure/repositories/readiness-decision.repository';
 import { ReadinessDecisionQueryRepository } from './infrastructure/repositories/readiness-decision-query.repository';
@@ -17,12 +18,15 @@ import { ReadinessEvaluationRequestRepository } from './infrastructure/repositor
 import { ReadinessEventRepository } from './infrastructure/repositories/readiness-event.repository';
 import { ReadinessPolicyRepository } from './infrastructure/repositories/readiness-policy.repository';
 import { ReadinessReconciliationRepository } from './infrastructure/repositories/readiness-reconciliation.repository';
+import { ReadinessWaiverQueryRepository } from './infrastructure/repositories/readiness-waiver-query.repository';
+import { ReadinessWaiverRepository } from './infrastructure/repositories/readiness-waiver.repository';
 import { CandidatePolicyAssignmentController } from './presentation/controllers/candidate-policy-assignment.controller';
 import {
   ReadinessDecisionController,
   ReadinessDecisionDetailController,
 } from './presentation/controllers/readiness-decision.controller';
 import { ReadinessPolicyController } from './presentation/controllers/readiness-policy.controller';
+import { ReadinessWaiverController } from './presentation/controllers/readiness-waiver.controller';
 import { ReadinessEvaluationWorker } from './presentation/workers/readiness-evaluation.worker';
 
 @Module({
@@ -32,6 +36,7 @@ import { ReadinessEvaluationWorker } from './presentation/workers/readiness-eval
     CandidatePolicyAssignmentController,
     ReadinessDecisionController,
     ReadinessDecisionDetailController,
+    ReadinessWaiverController,
   ],
   providers: [
     ReadinessPolicyRepository,
@@ -49,6 +54,9 @@ import { ReadinessEvaluationWorker } from './presentation/workers/readiness-eval
     ReadinessEventConsumerService,
     ReadinessReconciliationRepository,
     ReadinessReconciliationService,
+    ReadinessWaiverRepository,
+    ReadinessWaiverQueryRepository,
+    ReadinessWaiverService,
     ReadinessEvaluationWorker,
   ],
 })

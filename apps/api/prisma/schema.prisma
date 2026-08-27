@@ -163,6 +163,13 @@ enum ReadinessProjectionState {
   @@map("readiness_projection_state")
 }
 
+enum ReadinessWaiverScope {
+  DECISION        @map("decision")
+  GATE_EVALUATION @map("gate_evaluation")
+
+  @@map("readiness_waiver_scope")
+}
+
 enum CustomFieldType {
   TEXT        @map("text")
   SELECT      @map("select")
@@ -286,6 +293,8 @@ model Organization {
   readinessDecisions          ReadinessDecision[]
   gateEvaluations             GateEvaluation[]
   currentReadinessDecisions   CurrentReadinessDecision[]
+  readinessWaivers            ReadinessWaiver[]
+  readinessWaiverRevocations  ReadinessWaiverRevocation[]
 
   @@index([deletedAt, purgeStartedAt, id], map: "idx_organizations_workspace_purge")
   @@map("organizations")
@@ -351,6 +360,8 @@ model User {
   publishedPolicyVersions  ReleasePolicyVersion[]      @relation("ReleasePolicyVersionPublisher")
   policyAssignments        CandidatePolicyAssignment[] @relation("CandidatePolicyAssigner")
   readinessDecisions       ReadinessDecision[]         @relation("ReadinessDecisionEvaluator")
+  createdReadinessWaivers  ReadinessWaiver[]           @relation("ReadinessWaiverCreator")
+  revokedReadinessWaivers  ReadinessWaiverRevocation[] @relation("ReadinessWaiverRevoker")
 
   @@map("users")
 }
@@ -621,6 +632,8 @@ model Project {
   readinessDecisions          ReadinessDecision[]
   gateEvaluations             GateEvaluation[]
   currentReadinessDecisions   CurrentReadinessDecision[]
+  readinessWaivers            ReadinessWaiver[]
+  readinessWaiverRevocations  ReadinessWaiverRevocation[]
 
   @@id([organizationId, id], map: "pk_projects")
   @@unique([organizationId, key], map: "uq_projects_organization_id_key")
@@ -856,19 +869,21 @@ model ReleaseCandidate {
   createdById     String?  @map("created_by_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization             Organization                      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project                  Project                           @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
-  release                  Release                           @relation(fields: [organizationId, projectId, releaseId], references: [organizationId, projectId, id], onDelete: Restrict)
-  createdBy                User?                             @relation("ReleaseCandidateCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  testRuns                 CandidateTestRun[]
-  evidenceObservations     EvidenceObservation[]
-  evidenceRevision         CandidateEvidenceRevision?
-  currentEvidence          CurrentEvidenceObservation[]
-  policyAssignments        CandidatePolicyAssignment[]
-  currentPolicyAssignment  CurrentCandidatePolicyAssignment?
-  readinessDecisions       ReadinessDecision[]
-  gateEvaluations          GateEvaluation[]
-  currentReadinessDecision CurrentReadinessDecision?
+  organization               Organization                      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project                    Project                           @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  release                    Release                           @relation(fields: [organizationId, projectId, releaseId], references: [organizationId, projectId, id], onDelete: Restrict)
+  createdBy                  User?                             @relation("ReleaseCandidateCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  testRuns                   CandidateTestRun[]
+  evidenceObservations       EvidenceObservation[]
+  evidenceRevision           CandidateEvidenceRevision?
+  currentEvidence            CurrentEvidenceObservation[]
+  policyAssignments          CandidatePolicyAssignment[]
+  currentPolicyAssignment    CurrentCandidatePolicyAssignment?
+  readinessDecisions         ReadinessDecision[]
+  gateEvaluations            GateEvaluation[]
+  currentReadinessDecision   CurrentReadinessDecision?
+  readinessWaivers           ReadinessWaiver[]
+  readinessWaiverRevocations ReadinessWaiverRevocation[]
 
   @@id([organizationId, id], map: "pk_release_candidates")
   @@unique([organizationId, projectId, id], map: "uq_release_candidates_organization_project_id")
@@ -1208,14 +1223,16 @@ model ReadinessDecision {
   evaluatedAt      DateTime                   @map("evaluated_at") @db.Timestamptz(3)
   createdAt        DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization    Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "readiness_decisions_organization_id_fkey")
-  project         Project                   @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict, map: "readiness_decisions_project_fkey")
-  candidate       ReleaseCandidate          @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict, map: "readiness_decisions_candidate_fkey")
-  assignment      CandidatePolicyAssignment @relation(fields: [organizationId, projectId, candidateId, assignmentId], references: [organizationId, projectId, candidateId, id], onDelete: Restrict, map: "readiness_decisions_assignment_fkey")
-  policyVersion   ReleasePolicyVersion      @relation(fields: [organizationId, projectId, policyVersionId], references: [organizationId, projectId, id], onDelete: Restrict, map: "readiness_decisions_policy_version_fkey")
-  evaluatedBy     User?                     @relation("ReadinessDecisionEvaluator", fields: [evaluatedById], references: [id], onDelete: SetNull, map: "readiness_decisions_evaluated_by_id_fkey")
-  gateEvaluations GateEvaluation[]
-  currentFor      CurrentReadinessDecision?
+  organization      Organization                @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "readiness_decisions_organization_id_fkey")
+  project           Project                     @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict, map: "readiness_decisions_project_fkey")
+  candidate         ReleaseCandidate            @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict, map: "readiness_decisions_candidate_fkey")
+  assignment        CandidatePolicyAssignment   @relation(fields: [organizationId, projectId, candidateId, assignmentId], references: [organizationId, projectId, candidateId, id], onDelete: Restrict, map: "readiness_decisions_assignment_fkey")
+  policyVersion     ReleasePolicyVersion        @relation(fields: [organizationId, projectId, policyVersionId], references: [organizationId, projectId, id], onDelete: Restrict, map: "readiness_decisions_policy_version_fkey")
+  evaluatedBy       User?                       @relation("ReadinessDecisionEvaluator", fields: [evaluatedById], references: [id], onDelete: SetNull, map: "readiness_decisions_evaluated_by_id_fkey")
+  gateEvaluations   GateEvaluation[]
+  currentFor        CurrentReadinessDecision?
+  waivers           ReadinessWaiver[]
+  waiverRevocations ReadinessWaiverRevocation[]
 
   @@id([organizationId, id], map: "pk_readiness_decisions")
   @@unique([organizationId, projectId, candidateId, id], map: "uq_readiness_decisions_org_project_candidate_id")
@@ -1257,11 +1274,67 @@ model GateEvaluation {
   policyVersion       ReleasePolicyVersion @relation(fields: [organizationId, projectId, policyVersionId], references: [organizationId, projectId, id], onDelete: Restrict, map: "gate_evaluations_policy_version_fkey")
   gate                ReadinessGate        @relation(fields: [organizationId, gateId], references: [organizationId, id], onDelete: Restrict, map: "gate_evaluations_gate_fkey")
   selectedObservation EvidenceObservation? @relation(fields: [organizationId, candidateId, selectedObservationId], references: [organizationId, candidateId, id], onDelete: Restrict, map: "gate_evaluations_selected_observation_fkey")
+  waivers             ReadinessWaiver[]
 
   @@id([organizationId, id], map: "pk_gate_evaluations")
   @@unique([organizationId, decisionId, gateId], map: "uq_gate_evaluations_decision_gate")
+  @@unique([organizationId, decisionId, id], map: "uq_gate_evaluations_org_decision_id")
   @@index([organizationId, projectId, candidateId, decisionId, position], map: "idx_gate_evaluations_org_candidate_decision_position")
   @@map("gate_evaluations")
+}
+
+model ReadinessWaiver {
+  organizationId            String               @map("organization_id") @db.Uuid
+  id                        String               @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId                 String               @map("project_id") @db.Uuid
+  candidateId               String               @map("candidate_id") @db.Uuid
+  decisionId                String               @map("decision_id") @db.Uuid
+  scope                     ReadinessWaiverScope
+  gateEvaluationId          String?              @map("gate_evaluation_id") @db.Uuid
+  reason                    String               @db.VarChar(2000)
+  externalApprovalReference String?              @map("external_approval_reference") @db.VarChar(500)
+  expiresAt                 DateTime?            @map("expires_at") @db.Timestamptz(3)
+  createdById               String               @map("created_by_id") @db.Uuid
+  createdAt                 DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization   Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "readiness_waivers_organization_id_fkey")
+  project        Project                    @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict, map: "readiness_waivers_project_fkey")
+  candidate      ReleaseCandidate           @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict, map: "readiness_waivers_candidate_fkey")
+  decision       ReadinessDecision          @relation(fields: [organizationId, projectId, candidateId, decisionId], references: [organizationId, projectId, candidateId, id], onDelete: Cascade, map: "readiness_waivers_decision_fkey")
+  gateEvaluation GateEvaluation?            @relation(fields: [organizationId, decisionId, gateEvaluationId], references: [organizationId, decisionId, id], onDelete: Cascade, map: "readiness_waivers_gate_evaluation_fkey")
+  createdBy      User                       @relation("ReadinessWaiverCreator", fields: [createdById], references: [id], onDelete: Restrict, map: "readiness_waivers_created_by_id_fkey")
+  revocation     ReadinessWaiverRevocation?
+
+  @@id([organizationId, id], map: "pk_readiness_waivers")
+  @@unique([organizationId, projectId, candidateId, decisionId, id], map: "uq_readiness_waivers_org_decision_id")
+  @@index([organizationId, projectId, decisionId, createdAt, id], map: "idx_readiness_waivers_org_project_decision_time")
+  @@index([organizationId, decisionId, scope, gateEvaluationId, expiresAt], map: "idx_readiness_waivers_org_decision_active")
+  @@map("readiness_waivers")
+}
+
+model ReadinessWaiverRevocation {
+  organizationId String   @map("organization_id") @db.Uuid
+  id             String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String   @map("project_id") @db.Uuid
+  candidateId    String   @map("candidate_id") @db.Uuid
+  decisionId     String   @map("decision_id") @db.Uuid
+  waiverId       String   @map("waiver_id") @db.Uuid
+  reason         String   @db.VarChar(1000)
+  revokedById    String   @map("revoked_by_id") @db.Uuid
+  revokedAt      DateTime @default(now()) @map("revoked_at") @db.Timestamptz(3)
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "readiness_waiver_revocations_organization_id_fkey")
+  project      Project           @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict, map: "readiness_waiver_revocations_project_fkey")
+  candidate    ReleaseCandidate  @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict, map: "readiness_waiver_revocations_candidate_fkey")
+  decision     ReadinessDecision @relation(fields: [organizationId, projectId, candidateId, decisionId], references: [organizationId, projectId, candidateId, id], onDelete: Cascade, map: "readiness_waiver_revocations_decision_fkey")
+  waiver       ReadinessWaiver   @relation(fields: [organizationId, projectId, candidateId, decisionId, waiverId], references: [organizationId, projectId, candidateId, decisionId, id], onDelete: Cascade, map: "readiness_waiver_revocations_waiver_fkey")
+  revokedBy    User              @relation("ReadinessWaiverRevoker", fields: [revokedById], references: [id], onDelete: Restrict, map: "readiness_waiver_revocations_revoked_by_id_fkey")
+
+  @@id([organizationId, id], map: "pk_readiness_waiver_revocations")
+  @@unique([organizationId, waiverId], map: "uq_readiness_waiver_revocations_waiver")
+  @@unique([organizationId, projectId, candidateId, decisionId, waiverId], map: "uq_readiness_waiver_revocations_org_decision_waiver")
+  @@index([organizationId, projectId, decisionId, revokedAt, id], map: "idx_readiness_waiver_revocations_org_decision_time")
+  @@map("readiness_waiver_revocations")
 }
 
 model CurrentReadinessDecision {

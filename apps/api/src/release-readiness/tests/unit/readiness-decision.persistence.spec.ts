@@ -32,6 +32,7 @@ describe('current readiness projection mapping', () => {
           evaluatedAt: new Date('2026-08-27T12:00:00.000Z'),
           policyVersion: { id: '019c2f66-a1f4-7000-8000-000000000004', version: 1 },
           gateEvaluations: [],
+          waivers: [],
         },
       },
       4,

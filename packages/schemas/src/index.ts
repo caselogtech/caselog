@@ -248,9 +248,17 @@ export type {
   ReadinessDecisionListQuery,
   ReadinessDecisionListResponse,
   ReadinessDecisionResponse,
+  ReadinessEffectiveDisposition,
   ReadinessGateInput,
   ReadinessPolicy,
   ReadinessPolicyResponse,
+  CreateReadinessWaiverRequest,
+  RevokeReadinessWaiverRequest,
+  ReadinessWaiver,
+  ReadinessWaiverListQuery,
+  ReadinessWaiverListResponse,
+  ReadinessWaiverResponse,
+  ReadinessWaiverScope,
 } from './readiness.js';
 export {
   candidateTestRunListResponseSchema,

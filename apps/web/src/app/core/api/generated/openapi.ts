@@ -1524,6 +1524,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/readiness-decisions/{decisionId}/waivers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReadinessWaiverController_list"];
+        put?: never;
+        post: operations["ReadinessWaiverController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/readiness-decisions/{decisionId}/waivers/{waiverId}/revocation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReadinessWaiverController_revoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3828,6 +3860,8 @@ export interface components {
                 trigger: "manual" | "evidence_changed" | "policy_assigned" | "reconciliation";
                 /** @enum {string} */
                 status: "ready" | "at_risk" | "blocked" | "unknown";
+                /** @enum {string} */
+                effectiveDisposition: "ready" | "at_risk" | "blocked" | "unknown" | "approved_with_waiver";
                 /** Format: date-time */
                 evaluatedAt: string;
                 gates: {
@@ -3871,6 +3905,39 @@ export interface components {
                     selectedObservationId: string | null;
                     explanationCode: string;
                 }[];
+                waivers: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    decisionId: string;
+                    scope: {
+                        /** @constant */
+                        type: "decision";
+                    } | {
+                        /** @constant */
+                        type: "gate_evaluation";
+                        /** Format: uuid */
+                        gateEvaluationId: string;
+                    };
+                    reason: string;
+                    externalApprovalReference: string | null;
+                    expiresAt: string | null;
+                    /** @enum {string} */
+                    status: "active" | "expired" | "revoked";
+                    /** Format: uuid */
+                    createdById: string;
+                    /** Format: date-time */
+                    createdAt: string;
+                    revocation: {
+                        /** Format: uuid */
+                        id: string;
+                        reason: string;
+                        /** Format: uuid */
+                        revokedById: string;
+                        /** Format: date-time */
+                        revokedAt: string;
+                    } | null;
+                }[];
             } | null;
         };
         ReadinessDecisionListResponseDto: {
@@ -3892,6 +3959,8 @@ export interface components {
                 trigger: "manual" | "evidence_changed" | "policy_assigned" | "reconciliation";
                 /** @enum {string} */
                 status: "ready" | "at_risk" | "blocked" | "unknown";
+                /** @enum {string} */
+                effectiveDisposition: "ready" | "at_risk" | "blocked" | "unknown" | "approved_with_waiver";
                 /** Format: date-time */
                 evaluatedAt: string;
                 gates: {
@@ -3934,6 +4003,39 @@ export interface components {
                     }) | null;
                     selectedObservationId: string | null;
                     explanationCode: string;
+                }[];
+                waivers: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    decisionId: string;
+                    scope: {
+                        /** @constant */
+                        type: "decision";
+                    } | {
+                        /** @constant */
+                        type: "gate_evaluation";
+                        /** Format: uuid */
+                        gateEvaluationId: string;
+                    };
+                    reason: string;
+                    externalApprovalReference: string | null;
+                    expiresAt: string | null;
+                    /** @enum {string} */
+                    status: "active" | "expired" | "revoked";
+                    /** Format: uuid */
+                    createdById: string;
+                    /** Format: date-time */
+                    createdAt: string;
+                    revocation: {
+                        /** Format: uuid */
+                        id: string;
+                        reason: string;
+                        /** Format: uuid */
+                        revokedById: string;
+                        /** Format: date-time */
+                        revokedAt: string;
+                    } | null;
                 }[];
             }[];
             nextCursor: string | null;
@@ -3957,6 +4059,8 @@ export interface components {
                 trigger: "manual" | "evidence_changed" | "policy_assigned" | "reconciliation";
                 /** @enum {string} */
                 status: "ready" | "at_risk" | "blocked" | "unknown";
+                /** @enum {string} */
+                effectiveDisposition: "ready" | "at_risk" | "blocked" | "unknown" | "approved_with_waiver";
                 /** Format: date-time */
                 evaluatedAt: string;
                 gates: {
@@ -4000,7 +4104,132 @@ export interface components {
                     selectedObservationId: string | null;
                     explanationCode: string;
                 }[];
+                waivers: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    decisionId: string;
+                    scope: {
+                        /** @constant */
+                        type: "decision";
+                    } | {
+                        /** @constant */
+                        type: "gate_evaluation";
+                        /** Format: uuid */
+                        gateEvaluationId: string;
+                    };
+                    reason: string;
+                    externalApprovalReference: string | null;
+                    expiresAt: string | null;
+                    /** @enum {string} */
+                    status: "active" | "expired" | "revoked";
+                    /** Format: uuid */
+                    createdById: string;
+                    /** Format: date-time */
+                    createdAt: string;
+                    revocation: {
+                        /** Format: uuid */
+                        id: string;
+                        reason: string;
+                        /** Format: uuid */
+                        revokedById: string;
+                        /** Format: date-time */
+                        revokedAt: string;
+                    } | null;
+                }[];
             };
+        };
+        CreateReadinessWaiverRequestDto: {
+            scope: {
+                /** @constant */
+                type: "decision";
+            } | {
+                /** @constant */
+                type: "gate_evaluation";
+                /** Format: uuid */
+                gateEvaluationId: string;
+            };
+            reason: string;
+            /** @default null */
+            expiresAt: string | null;
+            /** @default null */
+            externalApprovalReference: string | null;
+        };
+        ReadinessWaiverResponseDto: {
+            waiver: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                decisionId: string;
+                scope: {
+                    /** @constant */
+                    type: "decision";
+                } | {
+                    /** @constant */
+                    type: "gate_evaluation";
+                    /** Format: uuid */
+                    gateEvaluationId: string;
+                };
+                reason: string;
+                externalApprovalReference: string | null;
+                expiresAt: string | null;
+                /** @enum {string} */
+                status: "active" | "expired" | "revoked";
+                /** Format: uuid */
+                createdById: string;
+                /** Format: date-time */
+                createdAt: string;
+                revocation: {
+                    /** Format: uuid */
+                    id: string;
+                    reason: string;
+                    /** Format: uuid */
+                    revokedById: string;
+                    /** Format: date-time */
+                    revokedAt: string;
+                } | null;
+            };
+            /** @enum {string} */
+            effectiveDisposition: "ready" | "at_risk" | "blocked" | "unknown" | "approved_with_waiver";
+        };
+        ReadinessWaiverListResponseDto: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                decisionId: string;
+                scope: {
+                    /** @constant */
+                    type: "decision";
+                } | {
+                    /** @constant */
+                    type: "gate_evaluation";
+                    /** Format: uuid */
+                    gateEvaluationId: string;
+                };
+                reason: string;
+                externalApprovalReference: string | null;
+                expiresAt: string | null;
+                /** @enum {string} */
+                status: "active" | "expired" | "revoked";
+                /** Format: uuid */
+                createdById: string;
+                /** Format: date-time */
+                createdAt: string;
+                revocation: {
+                    /** Format: uuid */
+                    id: string;
+                    reason: string;
+                    /** Format: uuid */
+                    revokedById: string;
+                    /** Format: date-time */
+                    revokedAt: string;
+                } | null;
+            }[];
+            nextCursor: string | null;
+        };
+        RevokeReadinessWaiverRequestDto: {
+            reason: string;
         };
         ApiErrorResponseDto: {
             error: {
@@ -7892,6 +8121,115 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReadinessDecisionResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessWaiverController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                projectSlug: string;
+                decisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessWaiverListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessWaiverController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                decisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReadinessWaiverRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessWaiverResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReadinessWaiverController_revoke: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                decisionId: string;
+                waiverId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevokeReadinessWaiverRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessWaiverResponseDto"];
                 };
             };
             /** @description API error */

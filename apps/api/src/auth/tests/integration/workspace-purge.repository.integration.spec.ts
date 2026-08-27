@@ -8,6 +8,7 @@ describe('workspace purge repository', () => {
   let admin: PrismaClient;
   let application: PrismaClient;
   let organizationId: string | undefined;
+  let waiverActorId: string | undefined;
 
   beforeAll(() => {
     const adminUrl = process.env.MIGRATION_DATABASE_URL;
@@ -21,6 +22,8 @@ describe('workspace purge repository', () => {
 
   afterAll(async () => {
     if (organizationId) {
+      await admin.readinessWaiverRevocation.deleteMany({ where: { organizationId } });
+      await admin.readinessWaiver.deleteMany({ where: { organizationId } });
       await admin.currentReadinessDecision.deleteMany({ where: { organizationId } });
       await admin.gateEvaluation.deleteMany({ where: { organizationId } });
       await admin.readinessDecision.deleteMany({ where: { organizationId } });
@@ -48,12 +51,20 @@ describe('workspace purge repository', () => {
       await admin.usageCounter.deleteMany({ where: { organizationId } });
       await admin.organization.deleteMany({ where: { id: organizationId } });
     }
+    if (waiverActorId) await admin.user.deleteMany({ where: { id: waiverActorId } });
     await Promise.all([admin.$disconnect(), application.$disconnect()]);
   });
 
   it('allows only claimed and expired workspaces to be deleted with all tenant metadata', async () => {
     const suffix = randomUUID().slice(0, 8);
     const deletedAt = new Date('2026-07-01T00:00:00.000Z');
+    const waiverActor = await admin.user.create({
+      data: {
+        email: `purge-waiver-${suffix}@example.com`,
+        displayName: 'Purge waiver actor',
+      },
+    });
+    waiverActorId = waiverActor.id;
     const organization = await admin.organization.create({
       data: {
         name: 'Purge integration',
@@ -283,7 +294,7 @@ describe('workspace purge repository', () => {
         evaluatedAt: new Date(),
       },
     });
-    await admin.gateEvaluation.create({
+    const gateEvaluation = await admin.gateEvaluation.create({
       data: {
         organizationId,
         projectId: project.id,
@@ -305,6 +316,29 @@ describe('workspace purge repository', () => {
         explanationCode: 'comparison_passed',
         evaluatorVersion: '1.0.0',
         evaluatedAt: new Date(),
+      },
+    });
+    const waiver = await admin.readinessWaiver.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        decisionId: readinessDecision.id,
+        scope: 'GATE_EVALUATION',
+        gateEvaluationId: gateEvaluation.id,
+        reason: 'Workspace purge waiver fixture',
+        createdById: waiverActor.id,
+      },
+    });
+    await admin.readinessWaiverRevocation.create({
+      data: {
+        organizationId,
+        projectId: project.id,
+        candidateId: candidate.id,
+        decisionId: readinessDecision.id,
+        waiverId: waiver.id,
+        reason: 'Workspace purge revocation fixture',
+        revokedById: waiverActor.id,
       },
     });
     await admin.currentReadinessDecision.create({
@@ -362,6 +396,10 @@ describe('workspace purge repository', () => {
     ).resolves.toBe(0);
     await expect(admin.readinessDecision.count({ where: { organizationId } })).resolves.toBe(0);
     await expect(admin.gateEvaluation.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(admin.readinessWaiver.count({ where: { organizationId } })).resolves.toBe(0);
+    await expect(
+      admin.readinessWaiverRevocation.count({ where: { organizationId } }),
+    ).resolves.toBe(0);
     await expect(admin.currentReadinessDecision.count({ where: { organizationId } })).resolves.toBe(
       0,
     );
@@ -381,6 +419,8 @@ describe('workspace purge repository', () => {
     await expect(
       admin.currentEvidenceObservation.count({ where: { organizationId } }),
     ).resolves.toBe(0);
+    await admin.user.delete({ where: { id: waiverActor.id } });
+    waiverActorId = undefined;
     organizationId = undefined;
   });
 });
