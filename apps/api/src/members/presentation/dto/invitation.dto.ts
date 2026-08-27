@@ -1,6 +1,7 @@
 import {
   createWorkspaceInvitationsRequestSchema,
   invitationTokenParamsSchema,
+  registerInvitationAccountRequestSchema,
   workspaceInvitationListQuerySchema,
   workspaceInvitationParamsSchema,
 } from '@caselog/schemas';
@@ -14,3 +15,6 @@ export class WorkspaceInvitationListQueryDto extends createZodDto(
 ) {}
 export class WorkspaceInvitationParamsDto extends createZodDto(workspaceInvitationParamsSchema) {}
 export class InvitationTokenParamsDto extends createZodDto(invitationTokenParamsSchema) {}
+export class RegisterInvitationAccountRequestDto extends createZodDto(
+  registerInvitationAccountRequestSchema,
+) {}

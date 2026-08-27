@@ -45,7 +45,7 @@ export const registerRequestSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
   email: emailSchema,
   password: passwordSchema,
-  termsAccepted: z.literal(true),
+  termsAccepted: z.boolean().default(false),
 });
 
 export const loginRequestSchema = z.object({

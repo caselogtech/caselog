@@ -45,6 +45,18 @@ h1 {
   text-wrap: pretty;
 }
 
+.auth-heading .instance-context {
+  color: var(--text-3);
+  font-size: 0.8125rem;
+  margin-top: 12px;
+}
+
+.instance-context span {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
 form {
   display: grid;
   gap: 8px;
@@ -135,6 +147,39 @@ a:hover {
   text-wrap: pretty;
 }
 
+.form-alert.neutral {
+  background: var(--color-neutral-100);
+  border-color: var(--color-neutral-300);
+  border-left-color: var(--color-neutral-500);
+  color: var(--text-2);
+}
+
+.registration-message {
+  background: var(--color-neutral-100);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  display: grid;
+  font-size: 0.875rem;
+  gap: 3px;
+  padding: 12px;
+  text-wrap: pretty;
+}
+
+.registration-message strong {
+  color: var(--text-1);
+}
+
+.invitation-email-note {
+  background: var(--color-accent-100);
+  border-left: 3px solid var(--color-accent-400);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--color-accent-700);
+  font-size: 0.8125rem;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+}
+
 .success-message {
   background: var(--success-surface);
   border: 1px solid var(--success-border);
@@ -178,6 +223,14 @@ a:hover {
   font-size: 0.875rem;
   margin: 24px 0 0;
   text-align: center;
+}
+
+.registration-note {
+  color: var(--text-3);
+  font-size: 0.8125rem;
+  margin: 20px 0 0;
+  text-align: center;
+  text-wrap: pretty;
 }
 
 @media (max-width: 520px) {

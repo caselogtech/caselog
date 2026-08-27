@@ -10,3 +10,8 @@ export function safeInvitationReturnUrl(value: string | null): string | null {
     ? `${INVITATION_PATH_PREFIX}${token}`
     : null;
 }
+
+export function invitationTokenFromReturnUrl(value: string | null): string | null {
+  const returnUrl = safeInvitationReturnUrl(value);
+  return returnUrl ? returnUrl.slice(INVITATION_PATH_PREFIX.length) : null;
+}

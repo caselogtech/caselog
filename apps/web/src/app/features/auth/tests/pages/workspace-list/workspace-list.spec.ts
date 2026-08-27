@@ -3,7 +3,9 @@ import { provideRouter } from '@angular/router';
 import type { WorkspaceListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { AuthApi } from '../../../data-access/auth-api';
+import { InstanceCapabilities } from '../../../../../core/instance/instance-capabilities';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { instanceCapabilitiesTestingValue } from '../../../../../../testing/instance-capabilities-testing';
 import { WorkspaceList } from '../../../pages/workspace-list/workspace-list';
 
 const workspaceResponse: WorkspaceListResponse = {
@@ -23,16 +25,19 @@ const workspaceResponse: WorkspaceListResponse = {
 describe('WorkspaceList', () => {
   const authApi = { listWorkspaces: vi.fn() };
   let queryClient: QueryClient;
+  let capabilities: ReturnType<typeof instanceCapabilitiesTestingValue>;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     authApi.listWorkspaces.mockReset();
+    capabilities = instanceCapabilitiesTestingValue();
     await TestBed.configureTestingModule({
       imports: [WorkspaceList, i18nTestingModule()],
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
         { provide: AuthApi, useValue: authApi },
+        { provide: InstanceCapabilities, useValue: capabilities },
       ],
     }).compileComponents();
   });
@@ -65,5 +70,19 @@ describe('WorkspaceList', () => {
       'Acme Quality',
     );
     expect(fixture.nativeElement.querySelector('.workspace-card')?.textContent).toContain('Owner');
+  });
+
+  it('does not offer workspace creation when the instance disables it', async () => {
+    capabilities.update({ workspaceCreationEnabled: false });
+    authApi.listWorkspaces.mockResolvedValue({ workspaces: [] });
+    const fixture = TestBed.createComponent(WorkspaceList);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.workspaces.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.empty-state')?.textContent).toContain(
+      'No workspace access',
+    );
+    expect(fixture.nativeElement.querySelector('.primary-link')).toBeNull();
   });
 });

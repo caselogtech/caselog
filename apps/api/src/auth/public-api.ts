@@ -1,3 +1,9 @@
+export {
+  AuthService,
+  type InvitedAccountRegistration,
+  type SessionResult,
+} from './application/services/auth.service';
+export { RefreshSessionCookieService } from './infrastructure/cookies/refresh-session-cookie.service';
 export { RequireApiTokenScopes } from './presentation/decorators/api-token-scope.decorator';
 export { CurrentOrganization } from './presentation/decorators/organization-principal.decorator';
 export { CurrentSession } from './presentation/decorators/session-principal.decorator';

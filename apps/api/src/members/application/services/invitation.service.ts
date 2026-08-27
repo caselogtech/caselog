@@ -9,12 +9,14 @@ import {
   type CreateWorkspaceInvitationsRequest,
   type CreateWorkspaceInvitationsResponse,
   type OrganizationAccessPrincipal,
+  type RegisterInvitationAccountRequest,
   type SessionPrincipal,
   type WorkspaceInvitationListQuery,
   type WorkspaceInvitationListResponse,
   type WorkspaceInvitationPreview,
   type WorkspaceInvitationResponse,
 } from '@caselog/schemas';
+import { AuthService, type SessionResult } from '../../../auth/public-api';
 import {
   AuthorizationDeniedError,
   InvalidAccountTokenError,
@@ -44,6 +46,7 @@ export class InvitationService {
     @Inject(InvitationRepository) private readonly invitations: InvitationRepository,
     @Inject(MailService) private readonly mail: MailService,
     @Inject(INVITATION_CONFIG) private readonly config: InvitationConfig,
+    @Inject(AuthService) private readonly auth: AuthService,
   ) {}
 
   async createMany(
@@ -124,6 +127,19 @@ export class InvitationService {
     const preview = await this.invitations.preview(organizationId, hashInvitationToken(token));
     if (!preview) throw new InvalidAccountTokenError();
     return workspaceInvitationPreviewSchema.parse(preview);
+  }
+
+  async registerAccount(
+    token: string,
+    request: RegisterInvitationAccountRequest,
+  ): Promise<SessionResult> {
+    const invitation = await this.preview(token);
+    return this.auth.registerInvitedAccount({
+      email: invitation.email,
+      displayName: request.displayName,
+      password: request.password,
+      termsAccepted: request.termsAccepted,
+    });
   }
 
   async accept(

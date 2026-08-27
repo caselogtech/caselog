@@ -6,7 +6,17 @@
     </div>
   </header>
 
-  <form class="workspace-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  @if (!capabilities.loaded()) {
+    <section class="state-panel error" role="alert">
+      <p>{{ 'workspace.create.capabilitiesUnavailable' | transloco }}</p>
+    </section>
+  } @else if (!capabilities.workspaceCreationEnabled()) {
+    <section class="state-panel" role="status">
+      <h2>{{ 'workspace.create.disabledTitle' | transloco }}</h2>
+      <p>{{ 'workspace.create.disabledDescription' | transloco }}</p>
+    </section>
+  } @else {
+    <form class="workspace-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     @if (createWorkspace.isError()) {
       <div class="form-alert" role="alert">{{ errorTranslationKey() | transloco }}</div>
     }
@@ -77,7 +87,8 @@
           | transloco
       }}
     </button>
-  </form>
+    </form>
+  }
 
   <a class="back-link" href="/auth/workspaces" routerLink="/auth/workspaces">
     {{ 'workspace.create.back' | transloco }}

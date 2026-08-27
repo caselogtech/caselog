@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation } from '@tanstack/angular-query-experimental';
 import { BrowserSession } from '../../../../core/auth/browser-session';
+import { InstanceCapabilities } from '../../../../core/instance/instance-capabilities';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { AuthApi } from '../../data-access/auth-api';
 import { safeInvitationReturnUrl } from '../../domain/auth-return-url';
@@ -19,11 +20,10 @@ export class Login {
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly authApi = inject(AuthApi);
   private readonly browserSession = inject(BrowserSession);
+  readonly capabilities = inject(InstanceCapabilities);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly returnUrl = safeInvitationReturnUrl(
-    this.route.snapshot.queryParamMap.get('returnUrl'),
-  );
+  readonly returnUrl = safeInvitationReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
 
   readonly form = this.formBuilder.group({
     email: ['', [Validators.required, Validators.email]],

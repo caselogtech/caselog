@@ -276,6 +276,22 @@ export interface paths {
         patch: operations["WorkspaceSettingsController_update"];
         trace?: never;
     };
+    "/api/v1/instance/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["InstanceCapabilitiesController_getCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/uploads": {
         parameters: {
             query?: never;
@@ -590,6 +606,22 @@ export interface paths {
         get: operations["InvitationController_preview"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{token}/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["InvitationController_register"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1648,8 +1680,8 @@ export interface components {
             displayName: string;
             email: string;
             password: string;
-            /** @constant */
-            termsAccepted: true;
+            /** @default false */
+            termsAccepted: boolean;
         };
         SessionResponseDto: {
             accessToken: string;
@@ -1764,6 +1796,15 @@ export interface components {
         };
         DeleteWorkspaceRequestDto: {
             confirmation: string;
+        };
+        InstanceCapabilitiesResponseDto: {
+            /** @enum {string} */
+            deployment: "self_hosted" | "managed";
+            instanceName: string;
+            /** @enum {string} */
+            registrationMode: "public" | "invitation_only";
+            workspaceCreationEnabled: boolean;
+            managedBillingEnabled: boolean;
         };
         CreateUploadSessionRequestDto: {
             fileName: string;
@@ -2116,6 +2157,25 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 displayName: string;
+            };
+        };
+        RegisterInvitationAccountRequestDto: {
+            displayName: string;
+            password: string;
+            /** @default false */
+            termsAccepted: boolean;
+        };
+        InvitationAccountSessionResponseDto: {
+            accessToken: string;
+            /** Format: date-time */
+            expiresAt: string;
+            user: {
+                /** Format: uuid */
+                id: string;
+                /** Format: email */
+                email: string;
+                displayName: string;
+                emailVerified: boolean;
             };
         };
         AcceptWorkspaceInvitationResponseDto: {
@@ -5048,6 +5108,34 @@ export interface operations {
             };
         };
     };
+    InstanceCapabilitiesController_getCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceCapabilitiesResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
     AttachmentController_createUploadSession: {
         parameters: {
             query?: never;
@@ -5828,6 +5916,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceInvitationPreviewDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    InvitationController_register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterInvitationAccountRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationAccountSessionResponseDto"];
                 };
             };
             /** @description API error */

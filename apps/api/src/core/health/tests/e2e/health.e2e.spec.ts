@@ -68,6 +68,9 @@ describe('health endpoint', () => {
     });
     expect(document.paths['/api/v1/auth/login'].post.responses['200'].content).toBeDefined();
     expect(
+      document.paths['/api/v1/instance/capabilities'].get.responses['200'].content,
+    ).toBeDefined();
+    expect(
       document.paths['/api/v1/projects/{projectSlug}/runs'].post.responses['201'].content,
     ).toBeDefined();
     expect(document.components.schemas.SessionResponseDto).toBeDefined();

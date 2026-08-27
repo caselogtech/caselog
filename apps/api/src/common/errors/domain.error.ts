@@ -33,6 +33,24 @@ export class EmailVerificationRequiredError extends DomainError {
   }
 }
 
+export class RegistrationDisabledError extends DomainError {
+  constructor() {
+    super('registration_disabled', 'Public account registration is disabled on this instance');
+  }
+}
+
+export class ManagedTermsRequiredError extends DomainError {
+  constructor() {
+    super('managed_terms_required', 'Accept the managed service terms to create an account');
+  }
+}
+
+export class WorkspaceCreationDisabledError extends DomainError {
+  constructor() {
+    super('workspace_creation_disabled', 'Workspace creation is disabled on this instance');
+  }
+}
+
 export class AuthorizationDeniedError extends DomainError {
   constructor() {
     super('insufficient_permissions', 'You do not have permission to perform this action');

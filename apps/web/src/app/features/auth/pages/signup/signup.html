@@ -6,7 +6,17 @@
       <p>{{ 'auth.signup.description' | transloco }}</p>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (!capabilities.loaded()) {
+      <div class="form-alert neutral" role="alert">
+        {{ 'auth.signup.capabilitiesUnavailable' | transloco }}
+      </div>
+    } @else if (!registrationAllowed()) {
+      <div class="registration-message" role="status">
+        <strong>{{ 'auth.signup.registrationDisabledTitle' | transloco }}</strong>
+        <span>{{ 'auth.signup.registrationDisabledDescription' | transloco }}</span>
+      </div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       @if (signup.isError()) {
         <div class="form-alert" role="alert">{{ errorTranslationKey() | transloco }}</div>
       }
@@ -31,20 +41,26 @@
         </p>
       }
 
-      <label for="email">{{ 'auth.signup.email' | transloco }}</label>
-      <input
-        id="email"
-        type="email"
-        formControlName="email"
-        autocomplete="email"
-        [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
-        [attr.aria-describedby]="
-          form.controls.email.touched && form.controls.email.invalid ? 'email-error' : null
-        "
-      />
-      @if (form.controls.email.touched && form.controls.email.invalid) {
-        <p id="email-error" class="field-error">{{ 'auth.signup.emailInvalid' | transloco }}</p>
-      }
+        @if (invitationToken) {
+          <p class="invitation-email-note">{{ 'auth.signup.invitationEmail' | transloco }}</p>
+        } @else {
+          <label for="email">{{ 'auth.signup.email' | transloco }}</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+            [attr.aria-describedby]="
+              form.controls.email.touched && form.controls.email.invalid ? 'email-error' : null
+            "
+          />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <p id="email-error" class="field-error">
+              {{ 'auth.signup.emailInvalid' | transloco }}
+            </p>
+          }
+        }
 
       <label for="password">{{ 'auth.signup.password' | transloco }}</label>
       <input
@@ -66,33 +82,44 @@
         </p>
       }
 
-      <label class="checkbox-row">
-        <input
-          type="checkbox"
-          formControlName="termsAccepted"
-          [attr.aria-invalid]="
-            form.controls.termsAccepted.touched && form.controls.termsAccepted.invalid
-          "
-          [attr.aria-describedby]="
-            form.controls.termsAccepted.touched && form.controls.termsAccepted.invalid
-              ? 'terms-error'
-              : null
-          "
-        />
-        <span>{{ 'auth.signup.terms' | transloco }}</span>
-      </label>
-      @if (form.controls.termsAccepted.touched && form.controls.termsAccepted.invalid) {
-        <p id="terms-error" class="field-error">{{ 'auth.signup.termsInvalid' | transloco }}</p>
-      }
+        @if (capabilities.managedTermsRequired()) {
+          <label class="checkbox-row">
+            <input
+              type="checkbox"
+              formControlName="termsAccepted"
+              [attr.aria-invalid]="
+                form.controls.termsAccepted.touched && form.controls.termsAccepted.invalid
+              "
+              [attr.aria-describedby]="
+                form.controls.termsAccepted.touched && form.controls.termsAccepted.invalid
+                  ? 'terms-error'
+                  : null
+              "
+            />
+            <span>{{ 'auth.signup.terms' | transloco }}</span>
+          </label>
+          @if (form.controls.termsAccepted.touched && form.controls.termsAccepted.invalid) {
+            <p id="terms-error" class="field-error">
+              {{ 'auth.signup.termsInvalid' | transloco }}
+            </p>
+          }
+        }
 
       <button type="submit" [disabled]="signup.isPending()">
         {{ (signup.isPending() ? 'auth.signup.pending' : 'auth.signup.submit') | transloco }}
       </button>
-    </form>
+      </form>
+    }
 
     <p class="auth-foot">
       {{ 'auth.signup.existingAccount' | transloco }}
-      <a href="/auth/login" routerLink="/auth/login">{{ 'auth.signup.signIn' | transloco }}</a>
+      <a
+        href="/auth/login"
+        routerLink="/auth/login"
+        [queryParams]="returnUrl ? { returnUrl: returnUrl } : null"
+      >
+        {{ 'auth.signup.signIn' | transloco }}
+      </a>
     </p>
   </section>
 </main>

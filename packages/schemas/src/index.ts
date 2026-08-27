@@ -211,6 +211,7 @@ export {
   createWorkspaceInvitationsResponseSchema,
   invitationTokenParamsSchema,
   invitationTokenSchema,
+  registerInvitationAccountRequestSchema,
   workspaceInvitationListQuerySchema,
   workspaceInvitationListResponseSchema,
   workspaceInvitationParamsSchema,
@@ -221,12 +222,21 @@ export {
   type AcceptWorkspaceInvitationResponse,
   type CreateWorkspaceInvitationsRequest,
   type CreateWorkspaceInvitationsResponse,
+  type RegisterInvitationAccountRequest,
   type WorkspaceInvitation,
   type WorkspaceInvitationListQuery,
   type WorkspaceInvitationListResponse,
   type WorkspaceInvitationPreview,
   type WorkspaceInvitationResponse,
 } from './invitation.js';
+export {
+  deploymentModeSchema,
+  instanceCapabilitiesSchema,
+  registrationModeSchema,
+  type DeploymentMode,
+  type InstanceCapabilities,
+  type RegistrationMode,
+} from './instance.js';
 export { organizationIdSchema, type OrganizationId } from './organization.js';
 export type {
   EvidenceListQuery,

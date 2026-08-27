@@ -14,7 +14,9 @@ import {
   EmailVerificationRequiredError,
   InvalidSessionError,
   ResourceConflictError,
+  WorkspaceCreationDisabledError,
 } from '../../../common/errors/domain.error';
+import { InstanceCapabilitiesService } from '../../../instance/public-api';
 import { IdentityRepository } from '../../infrastructure/repositories/identity.repository';
 import { WorkspaceRepository } from '../../infrastructure/repositories/workspace.repository';
 
@@ -23,6 +25,8 @@ export class WorkspaceService {
   constructor(
     @Inject(WorkspaceRepository) private readonly workspaces: WorkspaceRepository,
     @Inject(IdentityRepository) private readonly identities: IdentityRepository,
+    @Inject(InstanceCapabilitiesService)
+    private readonly capabilities: InstanceCapabilitiesService,
   ) {}
 
   async list(userId: string, query: WorkspaceListQuery): Promise<WorkspaceListResponse> {
@@ -41,6 +45,9 @@ export class WorkspaceService {
   }
 
   async create(userId: string, request: CreateWorkspaceRequest): Promise<CreateWorkspaceResponse> {
+    if (!this.capabilities.workspaceCreationEnabled()) {
+      throw new WorkspaceCreationDisabledError();
+    }
     const identity = await this.identities.findById(userId);
     if (!identity) {
       throw new InvalidSessionError();

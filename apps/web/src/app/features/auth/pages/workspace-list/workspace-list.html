@@ -4,9 +4,11 @@
       <h1 id="workspaces-title">{{ 'workspace.list.title' | transloco }}</h1>
       <p>{{ 'workspace.list.description' | transloco }}</p>
     </div>
-    <a class="primary-link" href="/auth/workspace" routerLink="/auth/workspace">
-      {{ 'workspace.list.create' | transloco }}
-    </a>
+    @if (capabilities.workspaceCreationEnabled()) {
+      <a class="primary-link" href="/auth/workspace" routerLink="/auth/workspace">
+        {{ 'workspace.list.create' | transloco }}
+      </a>
+    }
   </header>
 
   @if (workspaces.isPending()) {
@@ -20,13 +22,21 @@
         {{ 'workspace.list.retry' | transloco }}
       </button>
     </section>
-  } @else if (workspaces.data()?.workspaces?.length === 0) {
+  } @else if (
+    workspaces.data()?.workspaces?.length === 0 &&
+    capabilities.workspaceCreationEnabled()
+  ) {
     <section class="empty-state">
       <h2>{{ 'workspace.list.emptyTitle' | transloco }}</h2>
       <p>{{ 'workspace.list.emptyDescription' | transloco }}</p>
       <a class="primary-link" href="/auth/workspace" routerLink="/auth/workspace">
         {{ 'workspace.list.getStarted' | transloco }}
       </a>
+    </section>
+  } @else if (workspaces.data()?.workspaces?.length === 0) {
+    <section class="empty-state">
+      <h2>{{ 'workspace.list.emptyDisabledTitle' | transloco }}</h2>
+      <p>{{ 'workspace.list.emptyDisabledDescription' | transloco }}</p>
     </section>
   } @else {
     <ul class="workspace-list">

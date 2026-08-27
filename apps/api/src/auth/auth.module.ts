@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { InstanceModule } from '../instance/public-api';
 import { AccountTokenRepository } from './infrastructure/repositories/account-token.repository';
 import { ApiTokenController } from './presentation/controllers/api-token.controller';
 import { ApiTokenRepository } from './infrastructure/repositories/api-token.repository';
@@ -31,9 +32,10 @@ import { WorkspacePurgeQueue } from './application/services/workspace-purge.queu
 import { WorkspacePurgeService } from './application/services/workspace-purge.service';
 import { WorkspacePurgeRepository } from './infrastructure/repositories/workspace-purge.repository';
 import { WorkspacePurgeWorker } from './presentation/workers/workspace-purge.worker';
+import { RefreshSessionCookieService } from './infrastructure/cookies/refresh-session-cookie.service';
 
 @Module({
-  imports: [JwtModule.register({}), PassportModule.register({ session: false })],
+  imports: [InstanceModule, JwtModule.register({}), PassportModule.register({ session: false })],
   controllers: [
     ApiTokenController,
     AuthController,
@@ -50,6 +52,7 @@ import { WorkspacePurgeWorker } from './presentation/workers/workspace-purge.wor
     AuthTokenService,
     IdentityRepository,
     PasswordService,
+    RefreshSessionCookieService,
     OrganizationAuthGuard,
     OrganizationRoleGuard,
     OrganizationJwtStrategy,
@@ -65,6 +68,12 @@ import { WorkspacePurgeWorker } from './presentation/workers/workspace-purge.wor
     WorkspacePurgeService,
     WorkspacePurgeWorker,
   ],
-  exports: [ApiTokenService, OrganizationAuthGuard, OrganizationRoleGuard],
+  exports: [
+    ApiTokenService,
+    AuthService,
+    OrganizationAuthGuard,
+    OrganizationRoleGuard,
+    RefreshSessionCookieService,
+  ],
 })
 export class AuthModule {}

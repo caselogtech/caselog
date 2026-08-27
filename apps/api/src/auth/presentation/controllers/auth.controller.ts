@@ -28,7 +28,6 @@ import type {
   SessionResponse,
 } from '@caselog/schemas';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { AUTH_CONFIG, type AuthConfig } from '../../infrastructure/config/auth.config';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
   EmailVerificationRequestDto,
@@ -38,7 +37,7 @@ import {
   RegisterRequestDto,
   ResetPasswordRequestDto,
 } from '../dto/auth.dto';
-import { AuthService, type SessionResult } from '../../application/services/auth.service';
+import { AuthService } from '../../application/services/auth.service';
 import { SessionAuthGuard } from '../guards/session-auth.guard';
 import { CurrentSession } from '../decorators/session-principal.decorator';
 import type { SessionPrincipal } from '@caselog/schemas';
@@ -50,14 +49,14 @@ import {
   SessionResponseDto,
 } from '../dto/auth-response.dto';
 
-const REFRESH_COOKIE_DEVELOPMENT = 'caselog_refresh';
-const REFRESH_COOKIE_PRODUCTION = '__Host-caselog_refresh';
+import { RefreshSessionCookieService } from '../../infrastructure/cookies/refresh-session-cookie.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     @Inject(AuthService) private readonly auth: AuthService,
-    @Inject(AUTH_CONFIG) private readonly config: AuthConfig,
+    @Inject(RefreshSessionCookieService)
+    private readonly refreshCookie: RefreshSessionCookieService,
   ) {}
 
   @Post('register')
@@ -67,7 +66,7 @@ export class AuthController {
     @Body() request: RegisterRequestDto,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<SessionResponse> {
-    return this.withRefreshCookie(reply, await this.auth.register(request));
+    return this.refreshCookie.set(reply, await this.auth.register(request));
   }
 
   @Post('login')
@@ -78,7 +77,7 @@ export class AuthController {
     @Body() request: LoginRequestDto,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<SessionResponse> {
-    return this.withRefreshCookie(reply, await this.auth.login(request));
+    return this.refreshCookie.set(reply, await this.auth.login(request));
   }
 
   @Post('refresh')
@@ -90,10 +89,7 @@ export class AuthController {
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<SessionResponse> {
-    return this.withRefreshCookie(
-      reply,
-      await this.auth.refresh(request.cookies[this.refreshCookieName]),
-    );
+    return this.refreshCookie.set(reply, await this.auth.refresh(this.refreshCookie.read(request)));
   }
 
   @Post('logout')
@@ -103,8 +99,8 @@ export class AuthController {
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<void> {
-    await this.auth.logout(request.cookies[this.refreshCookieName]);
-    reply.clearCookie(this.refreshCookieName, { path: '/' });
+    await this.auth.logout(this.refreshCookie.read(request));
+    this.refreshCookie.clear(reply);
   }
 
   @Get('me')
@@ -159,22 +155,5 @@ export class AuthController {
     @Param() params: OrganizationSlugParamDto,
   ): Promise<OrganizationTokenResponse> {
     return this.auth.organizationToken(principal, params.slug);
-  }
-
-  private withRefreshCookie(reply: FastifyReply, result: SessionResult): SessionResponse {
-    reply
-      .header('Cache-Control', 'no-store')
-      .setCookie(this.refreshCookieName, result.refreshToken, {
-        httpOnly: true,
-        secure: this.config.production,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: this.config.refreshTokenTtlDays * 86_400,
-      });
-    return result.response;
-  }
-
-  private get refreshCookieName(): string {
-    return this.config.production ? REFRESH_COOKIE_PRODUCTION : REFRESH_COOKIE_DEVELOPMENT;
   }
 }

@@ -18,10 +18,13 @@ import {
   AuthenticationFailedError,
   InvalidAccountTokenError,
   InvalidSessionError,
+  ManagedTermsRequiredError,
+  RegistrationDisabledError,
   ResourceConflictError,
   ResourceNotFoundError,
 } from '../../../common/errors/domain.error';
 import { MailService } from '../../../core/mail/application/services/mail.service';
+import { InstanceCapabilitiesService } from '../../../instance/public-api';
 import { createAccountToken, hashAccountToken } from '../../domain/models/account-token';
 import { AccountTokenRepository } from '../../infrastructure/repositories/account-token.repository';
 import { AUTH_CONFIG, type AuthConfig } from '../../infrastructure/config/auth.config';
@@ -39,6 +42,11 @@ export type SessionResult = {
   refreshToken: string;
 };
 
+export type InvitedAccountRegistration = Pick<
+  RegisterRequest,
+  'displayName' | 'email' | 'password' | 'termsAccepted'
+>;
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -51,9 +59,28 @@ export class AuthService {
     @Inject(AccountTokenRepository) private readonly accountTokens: AccountTokenRepository,
     @Inject(MailService) private readonly mail: MailService,
     @Inject(AUTH_CONFIG) private readonly config: AuthConfig,
+    @Inject(InstanceCapabilitiesService)
+    private readonly capabilities: InstanceCapabilitiesService,
   ) {}
 
   async register(request: RegisterRequest): Promise<SessionResult> {
+    if (!this.capabilities.publicRegistrationEnabled()) {
+      throw new RegistrationDisabledError();
+    }
+    if (this.capabilities.managedTermsRequired() && !request.termsAccepted) {
+      throw new ManagedTermsRequiredError();
+    }
+    return this.registerAccount(request);
+  }
+
+  async registerInvitedAccount(request: InvitedAccountRegistration): Promise<SessionResult> {
+    if (this.capabilities.managedTermsRequired() && !request.termsAccepted) {
+      throw new ManagedTermsRequiredError();
+    }
+    return this.registerAccount(request);
+  }
+
+  private async registerAccount(request: InvitedAccountRegistration): Promise<SessionResult> {
     const passwordHash = await this.passwords.hash(request.password);
     const identity = await this.identities.createIdentity(
       request.email,

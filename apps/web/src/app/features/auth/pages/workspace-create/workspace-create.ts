@@ -16,6 +16,7 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs';
+import { InstanceCapabilities } from '../../../../core/instance/instance-capabilities';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { AuthApi } from '../../data-access/auth-api';
 
@@ -83,6 +84,7 @@ function validOrganizationSlug(control: AbstractControl): ValidationErrors | nul
 export class WorkspaceCreate {
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly authApi = inject(AuthApi);
+  readonly capabilities = inject(InstanceCapabilities);
   private readonly queryClient = inject(QueryClient);
   private readonly router = inject(Router);
   private readonly slugManuallyEdited = signal(false);
@@ -106,7 +108,9 @@ export class WorkspaceCreate {
     return {
       queryKey: ['workspace-slug-availability', slug],
       queryFn: () => this.authApi.workspaceSlugAvailability(slug),
-      enabled: workspaceSlugCandidateSchema.safeParse(slug).success,
+      enabled:
+        this.capabilities.workspaceCreationEnabled() &&
+        workspaceSlugCandidateSchema.safeParse(slug).success,
       staleTime: 30_000,
     };
   });
@@ -133,7 +137,11 @@ export class WorkspaceCreate {
   }
 
   submit(): void {
-    if (this.form.invalid || this.availability.data()?.available !== true) {
+    if (
+      !this.capabilities.workspaceCreationEnabled() ||
+      this.form.invalid ||
+      this.availability.data()?.available !== true
+    ) {
       this.form.markAllAsTouched();
       return;
     }

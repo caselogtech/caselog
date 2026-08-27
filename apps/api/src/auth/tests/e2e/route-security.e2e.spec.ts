@@ -6,7 +6,9 @@ import { configureApplication } from '../../../configure-application';
 
 const PUBLIC_OPERATIONS = new Set([
   'GET /api/v1/health',
+  'GET /api/v1/instance/capabilities',
   'GET /api/v1/invitations/{token}',
+  'POST /api/v1/invitations/{token}/register',
   'POST /api/v1/auth/register',
   'POST /api/v1/auth/login',
   'POST /api/v1/auth/logout',

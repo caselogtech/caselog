@@ -20,6 +20,7 @@ import {
   type MessageResponse,
   type OrganizationTokenResponse,
   type RegisterRequest,
+  type RegisterInvitationAccountRequest,
   type ResetPasswordRequest,
   type SessionResponse,
   type WorkspaceListResponse,
@@ -93,6 +94,20 @@ export class AuthApi {
       this.http.post<unknown>(`/api/v1/invitations/${encodeURIComponent(token)}/accept`, null),
     );
     return acceptWorkspaceInvitationResponseSchema.parse(response);
+  }
+
+  async registerInvitationAccount(
+    token: string,
+    request: RegisterInvitationAccountRequest,
+  ): Promise<SessionResponse> {
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/invitations/${encodeURIComponent(token)}/register`,
+        request,
+        { withCredentials: true },
+      ),
+    );
+    return sessionResponseSchema.parse(response);
   }
 
   async listWorkspaces(): Promise<WorkspaceListResponse> {

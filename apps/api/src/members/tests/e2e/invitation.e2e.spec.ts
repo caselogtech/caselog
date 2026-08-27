@@ -28,6 +28,7 @@ describe('workspace invitations', () => {
   let inviteeSessionToken = '';
   let outsiderSessionToken = '';
   let inviteeEmail = '';
+  let newInviteeEmail = '';
   let contributorEmail = '';
   let ownerEmail = '';
   let testerInvitationId = '';
@@ -66,9 +67,10 @@ describe('workspace invitations', () => {
     ownerEmail = `invite-owner-${suffix}@example.com`;
     const adminEmail = `invite-admin-${suffix}@example.com`;
     inviteeEmail = `invite-user-${suffix}@example.com`;
+    newInviteeEmail = `invite-new-user-${suffix}@example.com`;
     contributorEmail = `invite-contributor-${suffix}@example.com`;
     const outsiderEmail = `invite-outsider-${suffix}@example.com`;
-    emails.push(ownerEmail, adminEmail, inviteeEmail, outsiderEmail);
+    emails.push(ownerEmail, adminEmail, inviteeEmail, newInviteeEmail, outsiderEmail);
     const [owner, administrator, invitee, outsider] = await Promise.all([
       register(ownerEmail, 'Invitation Owner'),
       register(adminEmail, 'Invitation Admin'),
@@ -196,6 +198,42 @@ describe('workspace invitations', () => {
     expect(foreign.statusCode, foreign.body).toBe(404);
   });
 
+  it('registers a new account only through its valid pending invitation', async () => {
+    const createdResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/members/invitations',
+      headers: { authorization: `Bearer ${ownerToken}` },
+      payload: { invitations: [{ email: newInviteeEmail, role: 'tester' }] },
+    });
+    expect(createdResponse.statusCode, createdResponse.body).toBe(201);
+    const token = invitationTokenFor(newInviteeEmail);
+
+    const registration = await app.inject({
+      method: 'POST',
+      url: `/api/v1/invitations/${token}/register`,
+      payload: {
+        displayName: 'New Invitation User',
+        password: PASSWORD,
+        termsAccepted: false,
+      },
+    });
+    expect(registration.statusCode, registration.body).toBe(201);
+    expect(registration.headers['set-cookie']).toContain('caselog_refresh=');
+    const session = sessionResponseSchema.parse(registration.json());
+    expect(session.user.email).toBe(newInviteeEmail);
+
+    const acceptedResponse = await app.inject({
+      method: 'POST',
+      url: `/api/v1/invitations/${token}/accept`,
+      headers: { authorization: `Bearer ${session.accessToken}` },
+    });
+    expect(acceptedResponse.statusCode, acceptedResponse.body).toBe(200);
+    expect(acceptWorkspaceInvitationResponseSchema.parse(acceptedResponse.json())).toMatchObject({
+      workspace: { id: organizationId },
+      role: 'tester',
+    });
+  });
+
   it('accepts only with the matching account and remains idempotent', async () => {
     const token = invitationTokenFor(inviteeEmail);
     const mismatch = await app.inject({
@@ -288,6 +326,8 @@ describe('workspace invitations', () => {
     expect(actions).toEqual([
       'membership.invitation_sent',
       'membership.invitation_sent',
+      'membership.invitation_sent',
+      'membership.invitation_accepted',
       'membership.invitation_accepted',
       'membership.invitation_resent',
       'membership.invitation_revoked',

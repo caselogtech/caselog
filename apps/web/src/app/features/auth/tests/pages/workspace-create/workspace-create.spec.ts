@@ -3,7 +3,9 @@ import { Router, provideRouter } from '@angular/router';
 import type { CreateWorkspaceResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { AuthApi } from '../../../data-access/auth-api';
+import { InstanceCapabilities } from '../../../../../core/instance/instance-capabilities';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { instanceCapabilitiesTestingValue } from '../../../../../../testing/instance-capabilities-testing';
 import {
   slugifyWorkspaceName,
   WorkspaceCreate,
@@ -33,6 +35,7 @@ describe('WorkspaceCreate', () => {
     workspaceSlugAvailability: vi.fn(),
   };
   let queryClient: QueryClient;
+  let capabilities: ReturnType<typeof instanceCapabilitiesTestingValue>;
 
   beforeEach(async () => {
     queryClient = new QueryClient({
@@ -40,12 +43,14 @@ describe('WorkspaceCreate', () => {
     });
     authApi.createWorkspace.mockReset();
     authApi.workspaceSlugAvailability.mockReset();
+    capabilities = instanceCapabilitiesTestingValue();
     await TestBed.configureTestingModule({
       imports: [WorkspaceCreate, i18nTestingModule()],
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
         { provide: AuthApi, useValue: authApi },
+        { provide: InstanceCapabilities, useValue: capabilities },
       ],
     }).compileComponents();
   });
@@ -87,5 +92,19 @@ describe('WorkspaceCreate', () => {
       name: 'Якість Плюс',
       slug: 'yakist-plyus',
     });
+  });
+
+  it('does not prepare or submit workspace creation when the instance disables it', () => {
+    capabilities.update({ workspaceCreationEnabled: false });
+    const fixture = TestBed.createComponent(WorkspaceCreate);
+    fixture.detectChanges();
+    fixture.componentInstance.submit();
+
+    expect(fixture.nativeElement.querySelector('.state-panel')?.textContent).toContain(
+      'Workspace creation is disabled',
+    );
+    expect(fixture.nativeElement.querySelector('form')).toBeNull();
+    expect(authApi.workspaceSlugAvailability).not.toHaveBeenCalled();
+    expect(authApi.createWorkspace).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectQuery } from '@tanstack/angular-query-experimental';
+import { InstanceCapabilities } from '../../../../core/instance/instance-capabilities';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { workspaceRoleTranslationKey } from '../../../../shared/models/workspace-role';
 import { AuthApi } from '../../data-access/auth-api';
@@ -15,6 +16,7 @@ import { AuthApi } from '../../data-access/auth-api';
 })
 export class WorkspaceList {
   private readonly authApi = inject(AuthApi);
+  readonly capabilities = inject(InstanceCapabilities);
 
   readonly workspaces = injectQuery(() => ({
     queryKey: ['workspaces'],

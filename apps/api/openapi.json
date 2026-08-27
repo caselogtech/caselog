@@ -888,6 +888,37 @@
         ]
       }
     },
+    "/api/v1/instance/capabilities": {
+      "get": {
+        "operationId": "InstanceCapabilitiesController_getCapabilities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceCapabilitiesResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "InstanceCapabilities"
+        ]
+      }
+    },
     "/api/v1/projects/{projectSlug}/runs/{runId}/items/{itemId}/uploads": {
       "post": {
         "operationId": "AttachmentController_createUploadSession",
@@ -2413,6 +2444,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WorkspaceInvitationPreviewDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Invitation"
+        ]
+      }
+    },
+    "/api/v1/invitations/{token}/register": {
+      "post": {
+        "operationId": "InvitationController_register",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "pattern": "^clgi_[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}_[A-Za-z0-9_-]{43}$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterInvitationAccountRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationAccountSessionResponseDto"
                 }
               }
             }
@@ -8104,15 +8186,14 @@
             "maxLength": 128
           },
           "termsAccepted": {
-            "type": "boolean",
-            "const": true
+            "default": false,
+            "type": "boolean"
           }
         },
         "required": [
           "displayName",
           "email",
-          "password",
-          "termsAccepted"
+          "password"
         ]
       },
       "SessionResponseDto": {
@@ -8629,6 +8710,43 @@
         },
         "required": [
           "confirmation"
+        ]
+      },
+      "InstanceCapabilitiesResponseDto": {
+        "type": "object",
+        "properties": {
+          "deployment": {
+            "type": "string",
+            "enum": [
+              "self_hosted",
+              "managed"
+            ]
+          },
+          "instanceName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "registrationMode": {
+            "type": "string",
+            "enum": [
+              "public",
+              "invitation_only"
+            ]
+          },
+          "workspaceCreationEnabled": {
+            "type": "boolean"
+          },
+          "managedBillingEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deployment",
+          "instanceName",
+          "registrationMode",
+          "workspaceCreationEnabled",
+          "managedBillingEnabled"
         ]
       },
       "CreateUploadSessionRequestDto": {
@@ -10254,6 +10372,75 @@
           "expiresAt",
           "workspace",
           "invitedBy"
+        ]
+      },
+      "RegisterInvitationAccountRequestDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128
+          },
+          "termsAccepted": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "displayName",
+          "password"
+        ]
+      },
+      "InvitationAccountSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "emailVerified": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "displayName",
+              "emailVerified"
+            ]
+          }
+        },
+        "required": [
+          "accessToken",
+          "expiresAt",
+          "user"
         ]
       },
       "AcceptWorkspaceInvitationResponseDto": {

@@ -25,12 +25,14 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.invalid_csv_rows',
   'errors.invalid_or_expired_token',
   'errors.invalid_session',
+  'errors.managed_terms_required',
   'errors.member_already_active',
   'errors.not_found',
   'errors.project_has_open_runs',
   'errors.project_key_taken',
   'errors.project_slug_taken',
   'errors.rate_limited',
+  'errors.registration_disabled',
   'errors.readiness_input_superseded',
   'errors.readiness_decision_already_ready',
   'errors.readiness_gate_already_passed',
@@ -65,6 +67,7 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.upload_incomplete',
   'errors.validation_failed',
   'errors.workspace_limit_reached',
+  'errors.workspace_creation_disabled',
   'errors.workspace_slug_taken',
 ]);
 

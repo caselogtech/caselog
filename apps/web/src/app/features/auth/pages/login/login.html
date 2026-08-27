@@ -4,6 +4,17 @@
       <p class="eyebrow">{{ 'auth.login.eyebrow' | transloco }}</p>
       <h1 id="login-title">{{ 'auth.login.title' | transloco }}</h1>
       <p>{{ 'auth.login.description' | transloco }}</p>
+      @if (capabilities.value(); as instance) {
+        <p class="instance-context">
+          {{
+            (instance.deployment === 'self_hosted'
+              ? 'auth.login.selfHostedInstance'
+              : 'auth.login.managedInstance'
+            ) | transloco
+          }}
+          <span>{{ instance.instanceName }}</span>
+        </p>
+      }
     </div>
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -55,11 +66,22 @@
       </button>
     </form>
 
-    <p class="auth-foot">
-      {{ 'auth.login.newAccount' | transloco }}
-      <a href="/auth/signup" routerLink="/auth/signup">
-        {{ 'auth.login.createAccount' | transloco }}
-      </a>
-    </p>
+    @if (
+      capabilities.loaded() &&
+      (capabilities.publicRegistrationEnabled() || returnUrl)
+    ) {
+      <p class="auth-foot">
+        {{ 'auth.login.newAccount' | transloco }}
+        <a
+          href="/auth/signup"
+          routerLink="/auth/signup"
+          [queryParams]="returnUrl ? { returnUrl: returnUrl } : null"
+        >
+          {{ 'auth.login.createAccount' | transloco }}
+        </a>
+      </p>
+    } @else if (capabilities.loaded()) {
+      <p class="registration-note">{{ 'auth.login.registrationDisabled' | transloco }}</p>
+    }
   </section>
 </main>

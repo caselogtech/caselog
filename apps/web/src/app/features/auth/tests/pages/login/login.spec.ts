@@ -3,7 +3,9 @@ import { Router, provideRouter } from '@angular/router';
 import type { SessionResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { BrowserSession } from '../../../../../core/auth/browser-session';
+import { InstanceCapabilities } from '../../../../../core/instance/instance-capabilities';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { instanceCapabilitiesTestingValue } from '../../../../../../testing/instance-capabilities-testing';
 import { AuthApi } from '../../../data-access/auth-api';
 import { Login } from '../../../pages/login/login';
 
@@ -31,6 +33,7 @@ describe('Login', () => {
         provideRouter([]),
         provideTanStackQuery(queryClient),
         { provide: AuthApi, useValue: authApi },
+        { provide: InstanceCapabilities, useValue: instanceCapabilitiesTestingValue() },
       ],
     }).compileComponents();
   });

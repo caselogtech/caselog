@@ -1,6 +1,7 @@
 import {
   acceptWorkspaceInvitationResponseSchema,
   createWorkspaceInvitationsResponseSchema,
+  sessionResponseSchema,
   workspaceInvitationListResponseSchema,
   workspaceInvitationPreviewSchema,
   workspaceInvitationResponseSchema,
@@ -20,3 +21,4 @@ export class WorkspaceInvitationPreviewDto extends createZodDto(workspaceInvitat
 export class AcceptWorkspaceInvitationResponseDto extends createZodDto(
   acceptWorkspaceInvitationResponseSchema,
 ) {}
+export class InvitationAccountSessionResponseDto extends createZodDto(sessionResponseSchema) {}

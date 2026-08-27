@@ -115,6 +115,11 @@ button:focus-visible {
   margin: 0;
 }
 
+.state-panel h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
 .empty-state p {
   margin: 8px auto 20px;
   max-width: 440px;

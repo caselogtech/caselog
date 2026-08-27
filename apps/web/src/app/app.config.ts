@@ -12,6 +12,7 @@ import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-exper
 
 import { routes } from './app.routes';
 import { BrowserSession } from './core/auth/browser-session';
+import { InstanceCapabilities } from './core/instance/instance-capabilities';
 import { TranslocoHttpLoader } from './core/i18n/transloco-loader';
 import { sessionAuthInterceptor } from './core/auth/session-auth.interceptor';
 import { AuthApi } from './features/auth/public-api';
@@ -26,11 +27,18 @@ function restoreSession(): Promise<void> {
     .catch(() => browserSession.clear());
 }
 
+function loadInstanceCapabilities(): Promise<void> {
+  return inject(InstanceCapabilities)
+    .load()
+    .catch(() => undefined);
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(withInterceptors([sessionAuthInterceptor])),
     provideAppInitializer(restoreSession),
+    provideAppInitializer(loadInstanceCapabilities),
     provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' })),
     provideTransloco({
       config: {

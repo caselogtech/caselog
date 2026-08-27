@@ -10,6 +10,7 @@ import { DatabaseModule } from './core/database/database.module';
 import { HealthModule } from './core/health/health.module';
 import { ImportModule } from './imports/import.module';
 import { IntegrationModule } from './integrations/integration.module';
+import { InstanceModule } from './instance/public-api';
 import { JobsModule } from './core/jobs/jobs.module';
 import { ObservabilityModule } from './core/observability/observability.module';
 import { MailModule } from './core/mail/mail.module';
@@ -36,6 +37,7 @@ import { QualityEvidenceModule } from './quality-evidence/public-api';
     HealthModule,
     ImportModule,
     IntegrationModule,
+    InstanceModule,
     AuthModule,
     MembersModule,
     ProjectModule,

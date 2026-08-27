@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { emailSchema, organizationSlugSchema } from './auth.js';
+import { emailSchema, organizationSlugSchema, passwordSchema } from './auth.js';
 import { manageableWorkspaceRoleSchema } from './member.js';
 
 export const workspaceInvitationStatusSchema = z.enum([
@@ -61,6 +61,12 @@ export const invitationTokenSchema = z
 
 export const invitationTokenParamsSchema = z.object({ token: invitationTokenSchema });
 
+export const registerInvitationAccountRequestSchema = z.object({
+  displayName: z.string().trim().min(1).max(120),
+  password: passwordSchema,
+  termsAccepted: z.boolean().default(false),
+});
+
 export const workspaceInvitationPreviewSchema = z.object({
   email: emailSchema,
   role: manageableWorkspaceRoleSchema,
@@ -94,6 +100,9 @@ export type CreateWorkspaceInvitationsResponse = z.infer<
   typeof createWorkspaceInvitationsResponseSchema
 >;
 export type WorkspaceInvitationPreview = z.infer<typeof workspaceInvitationPreviewSchema>;
+export type RegisterInvitationAccountRequest = z.infer<
+  typeof registerInvitationAccountRequestSchema
+>;
 export type AcceptWorkspaceInvitationResponse = z.infer<
   typeof acceptWorkspaceInvitationResponseSchema
 >;

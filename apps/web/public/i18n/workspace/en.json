@@ -15,12 +15,17 @@
     "retry": "Try again",
     "emptyTitle": "Create your first workspace",
     "emptyDescription": "A workspace keeps your projects, test cases, runs, and team access together.",
+    "emptyDisabledTitle": "No workspace access",
+    "emptyDisabledDescription": "Workspace creation is disabled on this instance. Ask an existing workspace owner for an invitation.",
     "getStarted": "Get started",
     "open": "Open workspace"
   },
   "create": {
     "title": "Create a workspace",
     "description": "Choose a company name and a unique URL for your team.",
+    "capabilitiesUnavailable": "Workspace settings could not be loaded. Reload the page or ask the instance operator to check the service.",
+    "disabledTitle": "Workspace creation is disabled",
+    "disabledDescription": "This instance only allows access through an invitation to an existing workspace.",
     "name": "Company or team name",
     "nameInvalid": "Enter a name between 2 and 120 characters.",
     "slug": "Workspace URL",

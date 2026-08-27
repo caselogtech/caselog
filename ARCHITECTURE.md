@@ -134,6 +134,7 @@ an accepted target row reserves its boundary but does not claim that code alread
 
 | Module | Owns |
 |---|---|
+| `instance` | public deployment identity and server-enforced capability configuration |
 | `auth` | identities, sessions, workspace lifecycle, org-scoped token exchange |
 | `members` | membership and invitation workflows |
 | `projects` | project lifecycle and project defaults |
