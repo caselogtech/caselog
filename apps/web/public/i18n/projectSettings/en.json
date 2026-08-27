@@ -1,0 +1,46 @@
+{
+  "eyebrow": "Quality control plane",
+  "title": "Project settings",
+  "navigation": "Project settings navigation",
+  "environments": {
+    "navigation": "Environments",
+    "description": "Manage logical promotion targets for this project. Environments are not deployment records.",
+    "create": "Create environment",
+    "creating": "Creating environment…",
+    "createTitle": "New environment",
+    "createDescription": "Give the promotion target a stable name and URL-safe identifier.",
+    "name": "Name",
+    "nameInvalid": "Enter an environment name up to 120 characters.",
+    "slug": "Slug",
+    "slugHint": "Lowercase letters, numbers, and hyphens; for example production-eu.",
+    "slugInvalid": "Enter a valid environment slug up to 50 characters.",
+    "descriptionLabel": "Description",
+    "descriptionHint": "Optional context about what this promotion target represents.",
+    "descriptionInvalid": "Keep the description under 2,000 characters.",
+    "cancel": "Cancel",
+    "loading": "Loading environments…",
+    "loadErrorTitle": "Unable to load environments",
+    "mutationErrorTitle": "Unable to update environments",
+    "retry": "Try again",
+    "emptyTitle": "No environments configured",
+    "emptyDescription": "Create a logical target such as Development, Staging, or Production.",
+    "readOnlyTitle": "Environment settings are read-only",
+    "readOnlyDescription": "Only workspace owners, administrators, and leads can create or change environments.",
+    "noDescription": "No description provided.",
+    "created": "Created",
+    "updated": "Last updated",
+    "archive": "Archive",
+    "restore": "Restore",
+    "states": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "confirm": {
+      "archiveTitle": "Archive {{name}}?",
+      "archiveMessage": "Archived environments cannot receive new releases. Existing release history is preserved.",
+      "restoreTitle": "Restore {{name}}?",
+      "restoreMessage": "The environment will become available for new releases again.",
+      "cancel": "Go back"
+    }
+  }
+}

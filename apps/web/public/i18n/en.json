@@ -6,6 +6,7 @@
       "primary": "Primary navigation",
       "projects": "Projects",
       "releases": "Releases",
+      "settings": "Settings",
       "testCases": "Test cases",
       "testRuns": "Test runs",
       "ciImports": "CI imports"
@@ -23,6 +24,8 @@
     "email_verification_required": "Verify your email before creating a workspace.",
     "empty_csv_import": "The CSV file does not contain any test case rows.",
     "environment_archived": "This environment is archived and cannot receive a new release.",
+    "environment_has_open_releases": "Release or cancel this environment's open releases before archiving it.",
+    "environment_slug_taken": "This environment slug is already used in the project.",
     "http_error": "The request could not be completed.",
     "internal_error": "An unexpected error occurred. Please try again.",
     "insufficient_permissions": "You do not have permission to perform this action.",

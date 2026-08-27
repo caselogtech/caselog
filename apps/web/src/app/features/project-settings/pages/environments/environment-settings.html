@@ -1,0 +1,113 @@
+<main class="environment-settings-page" aria-labelledby="environment-settings-title">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">{{ 'projectSettings.eyebrow' | transloco }}</p>
+      <h1 id="environment-settings-title">{{ 'projectSettings.title' | transloco }}</h1>
+      <p class="description">{{ 'projectSettings.environments.description' | transloco }}</p>
+    </div>
+    @if (canManage() && !showCreate()) {
+      <button appButton="primary" type="button" (click)="openCreate()">
+        <span aria-hidden="true">＋</span>
+        {{ 'projectSettings.environments.create' | transloco }}
+      </button>
+    }
+  </header>
+
+  <nav class="settings-navigation" [attr.aria-label]="'projectSettings.navigation' | transloco">
+    <span aria-current="page">{{ 'projectSettings.environments.navigation' | transloco }}</span>
+  </nav>
+
+  @if (!canManage() && environments.isSuccess()) {
+    <app-callout [title]="'projectSettings.environments.readOnlyTitle' | transloco">
+      <p>{{ 'projectSettings.environments.readOnlyDescription' | transloco }}</p>
+    </app-callout>
+  }
+
+  @if (showCreate()) {
+    <app-environment-create-form
+      [pending]="createEnvironment.isPending()"
+      (submitted)="create($event)"
+      (cancelled)="showCreate.set(false)"
+    />
+  }
+
+  @if (createEnvironment.isError() || changeState.isError()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'projectSettings.environments.mutationErrorTitle' | transloco"
+    >
+      <p>{{ errorTranslationKey() | transloco }}</p>
+    </app-callout>
+  }
+
+  @if (environments.isPending()) {
+    <section class="loading-state" [attr.aria-label]="'projectSettings.environments.loading' | transloco">
+      <app-loading-skeleton
+        preset="block"
+        [label]="'projectSettings.environments.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="row"
+        [label]="'projectSettings.environments.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="row"
+        [label]="'projectSettings.environments.loading' | transloco"
+      />
+    </section>
+  } @else if (environments.isError()) {
+    <app-page-state
+      [title]="'projectSettings.environments.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="environments.refetch()">
+        {{ 'projectSettings.environments.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (environments.data(); as response) {
+    @if (response.items.length === 0) {
+      <app-page-state
+        [title]="'projectSettings.environments.emptyTitle' | transloco"
+        [message]="'projectSettings.environments.emptyDescription' | transloco"
+      >
+        @if (canManage()) {
+          <button actions appButton="primary" type="button" (click)="openCreate()">
+            {{ 'projectSettings.environments.create' | transloco }}
+          </button>
+        }
+      </app-page-state>
+    } @else {
+      <app-environment-list
+        [environments]="response.items"
+        [canManage]="canManage()"
+        [pending]="changeState.isPending()"
+        (stateChangeRequested)="requestStateChange($event)"
+      />
+    }
+  }
+
+  <app-dialog
+    [open]="!!confirmation()"
+    [title]="
+      (confirmation()?.action === 'archive'
+        ? 'projectSettings.environments.confirm.archiveTitle'
+        : 'projectSettings.environments.confirm.restoreTitle')
+        | transloco: { name: confirmation()?.environment?.name ?? '' }
+    "
+    [message]="
+      (confirmation()?.action === 'archive'
+        ? 'projectSettings.environments.confirm.archiveMessage'
+        : 'projectSettings.environments.confirm.restoreMessage') | transloco
+    "
+    [confirmLabel]="
+      (confirmation()?.action === 'archive'
+        ? 'projectSettings.environments.archive'
+        : 'projectSettings.environments.restore') | transloco
+    "
+    [cancelLabel]="'projectSettings.environments.confirm.cancel' | transloco"
+    [confirmVariant]="confirmation()?.action === 'archive' ? 'danger' : 'primary'"
+    (confirmed)="confirmStateChange()"
+    (cancelled)="confirmation.set(null)"
+  />
+</main>

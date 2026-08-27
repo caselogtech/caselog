@@ -12,6 +12,8 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.email_verification_required',
   'errors.empty_csv_import',
   'errors.environment_archived',
+  'errors.environment_has_open_releases',
+  'errors.environment_slug_taken',
   'errors.http_error',
   'errors.internal_error',
   'errors.insufficient_permissions',

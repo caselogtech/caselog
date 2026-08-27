@@ -1,0 +1,88 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <header>
+    <div>
+      <h2>{{ 'projectSettings.environments.createTitle' | transloco }}</h2>
+      <p>{{ 'projectSettings.environments.createDescription' | transloco }}</p>
+    </div>
+  </header>
+
+  <div class="field-grid">
+    <app-form-field
+      controlId="environment-name"
+      [label]="'projectSettings.environments.name' | transloco"
+      [error]="
+        form.controls.name.touched && form.controls.name.invalid
+          ? ('projectSettings.environments.nameInvalid' | transloco)
+          : undefined
+      "
+    >
+      <input
+        appControl
+        id="environment-name"
+        type="text"
+        formControlName="name"
+        autocomplete="off"
+        [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+        aria-describedby="environment-name-description"
+      />
+    </app-form-field>
+
+    <app-form-field
+      controlId="environment-slug"
+      [label]="'projectSettings.environments.slug' | transloco"
+      [hint]="'projectSettings.environments.slugHint' | transloco"
+      [error]="
+        form.controls.slug.touched && form.controls.slug.invalid
+          ? ('projectSettings.environments.slugInvalid' | transloco)
+          : undefined
+      "
+    >
+      <input
+        appControl
+        id="environment-slug"
+        class="mono"
+        type="text"
+        formControlName="slug"
+        autocomplete="off"
+        [attr.aria-invalid]="form.controls.slug.touched && form.controls.slug.invalid"
+        aria-describedby="environment-slug-description"
+      />
+    </app-form-field>
+
+    <app-form-field
+      class="wide-field"
+      controlId="environment-description"
+      [label]="'projectSettings.environments.descriptionLabel' | transloco"
+      [hint]="'projectSettings.environments.descriptionHint' | transloco"
+      [error]="
+        form.controls.description.touched && form.controls.description.invalid
+          ? ('projectSettings.environments.descriptionInvalid' | transloco)
+          : undefined
+      "
+    >
+      <textarea
+        appControl
+        id="environment-description"
+        formControlName="description"
+        rows="3"
+        [attr.aria-invalid]="
+          form.controls.description.touched && form.controls.description.invalid
+        "
+        aria-describedby="environment-description-description"
+      ></textarea>
+    </app-form-field>
+  </div>
+
+  <footer>
+    <button appButton="secondary" type="button" [disabled]="pending()" (click)="cancelled.emit()">
+      {{ 'projectSettings.environments.cancel' | transloco }}
+    </button>
+    <button appButton="primary" type="submit" [disabled]="pending()">
+      {{
+        (pending()
+          ? 'projectSettings.environments.creating'
+          : 'projectSettings.environments.create') | transloco
+      }}
+    </button>
+  </footer>
+</form>

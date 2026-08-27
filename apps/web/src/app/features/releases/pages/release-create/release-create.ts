@@ -11,6 +11,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
 import {
   Button,
   Callout,
@@ -19,7 +20,6 @@ import {
   LoadingSkeleton,
 } from '../../../../shared/ui/public-api';
 import { ReleasesApi } from '../../data-access/releases-api';
-import { IdempotencyIdentity } from '../../state/idempotency-identity';
 
 type ReleaseSubmission = {
   request: CreateReleaseRequest;

@@ -48,6 +48,7 @@ describe('WorkspaceShell', () => {
     expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Test cases');
     expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Releases');
     expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Test runs');
+    expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Settings');
     expect(shell.querySelector('.avatar')?.textContent?.trim()).toBe('DO');
   });
 });

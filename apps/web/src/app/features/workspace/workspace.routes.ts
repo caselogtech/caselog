@@ -18,6 +18,13 @@ export const workspaceRoutes: Routes = [
           import('../releases/public-api').then(({ releasesRoutes }) => releasesRoutes),
       },
       {
+        path: ':project/settings',
+        loadChildren: () =>
+          import('../project-settings/public-api').then(
+            ({ projectSettingsRoutes }) => projectSettingsRoutes,
+          ),
+      },
+      {
         path: ':project/imports',
         loadComponent: () =>
           import('./pages/automation/ci-imports').then(({ CiImports }) => CiImports),

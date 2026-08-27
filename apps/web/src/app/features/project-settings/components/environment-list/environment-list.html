@@ -1,0 +1,40 @@
+<ul class="environment-list">
+  @for (environment of environments(); track environment.id) {
+    @let state = presentation(environment);
+    <li>
+      <div class="identity">
+        <div class="name-row">
+          <h2>{{ environment.name }}</h2>
+          <app-status-badge [label]="state.labelKey | transloco" [tone]="state.tone" />
+        </div>
+        <span class="slug mono">{{ environment.slug }}</span>
+      </div>
+
+      <p class="description">
+        {{ environment.description ?? ('projectSettings.environments.noDescription' | transloco) }}
+      </p>
+
+      <dl>
+        <div>
+          <dt>{{ 'projectSettings.environments.created' | transloco }}</dt>
+          <dd>{{ environment.createdAt | date: 'mediumDate' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'projectSettings.environments.updated' | transloco }}</dt>
+          <dd>{{ environment.updatedAt | date: 'medium' }}</dd>
+        </div>
+      </dl>
+
+      @if (canManage()) {
+        <button
+          [appButton]="actionVariant(environment)"
+          type="button"
+          [disabled]="pending()"
+          (click)="requestStateChange(environment)"
+        >
+          {{ state.actionLabelKey | transloco }}
+        </button>
+      }
+    </li>
+  }
+</ul>

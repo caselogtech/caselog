@@ -1,4 +1,4 @@
-import { IdempotencyIdentity } from '../../state/idempotency-identity';
+import { IdempotencyIdentity } from '../idempotency-identity';
 
 describe('IdempotencyIdentity', () => {
   it('keeps one retry key for identical input and rotates it when input changes', () => {

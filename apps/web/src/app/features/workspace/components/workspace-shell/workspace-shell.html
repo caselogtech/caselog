@@ -39,6 +39,13 @@
       >
         {{ 'app.navigation.ciImports' | transloco }}
       </a>
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug() }}/settings/environments"
+        [routerLink]="['/', workspaceSlug, projectSlug(), 'settings', 'environments']"
+        routerLinkActive="active"
+      >
+        {{ 'app.navigation.settings' | transloco }}
+      </a>
     }
     <a
       href="/{{ workspaceSlug }}/projects"
