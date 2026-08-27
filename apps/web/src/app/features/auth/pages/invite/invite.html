@@ -1,0 +1,108 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="invitation-title">
+    <div class="auth-heading">
+      <p class="eyebrow">{{ 'auth.invite.eyebrow' | transloco }}</p>
+      <h1 id="invitation-title">{{ 'auth.invite.title' | transloco }}</h1>
+      <p>{{ 'auth.invite.description' | transloco }}</p>
+    </div>
+
+    @if (preview.isPending()) {
+      <div class="invitation-state" role="status">
+        <span class="state-spinner" aria-hidden="true"></span>
+        {{ 'auth.invite.loading' | transloco }}
+      </div>
+    } @else if (preview.isError()) {
+      <div class="form-alert" role="alert">
+        <strong>{{ 'auth.invite.invalidTitle' | transloco }}</strong>
+        <span>{{ 'auth.invite.invalidDescription' | transloco }}</span>
+      </div>
+      <a class="primary-link" href="/auth/login" routerLink="/auth/login">
+        {{ 'auth.common.backToSignIn' | transloco }}
+      </a>
+    } @else if (preview.data(); as invitation) {
+      <dl class="invitation-summary">
+        <div class="workspace-identity">
+          <dt>{{ 'auth.invite.workspace' | transloco }}</dt>
+          <dd>{{ invitation.workspace.name }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'auth.invite.invitedBy' | transloco }}</dt>
+          <dd>{{ invitation.invitedBy.displayName }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'auth.invite.role' | transloco }}</dt>
+          <dd>{{ roleTranslationKey(invitation.role) | transloco }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'auth.invite.recipient' | transloco }}</dt>
+          <dd class="mono-value">{{ invitation.email }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'auth.invite.expires' | transloco }}</dt>
+          <dd>
+            <time [attr.datetime]="invitation.expiresAt">
+              {{ invitation.expiresAt | date: 'medium' }}
+            </time>
+          </dd>
+        </div>
+      </dl>
+
+      @if (browserSession.user(); as user) {
+        @if (recipientMatches()) {
+          <p class="current-account">
+            {{ 'auth.invite.signedInAs' | transloco: { email: user.email } }}
+          </p>
+          @if (accept.isError()) {
+            <div class="form-alert" role="alert">
+              {{ acceptErrorTranslationKey() | transloco }}
+            </div>
+          }
+          <button type="button" [disabled]="accept.isPending()" (click)="acceptInvitation()">
+            {{ (accept.isPending() ? 'auth.invite.accepting' : 'auth.invite.accept') | transloco }}
+          </button>
+        } @else {
+          <div class="warning-message" role="alert">
+            <strong>{{ 'auth.invite.wrongAccountTitle' | transloco }}</strong>
+            <span>
+              {{
+                'auth.invite.wrongAccountDescription'
+                  | transloco
+                    : {
+                        recipient: invitation.email,
+                        current: user.email,
+                      }
+              }}
+            </span>
+          </div>
+          <a
+            class="invitation-action primary"
+            href="/auth/login"
+            routerLink="/auth/login"
+            [queryParams]="{ returnUrl: returnUrl }"
+          >
+            {{ 'auth.invite.useAnotherAccount' | transloco }}
+          </a>
+        }
+      } @else {
+        <div class="invitation-actions">
+          <a
+            class="invitation-action primary"
+            href="/auth/login"
+            routerLink="/auth/login"
+            [queryParams]="{ returnUrl: returnUrl }"
+          >
+            {{ 'auth.invite.signIn' | transloco }}
+          </a>
+          <a
+            class="invitation-action secondary"
+            href="/auth/signup"
+            routerLink="/auth/signup"
+            [queryParams]="{ returnUrl: returnUrl }"
+          >
+            {{ 'auth.invite.createAccount' | transloco }}
+          </a>
+        </div>
+      }
+    }
+  </section>
+</main>

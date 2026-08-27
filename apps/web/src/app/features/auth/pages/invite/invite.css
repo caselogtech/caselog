@@ -1,0 +1,146 @@
+.invitation-state {
+  align-items: center;
+  color: var(--text-2);
+  display: flex;
+  gap: 10px;
+  min-height: 80px;
+}
+
+.state-spinner {
+  animation: invitation-spin 800ms linear infinite;
+  border: 2px solid var(--color-accent-200);
+  border-radius: 50%;
+  border-top-color: var(--accent);
+  height: 18px;
+  width: 18px;
+}
+
+.form-alert {
+  display: grid;
+  gap: 3px;
+}
+
+.invitation-summary {
+  background: var(--color-neutral-100);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  margin: 0 0 20px;
+  overflow: hidden;
+}
+
+.invitation-summary > div {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 92px minmax(0, 1fr);
+  padding: 9px 12px;
+}
+
+.invitation-summary > div + div {
+  border-top: 1px solid var(--color-neutral-300);
+}
+
+.invitation-summary dt {
+  color: var(--text-3);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.invitation-summary dd {
+  font-size: 0.875rem;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.invitation-summary .workspace-identity dd {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.invitation-summary dd.mono-value {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.current-account {
+  font-size: 0.8125rem;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.warning-message {
+  background: var(--color-warning-surface);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
+  border-left: 4px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  color: var(--color-warning-text);
+  display: grid;
+  font-size: 0.875rem;
+  gap: 3px;
+  padding: 10px 12px;
+  text-wrap: pretty;
+}
+
+.invitation-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.invitation-action {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  display: flex;
+  font-weight: 600;
+  justify-content: center;
+  margin-top: 12px;
+  min-height: var(--control-min-size);
+  padding: 8px 14px;
+  text-decoration: none;
+}
+
+.invitation-actions .invitation-action {
+  margin-top: 0;
+}
+
+.invitation-action.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.invitation-action.primary:hover {
+  background: var(--color-accent-600);
+  border-color: var(--color-accent-600);
+  color: #fff;
+}
+
+.invitation-action.secondary {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-1);
+}
+
+@keyframes invitation-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 520px) {
+  .invitation-summary > div {
+    grid-template-columns: 84px minmax(0, 1fr);
+  }
+
+  .invitation-action {
+    min-height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state-spinner {
+    animation: none;
+  }
+}

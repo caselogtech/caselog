@@ -25,6 +25,7 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.invalid_csv_rows',
   'errors.invalid_or_expired_token',
   'errors.invalid_session',
+  'errors.member_already_active',
   'errors.not_found',
   'errors.project_has_open_runs',
   'errors.project_key_taken',

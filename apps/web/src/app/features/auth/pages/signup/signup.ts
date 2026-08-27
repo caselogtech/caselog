@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { registerRequestSchema } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation } from '@tanstack/angular-query-experimental';
 import { BrowserSession } from '../../../../core/auth/browser-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { AuthApi } from '../../data-access/auth-api';
+import { safeInvitationReturnUrl } from '../../domain/auth-return-url';
 
 @Component({
   selector: 'app-signup',
@@ -19,7 +20,11 @@ export class Signup {
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly authApi = inject(AuthApi);
   private readonly browserSession = inject(BrowserSession);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly returnUrl = safeInvitationReturnUrl(
+    this.route.snapshot.queryParamMap.get('returnUrl'),
+  );
 
   readonly form = this.formBuilder.group({
     displayName: ['', [Validators.required, Validators.maxLength(120)]],
@@ -33,7 +38,7 @@ export class Signup {
       this.authApi.register(registerRequestSchema.parse(value)),
     onSuccess: async (session) => {
       this.browserSession.start(session);
-      await this.router.navigateByUrl('/auth/verify');
+      await this.router.navigateByUrl(this.returnUrl ?? '/auth/verify');
     },
   }));
 

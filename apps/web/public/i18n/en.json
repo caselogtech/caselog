@@ -51,6 +51,7 @@
     "invalid_csv_rows": "Resolve every row validation error before importing test cases.",
     "invalid_or_expired_token": "This link is invalid or has expired.",
     "invalid_session": "Your session is invalid or has expired. Sign in again.",
+    "member_already_active": "This account is already an active member of the workspace.",
     "not_found": "The requested resource was not found.",
     "project_has_open_runs": "Close active and draft runs before archiving this project.",
     "project_key_taken": "This project key is already used in this workspace.",

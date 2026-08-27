@@ -70,6 +70,27 @@
     "resendSuccess": "If verification is required, a new email has been sent.",
     "resendError": "Could not send the email. Try again shortly."
   },
+  "invite": {
+    "eyebrow": "Workspace invitation",
+    "title": "You’re invited to join",
+    "description": "Review the workspace and account details before accepting.",
+    "loading": "Checking this invitation…",
+    "invalidTitle": "This invitation is unavailable",
+    "invalidDescription": "The link may have expired, been revoked, or already been used. Ask the workspace owner for a new invitation.",
+    "workspace": "Workspace",
+    "invitedBy": "Invited by",
+    "role": "Role",
+    "recipient": "For",
+    "expires": "Expires",
+    "signedInAs": "Signed in as {{email}}",
+    "accept": "Accept invitation",
+    "accepting": "Accepting invitation…",
+    "wrongAccountTitle": "Use the invited account",
+    "wrongAccountDescription": "This invitation is for {{recipient}}, but you are signed in as {{current}}.",
+    "useAnotherAccount": "Sign in with another account",
+    "signIn": "Sign in to accept",
+    "createAccount": "Create an account"
+  },
   "common": {
     "backToSignIn": "Back to sign in"
   }

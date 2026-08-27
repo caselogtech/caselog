@@ -1,13 +1,16 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
+  acceptWorkspaceInvitationResponseSchema,
   createWorkspaceResponseSchema,
   emailVerificationResponseSchema,
   messageResponseSchema,
   organizationTokenResponseSchema,
   sessionResponseSchema,
+  workspaceInvitationPreviewSchema,
   workspaceListResponseSchema,
   workspaceSlugAvailabilityResponseSchema,
+  type AcceptWorkspaceInvitationResponse,
   type CreateWorkspaceRequest,
   type CreateWorkspaceResponse,
   type EmailVerificationRequest,
@@ -20,6 +23,7 @@ import {
   type ResetPasswordRequest,
   type SessionResponse,
   type WorkspaceListResponse,
+  type WorkspaceInvitationPreview,
   type WorkspaceSlugAvailabilityResponse,
 } from '@caselog/schemas';
 import { lastValueFrom } from 'rxjs';
@@ -75,6 +79,20 @@ export class AuthApi {
       this.http.post<unknown>('/api/v1/auth/password/reset', request),
     );
     return messageResponseSchema.parse(response);
+  }
+
+  async invitationPreview(token: string): Promise<WorkspaceInvitationPreview> {
+    const response = await lastValueFrom(
+      this.http.get<unknown>(`/api/v1/invitations/${encodeURIComponent(token)}`),
+    );
+    return workspaceInvitationPreviewSchema.parse(response);
+  }
+
+  async acceptInvitation(token: string): Promise<AcceptWorkspaceInvitationResponse> {
+    const response = await lastValueFrom(
+      this.http.post<unknown>(`/api/v1/invitations/${encodeURIComponent(token)}/accept`, null),
+    );
+    return acceptWorkspaceInvitationResponseSchema.parse(response);
   }
 
   async listWorkspaces(): Promise<WorkspaceListResponse> {

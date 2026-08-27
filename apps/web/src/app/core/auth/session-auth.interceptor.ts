@@ -8,7 +8,7 @@ export const sessionAuthInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
 
-  const accessToken = request.url.startsWith('/api/v1/auth/')
+  const accessToken = usesBrowserSession(request.url)
     ? inject(BrowserSession).accessToken()
     : inject(WorkspaceSession).accessToken();
 
@@ -16,3 +16,7 @@ export const sessionAuthInterceptor: HttpInterceptorFn = (request, next) => {
     ? next(request.clone({ setHeaders: { Authorization: `Bearer ${accessToken}` } }))
     : next(request);
 };
+
+export function usesBrowserSession(url: string): boolean {
+  return url.startsWith('/api/v1/auth/') || url.startsWith('/api/v1/invitations/');
+}

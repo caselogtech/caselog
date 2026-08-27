@@ -38,6 +38,12 @@ export const authRoutes: Routes = [
           import('./pages/reset/reset').then(({ ResetPassword }) => ResetPassword),
       },
       {
+        path: 'invite/:token',
+        providers: [authTranslations, workspaceTranslations],
+        loadComponent: () =>
+          import('./pages/invite/invite').then(({ WorkspaceInvitation }) => WorkspaceInvitation),
+      },
+      {
         path: 'workspace',
         providers: workspaceTranslations,
         loadComponent: () =>
