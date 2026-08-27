@@ -4,8 +4,8 @@ import type { ResultIngestionListResponse, TestRunListResponse } from '@caselog/
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { TestRunsApi } from '../../../../test-runs/public-api';
-import { WorkspaceApi } from '../../../data-access/workspace-api';
-import { CiImports } from '../../../pages/automation/ci-imports';
+import { CiImportsApi } from '../../../data-access/ci-imports-api';
+import { CiImports } from '../../../pages/ci-imports/ci-imports';
 
 const project = {
   id: 'c684c153-3802-49c7-94d1-a443262a9129',
@@ -85,7 +85,7 @@ describe('CiImports', () => {
         provideRouter([]),
         provideTanStackQuery(queryClient),
         { provide: TestRunsApi, useValue: workspaceApi },
-        { provide: WorkspaceApi, useValue: workspaceApi },
+        { provide: CiImportsApi, useValue: workspaceApi },
         {
           provide: ActivatedRoute,
           useValue: {

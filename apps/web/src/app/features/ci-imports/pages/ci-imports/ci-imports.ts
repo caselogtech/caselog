@@ -12,7 +12,7 @@ import {
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { TestRunsApi } from '../../../test-runs/public-api';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { CiImportsApi } from '../../data-access/ci-imports-api';
 
 const MAX_BROWSER_UPLOAD_BYTES = 250 * 1024 * 1024;
 
@@ -27,7 +27,7 @@ export class CiImports {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly testRunsApi = inject(TestRunsApi);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly ciImportsApi = inject(CiImportsApi);
   private readonly workspaceSession = inject(WorkspaceSession);
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
@@ -45,7 +45,7 @@ export class CiImports {
   readonly imports = injectInfiniteQuery(() => ({
     queryKey: ['result-ingestions', this.workspaceSlug, this.projectSlug, this.status()],
     queryFn: ({ pageParam }) =>
-      this.workspaceApi.listResultIngestions(
+      this.ciImportsApi.listResultIngestions(
         this.workspaceSlug,
         this.projectSlug,
         pageParam ?? undefined,
@@ -72,7 +72,7 @@ export class CiImports {
 
   readonly upload = injectMutation(() => ({
     mutationFn: ({ runId, file }: { runId: string; file: File }) =>
-      this.workspaceApi.uploadJUnitResults(this.workspaceSlug, this.projectSlug, runId, file, {
+      this.ciImportsApi.uploadJUnitResults(this.workspaceSlug, this.projectSlug, runId, file, {
         pipeline: this.pipelineControl.value.trim() || undefined,
         branch: this.branchControl.value.trim() || undefined,
       }),

@@ -3,7 +3,7 @@
   min-height: 100%;
 }
 
-.imports-page {
+.ci-imports-page {
   padding: 24px 28px 40px;
 }
 
@@ -437,7 +437,7 @@ tbody tr:hover {
 }
 
 @media (max-width: 620px) {
-  .imports-page {
+  .ci-imports-page {
     padding: 20px 16px 32px;
   }
 

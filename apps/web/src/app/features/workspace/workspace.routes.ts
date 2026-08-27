@@ -26,8 +26,8 @@ export const workspaceRoutes: Routes = [
       },
       {
         path: ':project/imports',
-        loadComponent: () =>
-          import('./pages/automation/ci-imports').then(({ CiImports }) => CiImports),
+        loadChildren: () =>
+          import('../ci-imports/public-api').then(({ ciImportsRoutes }) => ciImportsRoutes),
       },
       {
         path: ':project/runs',
