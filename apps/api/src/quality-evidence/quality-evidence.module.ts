@@ -11,6 +11,7 @@ import { NativeEvidenceQueue } from './application/services/native-evidence.queu
 import { NativeEvidenceReconciliationService } from './application/services/native-evidence-reconciliation.service';
 import { EvidenceEventRepository } from './infrastructure/repositories/evidence-event.repository';
 import { EvidenceObservationRepository } from './infrastructure/repositories/evidence-observation.repository';
+import { EvidenceProcessingIssueRepository } from './infrastructure/repositories/evidence-processing-issue.repository';
 import { EvidenceQueryRepository } from './infrastructure/repositories/evidence-query.repository';
 import { EvidenceIngestionRepository } from './infrastructure/repositories/evidence-ingestion.repository';
 import { EvidenceSnapshotRepository } from './infrastructure/repositories/evidence-snapshot.repository';
@@ -24,6 +25,7 @@ import { EvidenceController } from './presentation/controllers/evidence.controll
   providers: [
     EvidenceEventRepository,
     EvidenceObservationRepository,
+    EvidenceProcessingIssueRepository,
     EvidenceQueryRepository,
     EvidenceIngestionRepository,
     EvidenceSnapshotRepository,

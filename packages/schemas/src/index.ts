@@ -233,6 +233,8 @@ export type {
   EvidenceListResponse,
   EvidenceMetricKey,
   EvidenceObservation,
+  EvidenceProcessingIssue,
+  EvidenceProcessingIssueCode,
   EvidenceIngestRequest,
   EvidenceIngestResponse,
 } from './evidence.js';

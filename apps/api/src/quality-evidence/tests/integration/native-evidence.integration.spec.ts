@@ -15,6 +15,7 @@ import { NativeEvidenceEventConsumerService } from '../../application/services/n
 import { NativeEvidenceMaterializerService } from '../../application/services/native-evidence-materializer.service';
 import { EvidenceEventRepository } from '../../infrastructure/repositories/evidence-event.repository';
 import { EvidenceObservationRepository } from '../../infrastructure/repositories/evidence-observation.repository';
+import { EvidenceProcessingIssueRepository } from '../../infrastructure/repositories/evidence-processing-issue.repository';
 import { EvidenceQueryRepository } from '../../infrastructure/repositories/evidence-query.repository';
 
 describe('native candidate evidence', () => {
@@ -51,7 +52,8 @@ describe('native candidate evidence', () => {
     consumer = new NativeEvidenceEventConsumerService(
       new EvidenceEventRepository(tenantDatabase),
       candidateReferences,
-      new NativeEvidenceMaterializerService(candidateReferences, testRunSources, observations),
+      new NativeEvidenceMaterializerService(testRunSources, observations),
+      new EvidenceProcessingIssueRepository(tenantDatabase),
     );
 
     const suffix = randomUUID().slice(0, 8);
@@ -178,6 +180,7 @@ describe('native candidate evidence', () => {
 
   afterAll(async () => {
     if (organizationId) {
+      await admin.evidenceProcessingIssue.deleteMany({ where: { organizationId } });
       await admin.currentEvidenceObservation.deleteMany({ where: { organizationId } });
       await admin.evidenceObservation.deleteMany({ where: { organizationId } });
       await admin.candidateEvidenceRevision.deleteMany({ where: { organizationId } });
@@ -377,6 +380,56 @@ describe('native candidate evidence', () => {
         data: { state: 'INCOMPLETE' },
       }),
     ).rejects.toThrow(/immutable/);
+  });
+
+  it('exposes active processing issues and resolves them atomically on recovery', async () => {
+    const sourceEvent = await createEvent(
+      RELEASE_INTEGRATION_EVENT.candidateCreated,
+      'release_candidate',
+      candidateId,
+      { projectId, candidateId },
+    );
+    await admin.evidenceProcessingIssue.create({
+      data: {
+        organizationId,
+        projectId,
+        candidateId,
+        sourceEventId: sourceEvent.id,
+        code: 'native_materialization_failed',
+        attemptCount: 2,
+      },
+    });
+    const failing = await queries.list(organizationId, projectSlug, {
+      candidateId,
+      currentOnly: true,
+      limit: 25,
+    });
+    expect(failing.kind === 'found' ? failing.value.issues : []).toMatchObject([
+      {
+        stage: 'ingestion',
+        code: 'native_materialization_failed',
+        attempts: 2,
+        source: { eventId: sourceEvent.id },
+      },
+    ]);
+
+    await expect(consumer.processBatch(organizationId)).resolves.toEqual({
+      processed: 1,
+      observationsCreated: 0,
+    });
+    await expect(
+      admin.evidenceProcessingIssue.findUniqueOrThrow({
+        where: {
+          organizationId_sourceEventId: { organizationId, sourceEventId: sourceEvent.id },
+        },
+      }),
+    ).resolves.toMatchObject({ resolvedAt: expect.any(Date) });
+    const recovered = await queries.list(organizationId, projectSlug, {
+      candidateId,
+      currentOnly: true,
+      limit: 25,
+    });
+    expect(recovered.kind === 'found' ? recovered.value.issues : []).toEqual([]);
   });
 
   function createStatus(key: string, isFinal: boolean, countsAsFailure: boolean) {

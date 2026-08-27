@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { CandidateTestRunRole } from '@caselog/schemas';
-import { ReleaseCandidateReferenceService } from '../../../releases/public-api';
+import type { ReleaseCandidateReference } from '../../../releases/public-api';
 import { TestRunEvidenceSourceService } from '../../../test-runs/public-api';
 import {
   buildNativeTestMetrics,
@@ -15,8 +15,6 @@ const TEST_RUN_ROLES = ['required', 'informational'] as const satisfies Candidat
 @Injectable()
 export class NativeEvidenceMaterializerService {
   constructor(
-    @Inject(ReleaseCandidateReferenceService)
-    private readonly candidates: ReleaseCandidateReferenceService,
     @Inject(TestRunEvidenceSourceService)
     private readonly testRuns: TestRunEvidenceSourceService,
     @Inject(EvidenceObservationRepository)
@@ -25,11 +23,10 @@ export class NativeEvidenceMaterializerService {
 
   async materialize(
     organizationId: string,
-    candidateId: string,
+    candidate: ReleaseCandidateReference,
     eventIds: string[],
     triggeredAt: Date,
   ): Promise<NativeEvidenceMaterializationResult> {
-    const candidate = await this.candidates.resolve(organizationId, candidateId);
     const snapshots = await Promise.all(
       candidate.testRuns.map(async (link) => ({
         role: link.role,

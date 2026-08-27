@@ -10,6 +10,11 @@ export const evidenceMetricKeySchema = z.enum([
 export const evidenceObservationStateSchema = z.enum(['available', 'incomplete']);
 export const evidenceTrustLevelSchema = z.enum(['verified', 'authenticated', 'unverified']);
 export const evidenceFreshnessSchema = z.enum(['current', 'stale']);
+export const evidenceProcessingIssueCodeSchema = z.enum([
+  'test_run_unavailable',
+  'invalid_source_data',
+  'native_materialization_failed',
+]);
 export const evidenceIdempotencyKeySchema = z
   .string()
   .min(8)
@@ -128,10 +133,27 @@ export const evidenceObservationSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 
+export const evidenceProcessingIssueSchema = z.object({
+  id: z.uuid(),
+  stage: z.literal('ingestion'),
+  code: evidenceProcessingIssueCodeSchema,
+  attempts: z.number().int().positive(),
+  source: z.object({
+    eventId: z.uuid(),
+    eventName: z.string().min(1).max(120),
+    type: z.string().min(1).max(80),
+    id: z.string().min(1).max(200),
+    revision: z.string().min(1).max(200),
+  }),
+  firstFailedAt: z.iso.datetime(),
+  lastFailedAt: z.iso.datetime(),
+});
+
 export const evidenceListResponseSchema = z.object({
   candidateId: z.uuid(),
   candidateRevision: z.number().int().nonnegative(),
   items: z.array(evidenceObservationSchema),
+  issues: z.array(evidenceProcessingIssueSchema).default([]),
   nextCursor: z.uuid().nullable(),
 });
 
@@ -187,6 +209,8 @@ export const evidenceIngestResponseSchema = z.object({
 export type EvidenceMetricKey = z.infer<typeof evidenceMetricKeySchema>;
 export type EvidenceListQuery = z.infer<typeof evidenceListQuerySchema>;
 export type EvidenceObservation = z.infer<typeof evidenceObservationSchema>;
+export type EvidenceProcessingIssue = z.infer<typeof evidenceProcessingIssueSchema>;
+export type EvidenceProcessingIssueCode = z.infer<typeof evidenceProcessingIssueCodeSchema>;
 export type EvidenceListResponse = z.infer<typeof evidenceListResponseSchema>;
 export type EvidenceIngestRequest = z.infer<typeof evidenceIngestRequestSchema>;
 export type EvidenceIngestResponse = z.infer<typeof evidenceIngestResponseSchema>;

@@ -16,6 +16,7 @@ import { NATIVE_EVIDENCE_CONSUMER } from '../../application/ports/native-evidenc
 import { candidateEvidenceRevisionAdvancedEvent } from '../../application/events/evidence-integration-event';
 import { NATIVE_TEST_PRODUCER } from '../../domain/models/native-test-metric';
 import { appendEvidenceIntegrationEvent } from '../persistence/evidence-integration-event.persistence';
+import { resolveEvidenceProcessingIssues } from '../persistence/evidence-processing-issue.persistence';
 
 const VALUE_TYPE = {
   percentage: EvidenceValueType.PERCENTAGE,
@@ -96,6 +97,7 @@ export class EvidenceObservationRepository {
           consumerName: NATIVE_EVIDENCE_CONSUMER,
           eventIds: input.eventIds,
         });
+        await resolveEvidenceProcessingIssues(transaction, input.organizationId, input.eventIds);
         return { revision: currentRevision, created: 0 };
       }
 
@@ -165,6 +167,7 @@ export class EvidenceObservationRepository {
         consumerName: NATIVE_EVIDENCE_CONSUMER,
         eventIds: input.eventIds,
       });
+      await resolveEvidenceProcessingIssues(transaction, input.organizationId, input.eventIds);
       return { revision, created: pending.length };
     });
   }

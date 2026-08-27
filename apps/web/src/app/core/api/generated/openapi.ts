@@ -2490,6 +2490,28 @@ export interface components {
                 /** Format: date-time */
                 createdAt: string;
             }[];
+            /** @default [] */
+            issues: {
+                /** Format: uuid */
+                id: string;
+                /** @constant */
+                stage: "ingestion";
+                /** @enum {string} */
+                code: "test_run_unavailable" | "invalid_source_data" | "native_materialization_failed";
+                attempts: number;
+                source: {
+                    /** Format: uuid */
+                    eventId: string;
+                    eventName: string;
+                    type: string;
+                    id: string;
+                    revision: string;
+                };
+                /** Format: date-time */
+                firstFailedAt: string;
+                /** Format: date-time */
+                lastFailedAt: string;
+            }[];
             nextCursor: string | null;
         };
         EvidenceIngestRequestDto: {

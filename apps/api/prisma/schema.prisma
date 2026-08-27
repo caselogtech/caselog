@@ -283,6 +283,7 @@ model Organization {
   integrationEventReceipts    IntegrationEventReceipt[]
   evidenceProducers           EvidenceProducer[]
   evidenceObservations        EvidenceObservation[]
+  evidenceProcessingIssues    EvidenceProcessingIssue[]
   candidateEvidenceRevisions  CandidateEvidenceRevision[]
   currentEvidenceObservations CurrentEvidenceObservation[]
   releasePolicies             ReleasePolicy[]
@@ -622,6 +623,7 @@ model Project {
   candidateTestRuns           CandidateTestRun[]
   releaseLifecycleEvents      ReleaseLifecycleEvent[]
   evidenceObservations        EvidenceObservation[]
+  evidenceProcessingIssues    EvidenceProcessingIssue[]
   candidateEvidenceRevisions  CandidateEvidenceRevision[]
   currentEvidenceObservations CurrentEvidenceObservation[]
   releasePolicies             ReleasePolicy[]
@@ -875,6 +877,7 @@ model ReleaseCandidate {
   createdBy                  User?                             @relation("ReleaseCandidateCreator", fields: [createdById], references: [id], onDelete: SetNull)
   testRuns                   CandidateTestRun[]
   evidenceObservations       EvidenceObservation[]
+  evidenceProcessingIssues   EvidenceProcessingIssue[]
   evidenceRevision           CandidateEvidenceRevision?
   currentEvidence            CurrentEvidenceObservation[]
   policyAssignments          CandidatePolicyAssignment[]
@@ -947,8 +950,9 @@ model IntegrationEvent {
   occurredAt     DateTime @map("occurred_at") @db.Timestamptz(3)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  receipts     IntegrationEventReceipt[]
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  receipts                 IntegrationEventReceipt[]
+  evidenceProcessingIssues EvidenceProcessingIssue[]
 
   @@id([organizationId, id], map: "pk_integration_events")
   @@unique([organizationId, eventName, sourceType, sourceId, sourceRevision], map: "uq_integration_events_source_revision")
@@ -1033,6 +1037,29 @@ model EvidenceObservation {
   @@index([organizationId, projectId, candidateId, createdAt, id], map: "idx_evidence_observations_org_project_candidate_created")
   @@index([organizationId, candidateId, metricKey, dimensionsHash, createdAt], map: "idx_evidence_observations_org_candidate_metric_dimensions")
   @@map("evidence_observations")
+}
+
+model EvidenceProcessingIssue {
+  organizationId String    @map("organization_id") @db.Uuid
+  id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String    @map("project_id") @db.Uuid
+  candidateId    String    @map("candidate_id") @db.Uuid
+  sourceEventId  String    @map("source_event_id") @db.Uuid
+  code           String    @db.VarChar(80)
+  attemptCount   Int       @default(1) @map("attempt_count")
+  firstFailedAt  DateTime  @default(now()) @map("first_failed_at") @db.Timestamptz(3)
+  lastFailedAt   DateTime  @default(now()) @map("last_failed_at") @db.Timestamptz(3)
+  resolvedAt     DateTime? @map("resolved_at") @db.Timestamptz(3)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project          @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  candidate    ReleaseCandidate @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict)
+  sourceEvent  IntegrationEvent @relation(fields: [organizationId, sourceEventId], references: [organizationId, id], onDelete: Cascade)
+
+  @@id([organizationId, id], map: "pk_evidence_processing_issues")
+  @@unique([organizationId, sourceEventId], map: "uq_evidence_processing_issues_source_event")
+  @@index([organizationId, projectId, candidateId, resolvedAt, lastFailedAt, id], map: "idx_evidence_processing_issues_candidate_status")
+  @@map("evidence_processing_issues")
 }
 
 model CandidateEvidenceRevision {

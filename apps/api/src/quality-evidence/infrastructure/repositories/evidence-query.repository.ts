@@ -1,5 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { EvidenceListQuery, EvidenceListResponse } from '@caselog/schemas';
+import {
+  evidenceProcessingIssueCodeSchema,
+  type EvidenceListQuery,
+  type EvidenceListResponse,
+} from '@caselog/schemas/evidence';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import {
   EvidenceObservationState,
@@ -95,12 +99,39 @@ export class EvidenceQueryRepository {
         take: query.limit + 1,
         select: EVIDENCE_OBSERVATION_SELECTION,
       });
-      const revision = await transaction.candidateEvidenceRevision.findUnique({
-        where: {
-          organizationId_candidateId: { organizationId, candidateId: candidate.id },
-        },
-        select: { revision: true },
-      });
+      const [revision, issues] = await Promise.all([
+        transaction.candidateEvidenceRevision.findUnique({
+          where: {
+            organizationId_candidateId: { organizationId, candidateId: candidate.id },
+          },
+          select: { revision: true },
+        }),
+        transaction.evidenceProcessingIssue.findMany({
+          where: {
+            projectId: project.id,
+            candidateId: candidate.id,
+            resolvedAt: null,
+          },
+          orderBy: [{ lastFailedAt: 'desc' }, { id: 'desc' }],
+          take: 25,
+          select: {
+            id: true,
+            code: true,
+            attemptCount: true,
+            firstFailedAt: true,
+            lastFailedAt: true,
+            sourceEvent: {
+              select: {
+                id: true,
+                eventName: true,
+                sourceType: true,
+                sourceId: true,
+                sourceRevision: true,
+              },
+            },
+          },
+        }),
+      ]);
       const hasMore = records.length > query.limit;
       const page = records.slice(0, query.limit);
       return {
@@ -109,6 +140,21 @@ export class EvidenceQueryRepository {
           candidateId: candidate.id,
           candidateRevision: revision?.revision ?? 0,
           items: page.map((record) => toEvidenceObservation(record, now)),
+          issues: issues.map((issue) => ({
+            id: issue.id,
+            stage: 'ingestion',
+            code: evidenceProcessingIssueCodeSchema.parse(issue.code),
+            attempts: issue.attemptCount,
+            source: {
+              eventId: issue.sourceEvent.id,
+              eventName: issue.sourceEvent.eventName,
+              type: issue.sourceEvent.sourceType,
+              id: issue.sourceEvent.sourceId,
+              revision: issue.sourceEvent.sourceRevision,
+            },
+            firstFailedAt: issue.firstFailedAt.toISOString(),
+            lastFailedAt: issue.lastFailedAt.toISOString(),
+          })),
           nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null,
         },
       };

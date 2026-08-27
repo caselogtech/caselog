@@ -41,6 +41,7 @@ export class NativeEvidenceReconciliationService {
       const result = await this.consumer.processBatch(organizationId, EVENT_BATCH_SIZE);
       processed += result.processed;
       observationsCreated += result.observationsCreated;
+      if (result.halted) break;
       if (result.processed < EVENT_BATCH_SIZE) break;
     }
     if (processed > 0) {
