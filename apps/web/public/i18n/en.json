@@ -1,10 +1,11 @@
 {
   "app": {
-    "brand": "CASELOG",
+    "brand": "Caselog",
     "homeAriaLabel": "Caselog home",
     "navigation": {
       "primary": "Primary navigation",
       "projects": "Projects",
+      "releases": "Releases",
       "testCases": "Test cases",
       "testRuns": "Test runs",
       "ciImports": "CI imports"

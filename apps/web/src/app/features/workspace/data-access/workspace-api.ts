@@ -66,41 +66,15 @@ import {
   updateTestCaseResponseSchema,
 } from '@caselog/schemas';
 import { lastValueFrom } from 'rxjs';
-import { WorkspaceSession } from '../../../core/auth/workspace-session';
-import { AuthApi } from '../../auth/public-api';
+import { WorkspaceAccess } from './workspace-access';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceApi {
   private readonly http = inject(HttpClient);
-  private readonly authApi = inject(AuthApi);
-  private readonly workspaceSession = inject(WorkspaceSession);
-  private opening: { slug: string; promise: Promise<OrganizationTokenResponse> } | null = null;
+  private readonly workspaceAccess = inject(WorkspaceAccess);
 
-  async open(slug: string): Promise<OrganizationTokenResponse> {
-    if (this.workspaceSession.isActiveFor(slug)) {
-      const current = this.workspaceSession.current();
-      if (current) {
-        return current;
-      }
-    }
-
-    if (this.opening?.slug === slug) {
-      return this.opening.promise;
-    }
-
-    this.workspaceSession.clear();
-    const promise = this.authApi.organizationToken(slug).then((session) => {
-      this.workspaceSession.start(session);
-      return session;
-    });
-    this.opening = { slug, promise };
-    try {
-      return await promise;
-    } finally {
-      if (this.opening?.promise === promise) {
-        this.opening = null;
-      }
-    }
+  open(slug: string): Promise<OrganizationTokenResponse> {
+    return this.workspaceAccess.open(slug);
   }
 
   async listProjects(

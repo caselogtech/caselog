@@ -12,13 +12,17 @@
 }
 
 .brand {
+  align-items: center;
   color: var(--color-text);
+  display: inline-flex;
   font-size: 1.2667rem;
   font-weight: 700;
+  gap: 9px;
   letter-spacing: -0.02em;
   text-decoration: none;
 }
 
-.brand-dot {
+.brand app-brand-mark {
   color: var(--color-accent);
+  font-size: 22px;
 }

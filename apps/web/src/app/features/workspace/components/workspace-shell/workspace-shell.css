@@ -19,16 +19,20 @@
 }
 
 .brand {
+  align-items: center;
   color: var(--color-text);
+  display: inline-flex;
   flex: none;
   font-size: 1.2667rem;
   font-weight: 700;
+  gap: 9px;
   letter-spacing: -0.02em;
   text-decoration: none;
 }
 
-.brand-dot {
+.brand app-brand-mark {
   color: var(--color-accent);
+  font-size: 22px;
 }
 
 .primary-navigation {
@@ -117,15 +121,10 @@
   }
 
   .brand {
-    font-size: 0;
+    gap: 0;
   }
 
-  .brand::before {
-    content: "CL";
-    font-size: 1rem;
-  }
-
-  .brand-dot {
+  .brand-wordmark {
     display: none;
   }
 

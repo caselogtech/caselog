@@ -1,0 +1,44 @@
+:host {
+  display: block;
+}
+
+.skeleton {
+  animation: pulse var(--skeleton-animation-duration) ease-in-out
+    var(--skeleton-animation-iteration-count);
+  background: linear-gradient(
+    90deg,
+    var(--color-neutral-200),
+    var(--color-neutral-100),
+    var(--color-neutral-200)
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  display: block;
+  height: 16px;
+  width: min(100%, 320px);
+}
+
+.title {
+  height: 28px;
+  width: min(70%, 420px);
+}
+
+.row {
+  height: 52px;
+  width: 100%;
+}
+
+.block {
+  height: 160px;
+  width: 100%;
+}
+
+@keyframes pulse {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}

@@ -1,0 +1,65 @@
+:host {
+  display: inline-flex;
+}
+
+.badge {
+  align-items: center;
+  background: var(--color-neutral-100);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: 999px;
+  color: var(--color-neutral-800);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  gap: var(--space-1);
+  line-height: 1.35;
+  min-height: 24px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.icon {
+  fill: none;
+  flex: none;
+  height: 14px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+  width: 14px;
+}
+
+.icon .filled {
+  fill: currentColor;
+  stroke: none;
+}
+
+.success {
+  background: var(--color-success-surface);
+  border-color: var(--success-border);
+  color: var(--color-success-text);
+}
+
+.danger {
+  background: var(--color-danger-surface);
+  border-color: var(--error-border);
+  color: var(--color-danger-text);
+}
+
+.warning {
+  background: var(--color-warning-surface);
+  border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+  color: var(--color-warning-text);
+}
+
+.unknown {
+  background: var(--color-unknown-surface);
+  border-color: var(--color-neutral-300);
+  color: var(--color-unknown-text);
+}
+
+.pending {
+  background: var(--color-pending-surface);
+  border-color: var(--color-accent-200);
+  color: var(--color-pending-text);
+}

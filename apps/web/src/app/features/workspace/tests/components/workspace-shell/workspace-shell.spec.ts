@@ -20,6 +20,7 @@ describe('WorkspaceShell', () => {
               path: ':org',
               component: WorkspaceShell,
               children: [
+                { path: ':project/releases', component: EmptyPage },
                 { path: ':project/cases', component: EmptyPage },
                 { path: 'projects', component: EmptyPage },
               ],
@@ -42,8 +43,10 @@ describe('WorkspaceShell', () => {
     await harness.navigateByUrl('/acme/checkout/cases');
 
     const shell = harness.routeNativeElement as HTMLElement;
-    expect(shell.querySelector('.brand')?.textContent?.trim()).toBe('CASELOG.');
+    expect(shell.querySelector('.brand')?.textContent?.trim()).toBe('Caselog');
+    expect(shell.querySelector('app-brand-mark svg')).not.toBeNull();
     expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Test cases');
+    expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Releases');
     expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Test runs');
     expect(shell.querySelector('.avatar')?.textContent?.trim()).toBe('DO');
   });

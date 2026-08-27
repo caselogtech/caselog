@@ -1,0 +1,48 @@
+{
+  "list": {
+    "eyebrow": "Quality control plane",
+    "title": "Releases",
+    "description": "Track release lifecycle, the latest immutable candidate, and its server-evaluated readiness.",
+    "filterLabel": "Release lifecycle",
+    "all": "All",
+    "loadedCount": "{{count}} loaded",
+    "loading": "Loading releases…",
+    "errorTitle": "Unable to load releases",
+    "retry": "Try again",
+    "emptyTitle": "No releases yet",
+    "emptyDescription": "Releases will appear here after they are created through the API or automation.",
+    "noFilteredTitle": "No matching releases",
+    "noFilteredDescription": "No releases have this lifecycle state.",
+    "clearFilter": "Clear filter",
+    "release": "Release",
+    "lifecycle": "Lifecycle",
+    "environment": "Environment",
+    "candidate": "Latest candidate",
+    "readiness": "Readiness",
+    "target": "Target date",
+    "archived": "Archived environment",
+    "notSet": "Not set",
+    "none": "None",
+    "candidateCount": "{{count}} candidates",
+    "loadMore": "Load more",
+    "loadingMore": "Loading more…"
+  },
+  "lifecycle": {
+    "draft": "Draft",
+    "active": "Active",
+    "released": "Released",
+    "cancelled": "Cancelled"
+  },
+  "readiness": {
+    "ready": "Ready",
+    "atRisk": "At risk",
+    "blocked": "Blocked",
+    "unknown": "Unknown",
+    "approvedWithWaiver": "Approved with waiver",
+    "pending": "Evaluating",
+    "stale": "Stale",
+    "evaluationFailed": "Evaluation failed",
+    "noCandidate": "No candidate",
+    "noPolicy": "No policy"
+  }
+}

@@ -1,0 +1,152 @@
+<main class="release-page" aria-labelledby="release-list-title">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">{{ 'releases.list.eyebrow' | transloco }}</p>
+      <h1 id="release-list-title">{{ 'releases.list.title' | transloco }}</h1>
+      <p class="description">{{ 'releases.list.description' | transloco }}</p>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <nav class="lifecycle-filter" [attr.aria-label]="'releases.list.filterLabel' | transloco">
+      <button type="button" [class.active]="!state()" (click)="selectState()">
+        {{ 'releases.list.all' | transloco }}
+      </button>
+      @for (option of lifecycleOptions; track option) {
+        @let presentation = lifecycleState(option);
+        <button
+          type="button"
+          [class.active]="state() === option"
+          (click)="selectState(option)"
+        >
+          {{ presentation.labelKey | transloco }}
+        </button>
+      }
+    </nav>
+
+    @if (!releases.isPending() && !releases.isError()) {
+      <span class="loaded-count">
+        {{ 'releases.list.loadedCount' | transloco: { count: items().length } }}
+      </span>
+    }
+  </div>
+
+  @if (releases.isPending()) {
+    <section class="release-table loading" [attr.aria-label]="'releases.list.loading' | transloco">
+      @for (row of [1, 2, 3, 4, 5]; track row) {
+        <app-loading-skeleton preset="row" [label]="'releases.list.loading' | transloco" />
+      }
+    </section>
+  } @else if (releases.isError()) {
+    <app-page-state
+      [title]="'releases.list.errorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions class="secondary-action" type="button" (click)="releases.refetch()">
+        {{ 'releases.list.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (items().length === 0) {
+    <app-page-state
+      [title]="
+        (state() ? 'releases.list.noFilteredTitle' : 'releases.list.emptyTitle') | transloco
+      "
+      [message]="
+        (state() ? 'releases.list.noFilteredDescription' : 'releases.list.emptyDescription')
+          | transloco
+      "
+    >
+      @if (state()) {
+        <button actions class="secondary-action" type="button" (click)="selectState()">
+          {{ 'releases.list.clearFilter' | transloco }}
+        </button>
+      }
+    </app-page-state>
+  } @else {
+    <div class="release-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">{{ 'releases.list.release' | transloco }}</th>
+            <th scope="col">{{ 'releases.list.lifecycle' | transloco }}</th>
+            <th scope="col">{{ 'releases.list.environment' | transloco }}</th>
+            <th scope="col">{{ 'releases.list.candidate' | transloco }}</th>
+            <th scope="col">{{ 'releases.list.readiness' | transloco }}</th>
+            <th scope="col">{{ 'releases.list.target' | transloco }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.release.id) {
+            @let lifecycleStatus = lifecycle(item);
+            @let readinessStatus = readiness(item);
+            <tr>
+              <td class="release-identity" [attr.data-label]="'releases.list.release' | transloco">
+                <strong>{{ item.release.name }}</strong>
+                <span class="mono">{{ item.release.key }}</span>
+              </td>
+              <td [attr.data-label]="'releases.list.lifecycle' | transloco">
+                <app-status-badge
+                  [label]="lifecycleStatus.labelKey | transloco"
+                  [tone]="lifecycleStatus.tone"
+                />
+              </td>
+              <td [attr.data-label]="'releases.list.environment' | transloco">
+                @if (item.release.environment; as environment) {
+                  <span>{{ environment.name }}</span>
+                  @if (environment.state === 'archived') {
+                    <small>{{ 'releases.list.archived' | transloco }}</small>
+                  }
+                } @else {
+                  <span class="muted">{{ 'releases.list.notSet' | transloco }}</span>
+                }
+              </td>
+              <td [attr.data-label]="'releases.list.candidate' | transloco">
+                @if (item.latestCandidate; as candidate) {
+                  <span class="mono candidate-label">{{ candidate.label }}</span>
+                  <small>
+                    {{ 'releases.list.candidateCount' | transloco: { count: item.release.candidateCount } }}
+                  </small>
+                } @else {
+                  <span class="muted">{{ 'releases.list.none' | transloco }}</span>
+                }
+              </td>
+              <td [attr.data-label]="'releases.list.readiness' | transloco">
+                <app-status-badge
+                  [label]="readinessStatus.labelKey | transloco"
+                  [tone]="readinessStatus.tone"
+                />
+                @if (item.readiness; as readinessDecision) {
+                  <small>
+                    {{ readinessDecision.policy.name }} v{{ readinessDecision.policy.version }}
+                  </small>
+                }
+              </td>
+              <td class="target-date" [attr.data-label]="'releases.list.target' | transloco">
+                @if (item.release.targetDate) {
+                  {{ item.release.targetDate | date: 'mediumDate' }}
+                } @else {
+                  <span class="muted">{{ 'releases.list.notSet' | transloco }}</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (releases.hasNextPage()) {
+      <button
+        class="load-more secondary-action"
+        type="button"
+        [disabled]="releases.isFetchingNextPage()"
+        (click)="releases.fetchNextPage()"
+      >
+        {{
+          (releases.isFetchingNextPage()
+            ? 'releases.list.loadingMore'
+            : 'releases.list.loadMore') | transloco
+        }}
+      </button>
+    }
+  }
+</main>

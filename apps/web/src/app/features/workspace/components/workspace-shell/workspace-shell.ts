@@ -12,10 +12,11 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { filter, map, startWith } from 'rxjs';
 import { BrowserSession } from '../../../../core/auth/browser-session';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
+import { BrandMark } from '../../../../shared/ui/public-api';
 
 @Component({
   selector: 'app-workspace-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, TranslocoPipe],
+  imports: [BrandMark, RouterLink, RouterLinkActive, RouterOutlet, TranslocoPipe],
   templateUrl: './workspace-shell.html',
   styleUrl: './workspace-shell.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

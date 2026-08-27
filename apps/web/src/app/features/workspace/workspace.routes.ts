@@ -13,6 +13,11 @@ export const workspaceRoutes: Routes = [
       ),
     children: [
       {
+        path: ':project/releases',
+        loadChildren: () =>
+          import('../releases/public-api').then(({ releasesRoutes }) => releasesRoutes),
+      },
+      {
         path: ':project/imports',
         loadComponent: () =>
           import('./pages/automation/ci-imports').then(({ CiImports }) => CiImports),

@@ -1,3 +1,6 @@
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+
 @font-face {
   font-family: "Figtree";
   font-style: normal;
@@ -34,6 +37,18 @@
   --color-success: #2f8a4f;
   --color-success-surface: #dff0e2;
   --color-success-text: #1c6b3c;
+  --color-warning: #b26a00;
+  --color-warning-surface: #fcf0dd;
+  --color-warning-text: #7e4b00;
+  --color-unknown: #798080;
+  --color-unknown-surface: #f6f7f7;
+  --color-unknown-text: #424747;
+  --color-pending: var(--color-accent);
+  --color-pending-surface: var(--color-accent-100);
+  --color-pending-text: var(--color-accent-700);
+  --color-disabled-surface: var(--color-neutral-200);
+  --color-disabled-text: var(--color-neutral-600);
+  --color-overlay: rgb(31 34 35 / 42%);
   --surface-0: var(--color-bg);
   --surface-1: var(--color-surface);
   --surface-2: var(--color-surface-raised);
@@ -61,6 +76,16 @@
   --shadow-md: 0 3px 10px rgba(45, 43, 43, 0.16);
   --font-sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --font-size-xs: 0.7333rem;
+  --font-size-sm: 0.8667rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.2667rem;
+  --font-size-xl: 1.7333rem;
+  --content-width: 1180px;
+  --content-gutter: clamp(16px, 3vw, 32px);
+  --control-min-size: 44px;
+  --skeleton-animation-duration: 1.4s;
+  --skeleton-animation-iteration-count: infinite;
 }
 
 * {
@@ -114,4 +139,16 @@ a {
   top: 0;
   white-space: nowrap;
   width: 1px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --skeleton-animation-duration: 0.01ms;
+    --skeleton-animation-iteration-count: 1;
+  }
 }

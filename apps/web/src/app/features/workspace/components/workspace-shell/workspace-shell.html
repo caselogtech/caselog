@@ -5,11 +5,19 @@
     [routerLink]="['/', workspaceSlug, 'projects']"
     [attr.aria-label]="'app.homeAriaLabel' | transloco"
   >
-    {{ 'app.brand' | transloco }}<span class="brand-dot">.</span>
+    <app-brand-mark />
+    <span class="brand-wordmark">{{ 'app.brand' | transloco }}</span>
   </a>
 
   <nav class="primary-navigation" [attr.aria-label]="'app.navigation.primary' | transloco">
     @if (projectSlug()) {
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug() }}/releases"
+        [routerLink]="['/', workspaceSlug, projectSlug(), 'releases']"
+        routerLinkActive="active"
+      >
+        {{ 'app.navigation.releases' | transloco }}
+      </a>
       <a
         href="/{{ workspaceSlug }}/{{ projectSlug() }}/cases"
         [routerLink]="['/', workspaceSlug, projectSlug(), 'cases']"
