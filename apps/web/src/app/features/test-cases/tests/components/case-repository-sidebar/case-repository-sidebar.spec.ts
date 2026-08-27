@@ -89,6 +89,60 @@ describe('CaseRepositorySidebar', () => {
     expect(selected).toHaveBeenCalledWith(SECTION_ID);
   });
 
+  it('collapses suites with accessible controls and searches the full structure', async () => {
+    const fixture = createComponent();
+    await vi.waitFor(() => expect(fixture.componentInstance.structure.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    const toggle = fixture.nativeElement.querySelector('.suite-toggle') as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle.getAttribute('aria-label')).toContain('Collapse Authentication suite');
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('.section-row')).toBeNull();
+
+    const filter = fixture.nativeElement.querySelector('#structure-filter') as HTMLInputElement;
+    filter.value = 'Sign in';
+    filter.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Sign in');
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('renders large suites in bounded chunks and keeps later sections discoverable', async () => {
+    const sections = Array.from({ length: 205 }, (_, index) => ({
+      id: `section-${index + 1}`,
+      parentId: index === 204 ? 'section-1' : null,
+      name: `Section ${index + 1}`,
+      depth: index === 204 ? 1 : 0,
+      position: index,
+    }));
+    structureApi.projectStructure.mockResolvedValue({
+      ...structure,
+      suites: [{ ...structure.suites[0], sections }],
+    });
+    const fixture = createComponent();
+    await vi.waitFor(() => expect(fixture.componentInstance.structure.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.section-row')).toHaveLength(100);
+    const showMore = fixture.nativeElement.querySelector(
+      '.show-more-sections',
+    ) as HTMLButtonElement;
+    expect(showMore.textContent).toContain('105 remaining');
+    showMore.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.section-row')).toHaveLength(200);
+
+    const filter = fixture.nativeElement.querySelector('#structure-filter') as HTMLInputElement;
+    filter.value = 'Section 205';
+    filter.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.section-row')).toHaveLength(2);
+    expect(fixture.nativeElement.textContent).toContain('Section 205');
+  });
+
   it('creates a suite and refreshes the project structure', async () => {
     structureApi.createSuite.mockResolvedValue({
       id: '67e2afe7-bd67-4039-a332-e4e4bddb9ac6',

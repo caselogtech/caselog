@@ -9,11 +9,19 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import type { ProjectStructureResponse } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
+
+const INITIAL_SECTION_LIMIT = 100;
+const SECTION_LIMIT_INCREMENT = 100;
+
+type StructureSuite = ProjectStructureResponse['suites'][number];
+type StructureSection = StructureSuite['sections'][number];
+type SuiteView = { suite: StructureSuite; sections: StructureSection[]; sourceIndex: number };
 
 @Component({
   selector: 'app-case-repository-sidebar',
@@ -39,6 +47,9 @@ export class CaseRepositorySidebar {
   readonly renameTarget = signal<{ type: 'suite' | 'section'; id: string } | null>(null);
   readonly moveTarget = signal<{ id: string } | null>(null);
   readonly deleteTarget = signal<{ type: 'suite' | 'section'; id: string } | null>(null);
+  readonly structureFilter = signal('');
+  readonly suiteExpansion = signal<Record<string, boolean>>({});
+  readonly sectionLimits = signal<Record<string, number>>({});
   readonly canManage = computed(() => this.workspaceSession.role() !== 'read_only');
 
   readonly suiteForm = this.formBuilder.group({
@@ -63,6 +74,16 @@ export class CaseRepositorySidebar {
     queryKey: ['project-structure', this.workspaceSlug(), this.projectSlug()],
     queryFn: () => this.structureApi.projectStructure(this.workspaceSlug(), this.projectSlug()),
   }));
+  readonly visibleSuites = computed(() => {
+    const term = this.structureFilter().trim().toLocaleLowerCase();
+    return (this.structure.data()?.suites ?? []).flatMap((suite, sourceIndex): SuiteView[] => {
+      if (!term || suite.name.toLocaleLowerCase().includes(term)) {
+        return [{ suite, sections: suite.sections, sourceIndex }];
+      }
+      const sections = matchingSections(suite.sections, term);
+      return sections.length > 0 ? [{ suite, sections, sourceIndex }] : [];
+    });
+  });
   readonly moveParentOptions = computed(
     () =>
       this.structure
@@ -227,6 +248,46 @@ export class CaseRepositorySidebar {
     if (target) this.deleteStructureItem.mutate(target);
   }
 
+  updateStructureFilter(event: Event): void {
+    this.structureFilter.set((event.target as HTMLInputElement).value);
+  }
+
+  clearStructureFilter(): void {
+    this.structureFilter.set('');
+  }
+
+  isSuiteExpanded(view: SuiteView, index: number): boolean {
+    if (view.sections.some(({ id }) => id === this.selectedSectionId())) return true;
+    if (this.structureFilter().trim()) return true;
+    return this.suiteExpansion()[view.suite.id] ?? index === 0;
+  }
+
+  toggleSuite(view: SuiteView, index: number): void {
+    this.suiteExpansion.update((expansion) => ({
+      ...expansion,
+      [view.suite.id]: !this.isSuiteExpanded(view, index),
+    }));
+  }
+
+  visibleSections(view: SuiteView): StructureSection[] {
+    return view.sections.slice(0, this.sectionLimit(view));
+  }
+
+  hasMoreSections(view: SuiteView): boolean {
+    return this.sectionLimit(view) < view.sections.length;
+  }
+
+  showMoreSections(view: SuiteView): void {
+    this.sectionLimits.update((limits) => ({
+      ...limits,
+      [view.suite.id]: this.sectionLimit(view) + SECTION_LIMIT_INCREMENT,
+    }));
+  }
+
+  remainingSectionCount(view: SuiteView): number {
+    return Math.max(0, view.sections.length - this.sectionLimit(view));
+  }
+
   errorTranslationKey(): string {
     return apiErrorTranslationKey(
       this.createSuite.error() ??
@@ -244,4 +305,27 @@ export class CaseRepositorySidebar {
       queryKey: ['project-structure', this.workspaceSlug(), this.projectSlug()],
     });
   }
+
+  private sectionLimit(view: SuiteView): number {
+    const selectedIndex = view.sections.findIndex(({ id }) => id === this.selectedSectionId());
+    return Math.max(
+      this.sectionLimits()[view.suite.id] ?? INITIAL_SECTION_LIMIT,
+      selectedIndex + 1,
+    );
+  }
+}
+
+function matchingSections(sections: StructureSection[], term: string): StructureSection[] {
+  const byId = new Map(sections.map((section) => [section.id, section]));
+  const included = new Set(
+    sections.filter(({ name }) => name.toLocaleLowerCase().includes(term)).map(({ id }) => id),
+  );
+  for (const sectionId of [...included]) {
+    let parentId = byId.get(sectionId)?.parentId ?? null;
+    while (parentId) {
+      included.add(parentId);
+      parentId = byId.get(parentId)?.parentId ?? null;
+    }
+  }
+  return sections.filter(({ id }) => included.has(id));
 }

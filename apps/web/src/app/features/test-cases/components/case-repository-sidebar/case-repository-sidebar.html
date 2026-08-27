@@ -28,86 +28,177 @@
         </button>
       </div>
     } @else {
-      @for (
-        suite of structure.data()?.suites ?? [];
-        track suite.id;
-        let suiteIndex = $index;
-        let firstSuite = $first;
-        let lastSuite = $last
-      ) {
-        <div class="suite-group">
-          <div class="suite-heading">
-            <h3>{{ suite.name }}</h3>
-            @if (canManage()) {
-              <div class="structure-actions">
-                <button
-                  type="button"
-                  [disabled]="firstSuite || moveSuiteItem.isPending()"
-                  [attr.aria-label]="'workspace.cases.moveSuiteUp' | transloco"
-                  [title]="'workspace.cases.moveSuiteUp' | transloco"
-                  (click)="moveSuite(suite.id, suiteIndex - 1)"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  [disabled]="lastSuite || moveSuiteItem.isPending()"
-                  [attr.aria-label]="'workspace.cases.moveSuiteDown' | transloco"
-                  [title]="'workspace.cases.moveSuiteDown' | transloco"
-                  (click)="moveSuite(suite.id, suiteIndex + 1)"
-                >
-                  ↓
-                </button>
-                <button type="button" (click)="beginRename('suite', suite.id, suite.name)">
-                  {{ 'workspace.cases.rename' | transloco }}
-                </button>
-                <button type="button" (click)="beginSection(suite.id)">+</button>
-                <button type="button" (click)="requestDelete('suite', suite.id)">×</button>
-              </div>
-            }
-          </div>
+      <div class="structure-filter">
+        <label for="structure-filter">{{ 'workspace.cases.filterStructure' | transloco }}</label>
+        <div>
+          <input
+            id="structure-filter"
+            type="search"
+            [value]="structureFilter()"
+            [placeholder]="'workspace.cases.filterStructurePlaceholder' | transloco"
+            (input)="updateStructureFilter($event)"
+          />
+          @if (structureFilter()) {
+            <button type="button" (click)="clearStructureFilter()">
+              {{ 'workspace.cases.clearStructureFilter' | transloco }}
+            </button>
+          }
+        </div>
+      </div>
 
-          @for (section of suite.sections; track section.id) {
-            <div class="section-row">
-              <button
-                type="button"
-                class="section-link"
-                [class.active]="selectedSectionId() === section.id"
-                [style.padding-left.px]="10 + section.depth * 14"
-                (click)="sectionSelected.emit(section.id)"
-              >
-                {{ section.name }}
-              </button>
-              @if (canManage()) {
-                <div class="structure-actions section-actions">
-                  <button
-                    type="button"
-                    [title]="'workspace.cases.rename' | transloco"
-                    (click)="beginRename('section', section.id, section.name)"
-                  >
-                    ✎
-                  </button>
-                  <button
-                    type="button"
-                    [title]="'workspace.cases.addChildSection' | transloco"
-                    (click)="beginSection(suite.id, section.id)"
-                  >
-                    +
-                  </button>
-                  <button
-                    type="button"
-                    [title]="'workspace.cases.move' | transloco"
-                    (click)="beginMoveSection(section.id, suite.id, section.position)"
-                  >
-                    ↕
-                  </button>
-                  <button
-                    type="button"
-                    [title]="'workspace.cases.delete' | transloco"
-                    (click)="requestDelete('section', section.id)"
-                  >
-                    ×
-                  </button>
+      @if (visibleSuites().length === 0) {
+        <p class="sidebar-state">{{ 'workspace.cases.noStructureMatches' | transloco }}</p>
+      } @else {
+        <div class="suite-groups">
+          @for (view of visibleSuites(); track view.suite.id) {
+            <div class="suite-group">
+              <div class="suite-heading">
+                <button
+                  type="button"
+                  class="suite-toggle"
+                  [attr.aria-expanded]="isSuiteExpanded(view, view.sourceIndex)"
+                  [attr.aria-controls]="'suite-sections-' + view.suite.id"
+                  [attr.aria-label]="
+                    (isSuiteExpanded(view, view.sourceIndex)
+                      ? 'workspace.cases.collapseSuite'
+                      : 'workspace.cases.expandSuite')
+                      | transloco: { name: view.suite.name }
+                  "
+                  (click)="toggleSuite(view, view.sourceIndex)"
+                >
+                  <span class="suite-chevron" aria-hidden="true">›</span>
+                  <span class="suite-name">{{ view.suite.name }}</span>
+                  <span class="suite-count">
+                    {{ 'workspace.cases.sectionCount' | transloco: { count: view.sections.length } }}
+                  </span>
+                </button>
+                @if (canManage()) {
+                  <div class="structure-actions suite-actions">
+                    <button
+                      type="button"
+                      [disabled]="view.sourceIndex === 0 || moveSuiteItem.isPending()"
+                      [attr.aria-label]="'workspace.cases.moveSuiteUp' | transloco"
+                      [title]="'workspace.cases.moveSuiteUp' | transloco"
+                      (click)="moveSuite(view.suite.id, view.sourceIndex - 1)"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      [disabled]="
+                        view.sourceIndex === (structure.data()?.suites?.length ?? 0) - 1 ||
+                        moveSuiteItem.isPending()
+                      "
+                      [attr.aria-label]="'workspace.cases.moveSuiteDown' | transloco"
+                      [title]="'workspace.cases.moveSuiteDown' | transloco"
+                      (click)="moveSuite(view.suite.id, view.sourceIndex + 1)"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      [attr.aria-label]="
+                        'workspace.cases.renameSuite' | transloco: { name: view.suite.name }
+                      "
+                      [title]="'workspace.cases.rename' | transloco"
+                      (click)="beginRename('suite', view.suite.id, view.suite.name)"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      type="button"
+                      [attr.aria-label]="
+                        'workspace.cases.addSectionToSuite' | transloco: { name: view.suite.name }
+                      "
+                      [title]="'workspace.cases.addSection' | transloco"
+                      (click)="beginSection(view.suite.id)"
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      [attr.aria-label]="
+                        'workspace.cases.deleteSuite' | transloco: { name: view.suite.name }
+                      "
+                      [title]="'workspace.cases.delete' | transloco"
+                      (click)="requestDelete('suite', view.suite.id)"
+                    >
+                      ×
+                    </button>
+                  </div>
+                }
+              </div>
+
+              @if (isSuiteExpanded(view, view.sourceIndex)) {
+                <div class="section-list" [id]="'suite-sections-' + view.suite.id">
+                  @for (section of visibleSections(view); track section.id) {
+                    <div class="section-row">
+                      <button
+                        type="button"
+                        class="section-link"
+                        [class.active]="selectedSectionId() === section.id"
+                        [style.padding-left.px]="10 + section.depth * 14"
+                        (click)="sectionSelected.emit(section.id)"
+                      >
+                        {{ section.name }}
+                      </button>
+                      @if (canManage()) {
+                        <div class="structure-actions section-actions">
+                          <button
+                            type="button"
+                            [attr.aria-label]="
+                              'workspace.cases.renameSection' | transloco: { name: section.name }
+                            "
+                            [title]="'workspace.cases.rename' | transloco"
+                            (click)="beginRename('section', section.id, section.name)"
+                          >
+                            ✎
+                          </button>
+                          <button
+                            type="button"
+                            [attr.aria-label]="
+                              'workspace.cases.addChildToSection'
+                                | transloco: { name: section.name }
+                            "
+                            [title]="'workspace.cases.addChildSection' | transloco"
+                            (click)="beginSection(view.suite.id, section.id)"
+                          >
+                            +
+                          </button>
+                          <button
+                            type="button"
+                            [attr.aria-label]="
+                              'workspace.cases.moveSection' | transloco: { name: section.name }
+                            "
+                            [title]="'workspace.cases.move' | transloco"
+                            (click)="
+                              beginMoveSection(section.id, view.suite.id, section.position)
+                            "
+                          >
+                            ↕
+                          </button>
+                          <button
+                            type="button"
+                            [attr.aria-label]="
+                              'workspace.cases.deleteSection' | transloco: { name: section.name }
+                            "
+                            [title]="'workspace.cases.delete' | transloco"
+                            (click)="requestDelete('section', section.id)"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (hasMoreSections(view)) {
+                    <button class="show-more-sections" type="button" (click)="showMoreSections(view)">
+                      {{
+                        'workspace.cases.showMoreSections'
+                          | transloco: { count: remainingSectionCount(view) }
+                      }}
+                    </button>
+                  }
                 </div>
               }
             </div>
