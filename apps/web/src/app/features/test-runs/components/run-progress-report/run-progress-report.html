@@ -44,8 +44,7 @@
   </div>
 
   <div class="progress-breakdowns">
-    <details>
-      <summary>{{ 'workspace.runs.detail.statusBreakdown' | transloco }}</summary>
+    <app-disclosure [label]="'workspace.runs.detail.statusBreakdown' | transloco">
       <ul>
         @for (status of report().statuses; track status.status.id) {
           <li>
@@ -55,9 +54,8 @@
           </li>
         }
       </ul>
-    </details>
-    <details>
-      <summary>{{ 'workspace.runs.detail.suiteBreakdown' | transloco }}</summary>
+    </app-disclosure>
+    <app-disclosure [label]="'workspace.runs.detail.suiteBreakdown' | transloco">
       <ul>
         @for (suite of report().suites; track suite.suite.id) {
           <li>
@@ -66,9 +64,8 @@
           </li>
         }
       </ul>
-    </details>
-    <details>
-      <summary>{{ 'workspace.runs.detail.assigneeBreakdown' | transloco }}</summary>
+    </app-disclosure>
+    <app-disclosure [label]="'workspace.runs.detail.assigneeBreakdown' | transloco">
       <ul>
         @for (assignee of report().assignees; track assignee.assignee?.id ?? 'unassigned') {
           <li>
@@ -81,6 +78,6 @@
           </li>
         }
       </ul>
-    </details>
+    </app-disclosure>
   </div>
 </section>

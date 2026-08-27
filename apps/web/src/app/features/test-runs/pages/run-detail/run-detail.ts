@@ -9,7 +9,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import type { CreateTestResultRequest, TestRunItemResponse, TestRunStatus } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -21,7 +20,17 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import {
+  Button,
+  Callout,
+  Dialog,
+  LoadingSkeleton,
+  PageState,
+  StatusBadge,
+  type StatusBadgeTone,
+} from '../../../../shared/ui/public-api';
 import { RunCaseQueue } from '../../components/run-case-queue/run-case-queue';
+import { RunExecutionPanel } from '../../components/run-execution-panel/run-execution-panel';
 import { RunProgressReport } from '../../components/run-progress-report/run-progress-report';
 import { TestRunsApi } from '../../data-access/test-runs-api';
 import { RunExecutionSession } from '../../state/run-execution-session';
@@ -29,11 +38,17 @@ import { RunExecutionSession } from '../../state/run-execution-session';
 @Component({
   selector: 'app-run-detail',
   imports: [
+    Button,
+    Callout,
     DatePipe,
-    ReactiveFormsModule,
+    Dialog,
+    LoadingSkeleton,
+    PageState,
     RouterLink,
     RunCaseQueue,
+    RunExecutionPanel,
     RunProgressReport,
+    StatusBadge,
     TranslocoPipe,
   ],
   templateUrl: './run-detail.html',
@@ -51,13 +66,7 @@ export class RunDetail {
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly runId = this.route.snapshot.paramMap.get('runId') ?? '';
   readonly selectedItemId = signal(this.route.snapshot.queryParamMap.get('item') ?? '');
-  readonly timerRunning = this.execution.timerRunning;
-  readonly online = this.execution.online;
-  readonly draftSavedAt = this.execution.draftSavedAt;
-  readonly draftRestored = this.execution.draftRestored;
-  readonly draftStorageError = this.execution.draftStorageError;
   readonly closeConfirmation = signal(false);
-  readonly resultForm = this.execution.form;
 
   readonly detail = injectInfiniteQuery(() => ({
     queryKey: ['test-run', this.workspaceSlug, this.projectSlug, this.runId],
@@ -153,35 +162,15 @@ export class RunDetail {
     this.selectedItemId.set(itemId);
   }
 
-  chooseStepStatus(position: number, statusId: string): void {
-    this.execution.chooseStepStatus(position, statusId);
-  }
-
-  isStepStatusSelected(position: number, statusId: string): boolean {
-    return this.execution.isStepStatusSelected(position, statusId);
-  }
-
   assign(itemId: string, assigneeId: string): void {
     this.assignment.mutate({ itemId, assigneeId: assigneeId || null });
   }
 
   record(statusId: string): void {
     const item = this.selectedItem();
-    if (!this.canExecute() || !this.online() || !item || this.result.isPending()) return;
+    if (!this.canExecute() || !this.execution.online() || !item || this.result.isPending()) return;
     const request = this.execution.createResultRequest(statusId);
     if (request) this.result.mutate({ itemId: item.id, request });
-  }
-
-  startTimer(): void {
-    if (this.canExecute()) this.execution.startTimer();
-  }
-
-  pauseTimer(): void {
-    this.execution.pauseTimer();
-  }
-
-  resetTimer(): void {
-    this.execution.resetTimer();
   }
 
   steps(item: TestRunItemResponse): Array<{ action: string; expected?: string }> {
@@ -191,15 +180,6 @@ export class RunDetail {
     return content.steps ?? [];
   }
 
-  textContent(item: TestRunItemResponse): string {
-    const content = item.caseVersion.content as {
-      text?: string;
-      charter?: string;
-      gherkin?: string;
-    };
-    return content.text ?? content.charter ?? content.gherkin ?? '';
-  }
-
   statusTranslationKey(status: TestRunStatus): string {
     return {
       draft: 'workspace.runs.statuses.draft',
@@ -207,6 +187,12 @@ export class RunDetail {
       completed: 'workspace.runs.statuses.completed',
       archived: 'workspace.runs.statuses.archived',
     }[status];
+  }
+
+  statusTone(status: TestRunStatus): StatusBadgeTone {
+    if (status === 'active') return 'pending';
+    if (status === 'completed') return 'success';
+    return 'neutral';
   }
 
   errorTranslationKey(): string {

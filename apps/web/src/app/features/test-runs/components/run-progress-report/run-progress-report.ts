@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { RunProgressResponse } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { Disclosure } from '../../../../shared/ui/public-api';
 
 @Component({
   selector: 'app-run-progress-report',
-  imports: [TranslocoPipe],
+  imports: [Disclosure, TranslocoPipe],
   templateUrl: './run-progress-report.html',
   styleUrl: './run-progress-report.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

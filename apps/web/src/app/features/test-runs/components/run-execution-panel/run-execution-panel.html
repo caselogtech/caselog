@@ -1,0 +1,232 @@
+<article class="execution-panel">
+  <header class="case-heading">
+    <div>
+      <p class="eyebrow">
+        {{
+          'workspace.runs.detail.version' | transloco: { version: item().caseVersion.version }
+        }}
+      </p>
+      <h2>{{ item().caseVersion.title }}</h2>
+    </div>
+    <app-status-badge [tone]="currentStatusTone()" [label]="item().status.name" />
+  </header>
+
+  <div class="case-controls">
+    @if (canManage()) {
+      <app-form-field
+        class="assignee"
+        controlId="run-item-assignee"
+        [label]="'workspace.runs.detail.assignee' | transloco"
+      >
+        <select
+          appControl
+          id="run-item-assignee"
+          [value]="item().assignee?.id ?? ''"
+          [disabled]="assignmentPending()"
+          (change)="
+            assignmentChanged.emit({
+              itemId: item().id,
+              assigneeId: $any($event.target).value
+            })
+          "
+        >
+          <option value="">{{ 'workspace.runs.detail.unassigned' | transloco }}</option>
+          @for (member of members(); track member.id) {
+            <option [value]="member.id">{{ member.displayName }}</option>
+          }
+        </select>
+      </app-form-field>
+    } @else if (item().assignee) {
+      <p class="assignee-readonly">
+        {{ 'workspace.runs.detail.assignee' | transloco }}: {{ item().assignee?.displayName }}
+      </p>
+    }
+
+    @if (item().attemptCount > 0) {
+      <a
+        appButton="secondary"
+        href="/{{ workspaceSlug() }}/{{ projectSlug() }}/runs/{{ runId() }}/items/{{ item().id }}/results"
+        [routerLink]="[
+          '/',
+          workspaceSlug(),
+          projectSlug(),
+          'runs',
+          runId(),
+          'items',
+          item().id,
+          'results'
+        ]"
+      >
+        {{ 'workspace.runs.detail.viewHistory' | transloco: { count: item().attemptCount } }}
+      </a>
+    }
+  </div>
+
+  <div class="case-content">
+    @if (item().caseVersion.preconditions) {
+      <section class="content-block">
+        <h3>{{ 'workspace.runs.detail.preconditions' | transloco }}</h3>
+        <p>{{ item().caseVersion.preconditions }}</p>
+      </section>
+    }
+
+    @if (steps().length > 0) {
+      <section class="content-block">
+        <h3>{{ 'workspace.runs.detail.steps' | transloco }}</h3>
+        <ol class="steps">
+          @for (step of steps(); track $index) {
+            <li>
+              <span class="step-number">{{ $index + 1 }}</span>
+              <div class="step-content">
+                <span class="step-label">{{ 'workspace.runs.detail.action' | transloco }}</span>
+                <p>{{ step.action }}</p>
+                @if (step.expected) {
+                  <span class="step-label">{{ 'workspace.runs.detail.expected' | transloco }}</span>
+                  <p class="expected-step">{{ step.expected }}</p>
+                }
+                @if (canExecute()) {
+                  <div
+                    class="step-statuses"
+                    [attr.aria-label]="
+                      'workspace.runs.detail.stepStatus' | transloco: { position: $index + 1 }
+                    "
+                  >
+                    @for (status of statuses(); track status.id) {
+                      @if (status.key !== 'untested') {
+                        <button
+                          appButton="secondary"
+                          type="button"
+                          [class.selected]="isStepStatusSelected($index, status.id)"
+                          [style.--status-color]="status.color"
+                          [attr.aria-pressed]="isStepStatusSelected($index, status.id)"
+                          (click)="chooseStepStatus($index, status.id)"
+                        >
+                          <i></i>
+                          {{ status.name }}
+                        </button>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            </li>
+          }
+        </ol>
+      </section>
+    } @else {
+      <pre>{{ textContent() }}</pre>
+    }
+
+    @if (item().caseVersion.expectedResult) {
+      <section class="content-block">
+        <h3>{{ 'workspace.runs.detail.expectedResult' | transloco }}</h3>
+        <p>{{ item().caseVersion.expectedResult }}</p>
+      </section>
+    }
+  </div>
+
+  @if (canExecute()) {
+    <form class="execution-form" [formGroup]="execution.form">
+      <div class="execution-heading">
+        <div>
+          <p class="eyebrow">{{ 'workspace.runs.detail.executionEyebrow' | transloco }}</p>
+          <h3>{{ 'workspace.runs.detail.recordResult' | transloco }}</h3>
+        </div>
+        <p class="draft-state" aria-live="polite">
+          @if (execution.draftStorageError()) {
+            <span class="error">{{ 'workspace.runs.detail.draftError' | transloco }}</span>
+          } @else if (!execution.online()) {
+            {{ 'workspace.runs.detail.offlineDraft' | transloco }}
+          } @else if (execution.draftRestored()) {
+            {{ 'workspace.runs.detail.draftRestored' | transloco }}
+          } @else if (execution.draftSavedAt()) {
+            {{ 'workspace.runs.detail.draftSaved' | transloco }}
+          } @else {
+            {{ 'workspace.runs.detail.draftReady' | transloco }}
+          }
+        </p>
+      </div>
+
+      <app-form-field
+        controlId="result-comment"
+        [label]="'workspace.runs.detail.comment' | transloco"
+      >
+        <textarea
+          appControl
+          id="result-comment"
+          rows="4"
+          formControlName="comment"
+          [placeholder]="'workspace.runs.detail.commentPlaceholder' | transloco"
+        ></textarea>
+      </app-form-field>
+
+      <div class="timer-field">
+        <app-form-field
+          controlId="elapsed-seconds"
+          [label]="'workspace.runs.detail.elapsedSeconds' | transloco"
+          [error]="
+            execution.form.controls.elapsedSeconds.invalid &&
+            (execution.form.controls.elapsedSeconds.dirty ||
+              execution.form.controls.elapsedSeconds.touched)
+              ? ('workspace.runs.detail.elapsedInvalid' | transloco)
+              : undefined
+          "
+        >
+          <div class="timer-controls">
+            <input
+              appControl
+              id="elapsed-seconds"
+              type="number"
+              min="0"
+              max="86400"
+              step="1"
+              formControlName="elapsedSeconds"
+              [attr.aria-invalid]="execution.form.controls.elapsedSeconds.invalid"
+              aria-describedby="elapsed-seconds-description"
+            />
+            @if (execution.timerRunning()) {
+              <button appButton="secondary" type="button" (click)="execution.pauseTimer()">
+                {{ 'workspace.runs.detail.pauseTimer' | transloco }}
+              </button>
+            } @else {
+              <button appButton="secondary" type="button" (click)="execution.startTimer()">
+                {{ 'workspace.runs.detail.startTimer' | transloco }}
+              </button>
+            }
+            <button appButton="quiet" type="button" (click)="execution.resetTimer()">
+              {{ 'workspace.runs.detail.resetTimer' | transloco }}
+            </button>
+            <output for="elapsed-seconds">
+              {{
+                'workspace.runs.detail.timerValue'
+                  | transloco: { seconds: execution.form.controls.elapsedSeconds.value }
+              }}
+            </output>
+          </div>
+        </app-form-field>
+      </div>
+
+      <div class="result-actions">
+        @for (status of statuses(); track status.id) {
+          @if (status.key !== 'untested') {
+            <button
+              appButton="secondary"
+              type="button"
+              [disabled]="!execution.online() || resultPending() || execution.form.invalid"
+              [style.--status-color]="status.color"
+              (click)="resultRecorded.emit(status.id)"
+            >
+              <i></i>
+              {{ status.name }}
+            </button>
+          }
+        }
+      </div>
+      <p class="shortcut-hint">{{ 'workspace.runs.detail.shortcuts' | transloco }}</p>
+    </form>
+  } @else {
+    <app-callout tone="neutral" [title]="'workspace.runs.detail.frozenTitle' | transloco">
+      <p>{{ 'workspace.runs.detail.frozen' | transloco }}</p>
+    </app-callout>
+  }
+</article>

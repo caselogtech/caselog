@@ -1,58 +1,71 @@
 <main class="runner-page" aria-labelledby="run-title">
   @if (detail.isPending()) {
-    <section class="page-state" aria-live="polite">
-      <span class="loading-indicator" aria-hidden="true"></span>
-      {{ 'workspace.runs.detail.loading' | transloco }}
+    <section class="run-loading" [attr.aria-label]="'workspace.runs.detail.loading' | transloco">
+      <app-loading-skeleton
+        preset="title"
+        [label]="'workspace.runs.detail.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="block"
+        [label]="'workspace.runs.detail.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="block"
+        [label]="'workspace.runs.detail.loading' | transloco"
+      />
     </section>
   } @else if (detail.isError()) {
-    <section class="page-state error" role="alert">
-      <p>{{ errorTranslationKey() | transloco }}</p>
-      <button class="secondary-action" type="button" (click)="detail.refetch()">
+    <app-page-state
+      [title]="'workspace.runs.detail.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="detail.refetch()">
         {{ 'workspace.runs.retry' | transloco }}
       </button>
-    </section>
+    </app-page-state>
   } @else if (metadata(); as data) {
+    <nav class="breadcrumbs" [attr.aria-label]="'workspace.runs.detail.breadcrumbs' | transloco">
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/runs"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'runs']"
+      >
+        {{ 'workspace.runs.title' | transloco }}
+      </a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ data.run.name }}</span>
+    </nav>
+
     <section class="run-overview">
       <header class="run-header">
         <div>
-          <a
-            class="back-link"
-            href="/{{ workspaceSlug }}/{{ projectSlug }}/runs"
-            [routerLink]="['/', workspaceSlug, projectSlug, 'runs']"
-          >
-            <span aria-hidden="true">←</span>
-            {{ 'workspace.runs.detail.back' | transloco }}
-          </a>
-          <p class="eyebrow">
-            {{ statusTranslationKey(data.run.status) | transloco }}
-            <span aria-hidden="true"> · </span>
-            {{ data.project.name }}
-          </p>
+          <div class="run-identity">
+            <app-status-badge
+              [tone]="statusTone(data.run.status)"
+              [label]="statusTranslationKey(data.run.status) | transloco"
+            />
+            @if (data.run.build) {
+              <code>{{ 'workspace.runs.build' | transloco }}: {{ data.run.build }}</code>
+            }
+          </div>
           <h1 id="run-title">{{ data.run.name }}</h1>
           <p class="run-meta">
-            @if (data.run.build) {
-              <span class="build-ref">
-                {{ 'workspace.runs.build' | transloco }}: {{ data.run.build }}
-              </span>
-              <span aria-hidden="true"> · </span>
-            }
-            <span>
-              {{
-                'workspace.runs.detail.caseCount'
-                  | transloco: { count: data.run.itemCount }
-              }}
-            </span>
+            {{ 'workspace.runs.detail.caseCount' | transloco: { count: data.run.itemCount } }}
             <span aria-hidden="true"> · </span>
-            <span>
-              {{ 'workspace.runs.detail.created' | transloco }}
-              {{ data.run.createdAt | date: 'mediumDate' }}
-            </span>
+            {{ 'workspace.runs.detail.created' | transloco }}
+            {{ data.run.createdAt | date: 'mediumDate' }}
           </p>
         </div>
         <div class="header-actions">
+          <a
+            appButton="secondary"
+            href="/{{ workspaceSlug }}/{{ projectSlug }}/runs"
+            [routerLink]="['/', workspaceSlug, projectSlug, 'runs']"
+          >
+            {{ 'workspace.runs.detail.back' | transloco }}
+          </a>
           @if (canManage() && data.run.status === 'draft') {
             <button
-              class="primary-action"
+              appButton="primary"
               type="button"
               [disabled]="lifecycle.isPending()"
               (click)="lifecycle.mutate('start')"
@@ -62,7 +75,7 @@
           }
           @if (canManage() && data.run.status === 'active') {
             <button
-              class="secondary-action danger-action"
+              appButton="danger"
               type="button"
               [disabled]="lifecycle.isPending()"
               (click)="closeConfirmation.set(true)"
@@ -73,45 +86,53 @@
         </div>
       </header>
 
-      @if (closeConfirmation()) {
-        <div class="close-confirmation" role="alert">
-          <p>{{ 'workspace.runs.detail.closeConfirmation' | transloco }}</p>
-          <div>
-            <button
-              class="danger-action"
-              type="button"
-              [disabled]="lifecycle.isPending()"
-              (click)="lifecycle.mutate('close')"
-            >
-              {{ 'workspace.runs.detail.confirmClose' | transloco }}
-            </button>
-            <button
-              class="secondary-action"
-              type="button"
-              (click)="closeConfirmation.set(false)"
-            >
-              {{ 'workspace.cases.cancel' | transloco }}
-            </button>
-          </div>
-        </div>
-      }
       @if (lifecycle.isError() || assignment.isError() || result.isError()) {
-        <p class="action-error" role="alert">{{ errorTranslationKey() | transloco }}</p>
+        <app-callout
+          tone="danger"
+          liveRole="alert"
+          [title]="'workspace.runs.detail.actionErrorTitle' | transloco"
+        >
+          <p>{{ errorTranslationKey() | transloco }}</p>
+        </app-callout>
       }
     </section>
 
+    <app-dialog
+      [open]="closeConfirmation()"
+      [title]="'workspace.runs.detail.closeTitle' | transloco"
+      [message]="'workspace.runs.detail.closeConfirmation' | transloco"
+      [confirmLabel]="'workspace.runs.detail.confirmClose' | transloco"
+      [cancelLabel]="'workspace.cases.cancel' | transloco"
+      confirmVariant="danger"
+      (confirmed)="lifecycle.mutate('close')"
+      (cancelled)="closeConfirmation.set(false)"
+    />
+
     @if (progress.isPending()) {
-      <section class="progress-state" aria-live="polite">
-        <span class="loading-indicator" aria-hidden="true"></span>
-        {{ 'workspace.runs.detail.progressLoading' | transloco }}
+      <section
+        class="progress-loading"
+        [attr.aria-label]="'workspace.runs.detail.progressLoading' | transloco"
+      >
+        <app-loading-skeleton
+          preset="title"
+          [label]="'workspace.runs.detail.progressLoading' | transloco"
+        />
+        <app-loading-skeleton
+          preset="row"
+          [label]="'workspace.runs.detail.progressLoading' | transloco"
+        />
       </section>
     } @else if (progress.isError()) {
-      <section class="progress-state error" role="alert">
-        <p>{{ 'workspace.runs.detail.progressUnavailable' | transloco }}</p>
-        <button class="secondary-action" type="button" (click)="progress.refetch()">
+      <app-callout
+        class="progress-error"
+        tone="danger"
+        liveRole="alert"
+        [title]="'workspace.runs.detail.progressUnavailable' | transloco"
+      >
+        <button appButton="secondary" type="button" (click)="progress.refetch()">
           {{ 'workspace.runs.detail.retryProgress' | transloco }}
         </button>
-      </section>
+      </app-callout>
     } @else if (progress.data(); as report) {
       <app-run-progress-report [report]="report" />
     }
@@ -127,235 +148,26 @@
       />
 
       @if (selectedItem(); as item) {
-        <article class="execution-panel">
-          <header class="case-heading">
-            <div>
-              <p class="eyebrow">
-                {{
-                  'workspace.runs.detail.version'
-                    | transloco: { version: item.caseVersion.version }
-                }}
-              </p>
-              <h2>{{ item.caseVersion.title }}</h2>
-            </div>
-            <span class="status-badge">
-              <i [style.background-color]="item.status.color"></i>
-              {{ item.status.name }}
-            </span>
-          </header>
-
-          <div class="case-controls">
-            @if (canManage()) {
-              <label class="assignee" for="run-item-assignee">
-                <span>{{ 'workspace.runs.detail.assignee' | transloco }}</span>
-                <select
-                  id="run-item-assignee"
-                  [value]="item.assignee?.id ?? ''"
-                  [disabled]="assignment.isPending()"
-                  (change)="assign(item.id, $any($event.target).value)"
-                >
-                  <option value="">{{ 'workspace.runs.detail.unassigned' | transloco }}</option>
-                  @for (member of data.members; track member.id) {
-                    <option [value]="member.id">{{ member.displayName }}</option>
-                  }
-                </select>
-              </label>
-            } @else if (item.assignee) {
-              <p class="assignee-readonly">
-                {{ 'workspace.runs.detail.assignee' | transloco }}: {{ item.assignee.displayName }}
-              </p>
-            }
-
-            @if (item.attemptCount > 0) {
-              <a
-                class="history-link"
-                href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}/items/{{ item.id }}/results"
-                [routerLink]="[
-                  '/',
-                  workspaceSlug,
-                  projectSlug,
-                  'runs',
-                  runId,
-                  'items',
-                  item.id,
-                  'results'
-                ]"
-              >
-                {{
-                  'workspace.runs.detail.viewHistory'
-                    | transloco: { count: item.attemptCount }
-                }}
-              </a>
-            }
-          </div>
-
-          <div class="case-content">
-            @if (item.caseVersion.preconditions) {
-              <section class="content-block">
-                <h3>{{ 'workspace.runs.detail.preconditions' | transloco }}</h3>
-                <p>{{ item.caseVersion.preconditions }}</p>
-              </section>
-            }
-
-            @if (steps(item).length > 0) {
-              <section class="content-block">
-                <h3>{{ 'workspace.runs.detail.steps' | transloco }}</h3>
-                <ol class="steps">
-                  @for (step of steps(item); track $index) {
-                    <li>
-                      <span class="step-number">{{ $index + 1 }}</span>
-                      <div class="step-content">
-                        <span class="step-label">
-                          {{ 'workspace.runs.detail.action' | transloco }}
-                        </span>
-                        <p>{{ step.action }}</p>
-                        @if (step.expected) {
-                          <span class="step-label">
-                            {{ 'workspace.runs.detail.expected' | transloco }}
-                          </span>
-                          <p class="expected-step">{{ step.expected }}</p>
-                        }
-                        @if (canExecute()) {
-                          <div
-                            class="step-statuses"
-                            [attr.aria-label]="
-                              'workspace.runs.detail.stepStatus'
-                                | transloco: { position: $index + 1 }
-                            "
-                          >
-                            @for (status of data.statuses; track status.id) {
-                              @if (status.key !== 'untested') {
-                                <button
-                                  type="button"
-                                  [class.selected]="isStepStatusSelected($index, status.id)"
-                                  [style.--status-color]="status.color"
-                                  [attr.aria-pressed]="
-                                    isStepStatusSelected($index, status.id)
-                                  "
-                                  (click)="chooseStepStatus($index, status.id)"
-                                >
-                                  <i></i>
-                                  {{ status.name }}
-                                </button>
-                              }
-                            }
-                          </div>
-                        }
-                      </div>
-                    </li>
-                  }
-                </ol>
-              </section>
-            } @else {
-              <pre>{{ textContent(item) }}</pre>
-            }
-
-            @if (item.caseVersion.expectedResult) {
-              <section class="content-block">
-                <h3>{{ 'workspace.runs.detail.expectedResult' | transloco }}</h3>
-                <p>{{ item.caseVersion.expectedResult }}</p>
-              </section>
-            }
-          </div>
-
-          @if (canExecute()) {
-            <form class="execution-form" [formGroup]="resultForm">
-              <div class="execution-heading">
-                <div>
-                  <p class="eyebrow">{{ 'workspace.runs.detail.executionEyebrow' | transloco }}</p>
-                  <h3>{{ 'workspace.runs.detail.recordResult' | transloco }}</h3>
-                </div>
-                <p class="draft-state" aria-live="polite">
-                  @if (draftStorageError()) {
-                    <span class="error">{{ 'workspace.runs.detail.draftError' | transloco }}</span>
-                  } @else if (!online()) {
-                    {{ 'workspace.runs.detail.offlineDraft' | transloco }}
-                  } @else if (draftRestored()) {
-                    {{ 'workspace.runs.detail.draftRestored' | transloco }}
-                  } @else if (draftSavedAt()) {
-                    {{ 'workspace.runs.detail.draftSaved' | transloco }}
-                  } @else {
-                    {{ 'workspace.runs.detail.draftReady' | transloco }}
-                  }
-                </p>
-              </div>
-
-              <label for="result-comment">{{ 'workspace.runs.detail.comment' | transloco }}</label>
-              <textarea
-                id="result-comment"
-                formControlName="comment"
-                [placeholder]="'workspace.runs.detail.commentPlaceholder' | transloco"
-              ></textarea>
-
-              <div class="timer-field">
-                <label for="elapsed-seconds">
-                  {{ 'workspace.runs.detail.elapsedSeconds' | transloco }}
-                </label>
-                <div class="timer-controls">
-                  <input
-                    id="elapsed-seconds"
-                    type="number"
-                    min="0"
-                    max="86400"
-                    step="1"
-                    formControlName="elapsedSeconds"
-                  />
-                  @if (timerRunning()) {
-                    <button class="secondary-action" type="button" (click)="pauseTimer()">
-                      {{ 'workspace.runs.detail.pauseTimer' | transloco }}
-                    </button>
-                  } @else {
-                    <button class="secondary-action" type="button" (click)="startTimer()">
-                      {{ 'workspace.runs.detail.startTimer' | transloco }}
-                    </button>
-                  }
-                  <button class="text-action" type="button" (click)="resetTimer()">
-                    {{ 'workspace.runs.detail.resetTimer' | transloco }}
-                  </button>
-                  <output for="elapsed-seconds">
-                    {{
-                      'workspace.runs.detail.timerValue'
-                        | transloco: { seconds: resultForm.controls.elapsedSeconds.value }
-                    }}
-                  </output>
-                </div>
-                @if (
-                  resultForm.controls.elapsedSeconds.invalid &&
-                  (resultForm.controls.elapsedSeconds.dirty ||
-                    resultForm.controls.elapsedSeconds.touched)
-                ) {
-                  <p class="action-error">
-                    {{ 'workspace.runs.detail.elapsedInvalid' | transloco }}
-                  </p>
-                }
-              </div>
-
-              <div class="result-actions">
-                @for (status of data.statuses; track status.id) {
-                  @if (status.key !== 'untested') {
-                    <button
-                      type="button"
-                      [disabled]="!online() || result.isPending() || resultForm.invalid"
-                      [style.--status-color]="status.color"
-                      (click)="record(status.id)"
-                    >
-                      <i></i>
-                      {{ status.name }}
-                    </button>
-                  }
-                }
-              </div>
-              <p class="shortcut-hint">{{ 'workspace.runs.detail.shortcuts' | transloco }}</p>
-            </form>
-          } @else {
-            <p class="frozen">{{ 'workspace.runs.detail.frozen' | transloco }}</p>
-          }
-        </article>
+        <app-run-execution-panel
+          [item]="item"
+          [members]="data.members"
+          [statuses]="data.statuses"
+          [workspaceSlug]="workspaceSlug"
+          [projectSlug]="projectSlug"
+          [runId]="runId"
+          [canManage]="canManage()"
+          [canExecute]="canExecute()"
+          [assignmentPending]="assignment.isPending()"
+          [resultPending]="result.isPending()"
+          (assignmentChanged)="assign($event.itemId, $event.assigneeId)"
+          (resultRecorded)="record($event)"
+        />
       } @else {
-        <section class="empty-run">
-          <h2>{{ 'workspace.runs.detail.emptyTitle' | transloco }}</h2>
-          <p>{{ 'workspace.runs.detail.emptyDescription' | transloco }}</p>
-        </section>
+        <app-page-state
+          class="empty-run"
+          [title]="'workspace.runs.detail.emptyTitle' | transloco"
+          [message]="'workspace.runs.detail.emptyDescription' | transloco"
+        />
       }
     </div>
   }

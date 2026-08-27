@@ -403,11 +403,15 @@
     },
     "detail": {
       "loading": "Loading test run…",
+      "loadErrorTitle": "Unable to load the test run",
+      "breadcrumbs": "Test run location",
       "start": "Start run",
       "close": "Close run",
       "back": "Back to runs",
+      "closeTitle": "Close this test run?",
       "closeConfirmation": "Close this run? Existing results will remain available, but assignments and results will be frozen.",
       "confirmClose": "Close run",
+      "actionErrorTitle": "Unable to update the test run",
       "progressLoading": "Loading run progress…",
       "progressUnavailable": "Run progress is unavailable.",
       "retryProgress": "Reload progress",
@@ -451,6 +455,7 @@
       "offlineDraft": "You are offline. This draft remains saved on this device.",
       "draftError": "This draft could not be saved locally. Keep this page open and copy your notes before leaving.",
       "shortcuts": "Keyboard: P passed · F failed · B blocked · Enter next case",
+      "frozenTitle": "Execution is read-only",
       "frozen": "This run is not active. Its execution data is read-only.",
       "emptyTitle": "This run has no test cases",
       "emptyDescription": "Test cases are fixed when the run is created and cannot be added later."

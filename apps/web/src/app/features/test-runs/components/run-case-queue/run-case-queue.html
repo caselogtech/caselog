@@ -28,6 +28,7 @@
 
   @if (hasNextPage()) {
     <button
+      appButton="quiet"
       class="load-more"
       type="button"
       [disabled]="fetchingNextPage()"

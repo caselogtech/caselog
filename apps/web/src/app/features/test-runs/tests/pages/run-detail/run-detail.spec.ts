@@ -1,9 +1,11 @@
-import { TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import type { RunProgressResponse, TestRunDetailResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { BrowserSession } from '../../../../../core/auth/browser-session';
+import { RunExecutionPanel } from '../../../components/run-execution-panel/run-execution-panel';
 import { TestRunsApi } from '../../../data-access/test-runs-api';
 import { RunDraftStore, type RunDraftContext } from '../../../state/run-draft-store';
 import { RunDetail } from '../../../pages/run-detail/run-detail';
@@ -171,9 +173,10 @@ describe('RunDetail', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Enter valid credentials');
+    const execution = executionPanel(fixture).execution;
 
-    fixture.componentInstance.resultForm.setValue({ comment: ' Works ', elapsedSeconds: 2 });
-    fixture.componentInstance.chooseStepStatus(0, PASSED_ID);
+    execution.form.setValue({ comment: ' Works ', elapsedSeconds: 2 });
+    execution.chooseStepStatus(0, PASSED_ID);
     fixture.componentInstance.record(PASSED_ID);
     await vi.waitFor(() => expect(workspaceApi.recordTestResult).toHaveBeenCalledOnce());
     expect(workspaceApi.recordTestResult).toHaveBeenCalledWith(
@@ -245,19 +248,20 @@ describe('RunDetail', () => {
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
     fixture.detectChanges();
+    const execution = executionPanel(fixture).execution;
 
     await vi.waitFor(() =>
-      expect(fixture.componentInstance.resultForm.getRawValue()).toEqual({
+      expect(execution.form.getRawValue()).toEqual({
         comment: 'Connection interrupted',
         elapsedSeconds: 17,
       }),
     );
-    expect(fixture.componentInstance.isStepStatusSelected(0, PASSED_ID)).toBe(true);
-    expect(fixture.componentInstance.draftRestored()).toBe(true);
+    expect(execution.isStepStatusSelected(0, PASSED_ID)).toBe(true);
+    expect(execution.draftRestored()).toBe(true);
 
     fixture.componentInstance.record(PASSED_ID);
     await vi.waitFor(() => expect(draftStore.load(draftContext)).toBeNull());
-    expect(fixture.componentInstance.resultForm.getRawValue()).toEqual({
+    expect(execution.form.getRawValue()).toEqual({
       comment: '',
       elapsedSeconds: 0,
     });
@@ -268,21 +272,27 @@ describe('RunDetail', () => {
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
     fixture.detectChanges();
+    const execution = executionPanel(fixture).execution;
 
     vi.useFakeTimers();
-    fixture.componentInstance.startTimer();
+    execution.startTimer();
     vi.advanceTimersByTime(2_000);
-    expect(fixture.componentInstance.resultForm.controls.elapsedSeconds.value).toBe(2);
-    fixture.componentInstance.pauseTimer();
+    expect(execution.form.controls.elapsedSeconds.value).toBe(2);
+    execution.pauseTimer();
     vi.advanceTimersByTime(1_000);
-    expect(fixture.componentInstance.resultForm.controls.elapsedSeconds.value).toBe(2);
+    expect(execution.form.controls.elapsedSeconds.value).toBe(2);
 
     fixture.componentInstance.handleOffline();
-    expect(fixture.componentInstance.online()).toBe(false);
+    expect(execution.online()).toBe(false);
     expect(TestBed.inject(RunDraftStore).load(draftContext)).toMatchObject({
       elapsedSeconds: 2,
     });
-    fixture.componentInstance.resetTimer();
-    expect(fixture.componentInstance.resultForm.controls.elapsedSeconds.value).toBe(0);
+    execution.resetTimer();
+    expect(execution.form.controls.elapsedSeconds.value).toBe(0);
   });
 });
+
+function executionPanel(fixture: ComponentFixture<RunDetail>): RunExecutionPanel {
+  return fixture.debugElement.query(By.directive(RunExecutionPanel))
+    .componentInstance as RunExecutionPanel;
+}
