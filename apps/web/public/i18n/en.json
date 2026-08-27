@@ -3,13 +3,25 @@
     "brand": "Caselog",
     "homeAriaLabel": "Caselog home",
     "navigation": {
+      "account": "Account for {{name}}",
+      "close": "Close navigation",
+      "localDeployment": "Local deployment",
+      "open": "Open navigation",
       "primary": "Primary navigation",
+      "project": "Project",
+      "projectContext": "Open project context for {{name}}",
+      "projectNavigation": "Project navigation",
+      "projectSettings": "Project settings",
       "projects": "Projects",
       "releases": "Releases",
-      "settings": "Settings",
       "testCases": "Test cases",
       "testRuns": "Test runs",
-      "ciImports": "CI imports"
+      "ciImports": "CI imports",
+      "role": "Workspace role: {{role}}",
+      "selfHosted": "Self-hosted instance",
+      "workspace": "Workspace",
+      "workspaceContext": "Open workspace context for {{name}}",
+      "workspaceNavigation": "Workspace navigation"
     }
   },
   "errors": {

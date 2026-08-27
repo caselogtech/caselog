@@ -130,6 +130,9 @@ describe('CaseList', () => {
     expect(fixture.nativeElement.querySelector('.case-title')?.textContent).toContain(
       'Reject an invalid password',
     );
+    expect(fixture.nativeElement.querySelector('.case-title')?.getAttribute('data-label')).toBe(
+      'Name',
+    );
   });
 
   it('stores search in the URL and refetches the case collection', async () => {
@@ -195,10 +198,10 @@ describe('CaseList', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.cases.isSuccess()).toBe(true));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.cases-state')?.textContent).toContain(
+    expect(fixture.nativeElement.querySelector('app-page-state')?.textContent).toContain(
       'No matching test cases',
     );
-    expect(fixture.nativeElement.querySelector('.cases-state button')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-page-state button')).not.toBeNull();
   });
 
   it('stores archived state in the URL and restores a case', async () => {

@@ -64,7 +64,6 @@
     "loadingMore": "Loading more…"
   },
   "cases": {
-    "eyebrow": "Repository",
     "titleFallback": "Test cases",
     "create": "Create test case",
     "importCsv": "Import CSV",
@@ -83,6 +82,8 @@
     "searchPlaceholder": "Filter by title, automation ID or case ID",
     "searchSubmit": "Search",
     "loading": "Loading test cases…",
+    "loadErrorTitle": "Unable to load test cases",
+    "actionErrorTitle": "Unable to update test case",
     "retry": "Try again",
     "emptyTitle": "No test cases yet",
     "emptyDescription": "This project does not contain any active test cases.",

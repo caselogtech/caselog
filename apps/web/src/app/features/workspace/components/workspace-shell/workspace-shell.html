@@ -1,4 +1,18 @@
 <header class="product-header">
+  <button
+    #navigationToggle
+    class="navigation-toggle"
+    type="button"
+    [attr.aria-label]="'app.navigation.open' | transloco"
+    aria-controls="product-navigation"
+    [attr.aria-expanded]="navigationOpen()"
+    (click)="openNavigation()"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  </button>
+
   <a
     class="brand"
     href="/{{ workspaceSlug }}/projects"
@@ -9,62 +23,152 @@
     <span class="brand-wordmark">{{ 'app.brand' | transloco }}</span>
   </a>
 
-  <nav class="primary-navigation" [attr.aria-label]="'app.navigation.primary' | transloco">
-    @if (projectSlug()) {
-      <a
-        href="/{{ workspaceSlug }}/{{ projectSlug() }}/releases"
-        [routerLink]="['/', workspaceSlug, projectSlug(), 'releases']"
-        routerLinkActive="active"
-      >
-        {{ 'app.navigation.releases' | transloco }}
-      </a>
-      <a
-        href="/{{ workspaceSlug }}/{{ projectSlug() }}/cases"
-        [routerLink]="['/', workspaceSlug, projectSlug(), 'cases']"
-        routerLinkActive="active"
-      >
-        {{ 'app.navigation.testCases' | transloco }}
-      </a>
-      <a
-        href="/{{ workspaceSlug }}/{{ projectSlug() }}/runs"
-        [routerLink]="['/', workspaceSlug, projectSlug(), 'runs']"
-        routerLinkActive="active"
-      >
-        {{ 'app.navigation.testRuns' | transloco }}
-      </a>
-      <a
-        href="/{{ workspaceSlug }}/{{ projectSlug() }}/imports"
-        [routerLink]="['/', workspaceSlug, projectSlug(), 'imports']"
-        routerLinkActive="active"
-      >
-        {{ 'app.navigation.ciImports' | transloco }}
-      </a>
-      <a
-        href="/{{ workspaceSlug }}/{{ projectSlug() }}/settings/environments"
-        [routerLink]="['/', workspaceSlug, projectSlug(), 'settings', 'environments']"
-        routerLinkActive="active"
-      >
-        {{ 'app.navigation.settings' | transloco }}
-      </a>
-    }
+  <div class="context-switchers">
     <a
+      class="context-link"
       href="/{{ workspaceSlug }}/projects"
       [routerLink]="['/', workspaceSlug, 'projects']"
-      routerLinkActive="active"
-      [routerLinkActiveOptions]="{ exact: true }"
+      [attr.aria-label]="
+        'app.navigation.workspaceContext' | transloco: { name: workspaceName() }
+      "
     >
-      {{ 'app.navigation.projects' | transloco }}
+      <span class="context-kind">{{ 'app.navigation.workspace' | transloco }}</span>
+      <strong>{{ workspaceName() }}</strong>
     </a>
-  </nav>
+    @if (projectSlug()) {
+      <span class="context-separator" aria-hidden="true">/</span>
+      <a
+        class="context-link"
+        href="/{{ workspaceSlug }}/{{ projectSlug() }}/releases"
+        [routerLink]="['/', workspaceSlug, projectSlug(), 'releases']"
+        [attr.aria-label]="
+          'app.navigation.projectContext' | transloco: { name: projectName() }
+        "
+      >
+        <span class="context-kind">{{ 'app.navigation.project' | transloco }}</span>
+        <strong>{{ projectName() }}</strong>
+      </a>
+    }
+  </div>
 
   <div class="account-context">
-    <span class="workspace-name">{{ workspaceName() }}</span>
-    <span class="avatar" [title]="displayName()" [attr.aria-label]="displayName()">
-      {{ initials() }}
-    </span>
+    <details>
+      <summary
+        [attr.aria-label]="'app.navigation.account' | transloco: { name: displayName() }"
+      >
+        <span class="account-name">{{ displayName() }}</span>
+        <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+      </summary>
+      <div class="account-popover">
+        <strong>{{ displayName() }}</strong>
+        <span>{{ browserSession.user()?.email }}</span>
+        <span>
+          {{
+            'app.navigation.role'
+              | transloco: { role: workspaceSession.role() ?? '—' }
+          }}
+        </span>
+      </div>
+    </details>
   </div>
 </header>
 
-<div class="workspace-view">
-  <router-outlet />
+<div class="workspace-layout">
+  <button
+    class="navigation-backdrop"
+    type="button"
+    [hidden]="!navigationOpen()"
+    [attr.aria-label]="'app.navigation.close' | transloco"
+    (click)="closeNavigation()"
+  ></button>
+
+  <aside
+    #navigation
+    id="product-navigation"
+    class="product-navigation"
+    [class.open]="navigationOpen()"
+    tabindex="-1"
+    [attr.aria-label]="'app.navigation.primary' | transloco"
+  >
+    @if (projectSlug()) {
+      <nav
+        class="project-navigation"
+        [attr.aria-label]="'app.navigation.projectNavigation' | transloco"
+      >
+        <span class="navigation-heading">{{ 'app.navigation.project' | transloco }}</span>
+        <a
+          href="/{{ workspaceSlug }}/{{ projectSlug() }}/releases"
+          [routerLink]="['/', workspaceSlug, projectSlug(), 'releases']"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          (click)="closeNavigation(false)"
+        >
+          {{ 'app.navigation.releases' | transloco }}
+        </a>
+        <a
+          href="/{{ workspaceSlug }}/{{ projectSlug() }}/runs"
+          [routerLink]="['/', workspaceSlug, projectSlug(), 'runs']"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          (click)="closeNavigation(false)"
+        >
+          {{ 'app.navigation.testRuns' | transloco }}
+        </a>
+        <a
+          href="/{{ workspaceSlug }}/{{ projectSlug() }}/cases"
+          [routerLink]="['/', workspaceSlug, projectSlug(), 'cases']"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          (click)="closeNavigation(false)"
+        >
+          {{ 'app.navigation.testCases' | transloco }}
+        </a>
+        <a
+          href="/{{ workspaceSlug }}/{{ projectSlug() }}/imports"
+          [routerLink]="['/', workspaceSlug, projectSlug(), 'imports']"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          (click)="closeNavigation(false)"
+        >
+          {{ 'app.navigation.ciImports' | transloco }}
+        </a>
+        <a
+          href="/{{ workspaceSlug }}/{{ projectSlug() }}/settings/environments"
+          [routerLink]="['/', workspaceSlug, projectSlug(), 'settings', 'environments']"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          (click)="closeNavigation(false)"
+        >
+          {{ 'app.navigation.projectSettings' | transloco }}
+        </a>
+      </nav>
+      <div class="navigation-divider"></div>
+    }
+
+    <nav
+      class="workspace-navigation"
+      [attr.aria-label]="'app.navigation.workspaceNavigation' | transloco"
+    >
+      <span class="navigation-heading">{{ 'app.navigation.workspace' | transloco }}</span>
+      <a
+        href="/{{ workspaceSlug }}/projects"
+        [routerLink]="['/', workspaceSlug, 'projects']"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+        (click)="closeNavigation(false)"
+      >
+        {{ 'app.navigation.projects' | transloco }}
+      </a>
+    </nav>
+
+    <div class="instance-context">
+      <strong>{{ 'app.navigation.selfHosted' | transloco }}</strong>
+      <span>{{ 'app.navigation.localDeployment' | transloco }}</span>
+    </div>
+  </aside>
+
+  <div class="workspace-view">
+    <router-outlet />
+  </div>
 </div>

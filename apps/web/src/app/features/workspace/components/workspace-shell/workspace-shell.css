@@ -7,23 +7,23 @@
 
 .product-header {
   align-items: center;
-  background: var(--color-bg);
-  border-bottom: 2px solid var(--color-divider);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--color-neutral-400);
   display: flex;
   flex: none;
-  gap: 32px;
-  height: 56px;
-  padding-inline: 24px;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-2) var(--space-4);
   position: relative;
-  z-index: 10;
+  z-index: 30;
 }
 
 .brand {
   align-items: center;
-  color: var(--color-text);
+  color: var(--text-1);
   display: inline-flex;
   flex: none;
-  font-size: 1.2667rem;
+  font-size: var(--font-size-lg);
   font-weight: 700;
   gap: 9px;
   letter-spacing: -0.02em;
@@ -31,48 +31,112 @@
 }
 
 .brand app-brand-mark {
-  color: var(--color-accent);
+  color: var(--accent);
   font-size: 22px;
 }
 
-.primary-navigation {
-  align-self: stretch;
+.navigation-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  cursor: pointer;
+  display: none;
+  flex: none;
+  height: var(--control-min-size);
+  justify-content: center;
+  padding: 0;
+  width: var(--control-min-size);
+}
+
+.navigation-toggle:hover {
+  background: var(--color-neutral-200);
+}
+
+.navigation-toggle svg {
+  fill: none;
+  height: 22px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+  width: 22px;
+}
+
+.context-switchers,
+.context-link,
+.account-context summary {
+  align-items: center;
   display: flex;
-  gap: 24px;
+}
+
+.context-switchers {
+  gap: var(--space-2);
   min-width: 0;
 }
 
-.primary-navigation a {
-  align-items: center;
-  border-bottom: 2px solid transparent;
-  color: color-mix(in srgb, var(--color-text) 55%, transparent);
-  display: flex;
-  font-size: 0.8667rem;
-  font-weight: 700;
+.context-link {
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  gap: var(--space-2);
+  max-width: 230px;
+  min-height: 38px;
+  padding: var(--space-1) var(--space-2);
   text-decoration: none;
+}
+
+.context-link:hover {
+  background: var(--color-neutral-100);
+  border-color: var(--color-neutral-400);
+}
+
+.context-link strong {
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.primary-navigation a:hover,
-.primary-navigation a.active {
-  color: var(--color-text);
+.context-kind {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
 }
 
-.primary-navigation a.active {
-  border-bottom-color: var(--color-accent);
+.context-separator {
+  color: var(--color-neutral-400);
 }
 
 .account-context {
-  align-items: center;
-  display: flex;
-  gap: 12px;
   margin-left: auto;
-  min-width: 0;
+  position: relative;
 }
 
-.workspace-name {
-  color: var(--color-neutral-700);
-  font-size: 0.8rem;
+.account-context details {
+  position: relative;
+}
+
+.account-context summary {
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  gap: var(--space-2);
+  list-style: none;
+  min-height: var(--control-min-size);
+  padding: var(--space-1);
+}
+
+.account-context summary::-webkit-details-marker {
+  display: none;
+}
+
+.account-context summary:hover,
+.account-context details[open] summary {
+  background: var(--color-neutral-200);
+}
+
+.account-name {
+  font-size: var(--font-size-sm);
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -81,54 +145,207 @@
 
 .avatar {
   align-items: center;
-  background: var(--color-neutral-800);
+  background: var(--color-accent-700);
   border-radius: 50%;
-  color: var(--color-bg);
+  color: var(--surface-2);
   display: inline-flex;
   flex: none;
-  font-size: 0.7333rem;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   height: 32px;
   justify-content: center;
   width: 32px;
 }
 
+.account-popover {
+  background: var(--surface-2);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  display: grid;
+  gap: var(--space-1);
+  min-width: 250px;
+  padding: var(--space-3);
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-1));
+}
+
+.account-popover span {
+  color: var(--text-2);
+  font-size: var(--font-size-xs);
+  overflow-wrap: anywhere;
+}
+
+.workspace-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+
+.product-navigation {
+  background: var(--surface-1);
+  border-right: 1px solid var(--color-neutral-400);
+  display: flex;
+  flex: 0 0 228px;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+  padding: var(--space-3);
+}
+
+.product-navigation:focus {
+  outline: none;
+}
+
+.project-navigation,
+.workspace-navigation {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.navigation-heading {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  padding: var(--space-1) var(--space-2);
+  text-transform: uppercase;
+}
+
+.product-navigation nav a {
+  align-items: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-neutral-800);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  min-height: var(--control-min-size);
+  padding: 10px var(--space-3);
+  text-decoration: none;
+}
+
+.product-navigation nav a:hover {
+  background: var(--color-neutral-200);
+  color: var(--text-1);
+}
+
+.product-navigation nav a.active {
+  background: var(--color-accent-100);
+  box-shadow: inset 2px 0 0 var(--accent);
+  color: var(--color-accent-700);
+  font-weight: 650;
+}
+
+.navigation-divider {
+  background: var(--color-neutral-300);
+  height: 1px;
+  margin: var(--space-2);
+}
+
+.instance-context {
+  background: var(--surface-2);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 2px;
+  margin-top: auto;
+  padding: var(--space-3);
+}
+
+.instance-context strong {
+  font-size: var(--font-size-xs);
+}
+
+.instance-context span {
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
 .workspace-view {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow: auto;
 }
 
-@media (max-width: 760px) {
-  .product-header {
-    gap: 18px;
-    padding-inline: 16px;
+.navigation-backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .navigation-toggle {
+    display: inline-flex;
   }
 
-  .primary-navigation {
-    gap: 16px;
-    overflow-x: auto;
+  .product-navigation {
+    bottom: 0;
+    box-shadow: var(--shadow-md);
+    left: 0;
+    max-width: min(86vw, 300px);
+    position: fixed;
+    top: 56px;
+    transform: translateX(-105%);
+    transition: transform 160ms ease;
+    visibility: hidden;
+    width: 100%;
+    z-index: 25;
   }
 
-  .workspace-name {
+  .product-navigation.open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .navigation-backdrop {
+    background: var(--color-overlay);
+    border: 0;
+    bottom: 0;
+    cursor: pointer;
+    display: block;
+    left: 0;
+    padding: 0;
+    position: fixed;
+    right: 0;
+    top: 56px;
+    z-index: 20;
+  }
+
+  .navigation-backdrop[hidden] {
     display: none;
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 680px) {
   .product-header {
-    gap: 12px;
+    gap: var(--space-2);
+    padding-inline: var(--space-2);
   }
 
-  .brand {
-    gap: 0;
-  }
-
-  .brand-wordmark {
+  .brand-wordmark,
+  .context-kind,
+  .account-name {
     display: none;
   }
 
-  .account-context {
+  .context-switchers {
+    overflow: hidden;
+  }
+
+  .context-link {
+    max-width: 155px;
+  }
+
+  .context-link:first-child:not(:last-child) {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-navigation {
+    transition: none;
   }
 }

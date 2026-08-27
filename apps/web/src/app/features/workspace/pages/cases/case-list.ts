@@ -11,6 +11,13 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import {
+  Button,
+  Callout,
+  FormControlStyle,
+  LoadingSkeleton,
+  PageState,
+} from '../../../../shared/ui/public-api';
 import { CaseRepositorySidebar } from '../../components/case-repository-sidebar/case-repository-sidebar';
 import { WorkspaceApi } from '../../data-access/workspace-api';
 
@@ -23,7 +30,18 @@ const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
 
 @Component({
   selector: 'app-case-list',
-  imports: [CaseRepositorySidebar, DatePipe, ReactiveFormsModule, RouterLink, TranslocoPipe],
+  imports: [
+    Button,
+    Callout,
+    CaseRepositorySidebar,
+    DatePipe,
+    FormControlStyle,
+    LoadingSkeleton,
+    PageState,
+    ReactiveFormsModule,
+    RouterLink,
+    TranslocoPipe,
+  ],
   templateUrl: './case-list.html',
   styleUrl: './case-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,6 +87,9 @@ export class CaseList {
 
   readonly items = computed(() => this.cases.data()?.pages.flatMap(({ items }) => items) ?? []);
   readonly project = computed(() => this.cases.data()?.pages[0]?.project ?? null);
+  readonly selectedSectionName = computed(
+    () => this.items().find(({ section }) => section.id === this.sectionId())?.section.name ?? '',
+  );
   readonly canCreate = computed(() => this.workspaceSession.role() !== 'read_only');
   readonly hasFilters = computed(() => Boolean(this.search() || this.sectionId()));
 

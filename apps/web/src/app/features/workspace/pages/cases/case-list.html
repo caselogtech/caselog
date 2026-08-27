@@ -11,28 +11,28 @@
   <section class="case-content">
     <header class="cases-header">
       <div>
-        <p class="eyebrow">{{ 'workspace.cases.eyebrow' | transloco }}</p>
+        <p class="breadcrumbs">
+          {{ project()?.name ?? projectSlug }}
+          @if (selectedSectionName()) {
+            <span aria-hidden="true">/</span> {{ selectedSectionName() }}
+          }
+        </p>
         <h1 id="cases-title">{{ 'workspace.cases.titleFallback' | transloco }}</h1>
-        @if (project()?.name) {
-          <p class="project-description">{{ project()?.name }}</p>
-        }
       </div>
       @if (canCreate() && state() === 'active') {
         <div class="header-actions">
           <a
-            class="secondary-action"
+            appButton="secondary"
             href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/import"
             [routerLink]="['/', workspaceSlug, projectSlug, 'cases', 'import']"
           >
-            <span aria-hidden="true">↑</span>
             {{ 'workspace.cases.importCsv' | transloco }}
           </a>
           <a
-            class="primary-action"
+            appButton="primary"
             href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/new"
             [routerLink]="['/', workspaceSlug, projectSlug, 'cases', 'new']"
           >
-            <span aria-hidden="true">＋</span>
             {{ 'workspace.cases.create' | transloco }}
           </a>
         </div>
@@ -45,18 +45,22 @@
           {{ 'workspace.cases.searchLabel' | transloco }}
         </label>
         <input
+          appControl
           id="case-search"
           type="search"
           formControlName="search"
           [placeholder]="'workspace.cases.searchPlaceholder' | transloco"
         />
-        <button type="submit">{{ 'workspace.cases.searchSubmit' | transloco }}</button>
+        <button appButton="secondary" type="submit">
+          {{ 'workspace.cases.searchSubmit' | transloco }}
+        </button>
       </form>
 
       <nav class="case-state-tabs" [attr.aria-label]="'workspace.cases.stateFilter' | transloco">
         <button
           type="button"
           [class.active]="state() === 'active'"
+          [attr.aria-pressed]="state() === 'active'"
           (click)="selectState('active')"
         >
           {{ 'workspace.cases.active' | transloco }}
@@ -64,6 +68,7 @@
         <button
           type="button"
           [class.active]="state() === 'archived'"
+          [attr.aria-pressed]="state() === 'archived'"
           (click)="selectState('archived')"
         >
           {{ 'workspace.cases.archived' | transloco }}
@@ -76,54 +81,60 @@
         </span>
       }
       @if (hasFilters()) {
-        <button type="button" class="clear-filters" (click)="clearFilters()">
+        <button appButton="quiet" type="button" class="clear-filters" (click)="clearFilters()">
           {{ 'workspace.cases.clearFilters' | transloco }}
         </button>
       }
     </div>
 
     @if (duplicateCase.isError() || archiveCase.isError() || restoreCase.isError()) {
-      <div class="case-action-error" role="alert">{{ errorTranslationKey() | transloco }}</div>
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'workspace.cases.actionErrorTitle' | transloco"
+      >
+        <p>{{ errorTranslationKey() | transloco }}</p>
+      </app-callout>
     }
 
     @if (cases.isPending()) {
-      <section class="cases-state" aria-live="polite">
-        <span class="loading-indicator" aria-hidden="true"></span>
-        {{ 'workspace.cases.loading' | transloco }}
+      <section class="case-loading" [attr.aria-label]="'workspace.cases.loading' | transloco">
+        <app-loading-skeleton preset="row" [label]="'workspace.cases.loading' | transloco" />
+        <app-loading-skeleton preset="row" [label]="'workspace.cases.loading' | transloco" />
+        <app-loading-skeleton preset="row" [label]="'workspace.cases.loading' | transloco" />
       </section>
     } @else if (cases.isError()) {
-      <section class="cases-state error" role="alert">
-        <p>{{ errorTranslationKey() | transloco }}</p>
-        <button type="button" (click)="cases.refetch()">
+      <app-page-state
+        [title]="'workspace.cases.loadErrorTitle' | transloco"
+        [message]="errorTranslationKey() | transloco"
+      >
+        <button actions appButton="secondary" type="button" (click)="cases.refetch()">
           {{ 'workspace.cases.retry' | transloco }}
         </button>
-      </section>
+      </app-page-state>
     } @else if (items().length === 0) {
-      <section class="cases-state">
-        <h2>
-          {{
-            (search()
-              ? 'workspace.cases.noMatchesTitle'
-              : state() === 'archived'
-                ? 'workspace.cases.noArchivedTitle'
-                : 'workspace.cases.emptyTitle') | transloco
-          }}
-        </h2>
-        <p>
-          {{
-            (search()
-              ? 'workspace.cases.noMatchesDescription'
-              : state() === 'archived'
-                ? 'workspace.cases.noArchivedDescription'
-                : 'workspace.cases.emptyDescription') | transloco
-          }}
-        </p>
+      <app-page-state
+        [title]="
+          (search()
+            ? 'workspace.cases.noMatchesTitle'
+            : state() === 'archived'
+              ? 'workspace.cases.noArchivedTitle'
+              : 'workspace.cases.emptyTitle') | transloco
+        "
+        [message]="
+          (search()
+            ? 'workspace.cases.noMatchesDescription'
+            : state() === 'archived'
+              ? 'workspace.cases.noArchivedDescription'
+              : 'workspace.cases.emptyDescription') | transloco
+        "
+      >
         @if (search()) {
-          <button type="button" (click)="clearSearch()">
+          <button actions appButton="secondary" type="button" (click)="clearSearch()">
             {{ 'workspace.cases.clearSearch' | transloco }}
           </button>
         }
-      </section>
+      </app-page-state>
     } @else {
       <div class="case-table-wrap">
         <table>
@@ -147,8 +158,10 @@
           <tbody>
             @for (testCase of items(); track testCase.id) {
               <tr>
-                <td class="case-id">{{ project()?.key }}-{{ testCase.caseNumber }}</td>
-                <td class="case-title">
+                <td class="case-id" [attr.data-label]="'workspace.cases.id' | transloco">
+                  {{ project()?.key }}-{{ testCase.caseNumber }}
+                </td>
+                <td class="case-title" [attr.data-label]="'workspace.cases.name' | transloco">
                   @if (state() === 'active') {
                     <a
                       href="/{{ workspaceSlug }}/{{ projectSlug }}/cases/{{ testCase.id }}"
@@ -163,8 +176,10 @@
                     <span class="automation-id">{{ testCase.automationId }}</span>
                   }
                 </td>
-                <td class="muted-cell">{{ testCase.section.name }}</td>
-                <td>
+                <td class="muted-cell" [attr.data-label]="'workspace.cases.section' | transloco">
+                  {{ testCase.section.name }}
+                </td>
+                <td [attr.data-label]="'workspace.cases.type' | transloco">
                   <span class="type-tag" [class.automated]="testCase.automationId">
                     {{
                       (testCase.automationId ? 'workspace.cases.automated' : 'workspace.cases.manual')
@@ -172,8 +187,12 @@
                     }}
                   </span>
                 </td>
-                <td class="muted-cell">{{ templateTranslationKey(testCase.template) | transloco }}</td>
-                <td class="updated-cell">{{ testCase.updatedAt | date: 'mediumDate' }}</td>
+                <td class="muted-cell" [attr.data-label]="'workspace.cases.template' | transloco">
+                  {{ templateTranslationKey(testCase.template) | transloco }}
+                </td>
+                <td class="updated-cell" [attr.data-label]="'workspace.cases.updated' | transloco">
+                  {{ testCase.updatedAt | date: 'mediumDate' }}
+                </td>
                 @if (canCreate()) {
                   <td class="case-actions">
                     <details>
@@ -203,6 +222,7 @@
 
       @if (cases.hasNextPage()) {
         <button
+          appButton="secondary"
           class="load-more"
           type="button"
           [disabled]="cases.isFetchingNextPage()"

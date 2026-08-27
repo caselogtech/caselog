@@ -10,6 +10,10 @@ import { WorkspaceShell } from '../../../components/workspace-shell/workspace-sh
 class EmptyPage {}
 
 describe('WorkspaceShell', () => {
+  afterEach(() => {
+    document.body.style.overflow = '';
+  });
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [i18nTestingModule()],
@@ -45,10 +49,35 @@ describe('WorkspaceShell', () => {
     const shell = harness.routeNativeElement as HTMLElement;
     expect(shell.querySelector('.brand')?.textContent?.trim()).toBe('Caselog');
     expect(shell.querySelector('app-brand-mark svg')).not.toBeNull();
-    expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Test cases');
-    expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Releases');
-    expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Test runs');
-    expect(shell.querySelector('.primary-navigation')?.textContent).toContain('Settings');
+    expect(
+      Array.from(shell.querySelectorAll('.project-navigation a')).map((link) =>
+        link.textContent?.trim(),
+      ),
+    ).toEqual(['Releases', 'Test runs', 'Test cases', 'CI imports', 'Project settings']);
+    expect(
+      shell.querySelector('.project-navigation a[aria-current="page"]')?.textContent?.trim(),
+    ).toBe('Test cases');
+    expect(shell.querySelector('.context-switchers')?.textContent).toContain('Checkout');
     expect(shell.querySelector('.avatar')?.textContent?.trim()).toBe('DO');
+  });
+
+  it('opens and dismisses the responsive navigation with Escape', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/acme/checkout/cases');
+
+    const shell = harness.routeNativeElement as HTMLElement;
+    const toggle = shell.querySelector<HTMLButtonElement>('.navigation-toggle');
+    toggle?.click();
+    harness.detectChanges();
+
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(shell.querySelector('.product-navigation')?.classList).toContain('open');
+    expect(document.body.style.overflow).toBe('hidden');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    harness.detectChanges();
+
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(document.body.style.overflow).toBe('');
   });
 });
