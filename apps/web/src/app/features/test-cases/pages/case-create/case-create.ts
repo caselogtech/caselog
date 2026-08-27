@@ -16,7 +16,8 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
+import { TestCasesApi } from '../../data-access/test-cases-api';
 
 @Component({
   selector: 'app-case-create',
@@ -29,7 +30,8 @@ export class CaseCreate {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly formBuilder = inject(NonNullableFormBuilder);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly structureApi = inject(TestCaseStructureApi);
+  private readonly testCasesApi = inject(TestCasesApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
 
@@ -52,7 +54,7 @@ export class CaseCreate {
 
   readonly structure = injectQuery(() => ({
     queryKey: ['project-structure', this.workspaceSlug, this.projectSlug],
-    queryFn: () => this.workspaceApi.projectStructure(this.workspaceSlug, this.projectSlug),
+    queryFn: () => this.structureApi.projectStructure(this.workspaceSlug, this.projectSlug),
   }));
 
   readonly sections = computed(
@@ -61,7 +63,7 @@ export class CaseCreate {
 
   readonly createCase = injectMutation(() => ({
     mutationFn: (request: CreateTestCaseRequest) =>
-      this.workspaceApi.createTestCase(this.workspaceSlug, this.projectSlug, request),
+      this.testCasesApi.createTestCase(this.workspaceSlug, this.projectSlug, request),
     onSuccess: async ({ testCase }) => {
       await this.queryClient.invalidateQueries({
         queryKey: ['test-cases', this.workspaceSlug, this.projectSlug],

@@ -2,68 +2,36 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
   attachmentDownloadResponseSchema,
-  caseAttachmentListResponseSchema,
-  caseAttachmentResponseSchema,
-  caseExecutionHistoryResponseSchema,
-  createUploadSessionResponseSchema,
-  csvImportPreviewResponseSchema,
-  csvImportResponseSchema,
-  createTestCaseResponseSchema,
-  createTestRunResponseSchema,
   assignTestRunItemResponseSchema,
   createTestResultResponseSchema,
+  createTestRunResponseSchema,
+  junitUploadResponseSchema,
   projectListResponseSchema,
-  projectStructureResponseSchema,
   resultIngestionListResponseSchema,
   runProgressResponseSchema,
-  sectionResponseSchema,
-  suiteResponseSchema,
-  testCaseListResponseSchema,
-  testCaseLifecycleResponseSchema,
-  testCaseDetailResponseSchema,
-  testCaseVersionSchema,
-  testRunListResponseSchema,
   testRunDetailResponseSchema,
   testRunLifecycleResponseSchema,
-  junitUploadResponseSchema,
+  testRunListResponseSchema,
   testResultDetailResponseSchema,
   testResultHistoryResponseSchema,
   type AttachmentDownloadResponse,
-  type CaseAttachmentListResponse,
-  type CaseAttachmentResponse,
-  type CreateTestCaseRequest,
-  type CreateTestCaseResponse,
-  type CreateTestRunRequest,
-  type CreateTestRunResponse,
-  type CaseExecutionHistoryResponse,
   type AssignTestRunItemResponse,
   type CreateTestResultRequest,
   type CreateTestResultResponse,
-  type CsvImportPreviewResponse,
-  type CsvImportRequest,
-  type CsvImportResponse,
+  type CreateTestRunRequest,
+  type CreateTestRunResponse,
+  type JUnitUploadResponse,
   type OrganizationTokenResponse,
   type ProjectListResponse,
-  type ProjectStructureResponse,
   type ResultIngestionListResponse,
   type ResultIngestionStatus,
   type RunProgressResponse,
-  type SectionResponse,
-  type SuiteResponse,
-  type TestCaseListResponse,
-  type TestCaseLifecycleResponse,
-  type TestCaseDetailResponse,
-  type TestCaseVersion,
-  type TestRunListResponse,
   type TestRunDetailResponse,
   type TestRunLifecycleResponse,
+  type TestRunListResponse,
+  type TestRunStatus,
   type TestResultDetailResponse,
   type TestResultHistoryResponse,
-  type TestRunStatus,
-  type JUnitUploadResponse,
-  type UpdateTestCaseRequest,
-  type UpdateTestCaseResponse,
-  updateTestCaseResponseSchema,
 } from '@caselog/schemas';
 import { lastValueFrom } from 'rxjs';
 import { WorkspaceAccess } from './workspace-access';
@@ -89,41 +57,6 @@ export class WorkspaceApi {
       }),
     );
     return projectListResponseSchema.parse(response);
-  }
-
-  async listTestCases(
-    workspaceSlug: string,
-    projectSlug: string,
-    cursor?: string,
-    search?: string,
-    sectionId?: string,
-    state: 'active' | 'archived' = 'active',
-    limit = 50,
-  ): Promise<TestCaseListResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.get<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/cases`, {
-        params: {
-          limit,
-          ...(cursor ? { cursor } : {}),
-          ...(search ? { search } : {}),
-          ...(sectionId ? { sectionId } : {}),
-          ...(state === 'archived' ? { state } : {}),
-        },
-      }),
-    );
-    return testCaseListResponseSchema.parse(response);
-  }
-
-  async projectStructure(
-    workspaceSlug: string,
-    projectSlug: string,
-  ): Promise<ProjectStructureResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.get<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/structure`),
-    );
-    return projectStructureResponseSchema.parse(response);
   }
 
   async listTestRuns(
@@ -159,38 +92,6 @@ export class WorkspaceApi {
       ),
     );
     return resultIngestionListResponseSchema.parse(response);
-  }
-
-  async previewCsvImport(
-    workspaceSlug: string,
-    projectSlug: string,
-    request: CsvImportRequest,
-  ): Promise<CsvImportPreviewResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.post<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/imports/csv/preview`,
-        request,
-      ),
-    );
-    return csvImportPreviewResponseSchema.parse(response);
-  }
-
-  async commitCsvImport(
-    workspaceSlug: string,
-    projectSlug: string,
-    request: CsvImportRequest,
-    idempotencyKey: string,
-  ): Promise<CsvImportResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.post<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/imports/csv/commit`,
-        request,
-        { headers: { 'Idempotency-Key': idempotencyKey } },
-      ),
-    );
-    return csvImportResponseSchema.parse(response);
   }
 
   async uploadJUnitResults(
@@ -262,23 +163,6 @@ export class WorkspaceApi {
       ),
     );
     return runProgressResponseSchema.parse(response);
-  }
-
-  async testCaseExecutionHistory(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-    cursor?: string,
-    limit = 25,
-  ): Promise<CaseExecutionHistoryResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.get<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/reports/cases/${encodeURIComponent(caseId)}/history`,
-        { params: { limit, ...(cursor ? { cursor } : {}) } },
-      ),
-    );
-    return caseExecutionHistoryResponseSchema.parse(response);
   }
 
   async startTestRun(
@@ -398,312 +282,4 @@ export class WorkspaceApi {
     );
     return testRunLifecycleResponseSchema.parse(response);
   }
-
-  async createTestCase(
-    workspaceSlug: string,
-    projectSlug: string,
-    request: CreateTestCaseRequest,
-  ): Promise<CreateTestCaseResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.post<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/cases`, request),
-    );
-    return createTestCaseResponseSchema.parse(response);
-  }
-
-  async testCase(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-  ): Promise<TestCaseDetailResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.get<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}`,
-      ),
-    );
-    return testCaseDetailResponseSchema.parse(response);
-  }
-
-  async testCaseAttachments(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-    versionId: string,
-    cursor?: string,
-    limit = 25,
-  ): Promise<CaseAttachmentListResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.get<unknown>(this.caseAttachmentUrl(projectSlug, caseId, versionId), {
-        params: { limit, ...(cursor ? { cursor } : {}) },
-      }),
-    );
-    return caseAttachmentListResponseSchema.parse(response);
-  }
-
-  async uploadTestCaseAttachment(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-    versionId: string,
-    file: File,
-  ): Promise<CaseAttachmentResponse> {
-    await this.open(workspaceSlug);
-    const checksumSha256 = await sha256(file);
-    const collectionUrl = this.caseAttachmentUrl(projectSlug, caseId, versionId);
-    const sessionResponse = await lastValueFrom(
-      this.http.post<unknown>(`${collectionUrl}/uploads`, {
-        fileName: file.name,
-        contentType: file.type,
-        sizeBytes: file.size,
-        checksumSha256,
-      }),
-    );
-    const { upload } = createUploadSessionResponseSchema.parse(sessionResponse);
-    const uploadResponse = await fetch(upload.url, {
-      method: upload.method,
-      headers: upload.headers,
-      body: file,
-    });
-    if (!uploadResponse.ok) {
-      throw new Error(`Attachment upload failed with status ${uploadResponse.status}`);
-    }
-
-    const response = await lastValueFrom(
-      this.http.post<unknown>(collectionUrl, { uploadId: upload.id }),
-    );
-    return caseAttachmentResponseSchema.parse(response);
-  }
-
-  async testCaseAttachmentDownload(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-    versionId: string,
-    attachmentId: string,
-  ): Promise<AttachmentDownloadResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.post<unknown>(
-        `${this.caseAttachmentUrl(projectSlug, caseId, versionId)}/${encodeURIComponent(attachmentId)}/download`,
-        null,
-      ),
-    );
-    return attachmentDownloadResponseSchema.parse(response);
-  }
-
-  async updateTestCase(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-    request: UpdateTestCaseRequest,
-  ): Promise<UpdateTestCaseResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.put<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}`,
-        request,
-      ),
-    );
-    return updateTestCaseResponseSchema.parse(response);
-  }
-
-  async testCaseVersion(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-    versionId: string,
-  ): Promise<TestCaseVersion> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.get<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}/versions/${encodeURIComponent(versionId)}`,
-      ),
-    );
-    return testCaseVersionSchema.parse(response);
-  }
-
-  async restoreTestCaseVersion(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-    versionId: string,
-    baseVersion: number,
-  ): Promise<UpdateTestCaseResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.post<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}/versions/${encodeURIComponent(versionId)}/restore`,
-        { baseVersion },
-      ),
-    );
-    return updateTestCaseResponseSchema.parse(response);
-  }
-
-  async duplicateTestCase(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-  ): Promise<CreateTestCaseResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.post<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}/duplicate`,
-        null,
-      ),
-    );
-    return createTestCaseResponseSchema.parse(response);
-  }
-
-  private caseAttachmentUrl(projectSlug: string, caseId: string, versionId: string): string {
-    return `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}/versions/${encodeURIComponent(versionId)}/attachments`;
-  }
-
-  async archiveTestCase(workspaceSlug: string, projectSlug: string, caseId: string): Promise<void> {
-    await this.open(workspaceSlug);
-    await lastValueFrom(
-      this.http.delete<void>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}`,
-      ),
-    );
-  }
-
-  async restoreArchivedTestCase(
-    workspaceSlug: string,
-    projectSlug: string,
-    caseId: string,
-  ): Promise<TestCaseLifecycleResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.post<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/cases/${encodeURIComponent(caseId)}/restore`,
-        null,
-      ),
-    );
-    return testCaseLifecycleResponseSchema.parse(response);
-  }
-
-  async createSuite(
-    workspaceSlug: string,
-    projectSlug: string,
-    name: string,
-  ): Promise<SuiteResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.post<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites`,
-        { name },
-      ),
-    );
-    return suiteResponseSchema.parse(response);
-  }
-
-  async updateSuite(
-    workspaceSlug: string,
-    projectSlug: string,
-    suiteId: string,
-    name: string,
-  ): Promise<SuiteResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.put<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites/${encodeURIComponent(suiteId)}`,
-        { name },
-      ),
-    );
-    return suiteResponseSchema.parse(response);
-  }
-
-  async moveSuite(
-    workspaceSlug: string,
-    projectSlug: string,
-    suiteId: string,
-    position: number,
-  ): Promise<SuiteResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.put<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites/${encodeURIComponent(suiteId)}/move`,
-        { position },
-      ),
-    );
-    return suiteResponseSchema.parse(response);
-  }
-
-  async deleteSuite(workspaceSlug: string, projectSlug: string, suiteId: string): Promise<void> {
-    await this.open(workspaceSlug);
-    await lastValueFrom(
-      this.http.delete<void>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites/${encodeURIComponent(suiteId)}`,
-      ),
-    );
-  }
-
-  async createSection(
-    workspaceSlug: string,
-    projectSlug: string,
-    suiteId: string,
-    name: string,
-    parentId?: string,
-  ): Promise<SectionResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.post<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/suites/${encodeURIComponent(suiteId)}/sections`,
-        { name, ...(parentId ? { parentId } : {}) },
-      ),
-    );
-    return sectionResponseSchema.parse(response);
-  }
-
-  async updateSection(
-    workspaceSlug: string,
-    projectSlug: string,
-    sectionId: string,
-    name: string,
-  ): Promise<SectionResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.put<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/sections/${encodeURIComponent(sectionId)}`,
-        { name },
-      ),
-    );
-    return sectionResponseSchema.parse(response);
-  }
-
-  async moveSection(
-    workspaceSlug: string,
-    projectSlug: string,
-    sectionId: string,
-    request: { suiteId: string; parentId: string | null; position: number },
-  ): Promise<SectionResponse> {
-    await this.open(workspaceSlug);
-    const response = await lastValueFrom(
-      this.http.put<unknown>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/sections/${encodeURIComponent(sectionId)}/move`,
-        request,
-      ),
-    );
-    return sectionResponseSchema.parse(response);
-  }
-
-  async deleteSection(
-    workspaceSlug: string,
-    projectSlug: string,
-    sectionId: string,
-  ): Promise<void> {
-    await this.open(workspaceSlug);
-    await lastValueFrom(
-      this.http.delete<void>(
-        `/api/v1/projects/${encodeURIComponent(projectSlug)}/structure/sections/${encodeURIComponent(sectionId)}`,
-      ),
-    );
-  }
-}
-
-async function sha256(file: File): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }

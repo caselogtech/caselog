@@ -3,8 +3,9 @@ import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angul
 import type { ProjectStructureResponse, TestCaseListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
-import { WorkspaceApi } from '../../../data-access/workspace-api';
-import { CaseList } from '../../../pages/cases/case-list';
+import { TestCaseStructureApi } from '../../../data-access/test-case-structure-api';
+import { TestCasesApi } from '../../../data-access/test-cases-api';
+import { CaseList } from '../../../pages/case-list/case-list';
 
 const SECTION_ID = 'cc4201aa-51f1-4a1b-898d-8d208d475ed3';
 
@@ -53,12 +54,8 @@ const structure: ProjectStructureResponse = {
 };
 
 describe('CaseList', () => {
-  const workspaceApi = {
-    listTestCases: vi.fn(),
+  const structureApi = {
     projectStructure: vi.fn(),
-    duplicateTestCase: vi.fn(),
-    archiveTestCase: vi.fn(),
-    restoreArchivedTestCase: vi.fn(),
     createSuite: vi.fn(),
     updateSuite: vi.fn(),
     moveSuite: vi.fn(),
@@ -68,30 +65,37 @@ describe('CaseList', () => {
     moveSection: vi.fn(),
     deleteSection: vi.fn(),
   };
+  const testCasesApi = {
+    listTestCases: vi.fn(),
+    duplicateTestCase: vi.fn(),
+    archiveTestCase: vi.fn(),
+    restoreArchivedTestCase: vi.fn(),
+  };
   let queryClient: QueryClient;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    workspaceApi.listTestCases.mockReset();
-    workspaceApi.projectStructure.mockReset();
-    workspaceApi.duplicateTestCase.mockReset();
-    workspaceApi.archiveTestCase.mockReset();
-    workspaceApi.restoreArchivedTestCase.mockReset();
-    workspaceApi.createSuite.mockReset();
-    workspaceApi.updateSuite.mockReset();
-    workspaceApi.moveSuite.mockReset();
-    workspaceApi.deleteSuite.mockReset();
-    workspaceApi.createSection.mockReset();
-    workspaceApi.updateSection.mockReset();
-    workspaceApi.moveSection.mockReset();
-    workspaceApi.deleteSection.mockReset();
-    workspaceApi.projectStructure.mockResolvedValue(structure);
+    testCasesApi.listTestCases.mockReset();
+    structureApi.projectStructure.mockReset();
+    testCasesApi.duplicateTestCase.mockReset();
+    testCasesApi.archiveTestCase.mockReset();
+    testCasesApi.restoreArchivedTestCase.mockReset();
+    structureApi.createSuite.mockReset();
+    structureApi.updateSuite.mockReset();
+    structureApi.moveSuite.mockReset();
+    structureApi.deleteSuite.mockReset();
+    structureApi.createSection.mockReset();
+    structureApi.updateSection.mockReset();
+    structureApi.moveSection.mockReset();
+    structureApi.deleteSection.mockReset();
+    structureApi.projectStructure.mockResolvedValue(structure);
     await TestBed.configureTestingModule({
       imports: [CaseList, i18nTestingModule()],
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
-        { provide: WorkspaceApi, useValue: workspaceApi },
+        { provide: TestCaseStructureApi, useValue: structureApi },
+        { provide: TestCasesApi, useValue: testCasesApi },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -108,13 +112,13 @@ describe('CaseList', () => {
   afterEach(() => queryClient.clear());
 
   it('renders current case versions with their project identifiers', async () => {
-    workspaceApi.listTestCases.mockResolvedValue(response);
+    testCasesApi.listTestCases.mockResolvedValue(response);
     const fixture = TestBed.createComponent(CaseList);
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.cases.isSuccess()).toBe(true));
     fixture.detectChanges();
 
-    expect(workspaceApi.listTestCases).toHaveBeenCalledWith(
+    expect(testCasesApi.listTestCases).toHaveBeenCalledWith(
       'acme-quality',
       'authentication',
       undefined,
@@ -136,7 +140,7 @@ describe('CaseList', () => {
   });
 
   it('stores search in the URL and refetches the case collection', async () => {
-    workspaceApi.listTestCases.mockResolvedValue(response);
+    testCasesApi.listTestCases.mockResolvedValue(response);
     const fixture = TestBed.createComponent(CaseList);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
     fixture.detectChanges();
@@ -145,7 +149,7 @@ describe('CaseList', () => {
     fixture.componentInstance.searchForm.controls.search.setValue(' invalid password ');
     await fixture.componentInstance.applySearch();
     await vi.waitFor(() =>
-      expect(workspaceApi.listTestCases).toHaveBeenLastCalledWith(
+      expect(testCasesApi.listTestCases).toHaveBeenLastCalledWith(
         'acme-quality',
         'authentication',
         undefined,
@@ -164,7 +168,7 @@ describe('CaseList', () => {
   });
 
   it('filters cases by section and stores the selection in the URL', async () => {
-    workspaceApi.listTestCases.mockResolvedValue(response);
+    testCasesApi.listTestCases.mockResolvedValue(response);
     const fixture = TestBed.createComponent(CaseList);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
     fixture.detectChanges();
@@ -172,7 +176,7 @@ describe('CaseList', () => {
 
     await fixture.componentInstance.selectSection(SECTION_ID);
     await vi.waitFor(() =>
-      expect(workspaceApi.listTestCases).toHaveBeenLastCalledWith(
+      expect(testCasesApi.listTestCases).toHaveBeenLastCalledWith(
         'acme-quality',
         'authentication',
         undefined,
@@ -191,7 +195,7 @@ describe('CaseList', () => {
   });
 
   it('shows a search-aware empty state', async () => {
-    workspaceApi.listTestCases.mockResolvedValue({ ...response, items: [] });
+    testCasesApi.listTestCases.mockResolvedValue({ ...response, items: [] });
     const fixture = TestBed.createComponent(CaseList);
     fixture.componentInstance.search.set('missing case');
     fixture.detectChanges();
@@ -205,8 +209,8 @@ describe('CaseList', () => {
   });
 
   it('stores archived state in the URL and restores a case', async () => {
-    workspaceApi.listTestCases.mockResolvedValue(response);
-    workspaceApi.restoreArchivedTestCase.mockResolvedValue({
+    testCasesApi.listTestCases.mockResolvedValue(response);
+    testCasesApi.restoreArchivedTestCase.mockResolvedValue({
       testCaseId: response.items[0]?.id,
       state: 'active',
     });
@@ -217,7 +221,7 @@ describe('CaseList', () => {
 
     await fixture.componentInstance.selectState('archived');
     await vi.waitFor(() =>
-      expect(workspaceApi.listTestCases).toHaveBeenLastCalledWith(
+      expect(testCasesApi.listTestCases).toHaveBeenLastCalledWith(
         'acme-quality',
         'authentication',
         undefined,
@@ -227,7 +231,7 @@ describe('CaseList', () => {
       ),
     );
     fixture.componentInstance.restoreCase.mutate(response.items[0]?.id ?? '');
-    await vi.waitFor(() => expect(workspaceApi.restoreArchivedTestCase).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(testCasesApi.restoreArchivedTestCase).toHaveBeenCalledOnce());
 
     expect(navigate).toHaveBeenCalledWith([], {
       relativeTo: TestBed.inject(ActivatedRoute),

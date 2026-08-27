@@ -19,7 +19,7 @@ import {
   PageState,
 } from '../../../../shared/ui/public-api';
 import { CaseRepositorySidebar } from '../../components/case-repository-sidebar/case-repository-sidebar';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestCasesApi } from '../../data-access/test-cases-api';
 
 const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
   steps: 'workspace.cases.templates.steps',
@@ -50,7 +50,7 @@ export class CaseList {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly formBuilder = inject(NonNullableFormBuilder);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly testCasesApi = inject(TestCasesApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
 
@@ -73,7 +73,7 @@ export class CaseList {
       this.state(),
     ],
     queryFn: ({ pageParam }) =>
-      this.workspaceApi.listTestCases(
+      this.testCasesApi.listTestCases(
         this.workspaceSlug,
         this.projectSlug,
         pageParam ?? undefined,
@@ -95,17 +95,17 @@ export class CaseList {
 
   readonly duplicateCase = injectMutation(() => ({
     mutationFn: (caseId: string) =>
-      this.workspaceApi.duplicateTestCase(this.workspaceSlug, this.projectSlug, caseId),
+      this.testCasesApi.duplicateTestCase(this.workspaceSlug, this.projectSlug, caseId),
     onSuccess: () => this.invalidateCases(),
   }));
   readonly archiveCase = injectMutation(() => ({
     mutationFn: (caseId: string) =>
-      this.workspaceApi.archiveTestCase(this.workspaceSlug, this.projectSlug, caseId),
+      this.testCasesApi.archiveTestCase(this.workspaceSlug, this.projectSlug, caseId),
     onSuccess: () => this.invalidateCases(),
   }));
   readonly restoreCase = injectMutation(() => ({
     mutationFn: (caseId: string) =>
-      this.workspaceApi.restoreArchivedTestCase(this.workspaceSlug, this.projectSlug, caseId),
+      this.testCasesApi.restoreArchivedTestCase(this.workspaceSlug, this.projectSlug, caseId),
     onSuccess: () => this.invalidateCases(),
   }));
 

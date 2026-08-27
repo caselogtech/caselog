@@ -22,7 +22,9 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestCaseAttachmentsApi } from '../../data-access/test-case-attachments-api';
+import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
+import { TestCasesApi } from '../../data-access/test-cases-api';
 
 const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
   steps: 'workspace.cases.templates.steps',
@@ -35,13 +37,15 @@ const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
   selector: 'app-case-detail',
   imports: [DatePipe, ReactiveFormsModule, RouterLink, TranslocoPipe],
   templateUrl: './case-detail.html',
-  styleUrls: ['./case-create.css', './case-detail.css', './case-attachments.css'],
+  styleUrls: ['../case-create/case-create.css', './case-detail.css', './case-attachments.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CaseDetail {
   private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(NonNullableFormBuilder);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly attachmentsApi = inject(TestCaseAttachmentsApi);
+  private readonly structureApi = inject(TestCaseStructureApi);
+  private readonly testCasesApi = inject(TestCasesApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
   private readonly document = inject(DOCUMENT);
@@ -68,13 +72,13 @@ export class CaseDetail {
 
   readonly detail = injectQuery(() => ({
     queryKey: ['test-case', this.workspaceSlug, this.projectSlug, this.caseId],
-    queryFn: () => this.workspaceApi.testCase(this.workspaceSlug, this.projectSlug, this.caseId),
+    queryFn: () => this.testCasesApi.testCase(this.workspaceSlug, this.projectSlug, this.caseId),
   }));
 
   readonly executionHistory = injectInfiniteQuery(() => ({
     queryKey: ['case-execution-history', this.workspaceSlug, this.projectSlug, this.caseId],
     queryFn: ({ pageParam }) =>
-      this.workspaceApi.testCaseExecutionHistory(
+      this.testCasesApi.testCaseExecutionHistory(
         this.workspaceSlug,
         this.projectSlug,
         this.caseId,
@@ -90,7 +94,7 @@ export class CaseDetail {
 
   readonly structure = injectQuery(() => ({
     queryKey: ['project-structure', this.workspaceSlug, this.projectSlug],
-    queryFn: () => this.workspaceApi.projectStructure(this.workspaceSlug, this.projectSlug),
+    queryFn: () => this.structureApi.projectStructure(this.workspaceSlug, this.projectSlug),
   }));
 
   readonly current = computed(() => this.detail.data()?.testCase.currentVersion ?? null);
@@ -100,7 +104,7 @@ export class CaseDetail {
     return {
       queryKey: ['case-attachments', this.workspaceSlug, this.projectSlug, this.caseId, versionId],
       queryFn: ({ pageParam }) =>
-        this.workspaceApi.testCaseAttachments(
+        this.attachmentsApi.testCaseAttachments(
           this.workspaceSlug,
           this.projectSlug,
           this.caseId,
@@ -120,7 +124,7 @@ export class CaseDetail {
   readonly uploadAttachment = injectMutation(() => ({
     mutationFn: (file: File) => {
       const versionId = this.requireCurrentVersionId();
-      return this.workspaceApi.uploadTestCaseAttachment(
+      return this.attachmentsApi.uploadTestCaseAttachment(
         this.workspaceSlug,
         this.projectSlug,
         this.caseId,
@@ -133,7 +137,7 @@ export class CaseDetail {
 
   readonly downloadAttachment = injectMutation(() => ({
     mutationFn: (attachmentId: string) =>
-      this.workspaceApi.testCaseAttachmentDownload(
+      this.attachmentsApi.testCaseAttachmentDownload(
         this.workspaceSlug,
         this.projectSlug,
         this.caseId,
@@ -152,7 +156,7 @@ export class CaseDetail {
       this.selectedVersionId(),
     ],
     queryFn: () =>
-      this.workspaceApi.testCaseVersion(
+      this.testCasesApi.testCaseVersion(
         this.workspaceSlug,
         this.projectSlug,
         this.caseId,
@@ -163,7 +167,7 @@ export class CaseDetail {
 
   readonly updateCase = injectMutation(() => ({
     mutationFn: (request: UpdateTestCaseRequest) =>
-      this.workspaceApi.updateTestCase(this.workspaceSlug, this.projectSlug, this.caseId, request),
+      this.testCasesApi.updateTestCase(this.workspaceSlug, this.projectSlug, this.caseId, request),
     onSuccess: async () => {
       this.editing.set(false);
       await Promise.all([
@@ -179,7 +183,7 @@ export class CaseDetail {
 
   readonly restoreVersion = injectMutation(() => ({
     mutationFn: (versionId: string) =>
-      this.workspaceApi.restoreTestCaseVersion(
+      this.testCasesApi.restoreTestCaseVersion(
         this.workspaceSlug,
         this.projectSlug,
         this.caseId,

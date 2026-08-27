@@ -13,7 +13,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
 
 @Component({
   selector: 'app-case-repository-sidebar',
@@ -24,7 +24,7 @@ import { WorkspaceApi } from '../../data-access/workspace-api';
 })
 export class CaseRepositorySidebar {
   private readonly formBuilder = inject(NonNullableFormBuilder);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly structureApi = inject(TestCaseStructureApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
 
@@ -61,7 +61,7 @@ export class CaseRepositorySidebar {
 
   readonly structure = injectQuery(() => ({
     queryKey: ['project-structure', this.workspaceSlug(), this.projectSlug()],
-    queryFn: () => this.workspaceApi.projectStructure(this.workspaceSlug(), this.projectSlug()),
+    queryFn: () => this.structureApi.projectStructure(this.workspaceSlug(), this.projectSlug()),
   }));
   readonly moveParentOptions = computed(
     () =>
@@ -73,7 +73,7 @@ export class CaseRepositorySidebar {
 
   readonly createSuite = injectMutation(() => ({
     mutationFn: (name: string) =>
-      this.workspaceApi.createSuite(this.workspaceSlug(), this.projectSlug(), name),
+      this.structureApi.createSuite(this.workspaceSlug(), this.projectSlug(), name),
     onSuccess: async () => {
       this.suiteForm.reset();
       await this.invalidateStructure();
@@ -81,7 +81,7 @@ export class CaseRepositorySidebar {
   }));
   readonly createSection = injectMutation(() => ({
     mutationFn: (input: { suiteId: string; parentId?: string; name: string }) =>
-      this.workspaceApi.createSection(
+      this.structureApi.createSection(
         this.workspaceSlug(),
         this.projectSlug(),
         input.suiteId,
@@ -97,13 +97,13 @@ export class CaseRepositorySidebar {
   readonly renameStructureItem = injectMutation(() => ({
     mutationFn: (input: { type: 'suite' | 'section'; id: string; name: string }) =>
       input.type === 'suite'
-        ? this.workspaceApi.updateSuite(
+        ? this.structureApi.updateSuite(
             this.workspaceSlug(),
             this.projectSlug(),
             input.id,
             input.name,
           )
-        : this.workspaceApi.updateSection(
+        : this.structureApi.updateSection(
             this.workspaceSlug(),
             this.projectSlug(),
             input.id,
@@ -116,7 +116,7 @@ export class CaseRepositorySidebar {
   }));
   readonly moveSuiteItem = injectMutation(() => ({
     mutationFn: (input: { id: string; position: number }) =>
-      this.workspaceApi.moveSuite(
+      this.structureApi.moveSuite(
         this.workspaceSlug(),
         this.projectSlug(),
         input.id,
@@ -131,7 +131,7 @@ export class CaseRepositorySidebar {
       parentId: string | null;
       position: number;
     }) =>
-      this.workspaceApi.moveSection(this.workspaceSlug(), this.projectSlug(), input.id, {
+      this.structureApi.moveSection(this.workspaceSlug(), this.projectSlug(), input.id, {
         suiteId: input.suiteId,
         parentId: input.parentId,
         position: input.position,
@@ -144,8 +144,8 @@ export class CaseRepositorySidebar {
   readonly deleteStructureItem = injectMutation(() => ({
     mutationFn: (input: { type: 'suite' | 'section'; id: string }) =>
       input.type === 'suite'
-        ? this.workspaceApi.deleteSuite(this.workspaceSlug(), this.projectSlug(), input.id)
-        : this.workspaceApi.deleteSection(this.workspaceSlug(), this.projectSlug(), input.id),
+        ? this.structureApi.deleteSuite(this.workspaceSlug(), this.projectSlug(), input.id)
+        : this.structureApi.deleteSection(this.workspaceSlug(), this.projectSlug(), input.id),
     onSuccess: async (_result, input) => {
       this.deleteTarget.set(null);
       if (input.type === 'section' && this.selectedSectionId() === input.id) {

@@ -7,8 +7,9 @@ import type {
 } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
-import { WorkspaceApi } from '../../../data-access/workspace-api';
-import { CsvImport } from '../../../pages/cases/csv-import';
+import { TestCaseImportsApi } from '../../../data-access/test-case-imports-api';
+import { TestCaseStructureApi } from '../../../data-access/test-case-structure-api';
+import { CsvImport } from '../../../pages/csv-import/csv-import';
 
 const sectionId = 'cc4201aa-51f1-4a1b-898d-8d208d475ed3';
 const structure: ProjectStructureResponse = {
@@ -65,26 +66,27 @@ const imported: CsvImportResponse = {
 };
 
 describe('CsvImport', () => {
-  const workspaceApi = {
-    projectStructure: vi.fn(),
+  const importsApi = {
     previewCsvImport: vi.fn(),
     commitCsvImport: vi.fn(),
   };
+  const structureApi = { projectStructure: vi.fn() };
   let queryClient: QueryClient;
 
   beforeEach(async () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
-    workspaceApi.projectStructure.mockReset().mockResolvedValue(structure);
-    workspaceApi.previewCsvImport.mockReset().mockResolvedValue(validPreview);
-    workspaceApi.commitCsvImport.mockReset().mockResolvedValue(imported);
+    structureApi.projectStructure.mockReset().mockResolvedValue(structure);
+    importsApi.previewCsvImport.mockReset().mockResolvedValue(validPreview);
+    importsApi.commitCsvImport.mockReset().mockResolvedValue(imported);
     await TestBed.configureTestingModule({
       imports: [CsvImport, i18nTestingModule()],
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
-        { provide: WorkspaceApi, useValue: workspaceApi },
+        { provide: TestCaseImportsApi, useValue: importsApi },
+        { provide: TestCaseStructureApi, useValue: structureApi },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -120,7 +122,7 @@ describe('CsvImport', () => {
 
     fixture.componentInstance.previewImport();
     await vi.waitFor(() => expect(fixture.componentInstance.preview.isSuccess()).toBe(true));
-    expect(workspaceApi.previewCsvImport).toHaveBeenCalledWith(
+    expect(importsApi.previewCsvImport).toHaveBeenCalledWith(
       'acme-quality',
       'authentication',
       expect.objectContaining({
@@ -137,10 +139,10 @@ describe('CsvImport', () => {
 
     fixture.componentInstance.commitImport();
     await vi.waitFor(() => expect(fixture.componentInstance.commit.isSuccess()).toBe(true));
-    expect(workspaceApi.commitCsvImport).toHaveBeenCalledWith(
+    expect(importsApi.commitCsvImport).toHaveBeenCalledWith(
       'acme-quality',
       'authentication',
-      workspaceApi.previewCsvImport.mock.calls[0]?.[2],
+      importsApi.previewCsvImport.mock.calls[0]?.[2],
       expect.stringMatching(/^[0-9a-f-]{36}$/),
     );
     fixture.detectChanges();
@@ -149,7 +151,7 @@ describe('CsvImport', () => {
   });
 
   it('keeps commit disabled when the backend reports invalid source rows', async () => {
-    workspaceApi.previewCsvImport.mockResolvedValue({
+    importsApi.previewCsvImport.mockResolvedValue({
       columns: ['Title', 'Content'],
       summary: { total: 1, valid: 0, invalid: 1 },
       rows: [
@@ -177,7 +179,7 @@ describe('CsvImport', () => {
     expect(commitButton.disabled).toBe(true);
     expect(fixture.nativeElement.textContent).toContain('The import cannot be committed yet');
     fixture.componentInstance.commitImport();
-    expect(workspaceApi.commitCsvImport).not.toHaveBeenCalled();
+    expect(importsApi.commitCsvImport).not.toHaveBeenCalled();
   });
 });
 

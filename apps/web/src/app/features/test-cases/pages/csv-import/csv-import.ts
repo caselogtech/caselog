@@ -20,7 +20,8 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestCaseImportsApi } from '../../data-access/test-case-imports-api';
+import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
 import {
   CSV_DELIMITERS,
   detectCsvDelimiter,
@@ -58,7 +59,8 @@ const FILE_ERROR_TRANSLATIONS: Record<FileError, string> = {
 export class CsvImport {
   private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(NonNullableFormBuilder);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly importsApi = inject(TestCaseImportsApi);
+  private readonly structureApi = inject(TestCaseStructureApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
 
@@ -91,7 +93,7 @@ export class CsvImport {
 
   readonly structure = injectQuery(() => ({
     queryKey: ['project-structure', this.workspaceSlug, this.projectSlug],
-    queryFn: () => this.workspaceApi.projectStructure(this.workspaceSlug, this.projectSlug),
+    queryFn: () => this.structureApi.projectStructure(this.workspaceSlug, this.projectSlug),
   }));
 
   readonly sections = computed(
@@ -100,7 +102,7 @@ export class CsvImport {
 
   readonly preview = injectMutation(() => ({
     mutationFn: (request: CsvImportRequest) =>
-      this.workspaceApi.previewCsvImport(this.workspaceSlug, this.projectSlug, request),
+      this.importsApi.previewCsvImport(this.workspaceSlug, this.projectSlug, request),
     onSuccess: (response, request) => {
       this.previewData.set(response);
       this.previewedRequest.set(request);
@@ -117,7 +119,7 @@ export class CsvImport {
       request: CsvImportRequest;
       idempotencyKey: string;
     }) =>
-      this.workspaceApi.commitCsvImport(
+      this.importsApi.commitCsvImport(
         this.workspaceSlug,
         this.projectSlug,
         request,

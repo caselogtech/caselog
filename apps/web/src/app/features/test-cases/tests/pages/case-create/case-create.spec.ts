@@ -3,8 +3,9 @@ import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angul
 import type { CreateTestCaseResponse, ProjectStructureResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
-import { WorkspaceApi } from '../../../data-access/workspace-api';
-import { CaseCreate } from '../../../pages/cases/case-create';
+import { TestCaseStructureApi } from '../../../data-access/test-case-structure-api';
+import { TestCasesApi } from '../../../data-access/test-cases-api';
+import { CaseCreate } from '../../../pages/case-create/case-create';
 
 const sectionId = 'cc4201aa-51f1-4a1b-898d-8d208d475ed3';
 
@@ -47,22 +48,24 @@ const created: CreateTestCaseResponse = {
 };
 
 describe('CaseCreate', () => {
-  const workspaceApi = { projectStructure: vi.fn(), createTestCase: vi.fn() };
+  const structureApi = { projectStructure: vi.fn() };
+  const testCasesApi = { createTestCase: vi.fn() };
   let queryClient: QueryClient;
 
   beforeEach(async () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
-    workspaceApi.projectStructure.mockReset();
-    workspaceApi.createTestCase.mockReset();
-    workspaceApi.projectStructure.mockResolvedValue(structure);
+    structureApi.projectStructure.mockReset();
+    testCasesApi.createTestCase.mockReset();
+    structureApi.projectStructure.mockResolvedValue(structure);
     await TestBed.configureTestingModule({
       imports: [CaseCreate, i18nTestingModule()],
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
-        { provide: WorkspaceApi, useValue: workspaceApi },
+        { provide: TestCaseStructureApi, useValue: structureApi },
+        { provide: TestCasesApi, useValue: testCasesApi },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -78,7 +81,7 @@ describe('CaseCreate', () => {
   afterEach(() => queryClient.clear());
 
   it('creates a steps case in the first available section', async () => {
-    workspaceApi.createTestCase.mockResolvedValue(created);
+    testCasesApi.createTestCase.mockResolvedValue(created);
     const fixture = TestBed.createComponent(CaseCreate);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
     fixture.detectChanges();
@@ -99,8 +102,8 @@ describe('CaseCreate', () => {
     });
     fixture.componentInstance.submit();
 
-    await vi.waitFor(() => expect(workspaceApi.createTestCase).toHaveBeenCalledOnce());
-    expect(workspaceApi.createTestCase).toHaveBeenCalledWith('acme-quality', 'authentication', {
+    await vi.waitFor(() => expect(testCasesApi.createTestCase).toHaveBeenCalledOnce());
+    expect(testCasesApi.createTestCase).toHaveBeenCalledWith('acme-quality', 'authentication', {
       title: 'Sign in with a passkey',
       sectionId,
       template: 'steps',
@@ -129,7 +132,7 @@ describe('CaseCreate', () => {
 
     fixture.componentInstance.submit();
 
-    expect(workspaceApi.createTestCase).not.toHaveBeenCalled();
+    expect(testCasesApi.createTestCase).not.toHaveBeenCalled();
     expect(fixture.componentInstance.form.controls.text.invalid).toBe(true);
     expect(fixture.componentInstance.form.controls.text.touched).toBe(true);
   });

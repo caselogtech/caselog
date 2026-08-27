@@ -21,7 +21,7 @@
     "format:check": "biome format apps packages scripts",
     "i18n:check": "pnpm --filter @caselog/web i18n:check",
     "lint": "biome lint apps packages scripts && pnpm lint:architecture",
-    "lint:architecture": "node scripts/check-backend-boundaries.mjs",
+    "lint:architecture": "node scripts/check-backend-boundaries.mjs && node scripts/check-frontend-boundaries.mjs",
     "openapi:generate": "pnpm --filter @caselog/api openapi:generate && openapi-typescript apps/api/openapi.json -o apps/web/src/app/core/api/generated/openapi.ts",
     "openapi:check": "openapi-typescript apps/api/openapi.json -o apps/web/src/app/core/api/generated/openapi.ts --check",
     "pretest": "pnpm db:migrate:deploy",

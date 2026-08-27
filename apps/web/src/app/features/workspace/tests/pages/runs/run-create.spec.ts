@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angul
 import type { TestCaseListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { TestCasesApi } from '../../../../test-cases/public-api';
 import { WorkspaceApi } from '../../../data-access/workspace-api';
 import { RunCreate } from '../../../pages/runs/run-create';
 
@@ -29,12 +30,13 @@ const cases: TestCaseListResponse = {
 };
 
 describe('RunCreate', () => {
-  const workspaceApi = { listTestCases: vi.fn(), createTestRun: vi.fn() };
+  const testCasesApi = { listTestCases: vi.fn() };
+  const workspaceApi = { createTestRun: vi.fn() };
   let queryClient: QueryClient;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    workspaceApi.listTestCases.mockReset().mockResolvedValue(cases);
+    testCasesApi.listTestCases.mockReset().mockResolvedValue(cases);
     workspaceApi.createTestRun.mockReset().mockResolvedValue({
       run: {
         id: 'b101eace-107c-4177-8d7c-f4f052785c16',
@@ -53,6 +55,7 @@ describe('RunCreate', () => {
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
+        { provide: TestCasesApi, useValue: testCasesApi },
         { provide: WorkspaceApi, useValue: workspaceApi },
         {
           provide: ActivatedRoute,
@@ -122,7 +125,7 @@ describe('RunCreate', () => {
     fixture.componentInstance.applySearch();
 
     await vi.waitFor(() =>
-      expect(workspaceApi.listTestCases).toHaveBeenLastCalledWith(
+      expect(testCasesApi.listTestCases).toHaveBeenLastCalledWith(
         'acme',
         'authentication',
         undefined,

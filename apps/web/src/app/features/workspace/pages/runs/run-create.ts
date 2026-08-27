@@ -11,6 +11,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery, injectMutation } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { TestCasesApi } from '../../../test-cases/public-api';
 import { WorkspaceApi } from '../../data-access/workspace-api';
 
 const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
@@ -31,6 +32,7 @@ export class RunCreate {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly formBuilder = inject(NonNullableFormBuilder);
+  private readonly testCasesApi = inject(TestCasesApi);
   private readonly workspaceApi = inject(WorkspaceApi);
   private readonly workspaceSession = inject(WorkspaceSession);
 
@@ -49,7 +51,7 @@ export class RunCreate {
   readonly cases = injectInfiniteQuery(() => ({
     queryKey: ['run-case-selection', this.workspaceSlug, this.projectSlug, this.search()],
     queryFn: ({ pageParam }) =>
-      this.workspaceApi.listTestCases(
+      this.testCasesApi.listTestCases(
         this.workspaceSlug,
         this.projectSlug,
         pageParam ?? undefined,

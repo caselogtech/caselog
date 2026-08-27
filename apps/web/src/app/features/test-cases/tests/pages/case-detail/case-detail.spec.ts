@@ -10,8 +10,10 @@ import type {
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
-import { WorkspaceApi } from '../../../data-access/workspace-api';
-import { CaseDetail } from '../../../pages/cases/case-detail';
+import { TestCaseAttachmentsApi } from '../../../data-access/test-case-attachments-api';
+import { TestCaseStructureApi } from '../../../data-access/test-case-structure-api';
+import { TestCasesApi } from '../../../data-access/test-cases-api';
+import { CaseDetail } from '../../../pages/case-detail/case-detail';
 
 const caseId = '77bcbeb6-1c8d-49ac-8358-e2c80ab0e187';
 const sectionId = 'cc4201aa-51f1-4a1b-898d-8d208d475ed3';
@@ -142,13 +144,15 @@ const attachments: CaseAttachmentListResponse = {
 };
 
 describe('CaseDetail', () => {
-  const workspaceApi = {
-    testCase: vi.fn(),
+  const attachmentsApi = {
     testCaseAttachments: vi.fn(),
     uploadTestCaseAttachment: vi.fn(),
     testCaseAttachmentDownload: vi.fn(),
+  };
+  const structureApi = { projectStructure: vi.fn() };
+  const testCasesApi = {
+    testCase: vi.fn(),
     testCaseExecutionHistory: vi.fn(),
-    projectStructure: vi.fn(),
     updateTestCase: vi.fn(),
     testCaseVersion: vi.fn(),
     restoreTestCaseVersion: vi.fn(),
@@ -159,25 +163,27 @@ describe('CaseDetail', () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
-    workspaceApi.testCase.mockReset();
-    workspaceApi.testCaseAttachments.mockReset();
-    workspaceApi.uploadTestCaseAttachment.mockReset();
-    workspaceApi.testCaseAttachmentDownload.mockReset();
-    workspaceApi.testCaseExecutionHistory.mockReset();
-    workspaceApi.projectStructure.mockReset();
-    workspaceApi.updateTestCase.mockReset();
-    workspaceApi.testCaseVersion.mockReset();
-    workspaceApi.restoreTestCaseVersion.mockReset();
-    workspaceApi.testCase.mockResolvedValue(detail);
-    workspaceApi.testCaseAttachments.mockResolvedValue(attachments);
-    workspaceApi.testCaseExecutionHistory.mockResolvedValue(executionHistory);
-    workspaceApi.projectStructure.mockResolvedValue(structure);
+    testCasesApi.testCase.mockReset();
+    attachmentsApi.testCaseAttachments.mockReset();
+    attachmentsApi.uploadTestCaseAttachment.mockReset();
+    attachmentsApi.testCaseAttachmentDownload.mockReset();
+    testCasesApi.testCaseExecutionHistory.mockReset();
+    structureApi.projectStructure.mockReset();
+    testCasesApi.updateTestCase.mockReset();
+    testCasesApi.testCaseVersion.mockReset();
+    testCasesApi.restoreTestCaseVersion.mockReset();
+    testCasesApi.testCase.mockResolvedValue(detail);
+    attachmentsApi.testCaseAttachments.mockResolvedValue(attachments);
+    testCasesApi.testCaseExecutionHistory.mockResolvedValue(executionHistory);
+    structureApi.projectStructure.mockResolvedValue(structure);
     await TestBed.configureTestingModule({
       imports: [CaseDetail, i18nTestingModule()],
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
-        { provide: WorkspaceApi, useValue: workspaceApi },
+        { provide: TestCaseAttachmentsApi, useValue: attachmentsApi },
+        { provide: TestCaseStructureApi, useValue: structureApi },
+        { provide: TestCasesApi, useValue: testCasesApi },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -221,7 +227,7 @@ describe('CaseDetail', () => {
     );
     fixture.detectChanges();
 
-    expect(workspaceApi.testCaseExecutionHistory).toHaveBeenCalledWith(
+    expect(testCasesApi.testCaseExecutionHistory).toHaveBeenCalledWith(
       'acme-quality',
       'authentication',
       caseId,
@@ -241,7 +247,7 @@ describe('CaseDetail', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.attachments.isSuccess()).toBe(true));
     fixture.detectChanges();
 
-    expect(workspaceApi.testCaseAttachments).toHaveBeenCalledWith(
+    expect(attachmentsApi.testCaseAttachments).toHaveBeenCalledWith(
       'acme-quality',
       'authentication',
       caseId,
@@ -257,7 +263,7 @@ describe('CaseDetail', () => {
   });
 
   it('uploads a file to the current immutable version', async () => {
-    workspaceApi.uploadTestCaseAttachment.mockResolvedValue({ attachment: attachments.items[0] });
+    attachmentsApi.uploadTestCaseAttachment.mockResolvedValue({ attachment: attachments.items[0] });
     const fixture = TestBed.createComponent(CaseDetail);
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
@@ -269,8 +275,8 @@ describe('CaseDetail', () => {
 
     fixture.componentInstance.selectAttachment({ target: input } as unknown as Event);
 
-    await vi.waitFor(() => expect(workspaceApi.uploadTestCaseAttachment).toHaveBeenCalledOnce());
-    expect(workspaceApi.uploadTestCaseAttachment).toHaveBeenCalledWith(
+    await vi.waitFor(() => expect(attachmentsApi.uploadTestCaseAttachment).toHaveBeenCalledOnce());
+    expect(attachmentsApi.uploadTestCaseAttachment).toHaveBeenCalledWith(
       'acme-quality',
       'authentication',
       caseId,
@@ -281,7 +287,7 @@ describe('CaseDetail', () => {
   });
 
   it('downloads an attachment through a short-lived URL', async () => {
-    workspaceApi.testCaseAttachmentDownload.mockResolvedValue({
+    attachmentsApi.testCaseAttachmentDownload.mockResolvedValue({
       download: {
         url: 'https://storage.example.com/evidence.pdf',
         expiresAt: '2026-08-02T12:35:00.000Z',
@@ -298,7 +304,7 @@ describe('CaseDetail', () => {
     fixture.nativeElement.querySelector('.case-attachments li button').click();
 
     await vi.waitFor(() =>
-      expect(workspaceApi.testCaseAttachmentDownload).toHaveBeenCalledWith(
+      expect(attachmentsApi.testCaseAttachmentDownload).toHaveBeenCalledWith(
         'acme-quality',
         'authentication',
         caseId,
@@ -311,7 +317,7 @@ describe('CaseDetail', () => {
   });
 
   it('renders an attachment loading error with a retry action', async () => {
-    workspaceApi.testCaseAttachments.mockRejectedValueOnce(new Error('Storage unavailable'));
+    attachmentsApi.testCaseAttachments.mockRejectedValueOnce(new Error('Storage unavailable'));
     const fixture = TestBed.createComponent(CaseDetail);
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.attachments.isError()).toBe(true));
@@ -347,7 +353,7 @@ describe('CaseDetail', () => {
       },
       version: { id: 'e0a758cf-e117-475d-8058-2b9c96d337a6', version: 2 },
     };
-    workspaceApi.updateTestCase.mockResolvedValue(updated);
+    testCasesApi.updateTestCase.mockResolvedValue(updated);
     const fixture = TestBed.createComponent(CaseDetail);
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
@@ -358,8 +364,8 @@ describe('CaseDetail', () => {
     );
     fixture.componentInstance.submit();
 
-    await vi.waitFor(() => expect(workspaceApi.updateTestCase).toHaveBeenCalledOnce());
-    expect(workspaceApi.updateTestCase).toHaveBeenCalledWith(
+    await vi.waitFor(() => expect(testCasesApi.updateTestCase).toHaveBeenCalledOnce());
+    expect(testCasesApi.updateTestCase).toHaveBeenCalledWith(
       'acme-quality',
       'authentication',
       caseId,
@@ -376,7 +382,7 @@ describe('CaseDetail', () => {
   });
 
   it('loads a selected immutable version for inspection', async () => {
-    workspaceApi.testCaseVersion.mockResolvedValue(detail.testCase.currentVersion);
+    testCasesApi.testCaseVersion.mockResolvedValue(detail.testCase.currentVersion);
     const fixture = TestBed.createComponent(CaseDetail);
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
@@ -387,7 +393,7 @@ describe('CaseDetail', () => {
     );
     fixture.detectChanges();
 
-    expect(workspaceApi.testCaseVersion).toHaveBeenCalledWith(
+    expect(testCasesApi.testCaseVersion).toHaveBeenCalledWith(
       'acme-quality',
       'authentication',
       caseId,
