@@ -1,26 +1,34 @@
 <main class="runs-page" aria-labelledby="runs-title">
+  <nav class="breadcrumbs" [attr.aria-label]="'workspace.runs.breadcrumbs' | transloco">
+    <span>{{ project()?.name ?? projectSlug }}</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'workspace.runs.title' | transloco }}</span>
+  </nav>
+
   <header class="runs-header">
     <div>
-      <p class="eyebrow">{{ 'workspace.runs.eyebrow' | transloco }}</p>
       <h1 id="runs-title">{{ 'workspace.runs.title' | transloco }}</h1>
-      <p class="description">
-        @if (project(); as currentProject) {
-          <strong>{{ currentProject.name }}</strong>
-          <span aria-hidden="true"> · </span>
-        }
-        {{ 'workspace.runs.description' | transloco }}
-      </p>
+      <p>{{ 'workspace.runs.description' | transloco }}</p>
     </div>
-    @if (canCreate()) {
+    <div class="header-actions">
       <a
-        class="primary-action"
-        href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/new"
-        [routerLink]="['/', workspaceSlug, projectSlug, 'runs', 'new']"
+        appButton="secondary"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/imports"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'imports']"
       >
-        <span aria-hidden="true">＋</span>
-        {{ 'workspace.runs.create' | transloco }}
+        {{ 'workspace.runs.openImports' | transloco }}
       </a>
-    }
+      @if (canCreate()) {
+        <a
+          appButton="primary"
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/new"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'runs', 'new']"
+        >
+          <span aria-hidden="true">＋</span>
+          {{ 'workspace.runs.create' | transloco }}
+        </a>
+      }
+    </div>
   </header>
 
   <div class="run-toolbar">
@@ -46,44 +54,45 @@
   </div>
 
   @if (runs.isPending()) {
-    <section class="state" aria-live="polite">
-      <span class="loading-indicator" aria-hidden="true"></span>
-      {{ 'workspace.runs.loading' | transloco }}
+    <section class="runs-loading" [attr.aria-label]="'workspace.runs.loading' | transloco">
+      <app-loading-skeleton preset="row" [label]="'workspace.runs.loading' | transloco" />
+      <app-loading-skeleton preset="row" [label]="'workspace.runs.loading' | transloco" />
+      <app-loading-skeleton preset="row" [label]="'workspace.runs.loading' | transloco" />
     </section>
   } @else if (runs.isError()) {
-    <section class="state error" role="alert">
-      <p>{{ errorTranslationKey() | transloco }}</p>
-      <button class="secondary-action" type="button" (click)="runs.refetch()">
+    <app-page-state
+      [title]="'workspace.runs.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="runs.refetch()">
         {{ 'workspace.runs.retry' | transloco }}
       </button>
-    </section>
+    </app-page-state>
   } @else if (items().length === 0) {
-    <section class="state">
-      <h2>
-        {{
-          (status() ? 'workspace.runs.noFilteredTitle' : 'workspace.runs.emptyTitle') | transloco
-        }}
-      </h2>
-      <p>
-        {{
-          (status() ? 'workspace.runs.noFilteredDescription' : 'workspace.runs.emptyDescription')
-            | transloco
-        }}
-      </p>
+    <app-page-state
+      [title]="
+        (status() ? 'workspace.runs.noFilteredTitle' : 'workspace.runs.emptyTitle') | transloco
+      "
+      [message]="
+        (status() ? 'workspace.runs.noFilteredDescription' : 'workspace.runs.emptyDescription')
+          | transloco
+      "
+    >
       @if (status()) {
-        <button class="secondary-action" type="button" (click)="selectStatus()">
+        <button actions appButton="secondary" type="button" (click)="selectStatus()">
           {{ 'workspace.runs.clearFilter' | transloco }}
         </button>
       } @else if (canCreate()) {
         <a
-          class="primary-action empty-action"
+          actions
+          appButton="primary"
           href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/new"
           [routerLink]="['/', workspaceSlug, projectSlug, 'runs', 'new']"
         >
           {{ 'workspace.runs.createFirst' | transloco }}
         </a>
       }
-    </section>
+    </app-page-state>
   } @else {
     <div class="run-table-wrap">
       <table>
@@ -99,7 +108,7 @@
         <tbody>
           @for (run of items(); track run.id) {
             <tr>
-              <td class="run-name">
+              <td class="run-name" [attr.data-label]="'workspace.runs.name' | transloco">
                 <a
                   href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ run.id }}"
                   [routerLink]="['/', workspaceSlug, projectSlug, 'runs', run.id]"
@@ -107,15 +116,17 @@
                   {{ run.name }}
                 </a>
                 @if (run.build) {
-                  <span>{{ 'workspace.runs.build' | transloco }}: {{ run.build }}</span>
+                  <code>{{ 'workspace.runs.build' | transloco }}: {{ run.build }}</code>
                 }
               </td>
-              <td class="status-cell">
-                <span class="status-badge status-{{ run.status }}">
-                  {{ statusTranslationKey(run.status) | transloco }}
-                </span>
+              <td class="status-cell" [attr.data-label]="'workspace.runs.status' | transloco">
+                <app-status-badge
+                  class="status-{{ run.status }}"
+                  [tone]="statusTone(run.status)"
+                  [label]="statusTranslationKey(run.status) | transloco"
+                />
               </td>
-              <td class="progress-cell">
+              <td class="progress-cell" [attr.data-label]="'workspace.runs.progress' | transloco">
                 <div>
                   <progress
                     [value]="run.completedCount"
@@ -131,17 +142,16 @@
                   }}
                 </small>
               </td>
-              <td
-                class="failure-cell"
-                [attr.data-label]="'workspace.runs.failures' | transloco"
-              >
+              <td class="failure-cell" [attr.data-label]="'workspace.runs.failures' | transloco">
                 @if (run.failedCount > 0) {
                   <span class="failure-count">{{ run.failedCount }}</span>
                 } @else {
                   <span class="no-failures">—</span>
                 }
               </td>
-              <td class="created-cell">{{ run.createdAt | date: 'mediumDate' }}</td>
+              <td class="created-cell" [attr.data-label]="'workspace.runs.created' | transloco">
+                {{ run.createdAt | date: 'mediumDate' }}
+              </td>
             </tr>
           }
         </tbody>
@@ -150,7 +160,8 @@
 
     @if (runs.hasNextPage()) {
       <button
-        class="load-more secondary-action"
+        class="load-more"
+        appButton="secondary"
         type="button"
         [disabled]="runs.isFetchingNextPage()"
         (click)="runs.fetchNextPage()"

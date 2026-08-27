@@ -6,6 +6,13 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import {
+  Button,
+  LoadingSkeleton,
+  PageState,
+  StatusBadge,
+  type StatusBadgeTone,
+} from '../../../../shared/ui/public-api';
 import { TestRunsApi } from '../../data-access/test-runs-api';
 
 const STATUS_TRANSLATION_KEYS: Record<TestRunStatus, string> = {
@@ -17,7 +24,7 @@ const STATUS_TRANSLATION_KEYS: Record<TestRunStatus, string> = {
 
 @Component({
   selector: 'app-run-list',
-  imports: [DatePipe, RouterLink, TranslocoPipe],
+  imports: [Button, DatePipe, LoadingSkeleton, PageState, RouterLink, StatusBadge, TranslocoPipe],
   templateUrl: './run-list.html',
   styleUrl: './run-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,6 +76,12 @@ export class RunList {
 
   progressPercent(run: TestRunSummary): number {
     return run.itemCount === 0 ? 0 : Math.round((run.completedCount / run.itemCount) * 100);
+  }
+
+  statusTone(status: TestRunStatus): StatusBadgeTone {
+    if (status === 'active') return 'pending';
+    if (status === 'completed') return 'success';
+    return 'neutral';
   }
 
   private readStatus(): TestRunStatus | undefined {

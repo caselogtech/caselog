@@ -1,8 +1,10 @@
 import type { Routes } from '@angular/router';
+import { runCreatePendingChangesGuard } from './pages/run-create/run-create.guard';
 
 export const testRunsRoutes: Routes = [
   {
     path: 'new',
+    canDeactivate: [runCreatePendingChangesGuard],
     loadComponent: () => import('./pages/run-create/run-create').then(({ RunCreate }) => RunCreate),
   },
   {

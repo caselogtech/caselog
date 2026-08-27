@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  HostListener,
+  inject,
+  signal,
+} from '@angular/core';
 import {
   FormControl,
   NonNullableFormBuilder,
@@ -11,6 +18,15 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery, injectMutation } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import {
+  Button,
+  Callout,
+  FormControlStyle,
+  FormField,
+  LoadingSkeleton,
+  PageState,
+  StatusBadge,
+} from '../../../../shared/ui/public-api';
 import { TestCasesApi } from '../../../test-cases/public-api';
 import { TestRunsApi } from '../../data-access/test-runs-api';
 
@@ -23,7 +39,18 @@ const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
 
 @Component({
   selector: 'app-run-create',
-  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe],
+  imports: [
+    Button,
+    Callout,
+    FormControlStyle,
+    FormField,
+    LoadingSkeleton,
+    PageState,
+    ReactiveFormsModule,
+    RouterLink,
+    StatusBadge,
+    TranslocoPipe,
+  ],
   templateUrl: './run-create.html',
   styleUrl: './run-create.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,8 +107,11 @@ export class RunCreate {
         caseIds: [...this.selectedIds()],
       });
     },
-    onSuccess: ({ run }) =>
-      this.router.navigate(['/', this.workspaceSlug, this.projectSlug, 'runs', run.id]),
+    onSuccess: ({ run }) => {
+      this.form.markAsPristine();
+      this.selectedIds.set(new Set());
+      return this.router.navigate(['/', this.workspaceSlug, this.projectSlug, 'runs', run.id]);
+    },
   }));
 
   applySearch(): void {
@@ -128,5 +158,14 @@ export class RunCreate {
 
   errorTranslationKey(): string {
     return apiErrorTranslationKey(this.createRun.error() ?? this.cases.error());
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty || this.selectedIds().size > 0;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  preventAccidentalUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) event.preventDefault();
   }
 }
