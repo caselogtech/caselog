@@ -78,6 +78,7 @@ export type HydratedReadinessDecisionRecord = ReadinessDecisionScalarRecord & {
 
 export type CurrentReadinessRecord = {
   targetEvidenceRevision: number;
+  targetEvaluatorVersion: string;
   state: 'PENDING' | 'CURRENT' | 'STALE' | 'FAILED';
   failureCode: string | null;
   assignment: CandidatePolicyAssignment;
@@ -112,7 +113,7 @@ export function toCandidateReadinessResponse(
 ): CandidateReadinessResponse {
   const decision = record.decision ? toReadinessDecision(record.decision) : null;
   const state =
-    decision && decision.evidenceRevision < currentEvidenceRevision
+    record.state !== 'FAILED' && decision && decision.evidenceRevision < currentEvidenceRevision
       ? ('stale' as const)
       : (record.state.toLowerCase() as CandidateReadinessResponse['state']);
   return {
@@ -120,6 +121,7 @@ export function toCandidateReadinessResponse(
     assignment: record.assignment,
     state,
     targetEvidenceRevision: Math.max(record.targetEvidenceRevision, currentEvidenceRevision),
+    targetEvaluatorVersion: record.targetEvaluatorVersion,
     currentEvidenceRevision,
     failureCode: record.failureCode,
     decision,

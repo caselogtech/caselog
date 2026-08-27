@@ -13,7 +13,9 @@ import type {
   NativeEvidenceObservationInput,
 } from '../../application/ports/native-evidence-write';
 import { NATIVE_EVIDENCE_CONSUMER } from '../../application/ports/native-evidence-write';
+import { candidateEvidenceRevisionAdvancedEvent } from '../../application/events/evidence-integration-event';
 import { NATIVE_TEST_PRODUCER } from '../../domain/models/native-test-metric';
+import { appendEvidenceIntegrationEvent } from '../persistence/evidence-integration-event.persistence';
 
 const VALUE_TYPE = {
   percentage: EvidenceValueType.PERCENTAGE,
@@ -148,6 +150,16 @@ export class EvidenceObservationRepository {
         },
         data: { revision },
       });
+      await appendEvidenceIntegrationEvent(
+        transaction,
+        candidateEvidenceRevisionAdvancedEvent({
+          organizationId: input.organizationId,
+          projectId: input.projectId,
+          candidateId: input.candidateId,
+          evidenceRevision: revision,
+          occurredAt: new Date(),
+        }),
+      );
       await markIntegrationEventsConsumed(transaction, {
         organizationId: input.organizationId,
         consumerName: NATIVE_EVIDENCE_CONSUMER,

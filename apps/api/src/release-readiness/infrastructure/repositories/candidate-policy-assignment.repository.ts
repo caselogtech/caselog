@@ -8,6 +8,7 @@ import {
   storeIdempotencyResponse,
 } from '../../../core/database/infrastructure/persistence/idempotency';
 import { ReleasePolicyVersionState } from '../../../generated/prisma/client';
+import { READINESS_EVALUATOR_VERSION } from '../../domain/policies/readiness-evaluator';
 import {
   CANDIDATE_POLICY_ASSIGNMENT_SELECTION,
   toCandidatePolicyAssignmentResponse,
@@ -58,7 +59,7 @@ export class CandidatePolicyAssignmentRepository {
 
       await transaction.$executeRaw`
         SELECT pg_advisory_xact_lock(
-          hashtextextended('candidate-policy:' || ${input.candidateId}::text, 0)
+          hashtextextended('release-readiness:' || ${input.candidateId}::text, 0)
         )
       `;
       const scope = `candidate:${input.candidateId}:release-policy:assign`;
@@ -157,12 +158,14 @@ export class CandidatePolicyAssignmentRepository {
             candidateId: input.candidateId,
             assignmentId: record.id,
             targetEvidenceRevision: input.evidenceRevision,
+            targetEvaluatorVersion: READINESS_EVALUATOR_VERSION,
             state: 'PENDING',
           },
           update: {
             assignmentId: record.id,
             decisionId: null,
             targetEvidenceRevision: input.evidenceRevision,
+            targetEvaluatorVersion: READINESS_EVALUATOR_VERSION,
             state: 'PENDING',
             failureCode: null,
           },

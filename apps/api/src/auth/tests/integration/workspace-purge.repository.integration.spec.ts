@@ -315,6 +315,7 @@ describe('workspace purge repository', () => {
         assignmentId: policyAssignment.id,
         decisionId: readinessDecision.id,
         targetEvidenceRevision: 1,
+        targetEvaluatorVersion: '1.0.0',
         state: 'CURRENT',
       },
     });

@@ -50,13 +50,17 @@ export class PgBossJobQueue extends JobQueue implements OnModuleInit, OnModuleDe
       });
     }
     await this.boss.createQueue(definition.name, {
-      policy: definition.policy,
-      retryLimit: definition.retryLimit,
-      retryDelay: definition.retryDelay,
-      retryBackoff: definition.retryBackoff,
-      expireInSeconds: definition.expireInSeconds,
-      deleteAfterSeconds: definition.deleteAfterSeconds,
-      deadLetter: definition.deadLetter,
+      ...(definition.policy === undefined ? {} : { policy: definition.policy }),
+      ...(definition.retryLimit === undefined ? {} : { retryLimit: definition.retryLimit }),
+      ...(definition.retryDelay === undefined ? {} : { retryDelay: definition.retryDelay }),
+      ...(definition.retryBackoff === undefined ? {} : { retryBackoff: definition.retryBackoff }),
+      ...(definition.expireInSeconds === undefined
+        ? {}
+        : { expireInSeconds: definition.expireInSeconds }),
+      ...(definition.deleteAfterSeconds === undefined
+        ? {}
+        : { deleteAfterSeconds: definition.deleteAfterSeconds }),
+      ...(definition.deadLetter === undefined ? {} : { deadLetter: definition.deadLetter }),
     });
     if (definition.deadLetter) {
       await this.boss.updateQueue(definition.name, { deadLetter: definition.deadLetter });

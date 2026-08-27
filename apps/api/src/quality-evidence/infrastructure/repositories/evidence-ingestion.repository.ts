@@ -11,6 +11,7 @@ import {
   EvidenceValueType,
   type Prisma,
 } from '../../../generated/prisma/client';
+import { candidateEvidenceRevisionAdvancedEvent } from '../../application/events/evidence-integration-event';
 import type {
   EvidenceIngestionInput,
   EvidenceIngestionResult,
@@ -19,6 +20,7 @@ import {
   EVIDENCE_OBSERVATION_SELECTION,
   toEvidenceObservation,
 } from '../persistence/evidence-observation.persistence';
+import { appendEvidenceIntegrationEvent } from '../persistence/evidence-integration-event.persistence';
 
 @Injectable()
 export class EvidenceIngestionRepository {
@@ -192,6 +194,16 @@ export class EvidenceIngestionRepository {
           },
           data: { revision },
         });
+        await appendEvidenceIntegrationEvent(
+          transaction,
+          candidateEvidenceRevisionAdvancedEvent({
+            organizationId: input.organizationId,
+            projectId: project.id,
+            candidateId: candidate.id,
+            evidenceRevision: revision,
+            occurredAt: new Date(),
+          }),
+        );
       }
 
       const record = await transaction.evidenceObservation.findUniqueOrThrow({

@@ -4,3 +4,7 @@ export type {
   CandidateEvidenceSnapshot,
   CandidateEvidenceSnapshotObservation,
 } from './application/ports/candidate-evidence-snapshot';
+export {
+  QUALITY_EVIDENCE_INTEGRATION_EVENT,
+  type CandidateEvidenceRevisionAdvancedEvent,
+} from './application/events/evidence-integration-event';

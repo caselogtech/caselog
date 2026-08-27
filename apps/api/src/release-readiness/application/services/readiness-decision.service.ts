@@ -12,12 +12,8 @@ import {
   readinessDecisionResponseSchema,
 } from '@caselog/schemas/readiness';
 import { ResourceConflictError, ResourceNotFoundError } from '../../../common/errors/domain.error';
-import {
-  type CandidateEvidenceSnapshotObservation,
-  EvidenceSnapshotService,
-} from '../../../quality-evidence/public-api';
+import { EvidenceSnapshotService } from '../../../quality-evidence/public-api';
 import { ReleaseCandidateReferenceService } from '../../../releases/public-api';
-import type { ReadinessEvidence } from '../../domain/models/readiness-evidence';
 import {
   READINESS_EVALUATOR_VERSION,
   evaluateReadiness,
@@ -27,6 +23,8 @@ import {
   type ReadinessDecisionResult,
   type ReadinessEvaluationContextResult,
 } from '../../infrastructure/repositories/readiness-decision.repository';
+import { ReadinessDecisionQueryRepository } from '../../infrastructure/repositories/readiness-decision-query.repository';
+import { toReadinessEvidence } from '../mappers/readiness-evidence.mapper';
 
 @Injectable()
 export class ReadinessDecisionService {
@@ -37,6 +35,8 @@ export class ReadinessDecisionService {
     private readonly evidence: EvidenceSnapshotService,
     @Inject(ReadinessDecisionRepository)
     private readonly decisions: ReadinessDecisionRepository,
+    @Inject(ReadinessDecisionQueryRepository)
+    private readonly queries: ReadinessDecisionQueryRepository,
   ) {}
 
   async evaluate(
@@ -102,7 +102,7 @@ export class ReadinessDecisionService {
       candidateId,
     );
     return this.resolveDecision(
-      await this.decisions.current(principal.organizationId, candidateId, snapshot.revision),
+      await this.queries.current(principal.organizationId, candidateId, snapshot.revision),
     );
   }
 
@@ -113,7 +113,7 @@ export class ReadinessDecisionService {
     query: ReadinessDecisionListQuery,
   ): Promise<ReadinessDecisionListResponse> {
     const candidate = await this.candidates.resolve(principal.organizationId, candidateId);
-    const result = await this.decisions.history({
+    const result = await this.queries.history({
       organizationId: principal.organizationId,
       projectId: candidate.projectId,
       projectSlug,
@@ -134,7 +134,7 @@ export class ReadinessDecisionService {
     projectSlug: string,
     decisionId: string,
   ): Promise<ReadinessDecisionResponse> {
-    const result = await this.decisions.detail({
+    const result = await this.queries.detail({
       organizationId: principal.organizationId,
       projectSlug,
       decisionId,
@@ -169,6 +169,12 @@ export class ReadinessDecisionService {
         'The candidate policy assignment changed during evaluation; retry the request',
       );
     }
+    if (result.kind === 'input_superseded') {
+      throw new ResourceConflictError(
+        'readiness_input_superseded',
+        'Readiness inputs changed during evaluation; retry the request',
+      );
+    }
     if (result.kind === 'projection_not_found') {
       throw new ResourceNotFoundError('readiness_decision');
     }
@@ -177,25 +183,4 @@ export class ReadinessDecisionService {
     }
     return candidateReadinessResponseSchema.parse(result.value);
   }
-}
-
-function toReadinessEvidence(observation: CandidateEvidenceSnapshotObservation): ReadinessEvidence {
-  const value =
-    observation.value.value === null
-      ? null
-      : observation.value.type === 'percentage'
-        ? { type: 'percentage' as const, value: observation.value.value }
-        : { type: 'integer' as const, value: observation.value.value };
-  return {
-    observationId: observation.id,
-    producerId: observation.producerId,
-    metricKey: observation.metricKey,
-    metricVersion: observation.metricVersion,
-    dimensions: observation.dimensions,
-    state: observation.state.toUpperCase() as ReadinessEvidence['state'],
-    value,
-    observedAt: observation.observedAt,
-    expiresAt: observation.expiresAt,
-    trust: observation.trust.toUpperCase() as ReadinessEvidence['trust'],
-  };
 }

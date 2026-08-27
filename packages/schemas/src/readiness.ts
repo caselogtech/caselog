@@ -201,6 +201,7 @@ export const candidateReadinessResponseSchema = z.object({
   assignment: candidatePolicyAssignmentSchema,
   state: readinessProjectionStateSchema,
   targetEvidenceRevision: z.number().int().nonnegative(),
+  targetEvaluatorVersion: z.string(),
   currentEvidenceRevision: z.number().int().nonnegative(),
   failureCode: z.string().nullable(),
   decision: readinessDecisionSchema.nullable(),

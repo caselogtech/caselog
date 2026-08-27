@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type {
   AssignCandidatePolicyRequest,
   CandidatePolicyAssignmentResponse,
@@ -13,9 +13,12 @@ import {
   CandidatePolicyAssignmentRepository,
   type CandidatePolicyAssignmentResult,
 } from '../../infrastructure/repositories/candidate-policy-assignment.repository';
+import { ReadinessEvaluationRequestService } from './readiness-evaluation-request.service';
 
 @Injectable()
 export class CandidatePolicyAssignmentService {
+  private readonly logger = new Logger(CandidatePolicyAssignmentService.name);
+
   constructor(
     @Inject(ReleaseCandidateReferenceService)
     private readonly candidates: ReleaseCandidateReferenceService,
@@ -23,6 +26,8 @@ export class CandidatePolicyAssignmentService {
     private readonly assignments: CandidatePolicyAssignmentRepository,
     @Inject(EvidenceSnapshotService)
     private readonly evidence: EvidenceSnapshotService,
+    @Inject(ReadinessEvaluationRequestService)
+    private readonly evaluationRequests: ReadinessEvaluationRequestService,
   ) {}
 
   async assign(
@@ -38,7 +43,7 @@ export class CandidatePolicyAssignmentService {
       candidate.projectId,
       candidateId,
     );
-    return this.resolve(
+    const assignment = this.resolve(
       await this.assignments.assign({
         organizationId: principal.organizationId,
         projectId: candidate.projectId,
@@ -51,6 +56,22 @@ export class CandidatePolicyAssignmentService {
         evidenceRevision: evidence.revision,
       }),
     );
+    try {
+      await this.evaluationRequests.request({
+        organizationId: principal.organizationId,
+        candidateId,
+        evidenceRevision: evidence.revision,
+        trigger: 'POLICY_ASSIGNED',
+      });
+    } catch (error) {
+      this.logger.warn({
+        event: 'readiness_evaluation.enqueue_failed',
+        organizationId: principal.organizationId,
+        candidateId,
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      });
+    }
+    return assignment;
   }
 
   async current(

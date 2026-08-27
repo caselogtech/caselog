@@ -1271,6 +1271,7 @@ model CurrentReadinessDecision {
   assignmentId           String                   @map("assignment_id") @db.Uuid
   decisionId             String?                  @map("decision_id") @db.Uuid
   targetEvidenceRevision Int                      @map("target_evidence_revision")
+  targetEvaluatorVersion String                   @map("target_evaluator_version") @db.VarChar(20)
   state                  ReadinessProjectionState
   failureCode            String?                  @map("failure_code") @db.VarChar(80)
   updatedAt              DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)

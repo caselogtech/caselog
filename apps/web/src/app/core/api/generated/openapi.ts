@@ -3807,6 +3807,7 @@ export interface components {
             /** @enum {string} */
             state: "pending" | "current" | "stale" | "failed";
             targetEvidenceRevision: number;
+            targetEvaluatorVersion: string;
             currentEvidenceRevision: number;
             failureCode: string | null;
             decision: {

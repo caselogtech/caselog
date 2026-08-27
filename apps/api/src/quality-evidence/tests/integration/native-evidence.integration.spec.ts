@@ -10,6 +10,7 @@ import { RELEASE_INTEGRATION_EVENT } from '../../../releases/public-api';
 import { TestRunEvidenceSourceService } from '../../../test-runs/application/services/test-run-evidence-source.service';
 import { TestRunEvidenceSourceRepository } from '../../../test-runs/infrastructure/repositories/test-run-evidence-source.repository';
 import { TEST_RUN_INTEGRATION_EVENT } from '../../../test-runs/public-api';
+import { QUALITY_EVIDENCE_INTEGRATION_EVENT } from '../../public-api';
 import { NativeEvidenceEventConsumerService } from '../../application/services/native-evidence-event-consumer.service';
 import { NativeEvidenceMaterializerService } from '../../application/services/native-evidence-materializer.service';
 import { EvidenceEventRepository } from '../../infrastructure/repositories/evidence-event.repository';
@@ -235,6 +236,19 @@ describe('native candidate evidence', () => {
         where: { organizationId_candidateId: { organizationId, candidateId } },
       }),
     ).resolves.toMatchObject({ revision: 1 });
+    await expect(
+      admin.integrationEvent.findFirstOrThrow({
+        where: {
+          organizationId,
+          eventName: QUALITY_EVIDENCE_INTEGRATION_EVENT.candidateRevisionAdvanced,
+          sourceId: candidateId,
+          sourceRevision: '1',
+        },
+      }),
+    ).resolves.toMatchObject({
+      schemaVersion: 1,
+      payload: { projectId, candidateId, evidenceRevision: 1 },
+    });
     const response = await queries.list(organizationId, projectSlug, {
       candidateId,
       currentOnly: true,
@@ -303,6 +317,14 @@ describe('native candidate evidence', () => {
         (observation.dimensions as { testRunRole: string }).testRunRole === 'required',
     );
     expect(currentRequired?.evidenceRevision).toBe(2);
+    await expect(
+      admin.integrationEvent.count({
+        where: {
+          organizationId,
+          eventName: QUALITY_EVIDENCE_INTEGRATION_EVENT.candidateRevisionAdvanced,
+        },
+      }),
+    ).resolves.toBe(2);
     const corrected = passRates.find(
       (observation) => observation.percentageValue?.toString() === '100',
     );
@@ -326,6 +348,14 @@ describe('native candidate evidence', () => {
       processed: 1,
       observationsCreated: 0,
     });
+    await expect(
+      admin.integrationEvent.count({
+        where: {
+          organizationId,
+          eventName: QUALITY_EVIDENCE_INTEGRATION_EVENT.candidateRevisionAdvanced,
+        },
+      }),
+    ).resolves.toBe(2);
     await expect(application.evidenceObservation.findMany()).resolves.toEqual([]);
     const observation = await admin.evidenceObservation.findFirstOrThrow({
       where: { organizationId },

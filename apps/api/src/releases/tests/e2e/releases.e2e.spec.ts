@@ -22,6 +22,7 @@ import { configureApplication } from '../../../configure-application';
 import { createPrismaClient } from '../../../core/database/infrastructure/prisma/prisma-client';
 import type { PrismaClient } from '../../../generated/prisma/client';
 import { NativeEvidenceEventConsumerService } from '../../../quality-evidence/application/services/native-evidence-event-consumer.service';
+import { QUALITY_EVIDENCE_INTEGRATION_EVENT } from '../../../quality-evidence/public-api';
 import { RELEASE_INTEGRATION_EVENT } from '../../public-api';
 
 const PASSWORD = 'correct horse battery staple';
@@ -405,6 +406,18 @@ describe('release foundations API', () => {
         isCurrent: true,
         producer: { type: 'api_token', trust: 'authenticated' },
       },
+    });
+    await expect(
+      admin.integrationEvent.findFirstOrThrow({
+        where: {
+          organizationId,
+          eventName: QUALITY_EVIDENCE_INTEGRATION_EVENT.candidateRevisionAdvanced,
+          sourceId: firstCandidateId,
+          sourceRevision: '2',
+        },
+      }),
+    ).resolves.toMatchObject({
+      payload: { projectId, candidateId: firstCandidateId, evidenceRevision: 2 },
     });
 
     const replay = await app.inject({
