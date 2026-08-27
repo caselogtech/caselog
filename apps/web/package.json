@@ -11,7 +11,7 @@
     "i18n:check": "node scripts/check-translations.mjs",
     "watch": "ng build --watch --configuration development",
     "pretest": "pnpm --filter @caselog/schemas build",
-    "test": "ng test --watch=false",
+    "test": "ng test --no-watch",
     "pretypecheck": "pnpm --filter @caselog/schemas build",
     "typecheck": "ng build --configuration development"
   },
