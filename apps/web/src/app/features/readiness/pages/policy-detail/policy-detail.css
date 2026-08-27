@@ -82,6 +82,10 @@ header code {
   font-size: var(--font-size-sm);
 }
 
+.latest-version .app-button {
+  margin-left: var(--space-2);
+}
+
 .versions-section {
   border-top: 2px solid var(--border);
   margin-top: var(--space-6);
@@ -97,8 +101,18 @@ app-page-state {
   margin-top: var(--space-5);
 }
 
+app-callout {
+  display: block;
+  margin-top: var(--space-5);
+}
+
 @media (max-width: 620px) {
   .title-row {
     flex-direction: column;
+  }
+
+  .latest-version {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }

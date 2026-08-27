@@ -126,6 +126,66 @@ describe('ReadinessApi', () => {
     await expect(assignment).resolves.toMatchObject({ assignment: { policy: { id: policyId } } });
   });
 
+  it('creates, versions, and publishes policies idempotently', async () => {
+    const api = TestBed.inject(ReadinessApi);
+    const http = TestBed.inject(HttpTestingController);
+    const baseUrl = '/api/v1/projects/checkout/release-policies';
+    const gate = {
+      key: 'required-pass-rate',
+      metricKey: 'test.pass_rate' as const,
+      metricVersion: '1.0.0' as const,
+      dimensions: { testRunRole: 'required' as const },
+      operator: 'gte' as const,
+      expected: { type: 'percentage' as const, value: '98' },
+      impact: 'blocking' as const,
+      missingEvidenceBehavior: 'block' as const,
+      staleEvidenceBehavior: 'unknown' as const,
+      minimumTrust: 'authenticated' as const,
+    };
+
+    const created = api.createPolicy(
+      'acme',
+      'checkout',
+      {
+        key: 'production',
+        name: 'Production promotion',
+        description: null,
+        gates: [gate],
+      },
+      'policy-create-retry',
+    );
+    await Promise.resolve();
+    const createRequest = http.expectOne(baseUrl);
+    expect(createRequest.request.method).toBe('POST');
+    expect(createRequest.request.headers.get('Idempotency-Key')).toBe('policy-create-retry');
+    expect(createRequest.request.body.gates).toEqual([gate]);
+    createRequest.flush(policy);
+    await expect(created).resolves.toMatchObject({ policy: { id: policyId } });
+
+    const versioned = api.createPolicyVersion(
+      'acme',
+      'checkout',
+      policyId,
+      { gates: [gate] },
+      'policy-version-retry',
+    );
+    await Promise.resolve();
+    const versionRequest = http.expectOne(`${baseUrl}/${policyId}/versions`);
+    expect(versionRequest.request.method).toBe('POST');
+    expect(versionRequest.request.headers.get('Idempotency-Key')).toBe('policy-version-retry');
+    versionRequest.flush(policy);
+    await expect(versioned).resolves.toMatchObject({ policy: { id: policyId } });
+
+    const published = api.publishPolicy('acme', 'checkout', policyId, 'policy-publish-retry');
+    await Promise.resolve();
+    const publishRequest = http.expectOne(`${baseUrl}/${policyId}/publish`);
+    expect(publishRequest.request.method).toBe('POST');
+    expect(publishRequest.request.body).toEqual({});
+    expect(publishRequest.request.headers.get('Idempotency-Key')).toBe('policy-publish-retry');
+    publishRequest.flush(policy);
+    await expect(published).resolves.toMatchObject({ policy: { id: policyId } });
+  });
+
   it('loads an exact decision and creates, lists, and revokes waivers idempotently', async () => {
     const api = TestBed.inject(ReadinessApi);
     const http = TestBed.inject(HttpTestingController);

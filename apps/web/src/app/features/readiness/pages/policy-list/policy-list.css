@@ -10,7 +10,18 @@
 }
 
 .page-header {
+  align-items: flex-end;
+  display: flex;
+  gap: var(--space-4);
+  justify-content: space-between;
+}
+
+.page-header > div {
   max-width: 720px;
+}
+
+.page-header > .app-button {
+  flex: none;
 }
 
 .eyebrow {
@@ -57,4 +68,11 @@ app-page-state {
 
 app-policy-catalog {
   display: block;
+}
+
+@media (max-width: 620px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

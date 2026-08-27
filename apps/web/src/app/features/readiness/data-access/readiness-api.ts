@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { releaseDetailResponseSchema, type ReleaseDetailResponse } from '@caselog/schemas';
 import {
+  createReadinessPolicyRequestSchema,
+  createReadinessPolicyVersionRequestSchema,
   createReadinessWaiverRequestSchema,
   candidatePolicyAssignmentResponseSchema,
   candidateReadinessResponseSchema,
@@ -12,6 +14,8 @@ import {
   readinessWaiverListResponseSchema,
   readinessWaiverResponseSchema,
   revokeReadinessWaiverRequestSchema,
+  type CreateReadinessPolicyRequest,
+  type CreateReadinessPolicyVersionRequest,
   type CreateReadinessWaiverRequest,
   type CandidatePolicyAssignmentResponse,
   type CandidateReadinessResponse,
@@ -202,6 +206,60 @@ export class ReadinessApi {
     const response = await lastValueFrom(
       this.http.get<unknown>(
         `/api/v1/projects/${encodeURIComponent(projectSlug)}/release-policies/${encodeURIComponent(policyId)}`,
+      ),
+    );
+    return readinessPolicyResponseSchema.parse(response);
+  }
+
+  async createPolicy(
+    workspaceSlug: string,
+    projectSlug: string,
+    request: CreateReadinessPolicyRequest,
+    idempotencyKey: string,
+  ): Promise<ReadinessPolicyResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const payload = createReadinessPolicyRequestSchema.parse(request);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/release-policies`,
+        payload,
+        { headers: { 'Idempotency-Key': idempotencyKey } },
+      ),
+    );
+    return readinessPolicyResponseSchema.parse(response);
+  }
+
+  async createPolicyVersion(
+    workspaceSlug: string,
+    projectSlug: string,
+    policyId: string,
+    request: CreateReadinessPolicyVersionRequest,
+    idempotencyKey: string,
+  ): Promise<ReadinessPolicyResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const payload = createReadinessPolicyVersionRequestSchema.parse(request);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/release-policies/${encodeURIComponent(policyId)}/versions`,
+        payload,
+        { headers: { 'Idempotency-Key': idempotencyKey } },
+      ),
+    );
+    return readinessPolicyResponseSchema.parse(response);
+  }
+
+  async publishPolicy(
+    workspaceSlug: string,
+    projectSlug: string,
+    policyId: string,
+    idempotencyKey: string,
+  ): Promise<ReadinessPolicyResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/release-policies/${encodeURIComponent(policyId)}/publish`,
+        {},
+        { headers: { 'Idempotency-Key': idempotencyKey } },
       ),
     );
     return readinessPolicyResponseSchema.parse(response);

@@ -1,0 +1,126 @@
+<main class="policy-create-page" aria-labelledby="policy-create-title">
+  <header class="page-header">
+    <a
+      appButton="quiet"
+      href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies"
+      [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies']"
+    >
+      <span aria-hidden="true">←</span>
+      {{ 'readiness.policies.backToPolicies' | transloco }}
+    </a>
+    <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>
+    <h1 id="policy-create-title">{{ 'readiness.policies.create.title' | transloco }}</h1>
+    <p class="description">{{ 'readiness.policies.create.description' | transloco }}</p>
+  </header>
+
+  @if (!canManage()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'readiness.policies.create.readOnlyTitle' | transloco"
+    >
+      <p>{{ 'readiness.policies.create.readOnlyDescription' | transloco }}</p>
+    </app-callout>
+  }
+
+  @if (createPolicy.isError()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'readiness.policies.create.errorTitle' | transloco"
+    >
+      <p>{{ errorTranslationKey() | transloco }}</p>
+    </app-callout>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <section class="identity-section" aria-labelledby="policy-identity-title">
+      <div class="section-heading">
+        <span class="section-number mono">01</span>
+        <div>
+          <h2 id="policy-identity-title">{{ 'readiness.policies.create.identityTitle' | transloco }}</h2>
+          <p>{{ 'readiness.policies.create.identityDescription' | transloco }}</p>
+        </div>
+      </div>
+
+      <div class="identity-fields">
+        <app-form-field
+          controlId="policy-key"
+          [label]="'readiness.policies.create.key' | transloco"
+          [hint]="'readiness.policies.create.keyHint' | transloco"
+          [error]="form.controls.key.touched && form.controls.key.invalid ? ('readiness.policies.create.keyInvalid' | transloco) : undefined"
+          [required]="true"
+        >
+          <input
+            appControl
+            id="policy-key"
+            type="text"
+            formControlName="key"
+            autocomplete="off"
+            [attr.aria-invalid]="form.controls.key.touched && form.controls.key.invalid"
+          />
+        </app-form-field>
+
+        <app-form-field
+          controlId="policy-name"
+          [label]="'readiness.policies.create.name' | transloco"
+          [error]="form.controls.name.touched && form.controls.name.invalid ? ('readiness.policies.create.nameInvalid' | transloco) : undefined"
+          [required]="true"
+        >
+          <input
+            appControl
+            id="policy-name"
+            type="text"
+            formControlName="name"
+            autocomplete="off"
+            [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+          />
+        </app-form-field>
+
+        <app-form-field
+          class="wide-field"
+          controlId="policy-description"
+          [label]="'readiness.policies.create.policyDescription' | transloco"
+          [hint]="'readiness.policies.create.descriptionHint' | transloco"
+          [error]="form.controls.description.touched && form.controls.description.invalid ? ('readiness.policies.create.descriptionInvalid' | transloco) : undefined"
+        >
+          <textarea
+            appControl
+            id="policy-description"
+            rows="3"
+            formControlName="description"
+            [attr.aria-invalid]="form.controls.description.touched && form.controls.description.invalid"
+          ></textarea>
+        </app-form-field>
+      </div>
+    </section>
+
+    <section class="gates-section" aria-labelledby="policy-gates-section-title">
+      <div class="section-heading">
+        <span class="section-number mono">02</span>
+        <div>
+          <h2 id="policy-gates-section-title">{{ 'readiness.policies.create.draftTitle' | transloco }}</h2>
+          <p>{{ 'readiness.policies.create.draftDescription' | transloco }}</p>
+        </div>
+      </div>
+      <app-policy-gate-editor [form]="form" />
+    </section>
+
+    <app-callout [title]="'readiness.policies.create.immutableTitle' | transloco">
+      <p>{{ 'readiness.policies.create.immutableDescription' | transloco }}</p>
+    </app-callout>
+
+    <footer class="form-actions">
+      <a
+        appButton="secondary"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies']"
+      >
+        {{ 'readiness.policies.create.cancel' | transloco }}
+      </a>
+      <button appButton="primary" type="submit" [disabled]="!canManage() || createPolicy.isPending()">
+        {{ (createPolicy.isPending() ? 'readiness.policies.create.creating' : 'readiness.policies.create.submit') | transloco }}
+      </button>
+    </footer>
+  </form>
+</main>

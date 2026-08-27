@@ -1,8 +1,20 @@
 <main class="policy-list-page" aria-labelledby="policy-list-title">
   <header class="page-header">
-    <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>
-    <h1 id="policy-list-title">{{ 'readiness.policies.title' | transloco }}</h1>
-    <p class="description">{{ 'readiness.policies.description' | transloco }}</p>
+    <div>
+      <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>
+      <h1 id="policy-list-title">{{ 'readiness.policies.title' | transloco }}</h1>
+      <p class="description">{{ 'readiness.policies.description' | transloco }}</p>
+    </div>
+    @if (canManage()) {
+      <a
+        appButton="primary"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies/new"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies', 'new']"
+      >
+        <span aria-hidden="true">＋</span>
+        {{ 'readiness.policies.create.submit' | transloco }}
+      </a>
+    }
   </header>
 
   @if (!policies.isPending() && !policies.isError()) {

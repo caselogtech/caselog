@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { ReadinessApi } from '../../../data-access/readiness-api';
 import { ReadinessPolicyList } from '../../../pages/policy-list/policy-list';
@@ -47,5 +48,15 @@ describe('ReadinessPolicyList', () => {
     expect(fixture.nativeElement.querySelector('a')?.getAttribute('href')).toBe(
       '/acme/authentication/release-policies/33333333-3333-4333-8333-333333333333',
     );
+  });
+
+  it('offers policy creation only to policy managers', () => {
+    TestBed.inject(WorkspaceSession).role.set('lead');
+    const fixture = TestBed.createComponent(ReadinessPolicyList);
+    fixture.detectChanges();
+    const createLink = fixture.nativeElement.querySelector(
+      'a[href="/acme/authentication/release-policies/new"]',
+    ) as HTMLAnchorElement | null;
+    expect(createLink?.textContent).toContain('Create policy');
   });
 });

@@ -1,0 +1,198 @@
+<section class="gate-editor" aria-labelledby="policy-gates-editor-title">
+  <div class="editor-heading">
+    <div>
+      <h2 id="policy-gates-editor-title">{{ 'readiness.policies.editor.gatesTitle' | transloco }}</h2>
+      <p>{{ 'readiness.policies.editor.gatesDescription' | transloco }}</p>
+    </div>
+    <button
+      appButton="secondary"
+      type="button"
+      [disabled]="form().controls.gates.length >= 50"
+      (click)="addGate()"
+    >
+      <span aria-hidden="true">＋</span>
+      {{ 'readiness.policies.editor.addGate' | transloco }}
+    </button>
+  </div>
+
+  <div class="gate-list">
+    @for (gate of form().controls.gates.controls; track gate; let index = $index) {
+      <article [formGroup]="gate">
+        <header>
+          <div class="gate-identity">
+            <span class="gate-number mono">{{ index + 1 }}</span>
+            <div>
+              <h3>{{ 'readiness.policies.editor.gateTitle' | transloco: { number: index + 1 } }}</h3>
+              <span>{{ 'readiness.policies.editor.metricVersion' | transloco }}</span>
+            </div>
+          </div>
+          <div class="gate-actions">
+            <button
+              appButton="quiet"
+              type="button"
+              [disabled]="$first"
+              [attr.aria-label]="'readiness.policies.editor.moveUp' | transloco: { number: index + 1 }"
+              (click)="moveGate(index, -1)"
+            >
+              ↑
+            </button>
+            <button
+              appButton="quiet"
+              type="button"
+              [disabled]="$last"
+              [attr.aria-label]="'readiness.policies.editor.moveDown' | transloco: { number: index + 1 }"
+              (click)="moveGate(index, 1)"
+            >
+              ↓
+            </button>
+            <button
+              appButton="quiet"
+              type="button"
+              [disabled]="form().controls.gates.length === 1"
+              [attr.aria-label]="'readiness.policies.editor.removeGate' | transloco: { number: index + 1 }"
+              (click)="removeGate(index)"
+            >
+              {{ 'readiness.policies.editor.remove' | transloco }}
+            </button>
+          </div>
+        </header>
+
+        <div class="gate-fields">
+          <app-form-field
+            [controlId]="'policy-gate-key-' + index"
+            [label]="'readiness.policies.editor.gateKey' | transloco"
+            [hint]="'readiness.policies.editor.gateKeyHint' | transloco"
+            [error]="gate.controls.key.touched && duplicateKey(index) ? ('readiness.policies.editor.gateKeyDuplicate' | transloco) : gate.controls.key.touched && gate.controls.key.invalid ? ('readiness.policies.editor.gateKeyInvalid' | transloco) : undefined"
+            [required]="true"
+          >
+            <input
+              appControl
+              [id]="'policy-gate-key-' + index"
+              type="text"
+              formControlName="key"
+              autocomplete="off"
+              [attr.aria-invalid]="gate.controls.key.touched && gate.controls.key.invalid"
+            />
+          </app-form-field>
+
+          <app-form-field
+            [controlId]="'policy-gate-metric-' + index"
+            [label]="'readiness.policies.editor.metric' | transloco"
+            [required]="true"
+          >
+            <select appControl [id]="'policy-gate-metric-' + index" formControlName="metricKey">
+              @for (metric of metrics; track metric) {
+                <option [value]="metric">{{ metricLabel(metric) | transloco }}</option>
+              }
+            </select>
+          </app-form-field>
+
+          <app-form-field
+            [controlId]="'policy-gate-role-' + index"
+            [label]="'readiness.policies.gates.role' | transloco"
+            [required]="true"
+          >
+            <select appControl [id]="'policy-gate-role-' + index" formControlName="testRunRole">
+              @for (role of roles; track role) {
+                <option [value]="role">{{ roleLabel(role) | transloco }}</option>
+              }
+            </select>
+          </app-form-field>
+
+          <app-form-field
+            [controlId]="'policy-gate-operator-' + index"
+            [label]="'readiness.policies.editor.operator' | transloco"
+            [required]="true"
+          >
+            <select appControl [id]="'policy-gate-operator-' + index" formControlName="operator">
+              @for (operator of operators; track operator) {
+                <option [value]="operator">{{ operatorLabel(operator) }}</option>
+              }
+            </select>
+          </app-form-field>
+
+          <app-form-field
+            [controlId]="'policy-gate-expected-' + index"
+            [label]="'readiness.policies.editor.expected' | transloco"
+            [hint]="expectedHint(gate.controls.metricKey.value) | transloco"
+            [error]="gate.controls.expectedValue.touched && (gate.controls.expectedValue.invalid || gate.hasError('incompatibleExpectedValue')) ? ('readiness.policies.editor.expectedInvalid' | transloco) : undefined"
+            [required]="true"
+          >
+            <input
+              appControl
+              [id]="'policy-gate-expected-' + index"
+              type="number"
+              min="0"
+              [max]="gate.controls.metricKey.value === 'test.failed_count' ? null : 100"
+              [step]="gate.controls.metricKey.value === 'test.failed_count' ? 1 : 0.1"
+              formControlName="expectedValue"
+              [attr.aria-invalid]="gate.controls.expectedValue.touched && (gate.controls.expectedValue.invalid || gate.hasError('incompatibleExpectedValue'))"
+            />
+          </app-form-field>
+
+          <app-form-field
+            [controlId]="'policy-gate-impact-' + index"
+            [label]="'readiness.policies.editor.impact' | transloco"
+            [required]="true"
+          >
+            <select appControl [id]="'policy-gate-impact-' + index" formControlName="impact">
+              @for (impact of impacts; track impact) {
+                <option [value]="impact">{{ impactLabel(impact) | transloco }}</option>
+              }
+            </select>
+          </app-form-field>
+
+          <app-form-field
+            [controlId]="'policy-gate-missing-' + index"
+            [label]="'readiness.policies.gates.missing' | transloco"
+            [required]="true"
+          >
+            <select appControl [id]="'policy-gate-missing-' + index" formControlName="missingEvidenceBehavior">
+              @for (behavior of behaviors; track behavior) {
+                <option [value]="behavior">{{ behaviorLabel(behavior) | transloco }}</option>
+              }
+            </select>
+          </app-form-field>
+
+          <app-form-field
+            [controlId]="'policy-gate-stale-' + index"
+            [label]="'readiness.policies.gates.stale' | transloco"
+            [required]="true"
+          >
+            <select appControl [id]="'policy-gate-stale-' + index" formControlName="staleEvidenceBehavior">
+              @for (behavior of behaviors; track behavior) {
+                <option [value]="behavior">{{ behaviorLabel(behavior) | transloco }}</option>
+              }
+            </select>
+          </app-form-field>
+
+          <app-form-field
+            [controlId]="'policy-gate-trust-' + index"
+            [label]="'readiness.policies.gates.minimumTrust' | transloco"
+            [required]="true"
+          >
+            <select appControl [id]="'policy-gate-trust-' + index" formControlName="minimumTrust">
+              @for (trust of trustLevels; track trust) {
+                <option [value]="trust">{{ trustLabel(trust) | transloco }}</option>
+              }
+            </select>
+          </app-form-field>
+        </div>
+
+        <div class="gate-preview">
+          <app-status-badge
+            [tone]="gate.controls.impact.value === 'blocking' ? 'danger' : 'warning'"
+            [label]="impactLabel(gate.controls.impact.value) | transloco"
+          />
+          <p>
+            {{ 'readiness.policies.editor.previewPrefix' | transloco }}
+            <strong>{{ roleLabel(gate.controls.testRunRole.value) | transloco }}</strong>
+            {{ metricLabel(gate.controls.metricKey.value) | transloco }}
+            <span class="mono">{{ operatorLabel(gate.controls.operator.value) }} {{ expectedDisplay(gate.controls.metricKey.value, gate.controls.expectedValue.value) }}</span>;
+            {{ 'readiness.policies.editor.previewFailure' | transloco }}
+          </p>
+        </div>
+      </article>
+    }
+  </div>
+</section>

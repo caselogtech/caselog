@@ -9,6 +9,13 @@ export const readinessPolicyRoutes: Routes = [
     providers: readinessTranslations,
     children: [
       {
+        path: 'new',
+        loadComponent: () =>
+          import('./pages/policy-create/policy-create').then(
+            ({ ReadinessPolicyCreate }) => ReadinessPolicyCreate,
+          ),
+      },
+      {
         path: ':policyId',
         loadComponent: () =>
           import('./pages/policy-detail/policy-detail').then(

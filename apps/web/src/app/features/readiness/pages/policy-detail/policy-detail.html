@@ -40,10 +40,36 @@
               [label]="stateLabel(latest.state) | transloco"
             />
             <span>{{ 'readiness.policies.version' | transloco: { version: latest.version } }}</span>
+            @if (canManage() && draftVersion()) {
+              <button
+                appButton="primary"
+                type="button"
+                [disabled]="publishPolicy.isPending()"
+                (click)="publishDraft()"
+              >
+                {{ (publishPolicy.isPending() ? 'readiness.policies.publishing' : 'readiness.policies.publishDraft') | transloco }}
+              </button>
+            }
           </div>
         }
       </div>
     </header>
+
+    @if (publishPolicy.isError()) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'readiness.policies.publishErrorTitle' | transloco"
+      >
+        <p>{{ errorTranslationKey() | transloco }}</p>
+      </app-callout>
+    }
+
+    @if (draftVersion()) {
+      <app-callout [title]="'readiness.policies.draftNoticeTitle' | transloco">
+        <p>{{ 'readiness.policies.draftNoticeDescription' | transloco }}</p>
+      </app-callout>
+    }
 
     <section class="versions-section" aria-labelledby="policy-versions-title">
       <div class="section-heading">
