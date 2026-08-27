@@ -1,0 +1,69 @@
+<div class="invitation-table">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">{{ 'workspaceSettings.members.invite.columns.recipient' | transloco }}</th>
+        <th scope="col">{{ 'workspaceSettings.members.columns.role' | transloco }}</th>
+        <th scope="col">{{ 'workspaceSettings.members.columns.state' | transloco }}</th>
+        <th scope="col">{{ 'workspaceSettings.members.invite.columns.expires' | transloco }}</th>
+        <th scope="col">{{ 'workspaceSettings.members.columns.actions' | transloco }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (invitation of invitations(); track invitation.id) {
+        <tr>
+          <td [attr.data-label]="'workspaceSettings.members.invite.columns.recipient' | transloco">
+            <strong>{{ invitation.email }}</strong>
+            <span>
+              {{
+                'workspaceSettings.members.invite.invitedBy'
+                  | transloco: { name: invitation.invitedBy.displayName }
+              }}
+            </span>
+          </td>
+          <td [attr.data-label]="'workspaceSettings.members.columns.role' | transloco">
+            {{ roleTranslationKey(invitation.role) | transloco }}
+          </td>
+          <td [attr.data-label]="'workspaceSettings.members.columns.state' | transloco">
+            <app-status-badge
+              [tone]="statusTone(invitation.status)"
+              [label]="statusTranslationKey(invitation.status) | transloco"
+            />
+          </td>
+          <td [attr.data-label]="'workspaceSettings.members.invite.columns.expires' | transloco">
+            <time class="mono" [attr.datetime]="invitation.expiresAt">
+              {{ formatDate(invitation.expiresAt) }}
+            </time>
+          </td>
+          <td [attr.data-label]="'workspaceSettings.members.columns.actions' | transloco">
+            <div class="actions">
+              @if (canManage() && invitation.status !== 'accepted') {
+                <button
+                  appButton="quiet"
+                  type="button"
+                  [disabled]="pending()"
+                  (click)="resendRequested.emit(invitation)"
+                >
+                  {{ 'workspaceSettings.members.invite.resend' | transloco }}
+                </button>
+              }
+              @if (canManage() && invitation.status === 'pending') {
+                <button
+                  appButton="quiet"
+                  type="button"
+                  [disabled]="pending()"
+                  (click)="revokeRequested.emit(invitation)"
+                >
+                  {{ 'workspaceSettings.members.invite.revoke' | transloco }}
+                </button>
+              }
+              @if (!canManage() || invitation.status === 'accepted') {
+                <span>{{ 'workspaceSettings.members.noActions' | transloco }}</span>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

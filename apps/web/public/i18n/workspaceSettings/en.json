@@ -1,10 +1,12 @@
 {
   "title": "Workspace settings",
   "description": "Manage workspace identity, access and lifecycle using server-enforced controls.",
+  "cancel": "Cancel",
   "retry": "Try again",
   "navigation": {
     "label": "Workspace settings sections",
     "general": "General",
+    "members": "Members",
     "danger": "Danger zone"
   },
   "general": {
@@ -31,6 +33,97 @@
     "save": "Save changes",
     "slugChangeTitle": "Canonical URL changes",
     "slugChangeDescription": "After a successful change, Caselog redirects this page to the new workspace URL. Existing reserved redirects prevent another workspace from claiming a previous URL."
+  },
+  "members": {
+    "eyebrow": "Workspace access",
+    "title": "Members",
+    "description": "Review membership, issue invitations and manage access within the server-enforced role hierarchy.",
+    "inviteMember": "Invite member",
+    "readOnlyTitle": "Membership is read only",
+    "readOnlyDescription": "All members can review active and inactive access. Only owners and admins can manage roles and invitations.",
+    "loading": "Loading workspace members…",
+    "loadingMore": "Loading more…",
+    "loadMore": "Load more",
+    "loadErrorTitle": "Unable to load workspace access",
+    "mutationErrorTitle": "Unable to update workspace access",
+    "emptyActiveTitle": "No active members",
+    "emptyActiveDescription": "This workspace currently has no active membership records.",
+    "emptyInactiveTitle": "No deactivated members",
+    "emptyInactiveDescription": "Deactivated memberships remain visible here for attributable recovery.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "changeRole": "Change role for {{name}}",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "transferOwnership": "Transfer ownership",
+    "noActions": "No available actions",
+    "columns": {
+      "member": "Member",
+      "role": "Role",
+      "state": "State",
+      "joined": "Joined",
+      "actions": "Actions"
+    },
+    "views": {
+      "label": "Membership views",
+      "active": "Active members",
+      "invitations": "Invitations",
+      "inactive": "Deactivated"
+    },
+    "success": {
+      "title": "Workspace access updated",
+      "role": "The member role has been updated.",
+      "state": "The member lifecycle state has been updated.",
+      "ownership": "Ownership was transferred and your workspace access was refreshed.",
+      "invited": "The invitation was created and delivery was requested.",
+      "resent": "The invitation token was rotated and delivery was requested again.",
+      "revoked": "The pending invitation was revoked."
+    },
+    "confirmDeactivate": {
+      "title": "Deactivate {{name}}?",
+      "message": "The member immediately loses workspace access and every active API token they created is revoked. Reactivation does not restore those tokens."
+    },
+    "invite": {
+      "title": "Invite a workspace member",
+      "description": "Caselog sends an opaque, expiring link. No raw invitation token is returned to this screen.",
+      "email": "Email address",
+      "emailInvalid": "Enter a valid recipient email address.",
+      "role": "Workspace role",
+      "roleHint": "Admins cannot invite another admin; the server enforces the same hierarchy.",
+      "sending": "Sending invitation…",
+      "send": "Send invitation",
+      "permissionTitle": "Invitation management requires admin access",
+      "permissionDescription": "Workspace invitations contain access decisions and are visible only to owners and admins.",
+      "emptyTitle": "No workspace invitations",
+      "emptyDescription": "Invite a member when another person needs access to this workspace.",
+      "invitedBy": "Invited by {{name}}",
+      "resend": "Resend",
+      "revoke": "Revoke",
+      "confirmRevokeTitle": "Revoke invitation for {{email}}?",
+      "confirmRevokeMessage": "The current opaque link stops working immediately. You can issue a new invitation later.",
+      "columns": {
+        "recipient": "Recipient",
+        "expires": "Expires"
+      },
+      "status": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "revoked": "Revoked",
+        "expired": "Expired"
+      }
+    },
+    "ownership": {
+      "eyebrow": "Irreversible access change",
+      "title": "Transfer ownership to {{name}}?",
+      "description": "Ownership is a singleton workspace role. This confirmed operation changes both memberships atomically.",
+      "newOwner": "The selected active member becomes the workspace owner.",
+      "formerOwner": "Your own role changes from owner to admin.",
+      "audited": "The complete transition is recorded in the immutable audit log.",
+      "confirmationLabel": "Type {{name}} to confirm",
+      "confirmationInvalid": "Enter exactly “{{name}}”.",
+      "transferring": "Transferring ownership…",
+      "transfer": "Transfer ownership"
+    }
   },
   "danger": {
     "eyebrow": "Workspace lifecycle",

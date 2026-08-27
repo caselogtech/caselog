@@ -1,0 +1,125 @@
+.invitation-table {
+  background: var(--surface-2);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--color-neutral-300);
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  background: var(--color-neutral-100);
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+td:first-child {
+  min-width: 210px;
+}
+
+.actions span,
+time {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+}
+
+td:first-child strong,
+td:first-child span {
+  display: block;
+}
+
+td:first-child strong {
+  overflow-wrap: anywhere;
+}
+
+td:first-child span {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+}
+
+time {
+  white-space: nowrap;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.actions .app-button {
+  min-height: 36px;
+  padding: 5px 9px;
+}
+
+@media (max-width: 760px) {
+  .invitation-table {
+    background: transparent;
+    border: 0;
+    overflow: visible;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  tr {
+    background: var(--surface-2);
+    border: 1px solid var(--color-neutral-300);
+    border-radius: var(--radius);
+    display: grid;
+    padding: var(--space-3);
+  }
+
+  td,
+  tbody tr:last-child td {
+    align-items: center;
+    border-bottom: 1px solid var(--color-neutral-300);
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(90px, 0.38fr) minmax(0, 1fr);
+    min-width: 0;
+    padding: var(--space-3) 0;
+  }
+
+  td::before {
+    color: var(--text-3);
+    content: attr(data-label);
+    font-size: var(--font-size-xs);
+    font-weight: 650;
+    text-transform: uppercase;
+  }
+
+  td:first-child {
+    min-width: 0;
+    padding-top: 0;
+  }
+
+  td:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}

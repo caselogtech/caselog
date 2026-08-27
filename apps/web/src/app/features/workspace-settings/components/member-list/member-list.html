@@ -1,0 +1,102 @@
+<div class="member-table">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">{{ 'workspaceSettings.members.columns.member' | transloco }}</th>
+        <th scope="col">{{ 'workspaceSettings.members.columns.role' | transloco }}</th>
+        <th scope="col">{{ 'workspaceSettings.members.columns.state' | transloco }}</th>
+        <th scope="col">{{ 'workspaceSettings.members.columns.joined' | transloco }}</th>
+        <th scope="col">{{ 'workspaceSettings.members.columns.actions' | transloco }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (member of members(); track member.membershipId) {
+        <tr>
+          <td [attr.data-label]="'workspaceSettings.members.columns.member' | transloco">
+            <div class="member-identity">
+              <span class="avatar" aria-hidden="true">
+                {{ member.user.displayName.slice(0, 2).toUpperCase() }}
+              </span>
+              <span>
+                <strong>{{ member.user.displayName }}</strong>
+                <span class="member-email">{{ member.user.email }}</span>
+              </span>
+            </div>
+          </td>
+          <td [attr.data-label]="'workspaceSettings.members.columns.role' | transloco">
+            @if (member.state === 'active' && canManage(member)) {
+              <select
+                appControl
+                [id]="'member-role-' + member.membershipId"
+                [attr.aria-label]="
+                  'workspaceSettings.members.changeRole'
+                    | transloco: { name: member.user.displayName }
+                "
+                [value]="member.role"
+                [disabled]="pending()"
+                (change)="changeRole(member, $any($event.target).value)"
+              >
+                @for (role of assignableRoles(); track role) {
+                  <option [value]="role">{{ roleTranslationKey(role) | transloco }}</option>
+                }
+              </select>
+            } @else {
+              <span>{{ roleTranslationKey(member.role) | transloco }}</span>
+            }
+          </td>
+          <td [attr.data-label]="'workspaceSettings.members.columns.state' | transloco">
+            <app-status-badge
+              [tone]="member.state === 'active' ? 'success' : 'neutral'"
+              [label]="
+                (member.state === 'active'
+                  ? 'workspaceSettings.members.active'
+                  : 'workspaceSettings.members.inactive') | transloco
+              "
+            />
+          </td>
+          <td [attr.data-label]="'workspaceSettings.members.columns.joined' | transloco">
+            <time class="mono" [attr.datetime]="member.createdAt">
+              {{ formatDate(member.createdAt) }}
+            </time>
+          </td>
+          <td [attr.data-label]="'workspaceSettings.members.columns.actions' | transloco">
+            <div class="actions">
+              @if (member.state === 'active' && canManage(member)) {
+                <button
+                  appButton="quiet"
+                  type="button"
+                  [disabled]="pending()"
+                  (click)="deactivateRequested.emit(member)"
+                >
+                  {{ 'workspaceSettings.members.deactivate' | transloco }}
+                </button>
+              } @else if (member.state === 'inactive' && canManage(member)) {
+                <button
+                  appButton="secondary"
+                  type="button"
+                  [disabled]="pending()"
+                  (click)="activateRequested.emit(member)"
+                >
+                  {{ 'workspaceSettings.members.reactivate' | transloco }}
+                </button>
+              }
+              @if (canTransfer(member)) {
+                <button
+                  appButton="quiet"
+                  type="button"
+                  [disabled]="pending()"
+                  (click)="ownershipRequested.emit(member)"
+                >
+                  {{ 'workspaceSettings.members.transferOwnership' | transloco }}
+                </button>
+              }
+              @if (!canManage(member) && !canTransfer(member)) {
+                <span class="no-action">{{ 'workspaceSettings.members.noActions' | transloco }}</span>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

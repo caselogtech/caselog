@@ -1,0 +1,151 @@
+.member-table {
+  background: var(--surface-2);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--color-neutral-300);
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  background: var(--color-neutral-100);
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.member-identity {
+  align-items: center;
+  display: flex;
+  gap: var(--space-3);
+  min-width: 210px;
+}
+
+.avatar {
+  align-items: center;
+  background: var(--color-accent-700);
+  border-radius: 50%;
+  color: var(--surface-2);
+  display: inline-flex;
+  flex: none;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.member-identity > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.member-email,
+.no-action {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+}
+
+select.app-control {
+  min-width: 145px;
+}
+
+time {
+  color: var(--text-2);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-width: 150px;
+}
+
+.actions .app-button {
+  min-height: 36px;
+  padding: 5px 9px;
+}
+
+@media (max-width: 760px) {
+  .member-table {
+    background: transparent;
+    border: 0;
+    overflow: visible;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  tr {
+    background: var(--surface-2);
+    border: 1px solid var(--color-neutral-300);
+    border-radius: var(--radius);
+    display: grid;
+    padding: var(--space-3);
+  }
+
+  td,
+  tbody tr:last-child td {
+    align-items: center;
+    border-bottom: 1px solid var(--color-neutral-300);
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(90px, 0.38fr) minmax(0, 1fr);
+    padding: var(--space-3) 0;
+  }
+
+  td::before {
+    color: var(--text-3);
+    content: attr(data-label);
+    font-size: var(--font-size-xs);
+    font-weight: 650;
+    text-transform: uppercase;
+  }
+
+  td:first-child {
+    padding-top: 0;
+  }
+
+  td:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .member-identity {
+    min-width: 0;
+  }
+
+  .member-email {
+    overflow-wrap: anywhere;
+  }
+
+  .actions {
+    min-width: 0;
+  }
+}

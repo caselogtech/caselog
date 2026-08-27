@@ -1,0 +1,260 @@
+<section aria-labelledby="workspace-members-title">
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">{{ 'workspaceSettings.members.eyebrow' | transloco }}</p>
+      <h2 id="workspace-members-title">{{ 'workspaceSettings.members.title' | transloco }}</h2>
+      <p>{{ 'workspaceSettings.members.description' | transloco }}</p>
+    </div>
+    @if (view() === 'invitations' && canManage() && !showInvitationForm()) {
+      <button appButton="primary" type="button" (click)="showInvitationForm.set(true)">
+        {{ 'workspaceSettings.members.inviteMember' | transloco }}
+      </button>
+    }
+  </header>
+
+  <div class="view-tabs" role="tablist" [attr.aria-label]="'workspaceSettings.members.views.label' | transloco">
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="view() === 'active'"
+      [class.active]="view() === 'active'"
+      (click)="selectView('active')"
+    >
+      {{ 'workspaceSettings.members.views.active' | transloco }}
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="view() === 'invitations'"
+      [class.active]="view() === 'invitations'"
+      (click)="selectView('invitations')"
+    >
+      {{ 'workspaceSettings.members.views.invitations' | transloco }}
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="view() === 'inactive'"
+      [class.active]="view() === 'inactive'"
+      (click)="selectView('inactive')"
+    >
+      {{ 'workspaceSettings.members.views.inactive' | transloco }}
+    </button>
+  </div>
+
+  @if (!canManage()) {
+    <app-callout [title]="'workspaceSettings.members.readOnlyTitle' | transloco">
+      <p>{{ 'workspaceSettings.members.readOnlyDescription' | transloco }}</p>
+    </app-callout>
+  }
+
+  @if (successKey(); as key) {
+    <app-callout
+      tone="success"
+      liveRole="status"
+      [title]="'workspaceSettings.members.success.title' | transloco"
+    >
+      <p>{{ key | transloco }}</p>
+    </app-callout>
+  }
+
+  @if (
+    changeRole.isError() ||
+    changeState.isError() ||
+    transferOwnership.isError() ||
+    createInvitation.isError() ||
+    mutateInvitation.isError()
+  ) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'workspaceSettings.members.mutationErrorTitle' | transloco"
+    >
+      <p>{{ errorTranslationKey() | transloco }}</p>
+    </app-callout>
+  }
+
+  @if (showInvitationForm() && canManage()) {
+    <app-invitation-form
+      [actorRole]="workspaceSession.role()"
+      [pending]="createInvitation.isPending()"
+      (submitted)="createInvitation.mutate($event)"
+      (cancelled)="showInvitationForm.set(false)"
+    />
+  }
+
+  @if (access.isPending()) {
+    <div class="loading-state" [attr.aria-label]="'workspaceSettings.members.loading' | transloco">
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspaceSettings.members.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspaceSettings.members.loading' | transloco"
+      />
+    </div>
+  } @else if (access.isError()) {
+    <app-page-state
+      [title]="'workspaceSettings.members.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="access.refetch()">
+        {{ 'workspaceSettings.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (view() === 'invitations' && !canManage()) {
+    <app-page-state
+      [title]="'workspaceSettings.members.invite.permissionTitle' | transloco"
+      [message]="'workspaceSettings.members.invite.permissionDescription' | transloco"
+    />
+  } @else if (
+    (view() === 'invitations' && invitations.isPending()) ||
+    (view() !== 'invitations' && members.isPending())
+  ) {
+    <div class="loading-state" [attr.aria-label]="'workspaceSettings.members.loading' | transloco">
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspaceSettings.members.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspaceSettings.members.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspaceSettings.members.loading' | transloco"
+      />
+    </div>
+  } @else if (
+    (view() === 'invitations' && invitations.isError()) ||
+    (view() !== 'invitations' && members.isError())
+  ) {
+    <app-page-state
+      [title]="'workspaceSettings.members.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      @if (view() === 'invitations') {
+        <button actions appButton="secondary" type="button" (click)="invitations.refetch()">
+          {{ 'workspaceSettings.retry' | transloco }}
+        </button>
+      } @else {
+        <button actions appButton="secondary" type="button" (click)="members.refetch()">
+          {{ 'workspaceSettings.retry' | transloco }}
+        </button>
+      }
+    </app-page-state>
+  } @else if (view() === 'invitations') {
+    @if (invitationItems().length === 0) {
+      <app-page-state
+        [title]="'workspaceSettings.members.invite.emptyTitle' | transloco"
+        [message]="'workspaceSettings.members.invite.emptyDescription' | transloco"
+      >
+        <button actions appButton="primary" type="button" (click)="showInvitationForm.set(true)">
+          {{ 'workspaceSettings.members.inviteMember' | transloco }}
+        </button>
+      </app-page-state>
+    } @else {
+      <app-invitation-list
+        [invitations]="invitationItems()"
+        [canManage]="canManage()"
+        [pending]="operationPending()"
+        (resendRequested)="requestResend($event)"
+        (revokeRequested)="requestRevoke($event)"
+      />
+      @if (invitations.hasNextPage()) {
+        <div class="pagination">
+          <button
+            appButton="secondary"
+            type="button"
+            [disabled]="invitations.isFetchingNextPage()"
+            (click)="invitations.fetchNextPage()"
+          >
+            {{
+              (invitations.isFetchingNextPage()
+                ? 'workspaceSettings.members.loadingMore'
+                : 'workspaceSettings.members.loadMore') | transloco
+            }}
+          </button>
+        </div>
+      }
+    }
+  } @else if (memberItems().length === 0) {
+    <app-page-state
+      [title]="
+        (view() === 'inactive'
+          ? 'workspaceSettings.members.emptyInactiveTitle'
+          : 'workspaceSettings.members.emptyActiveTitle') | transloco
+      "
+      [message]="
+        (view() === 'inactive'
+          ? 'workspaceSettings.members.emptyInactiveDescription'
+          : 'workspaceSettings.members.emptyActiveDescription') | transloco
+      "
+    />
+  } @else {
+    <app-member-list
+      [members]="memberItems()"
+      [actorRole]="workspaceSession.role()"
+      [actorUserId]="browserSession.user()?.id ?? null"
+      [pending]="operationPending()"
+      (roleChangeRequested)="changeRole.mutate($event)"
+      (deactivateRequested)="requestDeactivate($event)"
+      (activateRequested)="activate($event)"
+      (ownershipRequested)="requestOwnership($event)"
+    />
+    @if (members.hasNextPage()) {
+      <div class="pagination">
+        <button
+          appButton="secondary"
+          type="button"
+          [disabled]="members.isFetchingNextPage()"
+          (click)="members.fetchNextPage()"
+        >
+          {{
+            (members.isFetchingNextPage()
+              ? 'workspaceSettings.members.loadingMore'
+              : 'workspaceSettings.members.loadMore') | transloco
+          }}
+        </button>
+      </div>
+    }
+  }
+
+  <app-dialog
+    [open]="!!deactivateTarget()"
+    [title]="
+      'workspaceSettings.members.confirmDeactivate.title'
+        | transloco: { name: deactivateTarget()?.user?.displayName ?? '' }
+    "
+    [message]="'workspaceSettings.members.confirmDeactivate.message' | transloco"
+    [confirmLabel]="'workspaceSettings.members.deactivate' | transloco"
+    [cancelLabel]="'workspaceSettings.cancel' | transloco"
+    confirmVariant="danger"
+    (confirmed)="confirmDeactivate()"
+    (cancelled)="deactivateTarget.set(null)"
+  />
+
+  <app-dialog
+    [open]="invitationConfirmation()?.action === 'revoke'"
+    [title]="
+      'workspaceSettings.members.invite.confirmRevokeTitle'
+        | transloco: { email: invitationConfirmation()?.invitation?.email ?? '' }
+    "
+    [message]="'workspaceSettings.members.invite.confirmRevokeMessage' | transloco"
+    [confirmLabel]="'workspaceSettings.members.invite.revoke' | transloco"
+    [cancelLabel]="'workspaceSettings.cancel' | transloco"
+    confirmVariant="danger"
+    (confirmed)="confirmInvitationAction()"
+    (cancelled)="invitationConfirmation.set(null)"
+  />
+
+  <app-ownership-transfer-dialog
+    [open]="!!ownershipTarget()"
+    [member]="ownershipTarget()"
+    [workspaceName]="workspaceName()"
+    [pending]="transferOwnership.isPending()"
+    (confirmed)="transferOwnership.mutate($event)"
+    (cancelled)="ownershipTarget.set(null)"
+  />
+</section>

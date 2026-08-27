@@ -21,6 +21,13 @@ export const workspaceSettingsRoutes: Routes = [
           ),
       },
       {
+        path: 'members',
+        loadComponent: () =>
+          import('./pages/members/workspace-members-settings').then(
+            ({ WorkspaceMembersSettings }) => WorkspaceMembersSettings,
+          ),
+      },
+      {
         path: 'danger',
         loadComponent: () =>
           import('./pages/danger/workspace-danger-settings').then(

@@ -1,0 +1,61 @@
+<dialog #dialog (cancel)="cancel($event)" aria-labelledby="ownership-transfer-title">
+  <form method="dialog" (submit)="$event.preventDefault(); confirm()">
+    <header>
+      <p class="eyebrow">{{ 'workspaceSettings.members.ownership.eyebrow' | transloco }}</p>
+      <h2 id="ownership-transfer-title">
+        {{
+          'workspaceSettings.members.ownership.title'
+            | transloco: { name: member()?.user?.displayName ?? '' }
+        }}
+      </h2>
+    </header>
+
+    <div class="body">
+      <p>{{ 'workspaceSettings.members.ownership.description' | transloco }}</p>
+      <ul>
+        <li>{{ 'workspaceSettings.members.ownership.newOwner' | transloco }}</li>
+        <li>{{ 'workspaceSettings.members.ownership.formerOwner' | transloco }}</li>
+        <li>{{ 'workspaceSettings.members.ownership.audited' | transloco }}</li>
+      </ul>
+      <app-form-field
+        controlId="ownership-transfer-confirmation"
+        [label]="
+          'workspaceSettings.members.ownership.confirmationLabel'
+            | transloco: { name: workspaceName() }
+        "
+        [error]="
+          confirmation() && !matches()
+            ? ('workspaceSettings.members.ownership.confirmationInvalid'
+              | transloco: { name: workspaceName() })
+            : undefined
+        "
+        [required]="true"
+      >
+        <input
+          appControl
+          id="ownership-transfer-confirmation"
+          type="text"
+          autocomplete="off"
+          [value]="confirmation()"
+          [disabled]="pending()"
+          [attr.aria-invalid]="confirmation() && !matches()"
+          aria-describedby="ownership-transfer-confirmation-description"
+          (input)="confirmation.set($any($event.target).value)"
+        />
+      </app-form-field>
+    </div>
+
+    <footer>
+      <button appButton="secondary" type="button" autofocus [disabled]="pending()" (click)="cancel()">
+        {{ 'workspaceSettings.cancel' | transloco }}
+      </button>
+      <button appButton="danger" type="submit" [disabled]="pending() || !matches()">
+        {{
+          (pending()
+            ? 'workspaceSettings.members.ownership.transferring'
+            : 'workspaceSettings.members.ownership.transfer') | transloco
+        }}
+      </button>
+    </footer>
+  </form>
+</dialog>

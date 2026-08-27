@@ -15,6 +15,14 @@
       {{ 'workspaceSettings.navigation.general' | transloco }}
     </a>
     <a
+      href="/{{ workspaceSlug }}/settings/members"
+      [routerLink]="['/', workspaceSlug, 'settings', 'members']"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+    >
+      {{ 'workspaceSettings.navigation.members' | transloco }}
+    </a>
+    <a
       href="/{{ workspaceSlug }}/settings/danger"
       [routerLink]="['/', workspaceSlug, 'settings', 'danger']"
       routerLinkActive="active"
