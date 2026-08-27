@@ -30,26 +30,9 @@ export const workspaceRoutes: Routes = [
           import('./pages/automation/ci-imports').then(({ CiImports }) => CiImports),
       },
       {
-        path: ':project/runs/new',
-        loadComponent: () => import('./pages/runs/run-create').then(({ RunCreate }) => RunCreate),
-      },
-      {
-        path: ':project/runs/:runId/items/:itemId/results/:resultId',
-        loadComponent: () =>
-          import('./pages/runs/result-detail').then(({ ResultDetail }) => ResultDetail),
-      },
-      {
-        path: ':project/runs/:runId/items/:itemId/results',
-        loadComponent: () =>
-          import('./pages/runs/result-history').then(({ ResultHistory }) => ResultHistory),
-      },
-      {
-        path: ':project/runs/:runId',
-        loadComponent: () => import('./pages/runs/run-detail').then(({ RunDetail }) => RunDetail),
-      },
-      {
         path: ':project/runs',
-        loadComponent: () => import('./pages/runs/run-list').then(({ RunList }) => RunList),
+        loadChildren: () =>
+          import('../test-runs/public-api').then(({ testRunsRoutes }) => testRunsRoutes),
       },
       {
         path: ':project/cases',

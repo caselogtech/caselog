@@ -12,7 +12,7 @@ import { injectInfiniteQuery, injectMutation } from '@tanstack/angular-query-exp
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { TestCasesApi } from '../../../test-cases/public-api';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestRunsApi } from '../../data-access/test-runs-api';
 
 const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
   steps: 'workspace.cases.templates.steps',
@@ -33,7 +33,7 @@ export class RunCreate {
   private readonly router = inject(Router);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly testCasesApi = inject(TestCasesApi);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly testRunsApi = inject(TestRunsApi);
   private readonly workspaceSession = inject(WorkspaceSession);
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
@@ -73,7 +73,7 @@ export class RunCreate {
   readonly createRun = injectMutation(() => ({
     mutationFn: (status: CreateTestRunStatus) => {
       const value = this.form.getRawValue();
-      return this.workspaceApi.createTestRun(this.workspaceSlug, this.projectSlug, {
+      return this.testRunsApi.createTestRun(this.workspaceSlug, this.projectSlug, {
         name: value.name.trim(),
         build: value.build.trim() || undefined,
         status,

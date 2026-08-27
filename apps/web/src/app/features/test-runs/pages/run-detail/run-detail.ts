@@ -23,7 +23,7 @@ import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { RunCaseQueue } from '../../components/run-case-queue/run-case-queue';
 import { RunProgressReport } from '../../components/run-progress-report/run-progress-report';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestRunsApi } from '../../data-access/test-runs-api';
 import { RunExecutionSession } from '../../state/run-execution-session';
 
 @Component({
@@ -43,7 +43,7 @@ import { RunExecutionSession } from '../../state/run-execution-session';
 })
 export class RunDetail {
   private readonly route = inject(ActivatedRoute);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly testRunsApi = inject(TestRunsApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
   private readonly execution = inject(RunExecutionSession);
@@ -62,7 +62,7 @@ export class RunDetail {
   readonly detail = injectInfiniteQuery(() => ({
     queryKey: ['test-run', this.workspaceSlug, this.projectSlug, this.runId],
     queryFn: ({ pageParam }) =>
-      this.workspaceApi.testRun(
+      this.testRunsApi.testRun(
         this.workspaceSlug,
         this.projectSlug,
         this.runId,
@@ -74,7 +74,7 @@ export class RunDetail {
 
   readonly progress = injectQuery(() => ({
     queryKey: ['run-progress', this.workspaceSlug, this.projectSlug, this.runId],
-    queryFn: () => this.workspaceApi.runProgress(this.workspaceSlug, this.projectSlug, this.runId),
+    queryFn: () => this.testRunsApi.runProgress(this.workspaceSlug, this.projectSlug, this.runId),
   }));
 
   readonly items = computed(() => this.detail.data()?.pages.flatMap(({ items }) => items) ?? []);
@@ -95,8 +95,8 @@ export class RunDetail {
         this.execution.persist();
       }
       return action === 'start'
-        ? this.workspaceApi.startTestRun(this.workspaceSlug, this.projectSlug, this.runId)
-        : this.workspaceApi.closeTestRun(this.workspaceSlug, this.projectSlug, this.runId);
+        ? this.testRunsApi.startTestRun(this.workspaceSlug, this.projectSlug, this.runId)
+        : this.testRunsApi.closeTestRun(this.workspaceSlug, this.projectSlug, this.runId);
     },
     onSuccess: () => {
       this.closeConfirmation.set(false);
@@ -106,7 +106,7 @@ export class RunDetail {
 
   readonly assignment = injectMutation(() => ({
     mutationFn: (input: { itemId: string; assigneeId: string | null }) =>
-      this.workspaceApi.assignTestRunItem(
+      this.testRunsApi.assignTestRunItem(
         this.workspaceSlug,
         this.projectSlug,
         this.runId,
@@ -118,7 +118,7 @@ export class RunDetail {
 
   readonly result = injectMutation(() => ({
     mutationFn: ({ itemId, request }: { itemId: string; request: CreateTestResultRequest }) =>
-      this.workspaceApi.recordTestResult(
+      this.testRunsApi.recordTestResult(
         this.workspaceSlug,
         this.projectSlug,
         this.runId,

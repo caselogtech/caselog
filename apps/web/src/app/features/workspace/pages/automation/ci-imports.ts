@@ -11,6 +11,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { TestRunsApi } from '../../../test-runs/public-api';
 import { WorkspaceApi } from '../../data-access/workspace-api';
 
 const MAX_BROWSER_UPLOAD_BYTES = 250 * 1024 * 1024;
@@ -25,6 +26,7 @@ const MAX_BROWSER_UPLOAD_BYTES = 250 * 1024 * 1024;
 export class CiImports {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly testRunsApi = inject(TestRunsApi);
   private readonly workspaceApi = inject(WorkspaceApi);
   private readonly workspaceSession = inject(WorkspaceSession);
 
@@ -56,13 +58,7 @@ export class CiImports {
   readonly activeRuns = injectQuery(() => ({
     queryKey: ['result-ingestion-active-runs', this.workspaceSlug, this.projectSlug],
     queryFn: () =>
-      this.workspaceApi.listTestRuns(
-        this.workspaceSlug,
-        this.projectSlug,
-        undefined,
-        'active',
-        100,
-      ),
+      this.testRunsApi.listTestRuns(this.workspaceSlug, this.projectSlug, undefined, 'active', 100),
   }));
 
   readonly items = computed(() => this.imports.data()?.pages.flatMap(({ items }) => items) ?? []);

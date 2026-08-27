@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestRunsApi } from '../../data-access/test-runs-api';
 
 @Component({
   selector: 'app-result-history',
@@ -15,7 +15,7 @@ import { WorkspaceApi } from '../../data-access/workspace-api';
 })
 export class ResultHistory {
   private readonly route = inject(ActivatedRoute);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly testRunsApi = inject(TestRunsApi);
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
@@ -31,7 +31,7 @@ export class ResultHistory {
       this.itemId,
     ],
     queryFn: ({ pageParam }) =>
-      this.workspaceApi.testResultHistory(
+      this.testRunsApi.testResultHistory(
         this.workspaceSlug,
         this.projectSlug,
         this.runId,

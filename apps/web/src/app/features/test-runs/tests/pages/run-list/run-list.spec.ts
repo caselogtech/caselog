@@ -3,8 +3,8 @@ import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angul
 import type { TestRunListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
-import { WorkspaceApi } from '../../../data-access/workspace-api';
-import { RunList } from '../../../pages/runs/run-list';
+import { TestRunsApi } from '../../../data-access/test-runs-api';
+import { RunList } from '../../../pages/run-list/run-list';
 
 const response: TestRunListResponse = {
   project: {
@@ -41,7 +41,7 @@ describe('RunList', () => {
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
-        { provide: WorkspaceApi, useValue: workspaceApi },
+        { provide: TestRunsApi, useValue: workspaceApi },
         {
           provide: ActivatedRoute,
           useValue: {

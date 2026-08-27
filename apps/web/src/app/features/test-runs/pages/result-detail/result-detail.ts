@@ -5,7 +5,7 @@ import type { StepResultResponse, TestRunItemResponse } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestRunsApi } from '../../data-access/test-runs-api';
 
 @Component({
   selector: 'app-result-detail',
@@ -16,7 +16,7 @@ import { WorkspaceApi } from '../../data-access/workspace-api';
 })
 export class ResultDetail {
   private readonly route = inject(ActivatedRoute);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly testRunsApi = inject(TestRunsApi);
   private readonly document = inject(DOCUMENT);
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
@@ -35,7 +35,7 @@ export class ResultDetail {
       this.resultId,
     ],
     queryFn: () =>
-      this.workspaceApi.testResult(
+      this.testRunsApi.testResult(
         this.workspaceSlug,
         this.projectSlug,
         this.runId,
@@ -46,7 +46,7 @@ export class ResultDetail {
 
   readonly downloadAttachment = injectMutation(() => ({
     mutationFn: (attachmentId: string) =>
-      this.workspaceApi.testResultAttachmentDownload(
+      this.testRunsApi.testResultAttachmentDownload(
         this.workspaceSlug,
         this.projectSlug,
         this.runId,

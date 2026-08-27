@@ -4,9 +4,9 @@ import type { RunProgressResponse, TestRunDetailResponse } from '@caselog/schema
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { BrowserSession } from '../../../../../core/auth/browser-session';
-import { WorkspaceApi } from '../../../data-access/workspace-api';
+import { TestRunsApi } from '../../../data-access/test-runs-api';
 import { RunDraftStore, type RunDraftContext } from '../../../state/run-draft-store';
-import { RunDetail } from '../../../pages/runs/run-detail';
+import { RunDetail } from '../../../pages/run-detail/run-detail';
 
 const RUN_ID = 'b101eace-107c-4177-8d7c-f4f052785c16';
 const ITEM_ID = 'f230fe74-dd2d-40db-a0a4-21a8597526ef';
@@ -135,7 +135,7 @@ describe('RunDetail', () => {
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
-        { provide: WorkspaceApi, useValue: workspaceApi },
+        { provide: TestRunsApi, useValue: workspaceApi },
         {
           provide: ActivatedRoute,
           useValue: {

@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angul
 import type { ResultIngestionListResponse, TestRunListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { TestRunsApi } from '../../../../test-runs/public-api';
 import { WorkspaceApi } from '../../../data-access/workspace-api';
 import { CiImports } from '../../../pages/automation/ci-imports';
 
@@ -83,6 +84,7 @@ describe('CiImports', () => {
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
+        { provide: TestRunsApi, useValue: workspaceApi },
         { provide: WorkspaceApi, useValue: workspaceApi },
         {
           provide: ActivatedRoute,

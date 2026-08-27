@@ -4,8 +4,8 @@ import type { TestCaseListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { TestCasesApi } from '../../../../test-cases/public-api';
-import { WorkspaceApi } from '../../../data-access/workspace-api';
-import { RunCreate } from '../../../pages/runs/run-create';
+import { TestRunsApi } from '../../../data-access/test-runs-api';
+import { RunCreate } from '../../../pages/run-create/run-create';
 
 const CASE_ID = '77bcbeb6-1c8d-49ac-8358-e2c80ab0e187';
 const cases: TestCaseListResponse = {
@@ -56,7 +56,7 @@ describe('RunCreate', () => {
         provideRouter([]),
         provideTanStackQuery(queryClient),
         { provide: TestCasesApi, useValue: testCasesApi },
-        { provide: WorkspaceApi, useValue: workspaceApi },
+        { provide: TestRunsApi, useValue: workspaceApi },
         {
           provide: ActivatedRoute,
           useValue: {

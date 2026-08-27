@@ -3,8 +3,8 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import type { TestResultHistoryResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
-import { WorkspaceApi } from '../../../data-access/workspace-api';
-import { ResultHistory } from '../../../pages/runs/result-history';
+import { TestRunsApi } from '../../../data-access/test-runs-api';
+import { ResultHistory } from '../../../pages/result-history/result-history';
 
 const RUN_ID = 'b101eace-107c-4177-8d7c-f4f052785c16';
 const ITEM_ID = 'f230fe74-dd2d-40db-a0a4-21a8597526ef';
@@ -55,7 +55,7 @@ describe('ResultHistory', () => {
       providers: [
         provideRouter([]),
         provideTanStackQuery(queryClient),
-        { provide: WorkspaceApi, useValue: workspaceApi },
+        { provide: TestRunsApi, useValue: workspaceApi },
         {
           provide: ActivatedRoute,
           useValue: {

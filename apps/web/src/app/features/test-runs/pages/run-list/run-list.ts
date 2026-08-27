@@ -6,7 +6,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { WorkspaceApi } from '../../data-access/workspace-api';
+import { TestRunsApi } from '../../data-access/test-runs-api';
 
 const STATUS_TRANSLATION_KEYS: Record<TestRunStatus, string> = {
   draft: 'workspace.runs.statuses.draft',
@@ -25,7 +25,7 @@ const STATUS_TRANSLATION_KEYS: Record<TestRunStatus, string> = {
 export class RunList {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly workspaceApi = inject(WorkspaceApi);
+  private readonly testRunsApi = inject(TestRunsApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
@@ -36,7 +36,7 @@ export class RunList {
   readonly runs = injectInfiniteQuery(() => ({
     queryKey: ['test-runs', this.workspaceSlug, this.projectSlug, this.status()],
     queryFn: ({ pageParam }) =>
-      this.workspaceApi.listTestRuns(
+      this.testRunsApi.listTestRuns(
         this.workspaceSlug,
         this.projectSlug,
         pageParam ?? undefined,
