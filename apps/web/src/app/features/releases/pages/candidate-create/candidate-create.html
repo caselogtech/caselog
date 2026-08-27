@@ -1,0 +1,173 @@
+<main class="candidate-create-page" aria-labelledby="candidate-create-title">
+  <header class="page-header">
+    <a
+      appButton="quiet"
+      href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}"
+      [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId]"
+    >
+      <span aria-hidden="true">←</span>
+      {{ 'releases.candidateCreate.back' | transloco }}
+    </a>
+    <p class="eyebrow">{{ 'releases.detail.candidateEyebrow' | transloco }}</p>
+    <h1 id="candidate-create-title">{{ 'releases.candidateCreate.title' | transloco }}</h1>
+    <p class="description">{{ 'releases.candidateCreate.description' | transloco }}</p>
+  </header>
+
+  @if (release.isPending()) {
+    <app-loading-skeleton
+      preset="block"
+      [label]="'releases.detail.loading' | transloco"
+    />
+  } @else if (release.isError()) {
+    <app-page-state
+      [title]="'releases.detail.errorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    />
+  } @else {
+    @if (!canCreate()) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'releases.candidateCreate.unavailableTitle' | transloco"
+      >
+        <p>{{ 'releases.candidateCreate.unavailableDescription' | transloco }}</p>
+      </app-callout>
+    }
+
+    @if (createCandidate.isError()) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'releases.candidateCreate.errorTitle' | transloco"
+      >
+        <p>{{ errorTranslationKey() | transloco }}</p>
+      </app-callout>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <fieldset>
+        <legend>{{ 'releases.candidateCreate.identityTitle' | transloco }}</legend>
+        <p class="fieldset-description">
+          {{ 'releases.candidateCreate.identityDescription' | transloco }}
+        </p>
+
+        @if (submissionAttempted() && form.hasError('identityRequired')) {
+          <p class="identity-error" role="alert">
+            {{ 'releases.candidateCreate.identityRequired' | transloco }}
+          </p>
+        }
+
+        <div class="field-grid">
+          <app-form-field
+            controlId="candidate-revision"
+            [label]="'releases.detail.sourceRevision' | transloco"
+            [hint]="'releases.candidateCreate.revisionHint' | transloco"
+          >
+            <input
+              appControl
+              id="candidate-revision"
+              type="text"
+              formControlName="sourceRevision"
+              autocomplete="off"
+              aria-describedby="candidate-revision-description"
+            />
+          </app-form-field>
+
+          <app-form-field
+            controlId="candidate-build"
+            [label]="'releases.detail.buildIdentifier' | transloco"
+            [hint]="'releases.candidateCreate.buildHint' | transloco"
+          >
+            <input
+              appControl
+              id="candidate-build"
+              type="text"
+              formControlName="buildIdentifier"
+              autocomplete="off"
+              aria-describedby="candidate-build-description"
+            />
+          </app-form-field>
+
+          <app-form-field
+            controlId="candidate-digest"
+            [label]="'releases.candidateCreate.artifactDigest' | transloco"
+            [hint]="'releases.candidateCreate.digestHint' | transloco"
+          >
+            <input
+              appControl
+              id="candidate-digest"
+              type="text"
+              formControlName="artifactDigest"
+              autocomplete="off"
+              aria-describedby="candidate-digest-description"
+            />
+          </app-form-field>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>{{ 'releases.candidateCreate.metadataTitle' | transloco }}</legend>
+        <p class="fieldset-description">
+          {{ 'releases.candidateCreate.metadataDescription' | transloco }}
+        </p>
+        <div class="field-grid">
+          <app-form-field
+            controlId="candidate-branch"
+            [label]="'releases.detail.branch' | transloco"
+          >
+            <input appControl id="candidate-branch" type="text" formControlName="branch" />
+          </app-form-field>
+          <app-form-field
+            controlId="candidate-version"
+            [label]="'releases.detail.version' | transloco"
+          >
+            <input appControl id="candidate-version" type="text" formControlName="version" />
+          </app-form-field>
+          <app-form-field
+            class="wide-field"
+            controlId="candidate-source-url"
+            [label]="'releases.candidateCreate.sourceUrl' | transloco"
+            [hint]="'releases.candidateCreate.sourceUrlHint' | transloco"
+            [error]="
+              form.controls.sourceUrl.touched && form.controls.sourceUrl.invalid
+                ? ('releases.candidateCreate.sourceUrlInvalid' | transloco)
+                : undefined
+            "
+          >
+            <input
+              appControl
+              id="candidate-source-url"
+              type="url"
+              formControlName="sourceUrl"
+              aria-describedby="candidate-source-url-description"
+              [attr.aria-invalid]="
+                form.controls.sourceUrl.touched && form.controls.sourceUrl.invalid
+              "
+            />
+          </app-form-field>
+        </div>
+      </fieldset>
+
+      <footer class="form-actions">
+        <a
+          appButton="secondary"
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId]"
+        >
+          {{ 'releases.create.cancel' | transloco }}
+        </a>
+        <button
+          appButton="primary"
+          type="submit"
+          [disabled]="!canCreate() || createCandidate.isPending()"
+        >
+          {{
+            (createCandidate.isPending()
+              ? 'releases.candidateCreate.creating'
+              : 'releases.candidateCreate.submit') | transloco
+          }}
+        </button>
+      </footer>
+    </form>
+  }
+</main>

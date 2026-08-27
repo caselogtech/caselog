@@ -1,0 +1,123 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+.candidate-create-page {
+  margin-inline: auto;
+  max-width: 900px;
+  padding: var(--space-5) var(--content-gutter) 48px;
+}
+
+.page-header > .app-button {
+  margin: 0 0 var(--space-4) -14px;
+}
+
+.eyebrow {
+  color: var(--color-accent-700);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 var(--space-1);
+  text-transform: uppercase;
+}
+
+h1,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 3vw, 2.4rem);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin-bottom: 0;
+}
+
+.description,
+.fieldset-description {
+  color: var(--text-2);
+}
+
+.description {
+  margin: var(--space-2) 0 0;
+}
+
+app-callout,
+app-loading-skeleton,
+app-page-state {
+  display: block;
+  margin-top: var(--space-5);
+}
+
+form {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+}
+
+fieldset {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin: 0;
+  padding: var(--space-5);
+}
+
+legend {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  padding: 0 var(--space-2);
+}
+
+.fieldset-description {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+}
+
+.identity-error {
+  background: var(--error-surface);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-sm);
+  color: var(--error-text);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+}
+
+.field-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wide-field {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  align-items: center;
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+@media (max-width: 620px) {
+  fieldset {
+    padding: var(--space-4);
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wide-field {
+    grid-column: auto;
+  }
+
+  .form-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}

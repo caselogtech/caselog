@@ -103,7 +103,35 @@
           <p class="eyebrow">{{ 'releases.detail.candidateEyebrow' | transloco }}</p>
           <h2 id="candidate-list-title">{{ 'releases.detail.candidateTitle' | transloco }}</h2>
         </div>
+        @if (canMutateCandidates()) {
+          <a
+            appButton="primary"
+            href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}/candidates/new"
+            [routerLink]="[
+              '/',
+              workspaceSlug,
+              projectSlug,
+              'releases',
+              releaseId,
+              'candidates',
+              'new'
+            ]"
+          >
+            <span aria-hidden="true">＋</span>
+            {{ 'releases.candidateCreate.submit' | transloco }}
+          </a>
+        }
       </div>
+
+      @if (linkTestRun.isError() || unlinkTestRun.isError() || runs.isError()) {
+        <app-callout
+          tone="danger"
+          liveRole="alert"
+          [title]="'releases.detail.runMutationErrorTitle' | transloco"
+        >
+          <p>{{ errorTranslationKey() | transloco }}</p>
+        </app-callout>
+      }
 
       @if (model.candidates.length === 0) {
         <app-page-state
@@ -143,32 +171,38 @@
                 </div>
               </dl>
 
-              <div class="linked-runs">
-                <h3>{{ 'releases.detail.linkedRuns' | transloco }}</h3>
-                @if (candidate.testRuns.length === 0) {
-                  <p>{{ 'releases.detail.noLinkedRuns' | transloco }}</p>
-                } @else {
-                  <ul>
-                    @for (run of candidate.testRuns; track run.testRunId) {
-                      <li>
-                        <a
-                          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ run.testRunId }}"
-                          [routerLink]="['/', workspaceSlug, projectSlug, 'runs', run.testRunId]"
-                        >
-                          {{ run.name }}
-                        </a>
-                        <app-status-badge
-                          [label]="runRoleLabel(run.role) | transloco"
-                          [tone]="run.role === 'required' ? 'pending' : 'neutral'"
-                        />
-                      </li>
-                    }
-                  </ul>
-                }
-              </div>
+              <app-candidate-run-manager
+                [candidateId]="candidate.id"
+                [workspaceSlug]="workspaceSlug"
+                [projectSlug]="projectSlug"
+                [links]="candidate.testRuns"
+                [runs]="runItems()"
+                [canManage]="canManage()"
+                [mutable]="canMutateCandidates()"
+                [loadingRuns]="runs.isPending()"
+                [pending]="candidateMutationPending()"
+                (linkRequested)="linkTestRun.mutate($event)"
+                (unlinkRequested)="unlinkTestRun.mutate($event)"
+              />
             </article>
           }
         </div>
+
+        @if (runs.hasNextPage()) {
+          <button
+            appButton="secondary"
+            class="load-more-runs"
+            type="button"
+            [disabled]="runs.isFetchingNextPage()"
+            (click)="runs.fetchNextPage()"
+          >
+            {{
+              (runs.isFetchingNextPage()
+                ? 'releases.detail.loadingMoreRuns'
+                : 'releases.detail.loadMoreRuns') | transloco
+            }}
+          </button>
+        }
       }
     </section>
 

@@ -110,6 +110,103 @@ describe('ReleasesApi', () => {
     });
     await expect(transitioned).resolves.toMatchObject({ state: 'active' });
   });
+
+  it('registers candidates and manages their test-run evidence links', async () => {
+    const api = TestBed.inject(ReleasesApi);
+    const http = TestBed.inject(HttpTestingController);
+    const candidateId = '33333333-3333-4333-8333-333333333333';
+    const runId = '44444444-4444-4444-8444-444444444444';
+    const candidateRequest = {
+      sourceRevision: 'abc123',
+      buildIdentifier: undefined,
+      artifactDigest: undefined,
+      branch: undefined,
+      version: undefined,
+    };
+    const created = api.createCandidate(
+      'acme',
+      'authentication',
+      '22222222-2222-4222-8222-222222222222',
+      candidateRequest,
+      'candidate-browser-retry',
+    );
+    await Promise.resolve();
+    const createRequest = http.expectOne(
+      '/api/v1/projects/authentication/releases/22222222-2222-4222-8222-222222222222/candidates',
+    );
+    expect(createRequest.request.method).toBe('POST');
+    expect(createRequest.request.headers.get('Idempotency-Key')).toBe('candidate-browser-retry');
+    expect(createRequest.request.body).toEqual(candidateRequest);
+    createRequest.flush({
+      candidate: {
+        id: candidateId,
+        sequence: 1,
+        label: 'RC-1',
+        sourceRevision: 'abc123',
+        buildIdentifier: null,
+        artifactDigest: null,
+        branch: null,
+        version: null,
+        sourceUrl: null,
+        createdAt: '2026-08-27T12:00:00.000Z',
+        testRuns: [],
+      },
+    });
+    await expect(created).resolves.toMatchObject({ candidate: { label: 'RC-1' } });
+
+    const runs = api.listTestRuns('acme', 'authentication', runId);
+    await Promise.resolve();
+    const runsRequest = http.expectOne(
+      (request) =>
+        request.url === '/api/v1/projects/authentication/runs' &&
+        request.params.get('cursor') === runId,
+    );
+    expect(runsRequest.request.params.get('limit')).toBe('100');
+    runsRequest.flush({
+      project: {
+        id: '55555555-5555-4555-8555-555555555555',
+        key: 'AUTH',
+        slug: 'authentication',
+        name: 'Authentication',
+      },
+      items: [],
+      nextCursor: null,
+    });
+    await expect(runs).resolves.toMatchObject({ items: [], nextCursor: null });
+
+    const linked = api.linkCandidateTestRun(
+      'acme',
+      'authentication',
+      candidateId,
+      runId,
+      'informational',
+    );
+    await Promise.resolve();
+    const linkRequest = http.expectOne(
+      `/api/v1/projects/authentication/candidates/${candidateId}/test-runs/${runId}`,
+    );
+    expect(linkRequest.request.method).toBe('PUT');
+    expect(linkRequest.request.body).toEqual({ role: 'informational' });
+    linkRequest.flush({
+      link: {
+        testRunId: runId,
+        name: 'Smoke',
+        status: 'active',
+        role: 'informational',
+        linkedAt: '2026-08-27T12:15:00.000Z',
+      },
+    });
+    await expect(linked).resolves.toMatchObject({ link: { role: 'informational' } });
+
+    const unlinked = api.unlinkCandidateTestRun('acme', 'authentication', candidateId, runId);
+    await Promise.resolve();
+    const unlinkRequest = http.expectOne(
+      `/api/v1/projects/authentication/candidates/${candidateId}/test-runs/${runId}`,
+    );
+    expect(unlinkRequest.request.method).toBe('DELETE');
+    unlinkRequest.flush(null);
+    await expect(unlinked).resolves.toBeUndefined();
+  });
 });
 
 function releaseSummary() {

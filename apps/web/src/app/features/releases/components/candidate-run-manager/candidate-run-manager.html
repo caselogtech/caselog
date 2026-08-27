@@ -1,0 +1,121 @@
+<section class="run-manager" [attr.aria-labelledby]="'linked-runs-' + candidateId()">
+  <h3 [id]="'linked-runs-' + candidateId()">{{ 'releases.detail.linkedRuns' | transloco }}</h3>
+
+  @if (links().length === 0) {
+    <p class="empty-runs">{{ 'releases.detail.noLinkedRuns' | transloco }}</p>
+  } @else {
+    <ul class="linked-run-list">
+      @for (run of links(); track run.testRunId) {
+        <li>
+          <div class="run-identity">
+            <a
+              href="/{{ workspaceSlug() }}/{{ projectSlug() }}/runs/{{ run.testRunId }}"
+              [routerLink]="['/', workspaceSlug(), projectSlug(), 'runs', run.testRunId]"
+            >
+              {{ run.name }}
+            </a>
+            <app-status-badge
+              [label]="statusLabel(run.status) | transloco"
+              [tone]="statusTone(run.status)"
+            />
+          </div>
+
+          @if (canManage() && mutable()) {
+            <div class="run-actions">
+              <select
+                appControl
+                class="role-select"
+                [value]="run.role"
+                [disabled]="pending()"
+                [attr.aria-label]="'releases.detail.runRole' | transloco: { name: run.name }"
+                (change)="updateRole(run.testRunId, $any($event.target).value)"
+              >
+                <option value="required">{{ 'releases.detail.requiredRun' | transloco }}</option>
+                <option value="informational">
+                  {{ 'releases.detail.informationalRun' | transloco }}
+                </option>
+              </select>
+              <button
+                appButton="quiet"
+                type="button"
+                [disabled]="pending()"
+                (click)="unlinking.set(run)"
+              >
+                {{ 'releases.detail.unlinkRun' | transloco }}
+              </button>
+            </div>
+          } @else {
+            <app-status-badge
+              [label]="
+                (run.role === 'required'
+                  ? 'releases.detail.requiredRun'
+                  : 'releases.detail.informationalRun') | transloco
+              "
+              [tone]="run.role === 'required' ? 'pending' : 'neutral'"
+            />
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (canManage() && mutable()) {
+    <form class="link-form" [formGroup]="form" (ngSubmit)="requestLink()">
+      @if (loadingRuns()) {
+        <app-loading-skeleton
+          preset="row"
+          [label]="'releases.detail.loadingRuns' | transloco"
+        />
+      } @else if (availableRuns().length === 0) {
+        <p>{{ 'releases.detail.noAvailableRuns' | transloco }}</p>
+      } @else {
+        <label>
+          <span>
+            {{ 'releases.detail.selectRun' | transloco }}
+          </span>
+          <select
+            appControl
+            formControlName="runId"
+            [attr.aria-invalid]="form.controls.runId.touched && form.controls.runId.invalid"
+          >
+            <option value="">{{ 'releases.detail.chooseRun' | transloco }}</option>
+            @for (run of availableRuns(); track run.id) {
+              <option [value]="run.id">{{ run.name }} · {{ statusLabel(run.status) | transloco }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>
+            {{ 'releases.detail.role' | transloco }}
+          </span>
+          <select
+            appControl
+            formControlName="role"
+          >
+            <option value="required">{{ 'releases.detail.requiredRun' | transloco }}</option>
+            <option value="informational">
+              {{ 'releases.detail.informationalRun' | transloco }}
+            </option>
+          </select>
+        </label>
+        <button appButton="secondary" type="submit" [disabled]="pending()">
+          {{ 'releases.detail.linkRun' | transloco }}
+        </button>
+      }
+    </form>
+  }
+
+  <app-dialog
+    [open]="!!unlinking()"
+    [title]="
+      'releases.detail.unlinkConfirmTitle'
+        | transloco: { name: unlinking()?.name ?? '' }
+    "
+    [message]="'releases.detail.unlinkConfirmMessage' | transloco"
+    [confirmLabel]="'releases.detail.unlinkRun' | transloco"
+    [cancelLabel]="'releases.detail.confirm.keepEditing' | transloco"
+    confirmVariant="danger"
+    (confirmed)="confirmUnlink()"
+    (cancelled)="unlinking.set(null)"
+  />
+</section>

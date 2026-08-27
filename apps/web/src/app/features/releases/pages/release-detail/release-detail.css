@@ -142,7 +142,6 @@ dd {
 
 .candidate-card time,
 .candidate-sequence,
-.linked-runs p,
 .history-section time {
   color: var(--text-2);
   font-size: var(--font-size-xs);
@@ -154,44 +153,10 @@ dd {
   padding: var(--space-1) var(--space-2);
 }
 
-.linked-runs {
-  border-top: 1px solid var(--border);
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-}
-
-.linked-runs h3 {
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--space-2);
-}
-
-.linked-runs p {
-  margin-bottom: 0;
-}
-
-.linked-runs ul,
 .history-section ol {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-
-.linked-runs li {
-  align-items: center;
-  border-top: 1px solid var(--border);
-  display: flex;
-  gap: var(--space-3);
-  justify-content: space-between;
-  padding: var(--space-2) 0;
-}
-
-.linked-runs li:first-child {
-  border-top: 0;
-}
-
-.linked-runs a {
-  color: var(--text-1);
-  font-weight: 650;
 }
 
 .history-section ol {
@@ -218,6 +183,10 @@ dd {
   min-height: var(--control-min-size);
 }
 
+.load-more-runs {
+  margin: var(--space-4) auto 0;
+}
+
 @media (max-width: 760px) {
   .release-summary dl,
   .candidate-identity {
@@ -226,9 +195,11 @@ dd {
 }
 
 @media (max-width: 520px) {
+  .section-heading,
   .title-row {
     align-items: flex-start;
     flex-direction: column;
+    gap: var(--space-3);
   }
 
   .lifecycle-actions {
@@ -247,10 +218,5 @@ dd {
 
   .candidate-card {
     padding: var(--space-4);
-  }
-
-  .linked-runs li {
-    align-items: flex-start;
-    flex-direction: column;
   }
 }

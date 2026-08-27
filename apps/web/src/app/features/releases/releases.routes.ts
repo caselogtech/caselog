@@ -16,6 +16,13 @@ export const releasesRoutes: Routes = [
           ),
       },
       {
+        path: ':releaseId/candidates/new',
+        loadComponent: () =>
+          import('./pages/candidate-create/candidate-create').then(
+            ({ CandidateCreate }) => CandidateCreate,
+          ),
+      },
+      {
         path: ':releaseId',
         loadComponent: () =>
           import('./pages/release-detail/release-detail').then(

@@ -96,6 +96,19 @@
     "noLinkedRuns": "No test runs are linked to this candidate.",
     "requiredRun": "Required",
     "informationalRun": "Informational",
+    "runRole": "Role for {{name}}",
+    "unlinkRun": "Unlink",
+    "loadingRuns": "Loading test runs…",
+    "noAvailableRuns": "All available test runs are already linked.",
+    "selectRun": "Test run",
+    "chooseRun": "Choose a test run",
+    "role": "Readiness role",
+    "linkRun": "Link test run",
+    "unlinkConfirmTitle": "Unlink {{name}}?",
+    "unlinkConfirmMessage": "This test run will no longer contribute evidence to this candidate's readiness.",
+    "runMutationErrorTitle": "Unable to update candidate evidence",
+    "loadMoreRuns": "Load more test runs",
+    "loadingMoreRuns": "Loading more test runs…",
     "history": "Lifecycle history",
     "actions": {
       "activate": "Activate release",
@@ -111,5 +124,27 @@
       "cancelMessage": "Cancellation is final. Candidates and test-run links can no longer change.",
       "keepEditing": "Go back"
     }
+  },
+  "candidateCreate": {
+    "back": "Back to release",
+    "title": "Register candidate",
+    "description": "Capture an immutable build identity. Later evidence and readiness decisions refer to this exact candidate.",
+    "unavailableTitle": "Candidate registration is unavailable",
+    "unavailableDescription": "Only owners, administrators, and leads can register candidates while a release is draft or active.",
+    "errorTitle": "Unable to register candidate",
+    "identityTitle": "Candidate identity",
+    "identityDescription": "Provide at least one stable identity value. Caselog normalizes it before enforcing project-wide uniqueness.",
+    "identityRequired": "Enter a source revision, build identifier, or artifact digest.",
+    "revisionHint": "For example, a Git commit SHA.",
+    "buildHint": "For example, a CI build number or pipeline identifier.",
+    "artifactDigest": "Artifact digest",
+    "digestHint": "For example, a container or package SHA-256 digest.",
+    "metadataTitle": "Source metadata",
+    "metadataDescription": "Optional context helps people trace the candidate without changing its identity.",
+    "sourceUrl": "Source URL",
+    "sourceUrlHint": "Optional link to the commit, build, or artifact.",
+    "sourceUrlInvalid": "Enter a valid absolute URL up to 2,048 characters.",
+    "submit": "Register candidate",
+    "creating": "Registering candidate…"
   }
 }

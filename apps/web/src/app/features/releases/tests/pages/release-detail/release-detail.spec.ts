@@ -66,11 +66,15 @@ const response: ReleaseDetailResponse = {
     },
   ],
 };
+const candidateId = '33333333-3333-4333-8333-333333333333';
 
 describe('ReleaseDetail', () => {
   const releasesApi = {
     releaseDetail: vi.fn(),
     transitionRelease: vi.fn(),
+    listTestRuns: vi.fn(),
+    linkCandidateTestRun: vi.fn(),
+    unlinkCandidateTestRun: vi.fn(),
   };
   let queryClient: QueryClient;
 
@@ -82,6 +86,38 @@ describe('ReleaseDetail', () => {
       state: 'released',
       updatedAt: '2026-08-27T12:30:00.000Z',
     });
+    releasesApi.listTestRuns.mockReset().mockResolvedValue({
+      project: {
+        id: '77777777-7777-4777-8777-777777777777',
+        key: 'AUTH',
+        slug: 'authentication',
+        name: 'Authentication',
+      },
+      items: [
+        {
+          id: '88888888-8888-4888-8888-888888888888',
+          name: 'Smoke',
+          status: 'active',
+          build: 'build-42',
+          itemCount: 12,
+          completedCount: 10,
+          failedCount: 1,
+          createdAt: '2026-08-27T11:00:00.000Z',
+          closedAt: null,
+        },
+      ],
+      nextCursor: null,
+    });
+    releasesApi.linkCandidateTestRun.mockReset().mockResolvedValue({
+      link: {
+        testRunId: '88888888-8888-4888-8888-888888888888',
+        name: 'Smoke',
+        status: 'active',
+        role: 'informational',
+        linkedAt: '2026-08-27T12:15:00.000Z',
+      },
+    });
+    releasesApi.unlinkCandidateTestRun.mockReset().mockResolvedValue(undefined);
     await TestBed.configureTestingModule({
       imports: [ReleaseDetail, i18nTestingModule()],
       providers: [
@@ -137,6 +173,28 @@ describe('ReleaseDetail', () => {
       'authentication',
       response.release.id,
       'release',
+    );
+  });
+
+  it('loads selectable runs and links one to the candidate', async () => {
+    const fixture = TestBed.createComponent(ReleaseDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.runs.isSuccess()).toBe(true));
+
+    fixture.componentInstance.linkTestRun.mutate({
+      candidateId,
+      runId: '88888888-8888-4888-8888-888888888888',
+      role: 'informational',
+    });
+    await vi.waitFor(() => expect(releasesApi.linkCandidateTestRun).toHaveBeenCalledOnce());
+
+    expect(releasesApi.listTestRuns).toHaveBeenCalledWith('acme', 'authentication', undefined);
+    expect(releasesApi.linkCandidateTestRun).toHaveBeenCalledWith(
+      'acme',
+      'authentication',
+      candidateId,
+      '88888888-8888-4888-8888-888888888888',
+      'informational',
     );
   });
 });

@@ -19,6 +19,7 @@ import {
   LoadingSkeleton,
 } from '../../../../shared/ui/public-api';
 import { ReleasesApi } from '../../data-access/releases-api';
+import { IdempotencyIdentity } from '../../state/idempotency-identity';
 
 type ReleaseSubmission = {
   request: CreateReleaseRequest;
@@ -51,7 +52,7 @@ export class ReleaseCreate {
   private readonly releasesApi = inject(ReleasesApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
-  private retryIdentity: { fingerprint: string; key: string } | null = null;
+  private readonly idempotency = new IdempotencyIdentity();
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
@@ -85,7 +86,7 @@ export class ReleaseCreate {
     mutationFn: ({ request, idempotencyKey }: ReleaseSubmission) =>
       this.releasesApi.createRelease(this.workspaceSlug, this.projectSlug, request, idempotencyKey),
     onSuccess: async ({ release }) => {
-      this.retryIdentity = null;
+      this.idempotency.clear();
       await this.queryClient.invalidateQueries({
         queryKey: ['release-readiness', this.workspaceSlug, this.projectSlug],
       });
@@ -113,11 +114,10 @@ export class ReleaseCreate {
       ...(value.environmentId ? { environmentId: value.environmentId } : {}),
       ...(value.targetDate ? { targetDate: `${value.targetDate}T12:00:00.000Z` } : {}),
     };
-    const fingerprint = JSON.stringify(request);
-    if (this.retryIdentity?.fingerprint !== fingerprint) {
-      this.retryIdentity = { fingerprint, key: crypto.randomUUID() };
-    }
-    this.createRelease.mutate({ request, idempotencyKey: this.retryIdentity.key });
+    this.createRelease.mutate({
+      request,
+      idempotencyKey: this.idempotency.keyFor(request),
+    });
   }
 
   errorTranslationKey(): string {

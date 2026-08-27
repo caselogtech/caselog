@@ -1,9 +1,14 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import type { CandidateTestRunRole, ReleaseState } from '@caselog/schemas';
+import type { ReleaseState } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import {
+  injectInfiniteQuery,
+  injectMutation,
+  injectQuery,
+  QueryClient,
+} from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import {
@@ -16,6 +21,11 @@ import {
   type ButtonVariant,
 } from '../../../../shared/ui/public-api';
 import { ReleasesApi } from '../../data-access/releases-api';
+import {
+  CandidateRunManager,
+  type CandidateRunLinkRequest,
+  type CandidateRunUnlinkRequest,
+} from '../../components/candidate-run-manager/candidate-run-manager';
 import {
   type ReleaseLifecycleAction,
   releaseLifecycleActions,
@@ -40,16 +50,12 @@ const CONFIRMATION_MESSAGE: Record<ReleaseLifecycleAction, string> = {
   cancel: 'releases.detail.confirm.cancelMessage',
 };
 
-const RUN_ROLE_LABEL: Record<CandidateTestRunRole, string> = {
-  required: 'releases.detail.requiredRun',
-  informational: 'releases.detail.informationalRun',
-};
-
 @Component({
   selector: 'app-release-detail',
   imports: [
     Button,
     Callout,
+    CandidateRunManager,
     DatePipe,
     Dialog,
     LoadingSkeleton,
@@ -86,6 +92,19 @@ export class ReleaseDetail {
     const release = this.release();
     return release && this.canManage() ? releaseLifecycleActions(release.state) : [];
   });
+  readonly canMutateCandidates = computed(() => {
+    const state = this.release()?.state;
+    return this.canManage() && (state === 'draft' || state === 'active');
+  });
+  readonly runs = injectInfiniteQuery(() => ({
+    queryKey: ['release-run-selection', this.workspaceSlug, this.projectSlug],
+    queryFn: ({ pageParam }) =>
+      this.releasesApi.listTestRuns(this.workspaceSlug, this.projectSlug, pageParam ?? undefined),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled: this.canMutateCandidates(),
+  }));
+  readonly runItems = computed(() => this.runs.data()?.pages.flatMap(({ items }) => items) ?? []);
 
   readonly transition = injectMutation(() => ({
     mutationFn: (action: ReleaseLifecycleAction) =>
@@ -105,6 +124,27 @@ export class ReleaseDetail {
         }),
       ]);
     },
+  }));
+  readonly linkTestRun = injectMutation(() => ({
+    mutationFn: ({ candidateId, runId, role }: CandidateRunLinkRequest) =>
+      this.releasesApi.linkCandidateTestRun(
+        this.workspaceSlug,
+        this.projectSlug,
+        candidateId,
+        runId,
+        role,
+      ),
+    onSuccess: () => this.invalidateCandidateData(),
+  }));
+  readonly unlinkTestRun = injectMutation(() => ({
+    mutationFn: ({ candidateId, runId }: CandidateRunUnlinkRequest) =>
+      this.releasesApi.unlinkCandidateTestRun(
+        this.workspaceSlug,
+        this.projectSlug,
+        candidateId,
+        runId,
+      ),
+    onSuccess: () => this.invalidateCandidateData(),
   }));
 
   lifecycle(state: ReleaseState) {
@@ -127,10 +167,6 @@ export class ReleaseDetail {
     return CONFIRMATION_MESSAGE[this.confirmation() ?? 'activate'];
   }
 
-  runRoleLabel(role: CandidateTestRunRole): string {
-    return RUN_ROLE_LABEL[role];
-  }
-
   requestTransition(action: ReleaseLifecycleAction): void {
     if (this.canManage() && !this.transition.isPending()) this.confirmation.set(action);
   }
@@ -141,7 +177,28 @@ export class ReleaseDetail {
     if (action) this.transition.mutate(action);
   }
 
+  candidateMutationPending(): boolean {
+    return this.linkTestRun.isPending() || this.unlinkTestRun.isPending();
+  }
+
+  private invalidateCandidateData(): Promise<void> {
+    return Promise.all([
+      this.queryClient.invalidateQueries({
+        queryKey: ['release', this.workspaceSlug, this.projectSlug, this.releaseId],
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: ['release-readiness', this.workspaceSlug, this.projectSlug],
+      }),
+    ]).then(() => undefined);
+  }
+
   errorTranslationKey(): string {
-    return apiErrorTranslationKey(this.detail.error() ?? this.transition.error());
+    return apiErrorTranslationKey(
+      this.detail.error() ??
+        this.transition.error() ??
+        this.linkTestRun.error() ??
+        this.unlinkTestRun.error() ??
+        this.runs.error(),
+    );
   }
 }

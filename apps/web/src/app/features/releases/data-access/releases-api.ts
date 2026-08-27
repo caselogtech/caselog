@@ -1,11 +1,18 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
+  candidateTestRunResponseSchema,
+  createReleaseCandidateResponseSchema,
   createReleaseResponseSchema,
   environmentListResponseSchema,
   releaseDetailResponseSchema,
   releaseLifecycleResponseSchema,
   releaseReadinessListResponseSchema,
+  testRunListResponseSchema,
+  type CandidateTestRunResponse,
+  type CandidateTestRunRole,
+  type CreateReleaseCandidateRequest,
+  type CreateReleaseCandidateResponse,
   type CreateReleaseRequest,
   type CreateReleaseResponse,
   type EnvironmentListResponse,
@@ -13,6 +20,7 @@ import {
   type ReleaseLifecycleResponse,
   type ReleaseReadinessListResponse,
   type ReleaseState,
+  type TestRunListResponse,
 } from '@caselog/schemas';
 import { lastValueFrom } from 'rxjs';
 import { WorkspaceAccess } from '../../workspace/public-api';
@@ -78,6 +86,70 @@ export class ReleasesApi {
       ),
     );
     return releaseLifecycleResponseSchema.parse(response);
+  }
+
+  async createCandidate(
+    workspaceSlug: string,
+    projectSlug: string,
+    releaseId: string,
+    request: CreateReleaseCandidateRequest,
+    idempotencyKey: string,
+  ): Promise<CreateReleaseCandidateResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/releases/${encodeURIComponent(releaseId)}/candidates`,
+        request,
+        { headers: { 'Idempotency-Key': idempotencyKey } },
+      ),
+    );
+    return createReleaseCandidateResponseSchema.parse(response);
+  }
+
+  async listTestRuns(
+    workspaceSlug: string,
+    projectSlug: string,
+    cursor?: string,
+    limit = 100,
+  ): Promise<TestRunListResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(`/api/v1/projects/${encodeURIComponent(projectSlug)}/runs`, {
+        params: { limit, ...(cursor ? { cursor } : {}) },
+      }),
+    );
+    return testRunListResponseSchema.parse(response);
+  }
+
+  async linkCandidateTestRun(
+    workspaceSlug: string,
+    projectSlug: string,
+    candidateId: string,
+    runId: string,
+    role: CandidateTestRunRole,
+  ): Promise<CandidateTestRunResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.put<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/candidates/${encodeURIComponent(candidateId)}/test-runs/${encodeURIComponent(runId)}`,
+        { role },
+      ),
+    );
+    return candidateTestRunResponseSchema.parse(response);
+  }
+
+  async unlinkCandidateTestRun(
+    workspaceSlug: string,
+    projectSlug: string,
+    candidateId: string,
+    runId: string,
+  ): Promise<void> {
+    await this.workspaceAccess.open(workspaceSlug);
+    await lastValueFrom(
+      this.http.delete<void>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/candidates/${encodeURIComponent(candidateId)}/test-runs/${encodeURIComponent(runId)}`,
+      ),
+    );
   }
 
   async listReadiness(
