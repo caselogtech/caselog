@@ -1,0 +1,66 @@
+<article class="snapshot" aria-labelledby="snapshot-title">
+  <header>
+    <p>{{ 'workspace.runs.result.snapshotEyebrow' | transloco }}</p>
+    <h2 id="snapshot-title">{{ 'workspace.runs.result.snapshotTitle' | transloco }}</h2>
+  </header>
+
+  @if (item().caseVersion.preconditions) {
+    <section class="content-block">
+      <h3>{{ 'workspace.runs.detail.preconditions' | transloco }}</h3>
+      <p>{{ item().caseVersion.preconditions }}</p>
+    </section>
+  }
+
+  @if (steps().length > 0) {
+    <section class="steps-section" aria-labelledby="result-steps-title">
+      <h3 id="result-steps-title">{{ 'workspace.runs.detail.steps' | transloco }}</h3>
+      <ol>
+        @for (step of steps(); track $index) {
+          <li>
+            <span class="step-number">{{ $index + 1 }}</span>
+            <div class="step-copy">
+              <span class="step-label">{{ 'workspace.runs.detail.action' | transloco }}</span>
+              <p>{{ step.action }}</p>
+              @if (step.expected) {
+                <span class="step-label">{{ 'workspace.runs.detail.expected' | transloco }}</span>
+                <p class="expected">{{ step.expected }}</p>
+              }
+            </div>
+            <div class="outcome">
+              <span class="step-label">{{ 'workspace.runs.result.stepResult' | transloco }}</span>
+              @if (stepResult($index); as recordedOutcome) {
+                <div class="outcome-heading">
+                  <app-status-badge
+                    [tone]="statusTone(recordedOutcome.status.key)"
+                    [label]="recordedOutcome.status.name"
+                  />
+                  @if (recordedOutcome.elapsedMs !== null) {
+                    <span class="outcome-time">
+                      {{ formatElapsed(recordedOutcome.elapsedMs) }}
+                    </span>
+                  }
+                </div>
+                @if (recordedOutcome.comment) {
+                  <p>{{ recordedOutcome.comment }}</p>
+                }
+              } @else {
+                <span class="not-recorded">
+                  {{ 'workspace.runs.result.notRecorded' | transloco }}
+                </span>
+              }
+            </div>
+          </li>
+        }
+      </ol>
+    </section>
+  } @else {
+    <pre>{{ textContent() }}</pre>
+  }
+
+  @if (item().caseVersion.expectedResult) {
+    <section class="content-block expected-result">
+      <h3>{{ 'workspace.runs.detail.expectedResult' | transloco }}</h3>
+      <p>{{ item().caseVersion.expectedResult }}</p>
+    </section>
+  }
+</article>

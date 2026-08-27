@@ -1,0 +1,49 @@
+<section class="result-attachments" aria-labelledby="result-attachments-title">
+  <header>
+    <p>{{ 'workspace.runs.result.evidenceEyebrow' | transloco }}</p>
+    <h2 id="result-attachments-title">{{ 'workspace.runs.result.attachments' | transloco }}</h2>
+    <span>{{ attachments().length }}</span>
+  </header>
+
+  @if (failed()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'workspace.runs.result.attachmentErrorTitle' | transloco"
+    >
+      <p>{{ errorMessage() }}</p>
+    </app-callout>
+  }
+
+  @if (attachments().length === 0) {
+    <p class="empty-evidence">{{ 'workspace.runs.result.noAttachments' | transloco }}</p>
+  } @else {
+    <ul>
+      @for (attachment of attachments(); track attachment.id) {
+        <li>
+          <div>
+            <strong>{{ attachment.fileName }}</strong>
+            <span>
+              {{ formatFileSize(attachment.sizeBytes) }} · {{ attachment.contentType }}
+              @if (attachment.stepPosition !== null) {
+                ·
+                {{
+                  'workspace.runs.result.stepAttachment'
+                    | transloco: { position: attachment.stepPosition + 1 }
+                }}
+              }
+            </span>
+          </div>
+          <button
+            appButton="secondary"
+            type="button"
+            [disabled]="pending()"
+            (click)="download.emit(attachment.id)"
+          >
+            {{ 'workspace.runs.result.downloadAttachment' | transloco }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

@@ -1,34 +1,44 @@
 <main class="results-page" aria-labelledby="history-title">
   @if (history.isPending()) {
-    <section class="page-state" aria-live="polite">
-      <span class="loading-indicator" aria-hidden="true"></span>
-      {{ 'workspace.runs.history.loading' | transloco }}
+    <section class="history-loading" [attr.aria-label]="'workspace.runs.history.loading' | transloco">
+      <app-loading-skeleton
+        preset="title"
+        [label]="'workspace.runs.history.loading' | transloco"
+      />
+      <app-loading-skeleton preset="row" [label]="'workspace.runs.history.loading' | transloco" />
+      <app-loading-skeleton preset="row" [label]="'workspace.runs.history.loading' | transloco" />
     </section>
   } @else if (history.isError()) {
-    <section class="page-state error" role="alert">
-      <p>{{ errorTranslationKey() | transloco }}</p>
-      <button class="secondary-action" type="button" (click)="history.refetch()">
+    <app-page-state
+      [title]="'workspace.runs.history.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="history.refetch()">
         {{ 'workspace.runs.retry' | transloco }}
       </button>
-    </section>
+    </app-page-state>
   } @else if (item(); as currentItem) {
+    <nav class="breadcrumbs" [attr.aria-label]="'workspace.runs.history.breadcrumbs' | transloco">
+      <a
+        class="back-link"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}?item={{ itemId }}"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId]"
+        [queryParams]="{ item: itemId }"
+      >
+        {{ 'workspace.runs.history.back' | transloco }}
+      </a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ 'workspace.runs.history.eyebrow' | transloco }}</span>
+    </nav>
+
     <header class="history-header">
       <div>
-        <a
-          class="back-link"
-          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}?item={{ itemId }}"
-          [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId]"
-          [queryParams]="{ item: itemId }"
-        >
-          <span aria-hidden="true">←</span>
-          {{ 'workspace.runs.history.back' | transloco }}
-        </a>
         <p class="eyebrow">{{ 'workspace.runs.history.eyebrow' | transloco }}</p>
         <h1 id="history-title">{{ currentItem.title }}</h1>
         <p class="description">{{ 'workspace.runs.history.description' | transloco }}</p>
       </div>
       <a
-        class="primary-action"
+        appButton="primary"
         href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}?item={{ itemId }}"
         [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId]"
         [queryParams]="{ item: itemId }"
@@ -42,114 +52,31 @@
     </div>
 
     @if (results().length === 0) {
-      <section class="page-state empty-state">
-        <p>{{ 'workspace.runs.history.empty' | transloco }}</p>
+      <app-page-state
+        [title]="'workspace.runs.history.emptyTitle' | transloco"
+        [message]="'workspace.runs.history.empty' | transloco"
+      >
         <a
-          class="primary-action"
+          actions
+          appButton="primary"
           href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}?item={{ itemId }}"
           [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId]"
           [queryParams]="{ item: itemId }"
         >
           {{ 'workspace.runs.history.retest' | transloco }}
         </a>
-      </section>
+      </app-page-state>
     } @else {
-      <table class="attempts-table">
-        <thead>
-          <tr class="attempts-heading">
-            <th scope="col">{{ 'workspace.runs.history.attemptColumn' | transloco }}</th>
-            <th scope="col">{{ 'workspace.runs.status' | transloco }}</th>
-            <th scope="col">{{ 'workspace.runs.history.executedAt' | transloco }}</th>
-            <th scope="col">{{ 'workspace.runs.history.executor' | transloco }}</th>
-            <th scope="col">{{ 'workspace.runs.history.elapsed' | transloco }}</th>
-            <th scope="col">{{ 'workspace.runs.history.evidence' | transloco }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (result of results(); track result.id) {
-            <tr class="attempt-row">
-              <td class="attempt-cell">
-                <span class="mobile-label">
-                  {{ 'workspace.runs.history.attemptColumn' | transloco }}
-                </span>
-                <a
-                  class="attempt-link"
-                  [attr.aria-label]="
-                    'workspace.runs.history.openAttempt' | transloco: { attempt: result.attempt }
-                  "
-                  href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}/items/{{ itemId }}/results/{{ result.id }}"
-                  [routerLink]="[
-                    '/',
-                    workspaceSlug,
-                    projectSlug,
-                    'runs',
-                    runId,
-                    'items',
-                    itemId,
-                    'results',
-                    result.id,
-                  ]"
-                >
-                  {{ 'workspace.runs.history.attempt' | transloco: { attempt: result.attempt } }}
-                </a>
-                @if (result.comment) {
-                  <span class="comment-preview">{{ result.comment }}</span>
-                }
-              </td>
-              <td>
-                <span class="mobile-label">{{ 'workspace.runs.status' | transloco }}</span>
-                <span class="status-badge">
-                  <i [style.background-color]="result.status.color"></i>
-                  {{ result.status.name }}
-                </span>
-              </td>
-              <td>
-                <span class="mobile-label">
-                  {{ 'workspace.runs.history.executedAt' | transloco }}
-                </span>
-                <span class="date-value">{{ result.executedAt | date: 'medium' }}</span>
-              </td>
-              <td>
-                <span class="mobile-label">
-                  {{ 'workspace.runs.history.executor' | transloco }}
-                </span>
-                {{
-                  result.executedBy?.displayName ??
-                    ('workspace.runs.history.unknownExecutor' | transloco)
-                }}
-              </td>
-              <td class="mono">
-                <span class="mobile-label">
-                  {{ 'workspace.runs.history.elapsed' | transloco }}
-                </span>
-                {{ formatElapsed(result.elapsedMs) }}
-              </td>
-              <td class="evidence-count">
-                <span class="mobile-label">
-                  {{ 'workspace.runs.history.evidence' | transloco }}
-                </span>
-                {{ result.attachments.length }}
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-
-      @if (history.hasNextPage()) {
-        <div class="load-more">
-          <button
-            class="secondary-action"
-            type="button"
-            [disabled]="history.isFetchingNextPage()"
-            (click)="history.fetchNextPage()"
-          >
-            {{
-              (history.isFetchingNextPage() ? 'workspace.runs.loadingMore' : 'workspace.runs.loadMore')
-                | transloco
-            }}
-          </button>
-        </div>
-      }
+      <app-result-attempt-list
+        [results]="results()"
+        [workspaceSlug]="workspaceSlug"
+        [projectSlug]="projectSlug"
+        [runId]="runId"
+        [itemId]="itemId"
+        [hasNextPage]="history.hasNextPage()"
+        [fetchingNextPage]="history.isFetchingNextPage()"
+        (loadMore)="history.fetchNextPage()"
+      />
     }
   }
 </main>

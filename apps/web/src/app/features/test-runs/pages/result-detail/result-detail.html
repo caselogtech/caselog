@@ -1,37 +1,45 @@
 <main class="result-page" aria-labelledby="result-title">
   @if (detail.isPending()) {
-    <section class="page-state" aria-live="polite">
-      <span class="loading-indicator" aria-hidden="true"></span>
-      {{ 'workspace.runs.result.loading' | transloco }}
+    <section class="result-loading" [attr.aria-label]="'workspace.runs.result.loading' | transloco">
+      <app-loading-skeleton
+        preset="title"
+        [label]="'workspace.runs.result.loading' | transloco"
+      />
+      <app-loading-skeleton preset="block" [label]="'workspace.runs.result.loading' | transloco" />
+      <app-loading-skeleton preset="block" [label]="'workspace.runs.result.loading' | transloco" />
     </section>
   } @else if (detail.isError()) {
-    <section class="page-state error" role="alert">
-      <p>{{ errorTranslationKey() | transloco }}</p>
-      <button class="secondary-action" type="button" (click)="detail.refetch()">
+    <app-page-state
+      [title]="'workspace.runs.result.loadErrorTitle' | transloco"
+      [message]="detailErrorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="detail.refetch()">
         {{ 'workspace.runs.retry' | transloco }}
       </button>
-    </section>
+    </app-page-state>
   } @else if (detail.data(); as data) {
+    <nav class="breadcrumbs" [attr.aria-label]="'workspace.runs.result.breadcrumbs' | transloco">
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}/items/{{ itemId }}/results"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId, 'items', itemId, 'results']"
+      >
+        {{ 'workspace.runs.result.backToHistory' | transloco }}
+      </a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">
+        {{ 'workspace.runs.result.eyebrow' | transloco: { attempt: data.result.attempt } }}
+      </span>
+    </nav>
+
     <header class="result-header">
       <div>
-        <a
-          class="back-link"
-          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}/items/{{ itemId }}/results"
-          [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId, 'items', itemId, 'results']"
-        >
-          <span aria-hidden="true">←</span>
-          {{ 'workspace.runs.result.backToHistory' | transloco }}
-        </a>
         <div class="title-meta">
-          <span class="status-badge">
-            <i [style.background-color]="data.result.status.color"></i>
-            {{ data.result.status.name }}
-          </span>
+          <app-status-badge
+            [tone]="statusTone(data.result.status.key)"
+            [label]="data.result.status.name"
+          />
           <span>
-            {{
-              'workspace.runs.result.eyebrow'
-                | transloco: { attempt: data.result.attempt }
-            }}
+            {{ 'workspace.runs.result.eyebrow' | transloco: { attempt: data.result.attempt } }}
           </span>
           <span>
             {{
@@ -43,7 +51,7 @@
         <h1 id="result-title">{{ data.item.caseVersion.title }}</h1>
       </div>
       <a
-        class="primary-action"
+        appButton="primary"
         href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}?item={{ itemId }}"
         [routerLink]="['/', workspaceSlug, projectSlug, 'runs', runId]"
         [queryParams]="{ item: itemId }"
@@ -52,10 +60,7 @@
       </a>
     </header>
 
-    <section
-      class="result-summary"
-      [attr.aria-label]="'workspace.runs.result.metadata' | transloco"
-    >
+    <section class="result-summary" [attr.aria-label]="'workspace.runs.result.metadata' | transloco">
       <dl>
         <div>
           <dt>{{ 'workspace.runs.history.executedAt' | transloco }}</dt>
@@ -87,121 +92,14 @@
       }
     </section>
 
-    <article class="snapshot">
-      @if (data.item.caseVersion.preconditions) {
-        <section class="content-block">
-          <h2>{{ 'workspace.runs.detail.preconditions' | transloco }}</h2>
-          <p>{{ data.item.caseVersion.preconditions }}</p>
-        </section>
-      }
+    <app-result-snapshot [item]="data.item" [stepResults]="data.result.stepResults" />
 
-      @if (steps(data.item).length > 0) {
-        <section class="steps-section" aria-labelledby="result-steps-title">
-          <h2 id="result-steps-title">{{ 'workspace.runs.detail.steps' | transloco }}</h2>
-          <table class="steps-table">
-            <thead>
-              <tr class="steps-heading">
-                <th scope="col">#</th>
-                <th scope="col">{{ 'workspace.runs.detail.action' | transloco }}</th>
-                <th scope="col">{{ 'workspace.runs.detail.expected' | transloco }}</th>
-                <th scope="col">{{ 'workspace.runs.result.stepResult' | transloco }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (step of steps(data.item); track $index) {
-                <tr class="step-row">
-                  <td class="step-number">{{ $index + 1 }}</td>
-                  <td class="step-value">
-                    <span class="mobile-label">
-                      {{ 'workspace.runs.detail.action' | transloco }}
-                    </span>
-                    {{ step.action }}
-                  </td>
-                  <td class="step-value expected">
-                    <span class="mobile-label">
-                      {{ 'workspace.runs.detail.expected' | transloco }}
-                    </span>
-                    {{ step.expected || '—' }}
-                  </td>
-                  <td class="outcome">
-                    <span class="mobile-label">
-                      {{ 'workspace.runs.result.stepResult' | transloco }}
-                    </span>
-                    @if (stepResult($index, data.result.stepResults); as recordedOutcome) {
-                      <span class="status-badge">
-                        <i [style.background-color]="recordedOutcome.status.color"></i>
-                        {{ recordedOutcome.status.name }}
-                      </span>
-                      @if (recordedOutcome.elapsedMs !== null) {
-                        <span class="outcome-time">
-                          {{ formatElapsed(recordedOutcome.elapsedMs) }}
-                        </span>
-                      }
-                      @if (recordedOutcome.comment) {
-                        <p>{{ recordedOutcome.comment }}</p>
-                      }
-                    } @else {
-                      <span class="not-recorded">
-                        {{ 'workspace.runs.result.notRecorded' | transloco }}
-                      </span>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </section>
-      } @else {
-        <pre>{{ textContent(data.item) }}</pre>
-      }
-
-      @if (data.item.caseVersion.expectedResult) {
-        <section class="content-block">
-          <h2>{{ 'workspace.runs.detail.expectedResult' | transloco }}</h2>
-          <p>{{ data.item.caseVersion.expectedResult }}</p>
-        </section>
-      }
-    </article>
-
-    <section class="result-attachments" aria-labelledby="result-attachments-title">
-      <div>
-        <p class="eyebrow">{{ 'workspace.runs.result.evidenceEyebrow' | transloco }}</p>
-        <h2 id="result-attachments-title">{{ 'workspace.runs.result.attachments' | transloco }}</h2>
-      </div>
-      @if (downloadAttachment.isError()) {
-        <p class="attachment-error" role="alert">{{ errorTranslationKey() | transloco }}</p>
-      }
-      @if (data.result.attachments.length === 0) {
-        <p class="empty-evidence">{{ 'workspace.runs.result.noAttachments' | transloco }}</p>
-      } @else {
-        <ul>
-          @for (attachment of data.result.attachments; track attachment.id) {
-            <li>
-              <div>
-                <strong>{{ attachment.fileName }}</strong>
-                <span>
-                  {{ formatFileSize(attachment.sizeBytes) }} · {{ attachment.contentType }}
-                  @if (attachment.stepPosition !== null) {
-                    ·
-                    {{
-                      'workspace.runs.result.stepAttachment'
-                        | transloco: { position: attachment.stepPosition + 1 }
-                    }}
-                  }
-                </span>
-              </div>
-              <button
-                class="secondary-action"
-                type="button"
-                [disabled]="downloadAttachment.isPending()"
-                (click)="downloadAttachment.mutate(attachment.id)"
-              >
-                {{ 'workspace.runs.result.downloadAttachment' | transloco }}
-              </button>
-            </li>
-          }
-        </ul>
-      }
-    </section>
+    <app-result-attachments
+      [attachments]="data.result.attachments"
+      [pending]="downloadAttachment.isPending()"
+      [failed]="downloadAttachment.isError()"
+      [errorMessage]="attachmentErrorTranslationKey() | transloco"
+      (download)="downloadAttachment.mutate($event)"
+    />
   }
 </main>

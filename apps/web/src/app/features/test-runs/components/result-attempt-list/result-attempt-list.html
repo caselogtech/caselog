@@ -1,0 +1,98 @@
+<div class="attempt-list">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">{{ 'workspace.runs.history.attemptColumn' | transloco }}</th>
+        <th scope="col">{{ 'workspace.runs.status' | transloco }}</th>
+        <th scope="col">{{ 'workspace.runs.history.executedAt' | transloco }}</th>
+        <th scope="col">{{ 'workspace.runs.history.executor' | transloco }}</th>
+        <th scope="col">{{ 'workspace.runs.history.elapsed' | transloco }}</th>
+        <th scope="col">{{ 'workspace.runs.history.evidence' | transloco }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (result of results(); track result.id) {
+        <tr>
+          <td class="attempt-cell">
+            <span class="mobile-label">
+              {{ 'workspace.runs.history.attemptColumn' | transloco }}
+            </span>
+            <a
+              class="attempt-link"
+              [attr.aria-label]="
+                'workspace.runs.history.openAttempt' | transloco: { attempt: result.attempt }
+              "
+              href="/{{ workspaceSlug() }}/{{ projectSlug() }}/runs/{{ runId() }}/items/{{ itemId() }}/results/{{ result.id }}"
+              [routerLink]="[
+                '/',
+                workspaceSlug(),
+                projectSlug(),
+                'runs',
+                runId(),
+                'items',
+                itemId(),
+                'results',
+                result.id
+              ]"
+            >
+              {{ 'workspace.runs.history.attempt' | transloco: { attempt: result.attempt } }}
+            </a>
+            @if (result.comment) {
+              <span class="comment-preview">{{ result.comment }}</span>
+            }
+          </td>
+          <td>
+            <span class="mobile-label">{{ 'workspace.runs.status' | transloco }}</span>
+            <app-status-badge
+              [tone]="statusTone(result.status.key)"
+              [label]="result.status.name"
+            />
+          </td>
+          <td>
+            <span class="mobile-label">
+              {{ 'workspace.runs.history.executedAt' | transloco }}
+            </span>
+            <span class="date-value">{{ result.executedAt | date: 'medium' }}</span>
+          </td>
+          <td>
+            <span class="mobile-label">
+              {{ 'workspace.runs.history.executor' | transloco }}
+            </span>
+            {{
+              result.executedBy?.displayName ??
+                ('workspace.runs.history.unknownExecutor' | transloco)
+            }}
+          </td>
+          <td class="mono">
+            <span class="mobile-label">
+              {{ 'workspace.runs.history.elapsed' | transloco }}
+            </span>
+            {{ formatElapsed(result.elapsedMs) }}
+          </td>
+          <td class="evidence-count">
+            <span class="mobile-label">
+              {{ 'workspace.runs.history.evidence' | transloco }}
+            </span>
+            {{ result.attachments.length }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @if (hasNextPage()) {
+    <div class="load-more">
+      <button
+        appButton="secondary"
+        type="button"
+        [disabled]="fetchingNextPage()"
+        (click)="loadMore.emit()"
+      >
+        {{
+          (fetchingNextPage() ? 'workspace.runs.loadingMore' : 'workspace.runs.loadMore')
+            | transloco
+        }}
+      </button>
+    </div>
+  }
+</div>
