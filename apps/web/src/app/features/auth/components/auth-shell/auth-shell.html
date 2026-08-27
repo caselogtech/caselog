@@ -1,8 +1,17 @@
-<header class="auth-header">
-  <a class="brand" href="/auth/login" routerLink="/auth/login" [attr.aria-label]="'app.homeAriaLabel' | transloco">
-    <app-brand-mark />
-    <span>{{ 'app.brand' | transloco }}</span>
-  </a>
-</header>
+<div class="auth-shell">
+  <header class="auth-header">
+    <a
+      class="brand"
+      href="/auth/login"
+      routerLink="/auth/login"
+      [attr.aria-label]="'app.homeAriaLabel' | transloco"
+    >
+      <app-brand-mark />
+      <span>{{ 'app.brand' | transloco }}</span>
+    </a>
+  </header>
 
-<router-outlet />
+  <div class="auth-content">
+    <router-outlet />
+  </div>
+</div>

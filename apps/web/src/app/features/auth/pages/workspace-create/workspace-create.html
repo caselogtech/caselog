@@ -17,9 +17,15 @@
       type="text"
       formControlName="name"
       autocomplete="organization"
+      [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+      [attr.aria-describedby]="
+        form.controls.name.touched && form.controls.name.invalid ? 'workspace-name-error' : null
+      "
     />
     @if (form.controls.name.touched && form.controls.name.invalid) {
-      <p class="field-error">{{ 'workspace.create.nameInvalid' | transloco }}</p>
+      <p id="workspace-name-error" class="field-error">
+        {{ 'workspace.create.nameInvalid' | transloco }}
+      </p>
     }
 
     <label for="workspace-slug">{{ 'workspace.create.slug' | transloco }}</label>
@@ -30,6 +36,10 @@
       autocomplete="off"
       aria-describedby="workspace-slug-help workspace-slug-status"
       (input)="markSlugAsEdited()"
+      [attr.aria-invalid]="
+        (form.controls.slug.touched && form.controls.slug.invalid) ||
+        availability.data()?.available === false
+      "
     />
     <p id="workspace-slug-help" class="field-help">
       {{
@@ -55,6 +65,7 @@
 
     <button
       type="submit"
+      class="workspace-submit"
       [disabled]="
         form.invalid ||
         availability.data()?.available !== true ||

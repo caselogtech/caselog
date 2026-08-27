@@ -3,19 +3,26 @@
   min-height: 100vh;
 }
 
+.auth-shell {
+  background:
+    radial-gradient(circle at 10% 15%, var(--color-accent-100), transparent 28rem), var(--surface-0);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
 .auth-header {
   align-items: center;
-  border-bottom: 2px solid var(--color-divider);
   display: flex;
-  height: 56px;
-  padding-inline: 24px;
+  min-height: 72px;
+  padding: 16px clamp(20px, 4vw, 48px);
 }
 
 .brand {
   align-items: center;
   color: var(--color-text);
   display: inline-flex;
-  font-size: 1.2667rem;
+  font-size: 1.2rem;
   font-weight: 700;
   gap: 9px;
   letter-spacing: -0.02em;
@@ -24,5 +31,30 @@
 
 .brand app-brand-mark {
   color: var(--color-accent);
-  font-size: 22px;
+  font-size: 24px;
+}
+
+.auth-content {
+  display: grid;
+  min-height: 0;
+}
+
+.auth-content router-outlet {
+  display: none;
+}
+
+.auth-content > :not(router-outlet) {
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 520px) {
+  .auth-shell {
+    background: var(--surface-0);
+  }
+
+  .auth-header {
+    min-height: 68px;
+    padding: 20px;
+  }
 }

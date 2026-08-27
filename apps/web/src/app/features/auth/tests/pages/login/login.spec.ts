@@ -44,6 +44,15 @@ describe('Login', () => {
 
     expect(authApi.login).not.toHaveBeenCalled();
     expect(fixture.nativeElement.querySelectorAll('.field-error')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelector('#email')?.getAttribute('aria-invalid')).toBe(
+      'true',
+    );
+    expect(fixture.nativeElement.querySelector('#email')?.getAttribute('aria-describedby')).toBe(
+      'email-error',
+    );
+    expect(fixture.nativeElement.querySelector('#password')?.getAttribute('aria-describedby')).toBe(
+      'password-error',
+    );
   });
 
   it('keeps the successful session in tab memory', async () => {

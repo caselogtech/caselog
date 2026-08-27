@@ -1,15 +1,20 @@
 .workspace-page {
-  margin: 0 auto;
-  max-width: 760px;
-  padding: 48px 20px 72px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin: 12px auto 64px;
+  max-width: 520px;
+  padding: 28px;
+  width: calc(100% - 40px);
 }
 
 .workspace-header {
   align-items: flex-start;
   display: flex;
-  gap: 24px;
+  gap: 20px;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .workspace-header h1,
@@ -19,7 +24,7 @@
 }
 
 .workspace-header h1 {
-  font-size: 1.75rem;
+  font-size: 1.4rem;
 }
 
 .workspace-header p,
@@ -35,13 +40,15 @@
 
 .primary-link,
 .secondary-link {
+  align-items: center;
   border-radius: var(--radius-sm);
   display: inline-flex;
   font-weight: 600;
   justify-content: center;
-  min-height: 40px;
+  min-height: var(--control-min-size);
   padding: 9px 14px;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .primary-link {
@@ -75,19 +82,18 @@ button:focus-visible {
 
 .workspace-card,
 .empty-state,
-.workspace-form,
 .state-panel {
-  background: var(--surface-2);
+  background: var(--color-neutral-100);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
 }
 
 .workspace-card {
   align-items: center;
   display: flex;
-  gap: 20px;
+  gap: 16px;
   justify-content: space-between;
-  padding: 18px 20px;
+  padding: 16px;
 }
 
 .workspace-card h2 {
@@ -101,7 +107,7 @@ button:focus-visible {
 
 .empty-state,
 .state-panel {
-  padding: 32px;
+  padding: 28px 20px;
   text-align: center;
 }
 
@@ -127,8 +133,6 @@ button:focus-visible {
 .workspace-form {
   display: grid;
   gap: 8px;
-  max-width: 560px;
-  padding: 28px;
 }
 
 .workspace-form label {
@@ -138,31 +142,44 @@ button:focus-visible {
 }
 
 .workspace-form input {
-  background: var(--surface-1);
+  background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-1);
   font: inherit;
-  min-height: 42px;
-  padding: 8px 10px;
+  min-height: var(--control-min-size);
+  padding: 9px 11px;
   width: 100%;
 }
 
-.workspace-form button {
+.workspace-form input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px var(--color-danger-surface);
+}
+
+.workspace-submit {
   background: var(--accent);
-  border: 0;
+  border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
   color: white;
   cursor: pointer;
   font: inherit;
   font-weight: 600;
   margin-top: 16px;
-  min-height: 42px;
+  min-height: var(--control-min-size);
   padding: 8px 14px;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
 }
 
-.workspace-form button:disabled {
-  cursor: wait;
+.workspace-submit:hover:not(:disabled) {
+  background: var(--color-accent-600);
+  border-color: var(--color-accent-600);
+}
+
+.workspace-submit:disabled {
+  cursor: not-allowed;
   opacity: 0.65;
 }
 
@@ -184,6 +201,7 @@ button:focus-visible {
 .form-alert {
   background: var(--error-surface);
   border: 1px solid var(--error-border);
+  border-left: 4px solid var(--color-danger);
   border-radius: var(--radius-sm);
   color: var(--error-text);
   font-size: 0.875rem;
@@ -196,9 +214,15 @@ button:focus-visible {
   margin-top: 20px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 520px) {
   .workspace-page {
-    padding: 28px 14px 48px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 12px 20px 40px;
+    width: 100%;
   }
 
   .workspace-header,
@@ -207,7 +231,13 @@ button:focus-visible {
     flex-direction: column;
   }
 
-  .workspace-form {
-    padding: 22px 18px;
+  .workspace-submit {
+    min-height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-submit {
+    transition: none;
   }
 }

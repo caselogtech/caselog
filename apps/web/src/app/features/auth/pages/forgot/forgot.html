@@ -14,9 +14,20 @@
           <div class="form-alert" role="alert">{{ errorTranslationKey() | transloco }}</div>
         }
         <label for="email">{{ 'auth.forgot.email' | transloco }}</label>
-        <input id="email" type="email" formControlName="email" autocomplete="email" />
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+          [attr.aria-describedby]="
+            form.controls.email.touched && form.controls.email.invalid ? 'email-error' : null
+          "
+        />
         @if (form.controls.email.touched && form.controls.email.invalid) {
-          <p class="field-error">{{ 'auth.forgot.emailInvalid' | transloco }}</p>
+          <p id="email-error" class="field-error">
+            {{ 'auth.forgot.emailInvalid' | transloco }}
+          </p>
         }
         <button type="submit" [disabled]="forgot.isPending()">
           {{ (forgot.isPending() ? 'auth.forgot.pending' : 'auth.forgot.submit') | transloco }}

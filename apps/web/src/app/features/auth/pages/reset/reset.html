@@ -20,9 +20,22 @@
         }
 
         <label for="password">{{ 'auth.reset.newPassword' | transloco }}</label>
-        <input id="password" type="password" formControlName="password" autocomplete="new-password" />
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+          [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+          [attr.aria-describedby]="
+            form.controls.password.touched && form.controls.password.invalid
+              ? 'password-error'
+              : null
+          "
+        />
         @if (form.controls.password.touched && form.controls.password.invalid) {
-          <p class="field-error">{{ 'auth.reset.passwordInvalid' | transloco }}</p>
+          <p id="password-error" class="field-error">
+            {{ 'auth.reset.passwordInvalid' | transloco }}
+          </p>
         }
 
         <label for="confirm-password">{{ 'auth.reset.confirmPassword' | transloco }}</label>
@@ -31,9 +44,19 @@
           type="password"
           formControlName="confirmPassword"
           autocomplete="new-password"
+          [attr.aria-invalid]="
+            form.controls.confirmPassword.touched && form.hasError('passwordsMismatch')
+          "
+          [attr.aria-describedby]="
+            form.controls.confirmPassword.touched && form.hasError('passwordsMismatch')
+              ? 'confirm-password-error'
+              : null
+          "
         />
         @if (form.controls.confirmPassword.touched && form.hasError('passwordsMismatch')) {
-          <p class="field-error">{{ 'auth.reset.passwordsMismatch' | transloco }}</p>
+          <p id="confirm-password-error" class="field-error">
+            {{ 'auth.reset.passwordsMismatch' | transloco }}
+          </p>
         }
 
         <button type="submit" [disabled]="reset.isPending()">
