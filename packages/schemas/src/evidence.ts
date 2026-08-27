@@ -17,16 +17,37 @@ export const evidenceIdempotencyKeySchema = z
   .regex(/^[A-Za-z0-9._:-]+$/);
 
 export const evidenceProjectParamsSchema = z.object({ projectSlug: projectSlugSchema });
-export const evidenceListQuerySchema = z.object({
-  candidateId: z.uuid(),
-  metricKey: evidenceMetricKeySchema.optional(),
-  currentOnly: z
-    .enum(['true', 'false'])
-    .default('true')
-    .transform((value) => value === 'true'),
-  cursor: z.uuid().optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(25),
-});
+export const evidenceListQuerySchema = z
+  .object({
+    candidateId: z.uuid(),
+    metricKey: evidenceMetricKeySchema.optional(),
+    producerKey: z.string().trim().min(1).max(120).optional(),
+    sourceType: z.string().trim().min(1).max(80).optional(),
+    trust: evidenceTrustLevelSchema.optional(),
+    freshness: evidenceFreshnessSchema.optional(),
+    state: evidenceObservationStateSchema.optional(),
+    observedAfter: z.iso.datetime().optional(),
+    observedBefore: z.iso.datetime().optional(),
+    currentOnly: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((value) => value === 'true'),
+    cursor: z.uuid().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(25),
+  })
+  .superRefine((query, context) => {
+    if (
+      query.observedAfter &&
+      query.observedBefore &&
+      new Date(query.observedAfter) > new Date(query.observedBefore)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['observedBefore'],
+        message: 'Observed-before must not precede observed-after',
+      });
+    }
+  });
 
 export const evidenceValueSchema = z.discriminatedUnion('type', [
   z.object({

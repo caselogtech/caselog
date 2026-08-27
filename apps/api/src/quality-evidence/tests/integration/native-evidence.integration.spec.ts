@@ -260,6 +260,17 @@ describe('native candidate evidence', () => {
       expect(response.value.items).toHaveLength(6);
       expect(response.value.items.every(({ isCurrent }) => isCurrent)).toBe(true);
     }
+    const filtered = await queries.list(organizationId, projectSlug, {
+      candidateId,
+      metricKey: 'test.pass_rate',
+      producerKey: 'caselog.test-runs',
+      sourceType: 'release_candidate_test_runs',
+      trust: 'verified',
+      state: 'available',
+      currentOnly: true,
+      limit: 25,
+    });
+    expect(filtered.kind === 'found' ? filtered.value.items : []).toHaveLength(1);
   });
 
   it('appends corrections and advances the candidate revision after a source change', async () => {

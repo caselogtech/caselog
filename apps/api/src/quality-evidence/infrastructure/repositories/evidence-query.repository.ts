@@ -1,7 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { EvidenceListQuery, EvidenceListResponse } from '@caselog/schemas';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
-import type { Prisma } from '../../../generated/prisma/client';
+import {
+  EvidenceObservationState,
+  EvidenceTrustLevel,
+  type Prisma,
+} from '../../../generated/prisma/client';
 import {
   EVIDENCE_OBSERVATION_SELECTION,
   toEvidenceObservation,
@@ -34,10 +38,29 @@ export class EvidenceQueryRepository {
       });
       if (!candidate) return { kind: 'candidate_not_found' };
 
+      const now = new Date();
       const filters = {
         projectId: project.id,
         candidateId: candidate.id,
         metricKey: query.metricKey,
+        producer: query.producerKey ? { producerKey: query.producerKey } : undefined,
+        sourceType: query.sourceType,
+        trustLevel: query.trust
+          ? EvidenceTrustLevel[query.trust.toUpperCase() as keyof typeof EvidenceTrustLevel]
+          : undefined,
+        state: query.state
+          ? EvidenceObservationState[
+              query.state.toUpperCase() as keyof typeof EvidenceObservationState
+            ]
+          : undefined,
+        observedAt:
+          query.observedAfter || query.observedBefore
+            ? {
+                gte: query.observedAfter ? new Date(query.observedAfter) : undefined,
+                lte: query.observedBefore ? new Date(query.observedBefore) : undefined,
+              }
+            : undefined,
+        expiresAt: query.freshness === 'stale' ? { lte: now } : undefined,
         currentFor: query.currentOnly ? { isNot: null } : undefined,
       } satisfies Prisma.EvidenceObservationWhereInput;
       const cursor = query.cursor
@@ -48,17 +71,25 @@ export class EvidenceQueryRepository {
         : null;
       if (query.cursor && !cursor) return { kind: 'cursor_not_found' };
 
-      const records = await transaction.evidenceObservation.findMany({
-        where: {
-          ...filters,
-          ...(cursor
-            ? {
+      const constraints: Prisma.EvidenceObservationWhereInput[] = [
+        ...(query.freshness === 'current'
+          ? [{ OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] }]
+          : []),
+        ...(cursor
+          ? [
+              {
                 OR: [
                   { createdAt: { lt: cursor.createdAt } },
                   { createdAt: cursor.createdAt, id: { lt: cursor.id } },
                 ],
-              }
-            : {}),
+              },
+            ]
+          : []),
+      ];
+      const records = await transaction.evidenceObservation.findMany({
+        where: {
+          ...filters,
+          ...(constraints.length > 0 ? { AND: constraints } : {}),
         },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         take: query.limit + 1,
@@ -72,7 +103,6 @@ export class EvidenceQueryRepository {
       });
       const hasMore = records.length > query.limit;
       const page = records.slice(0, query.limit);
-      const now = new Date();
       return {
         kind: 'found',
         value: {

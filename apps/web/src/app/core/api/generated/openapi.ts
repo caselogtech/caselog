@@ -6317,6 +6317,13 @@ export interface operations {
             query: {
                 candidateId: string;
                 metricKey?: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                producerKey?: string;
+                sourceType?: string;
+                trust?: "verified" | "authenticated" | "unverified";
+                freshness?: "current" | "stale";
+                state?: "available" | "incomplete";
+                observedAfter?: string;
+                observedBefore?: string;
                 currentOnly?: "true" | "false";
                 cursor?: string;
                 limit?: number;
