@@ -1,11 +1,12 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { ReleaseState } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
+import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { LoadingSkeleton, PageState, StatusBadge } from '../../../../shared/ui/public-api';
+import { Button, LoadingSkeleton, PageState, StatusBadge } from '../../../../shared/ui/public-api';
 import { ReleasesApi } from '../../data-access/releases-api';
 import {
   type ReleaseListItem,
@@ -15,7 +16,7 @@ import {
 
 @Component({
   selector: 'app-release-list',
-  imports: [DatePipe, LoadingSkeleton, PageState, StatusBadge, TranslocoPipe],
+  imports: [Button, DatePipe, LoadingSkeleton, PageState, RouterLink, StatusBadge, TranslocoPipe],
   templateUrl: './release-list.html',
   styleUrl: './release-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,11 +25,15 @@ export class ReleaseList {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly releasesApi = inject(ReleasesApi);
+  private readonly workspaceSession = inject(WorkspaceSession);
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly lifecycleOptions: ReleaseState[] = ['draft', 'active', 'released', 'cancelled'];
   readonly state = signal<ReleaseState | undefined>(this.readState());
+  readonly canManage = computed(() =>
+    ['owner', 'admin', 'lead'].includes(this.workspaceSession.role() ?? ''),
+  );
 
   readonly releases = injectInfiniteQuery(() => ({
     queryKey: ['release-readiness', this.workspaceSlug, this.projectSlug, this.state()],

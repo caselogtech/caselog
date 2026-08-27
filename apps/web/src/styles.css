@@ -32,6 +32,7 @@
   --color-neutral-800: #424747;
   --color-neutral-900: #2b2f2f;
   --color-danger: #b8503c;
+  --color-on-danger: #fff;
   --color-danger-surface: #fbeae5;
   --color-danger-text: #8d3c28;
   --color-success: #2f8a4f;
@@ -144,6 +145,65 @@ a {
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+.app-button {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 650;
+  gap: var(--space-2);
+  justify-content: center;
+  min-height: var(--control-min-size);
+  padding: 8px 14px;
+  text-decoration: none;
+}
+
+.app-button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface-2);
+}
+
+.app-button-secondary {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-1);
+}
+
+.app-button-danger {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-on-danger);
+}
+
+.app-button-quiet {
+  background: transparent;
+  color: var(--text-1);
+}
+
+.app-button:disabled,
+.app-button[aria-disabled="true"] {
+  background: var(--color-disabled-surface);
+  border-color: var(--color-neutral-300);
+  color: var(--color-disabled-text);
+  cursor: not-allowed;
+}
+
+.app-control {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  min-height: var(--control-min-size);
+  padding: 9px 11px;
+  width: 100%;
+}
+
+.app-control[aria-invalid="true"] {
+  border-color: var(--color-danger);
 }
 
 @media (prefers-reduced-motion: reduce) {

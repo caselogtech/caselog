@@ -1,0 +1,205 @@
+<main class="release-detail-page" aria-labelledby="release-detail-title">
+  @if (detail.isPending()) {
+    <section class="loading-state" [attr.aria-label]="'releases.detail.loading' | transloco">
+      <app-loading-skeleton preset="title" [label]="'releases.detail.loading' | transloco" />
+      <app-loading-skeleton preset="block" [label]="'releases.detail.loading' | transloco" />
+      <app-loading-skeleton preset="row" [label]="'releases.detail.loading' | transloco" />
+    </section>
+  } @else if (detail.isError()) {
+    <app-page-state
+      [title]="'releases.detail.errorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="detail.refetch()">
+        {{ 'releases.list.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (detail.data(); as model) {
+    @let lifecycleStatus = lifecycle(model.release.state);
+    <header class="detail-header">
+      <a
+        appButton="quiet"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/releases"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'releases']"
+      >
+        <span aria-hidden="true">←</span>
+        {{ 'releases.detail.back' | transloco }}
+      </a>
+
+      <div class="title-row">
+        <div>
+          <p class="release-key mono">{{ model.release.key }}</p>
+          <h1 id="release-detail-title">{{ model.release.name }}</h1>
+        </div>
+        <app-status-badge
+          [label]="lifecycleStatus.labelKey | transloco"
+          [tone]="lifecycleStatus.tone"
+        />
+      </div>
+
+      @if (actions().length > 0) {
+        <div class="lifecycle-actions" [attr.aria-label]="'releases.detail.lifecycleActions' | transloco">
+          @for (action of actions(); track action) {
+            <button
+              [appButton]="actionVariant(action)"
+              type="button"
+              [disabled]="transition.isPending()"
+              (click)="requestTransition(action)"
+            >
+              {{ actionLabel(action) | transloco }}
+            </button>
+          }
+        </div>
+      }
+    </header>
+
+    @if (transition.isError()) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'releases.detail.transitionErrorTitle' | transloco"
+      >
+        <p>{{ errorTranslationKey() | transloco }}</p>
+      </app-callout>
+    }
+
+    <section class="release-summary" aria-labelledby="release-summary-title">
+      <h2 id="release-summary-title">{{ 'releases.detail.summary' | transloco }}</h2>
+      <dl>
+        <div>
+          <dt>{{ 'releases.list.environment' | transloco }}</dt>
+          <dd>{{ model.release.environment?.name ?? ('releases.list.notSet' | transloco) }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'releases.list.target' | transloco }}</dt>
+          <dd>
+            {{
+              model.release.targetDate
+                ? (model.release.targetDate | date: 'mediumDate')
+                : ('releases.list.notSet' | transloco)
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>{{ 'releases.detail.candidates' | transloco }}</dt>
+          <dd>{{ model.release.candidateCount }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'releases.detail.created' | transloco }}</dt>
+          <dd>{{ model.release.createdAt | date: 'medium' }}</dd>
+        </div>
+        <div class="wide-summary">
+          <dt>{{ 'releases.create.externalReference' | transloco }}</dt>
+          <dd class="mono">
+            {{ model.release.externalReference ?? ('releases.list.notSet' | transloco) }}
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="candidate-section" aria-labelledby="candidate-list-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ 'releases.detail.candidateEyebrow' | transloco }}</p>
+          <h2 id="candidate-list-title">{{ 'releases.detail.candidateTitle' | transloco }}</h2>
+        </div>
+      </div>
+
+      @if (model.candidates.length === 0) {
+        <app-page-state
+          [title]="'releases.detail.noCandidatesTitle' | transloco"
+          [message]="'releases.detail.noCandidatesDescription' | transloco"
+        />
+      } @else {
+        <div class="candidate-list">
+          @for (candidate of model.candidates; track candidate.id) {
+            <article class="candidate-card">
+              <header>
+                <div>
+                  <span class="candidate-label mono">{{ candidate.label }}</span>
+                  <time [dateTime]="candidate.createdAt">
+                    {{ candidate.createdAt | date: 'medium' }}
+                  </time>
+                </div>
+                <span class="candidate-sequence mono">#{{ candidate.sequence }}</span>
+              </header>
+
+              <dl class="candidate-identity">
+                <div>
+                  <dt>{{ 'releases.detail.sourceRevision' | transloco }}</dt>
+                  <dd class="mono">{{ candidate.sourceRevision ?? '—' }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'releases.detail.buildIdentifier' | transloco }}</dt>
+                  <dd class="mono">{{ candidate.buildIdentifier ?? '—' }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'releases.detail.version' | transloco }}</dt>
+                  <dd class="mono">{{ candidate.version ?? '—' }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'releases.detail.branch' | transloco }}</dt>
+                  <dd class="mono">{{ candidate.branch ?? '—' }}</dd>
+                </div>
+              </dl>
+
+              <div class="linked-runs">
+                <h3>{{ 'releases.detail.linkedRuns' | transloco }}</h3>
+                @if (candidate.testRuns.length === 0) {
+                  <p>{{ 'releases.detail.noLinkedRuns' | transloco }}</p>
+                } @else {
+                  <ul>
+                    @for (run of candidate.testRuns; track run.testRunId) {
+                      <li>
+                        <a
+                          href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ run.testRunId }}"
+                          [routerLink]="['/', workspaceSlug, projectSlug, 'runs', run.testRunId]"
+                        >
+                          {{ run.name }}
+                        </a>
+                        <app-status-badge
+                          [label]="runRoleLabel(run.role) | transloco"
+                          [tone]="run.role === 'required' ? 'pending' : 'neutral'"
+                        />
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="history-section" aria-labelledby="release-history-title">
+      <h2 id="release-history-title">{{ 'releases.detail.history' | transloco }}</h2>
+      <ol>
+        @for (event of model.history; track event.id) {
+          @let eventStatus = lifecycle(event.toState);
+          <li>
+            <span class="history-marker" aria-hidden="true"></span>
+            <div>
+              <app-status-badge
+                [label]="eventStatus.labelKey | transloco"
+                [tone]="eventStatus.tone"
+              />
+              <time [dateTime]="event.occurredAt">{{ event.occurredAt | date: 'medium' }}</time>
+            </div>
+          </li>
+        }
+      </ol>
+    </section>
+
+    <app-dialog
+      [open]="!!confirmation()"
+      [title]="confirmationTitle() | transloco"
+      [message]="confirmationMessage() | transloco"
+      [confirmLabel]="actionLabel(confirmation() ?? 'activate') | transloco"
+      [cancelLabel]="'releases.detail.confirm.keepEditing' | transloco"
+      [confirmVariant]="confirmation() === 'cancel' ? 'danger' : 'primary'"
+      (confirmed)="confirmTransition()"
+      (cancelled)="confirmation.set(null)"
+    />
+  }
+</main>

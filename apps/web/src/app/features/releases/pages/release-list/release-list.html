@@ -5,6 +5,16 @@
       <h1 id="release-list-title">{{ 'releases.list.title' | transloco }}</h1>
       <p class="description">{{ 'releases.list.description' | transloco }}</p>
     </div>
+    @if (canManage()) {
+      <a
+        appButton="primary"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/new"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'releases', 'new']"
+      >
+        <span aria-hidden="true">＋</span>
+        {{ 'releases.create.submit' | transloco }}
+      </a>
+    }
   </header>
 
   <div class="toolbar">
@@ -42,7 +52,7 @@
       [title]="'releases.list.errorTitle' | transloco"
       [message]="errorTranslationKey() | transloco"
     >
-      <button actions class="secondary-action" type="button" (click)="releases.refetch()">
+      <button actions appButton="secondary" type="button" (click)="releases.refetch()">
         {{ 'releases.list.retry' | transloco }}
       </button>
     </app-page-state>
@@ -57,7 +67,7 @@
       "
     >
       @if (state()) {
-        <button actions class="secondary-action" type="button" (click)="selectState()">
+        <button actions appButton="secondary" type="button" (click)="selectState()">
           {{ 'releases.list.clearFilter' | transloco }}
         </button>
       }
@@ -81,7 +91,12 @@
             @let readinessStatus = readiness(item);
             <tr>
               <td class="release-identity" [attr.data-label]="'releases.list.release' | transloco">
-                <strong>{{ item.release.name }}</strong>
+                <a
+                  href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ item.release.id }}"
+                  [routerLink]="['/', workspaceSlug, projectSlug, 'releases', item.release.id]"
+                >
+                  {{ item.release.name }}
+                </a>
                 <span class="mono">{{ item.release.key }}</span>
               </td>
               <td [attr.data-label]="'releases.list.lifecycle' | transloco">
@@ -136,7 +151,8 @@
 
     @if (releases.hasNextPage()) {
       <button
-        class="load-more secondary-action"
+        appButton="secondary"
+        class="load-more"
         type="button"
         [disabled]="releases.isFetchingNextPage()"
         (click)="releases.fetchNextPage()"

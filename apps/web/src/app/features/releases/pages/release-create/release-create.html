@@ -1,0 +1,186 @@
+<main class="release-create-page" aria-labelledby="release-create-title">
+  <header class="page-header">
+    <a
+      appButton="quiet"
+      href="/{{ workspaceSlug }}/{{ projectSlug }}/releases"
+      [routerLink]="['/', workspaceSlug, projectSlug, 'releases']"
+    >
+      <span aria-hidden="true">←</span>
+      {{ 'releases.create.back' | transloco }}
+    </a>
+    <p class="eyebrow">{{ 'releases.list.eyebrow' | transloco }}</p>
+    <h1 id="release-create-title">{{ 'releases.create.title' | transloco }}</h1>
+    <p class="description">{{ 'releases.create.description' | transloco }}</p>
+  </header>
+
+  @if (!canManage()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'releases.create.readOnlyTitle' | transloco"
+    >
+      <p>{{ 'releases.create.readOnlyDescription' | transloco }}</p>
+    </app-callout>
+  }
+
+  @if (createRelease.isError()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'releases.create.errorTitle' | transloco"
+    >
+      <p>{{ errorTranslationKey() | transloco }}</p>
+    </app-callout>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <section class="form-section" aria-labelledby="release-basics-title">
+      <div class="section-heading">
+        <span class="section-number mono">01</span>
+        <div>
+          <h2 id="release-basics-title">{{ 'releases.create.basicsTitle' | transloco }}</h2>
+          <p>{{ 'releases.create.basicsDescription' | transloco }}</p>
+        </div>
+      </div>
+
+      <div class="field-grid">
+        <app-form-field
+          controlId="release-key"
+          [label]="'releases.create.key' | transloco"
+          [hint]="'releases.create.keyHint' | transloco"
+          [error]="
+            form.controls.key.touched && form.controls.key.invalid
+              ? ('releases.create.keyInvalid' | transloco)
+              : undefined
+          "
+          [required]="true"
+        >
+          <input
+            appControl
+            id="release-key"
+            type="text"
+            formControlName="key"
+            autocomplete="off"
+            aria-describedby="release-key-description"
+            [attr.aria-invalid]="form.controls.key.touched && form.controls.key.invalid"
+          />
+        </app-form-field>
+
+        <app-form-field
+          controlId="release-name"
+          [label]="'releases.create.name' | transloco"
+          [error]="
+            form.controls.name.touched && form.controls.name.invalid
+              ? ('releases.create.nameInvalid' | transloco)
+              : undefined
+          "
+          [required]="true"
+        >
+          <input
+            appControl
+            id="release-name"
+            type="text"
+            formControlName="name"
+            autocomplete="off"
+            aria-describedby="release-name-description"
+            [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+          />
+        </app-form-field>
+      </div>
+    </section>
+
+    <section class="form-section" aria-labelledby="release-context-title">
+      <div class="section-heading">
+        <span class="section-number mono">02</span>
+        <div>
+          <h2 id="release-context-title">{{ 'releases.create.contextTitle' | transloco }}</h2>
+          <p>{{ 'releases.create.contextDescription' | transloco }}</p>
+        </div>
+      </div>
+
+      <div class="field-grid">
+        @if (environments.isPending()) {
+          <app-loading-skeleton
+            preset="block"
+            [label]="'releases.create.loadingEnvironments' | transloco"
+          />
+        } @else {
+          <app-form-field
+            controlId="release-environment"
+            [label]="'releases.create.environment' | transloco"
+            [hint]="
+              (activeEnvironments().length
+                ? 'releases.create.environmentHint'
+                : 'releases.create.noEnvironments') | transloco
+            "
+          >
+            <select
+              appControl
+              id="release-environment"
+              formControlName="environmentId"
+              aria-describedby="release-environment-description"
+            >
+              <option value="">{{ 'releases.create.noEnvironment' | transloco }}</option>
+              @for (environment of activeEnvironments(); track environment.id) {
+                <option [value]="environment.id">{{ environment.name }}</option>
+              }
+            </select>
+          </app-form-field>
+        }
+
+        <app-form-field
+          controlId="release-target-date"
+          [label]="'releases.create.targetDate' | transloco"
+          [hint]="'releases.create.targetDateHint' | transloco"
+        >
+          <input
+            appControl
+            id="release-target-date"
+            type="date"
+            formControlName="targetDate"
+            aria-describedby="release-target-date-description"
+          />
+        </app-form-field>
+
+        <app-form-field
+          class="wide-field"
+          controlId="release-reference"
+          [label]="'releases.create.externalReference' | transloco"
+          [hint]="'releases.create.externalReferenceHint' | transloco"
+          [error]="
+            form.controls.externalReference.touched && form.controls.externalReference.invalid
+              ? ('releases.create.externalReferenceInvalid' | transloco)
+              : undefined
+          "
+        >
+          <input
+            appControl
+            id="release-reference"
+            type="text"
+            formControlName="externalReference"
+            aria-describedby="release-reference-description"
+            [attr.aria-invalid]="
+              form.controls.externalReference.touched && form.controls.externalReference.invalid
+            "
+          />
+        </app-form-field>
+      </div>
+    </section>
+
+    <footer class="form-actions">
+      <a
+        appButton="secondary"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/releases"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'releases']"
+      >
+        {{ 'releases.create.cancel' | transloco }}
+      </a>
+      <button appButton="primary" type="submit" [disabled]="!canManage() || createRelease.isPending()">
+        {{
+          (createRelease.isPending() ? 'releases.create.creating' : 'releases.create.submit')
+            | transloco
+        }}
+      </button>
+    </footer>
+  </form>
+</main>

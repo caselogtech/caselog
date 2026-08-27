@@ -15,6 +15,10 @@
   justify-content: space-between;
 }
 
+.page-header > .app-button {
+  flex: none;
+}
+
 .eyebrow {
   color: var(--color-accent-700);
   font-size: var(--font-size-xs);
@@ -133,9 +137,12 @@ td small,
   min-width: 210px;
 }
 
-.release-identity strong {
+.release-identity a {
+  color: var(--text-1);
   display: block;
   font-size: var(--font-size-md);
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .candidate-label {
@@ -151,20 +158,6 @@ td small,
   color: var(--text-3);
 }
 
-.secondary-action {
-  align-items: center;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-1);
-  cursor: pointer;
-  display: inline-flex;
-  font-weight: 650;
-  justify-content: center;
-  min-height: var(--control-min-size);
-  padding: 8px 14px;
-}
-
 .load-more {
   margin: var(--space-5) auto 0;
 }
@@ -175,6 +168,12 @@ td small,
 }
 
 @media (max-width: 760px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
   .toolbar {
     align-items: flex-start;
     flex-direction: column;

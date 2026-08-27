@@ -7,7 +7,7 @@ describe('Callout', () => {
     const fixture = TestBed.createComponent(Callout);
     fixture.componentRef.setInput('title', 'Evaluation failed');
     fixture.componentRef.setInput('tone', 'danger');
-    fixture.componentRef.setInput('role', 'alert');
+    fixture.componentRef.setInput('liveRole', 'alert');
     fixture.detectChanges();
 
     const callout = fixture.nativeElement.querySelector('.callout') as HTMLElement;

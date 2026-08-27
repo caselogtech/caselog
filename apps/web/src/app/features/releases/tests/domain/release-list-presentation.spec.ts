@@ -1,5 +1,6 @@
 import type { ReleaseReadinessListResponse } from '@caselog/schemas';
 import {
+  releaseLifecycleActions,
   releaseLifecyclePresentation,
   releaseReadinessPresentation,
 } from '../../domain/release-list-presentation';
@@ -54,6 +55,8 @@ describe('release list presentation', () => {
       tone: 'success',
     });
     expect(releaseLifecyclePresentation('cancelled').tone).toBe('danger');
+    expect(releaseLifecycleActions('draft')).toEqual(['activate', 'cancel']);
+    expect(releaseLifecycleActions('released')).toEqual([]);
   });
 
   it('keeps an effective waiver distinct from the blocked computed status', () => {

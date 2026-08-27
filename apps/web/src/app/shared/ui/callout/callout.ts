@@ -4,7 +4,7 @@ import type { StatusBadgeTone } from '../status-badge/status-badge';
 @Component({
   selector: 'app-callout',
   template: `
-    <section class="callout" [class]="tone()" [attr.role]="role()">
+    <section class="callout" [class]="tone()" [attr.role]="liveRole()">
       <strong>{{ title() }}</strong>
       <div class="content"><ng-content /></div>
     </section>
@@ -15,5 +15,5 @@ import type { StatusBadgeTone } from '../status-badge/status-badge';
 export class Callout {
   readonly title = input.required<string>();
   readonly tone = input<StatusBadgeTone>('neutral');
-  readonly role = input<'alert' | 'status' | null>(null);
+  readonly liveRole = input<'alert' | 'status' | null>(null);
 }

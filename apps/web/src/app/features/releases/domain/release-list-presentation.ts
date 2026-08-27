@@ -12,6 +12,15 @@ export interface StatusPresentation {
   tone: StatusBadgeTone;
 }
 
+export type ReleaseLifecycleAction = 'activate' | 'release' | 'cancel';
+
+const ACTIONS: Record<ReleaseState, readonly ReleaseLifecycleAction[]> = {
+  draft: ['activate', 'cancel'],
+  active: ['release', 'cancel'],
+  released: [],
+  cancelled: [],
+};
+
 const LIFECYCLE: Record<ReleaseState, StatusPresentation> = {
   draft: { labelKey: 'releases.lifecycle.draft', tone: 'neutral' },
   active: { labelKey: 'releases.lifecycle.active', tone: 'pending' },
@@ -55,4 +64,8 @@ export function releaseReadinessPresentation(item: ReleaseListItem): StatusPrese
         ? DISPOSITION[item.readiness.effectiveDisposition]
         : { labelKey: 'releases.readiness.unknown', tone: 'unknown' };
   }
+}
+
+export function releaseLifecycleActions(state: ReleaseState): readonly ReleaseLifecycleAction[] {
+  return ACTIONS[state];
 }

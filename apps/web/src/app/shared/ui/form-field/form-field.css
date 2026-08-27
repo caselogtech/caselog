@@ -1,0 +1,25 @@
+:host {
+  display: grid;
+  gap: var(--space-2);
+}
+
+label {
+  color: var(--text-1);
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+}
+
+.required,
+.error {
+  color: var(--error-text);
+}
+
+.hint,
+.error {
+  font-size: var(--font-size-xs);
+  margin: 0;
+}
+
+.hint {
+  color: var(--text-2);
+}
