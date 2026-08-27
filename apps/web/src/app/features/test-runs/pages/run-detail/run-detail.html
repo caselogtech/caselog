@@ -95,6 +95,30 @@
           <p>{{ errorTranslationKey() | transloco }}</p>
         </app-callout>
       }
+      @if (hasReadinessOrigin) {
+        <app-callout
+          class="readiness-origin"
+          tone="neutral"
+          [title]="'workspace.runs.detail.readinessOriginTitle' | transloco"
+        >
+          <p>{{ 'workspace.runs.detail.readinessOriginDescription' | transloco }}</p>
+          <a
+            appButton="secondary"
+            href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ originReleaseId }}/candidates/{{ originCandidateId }}"
+            [routerLink]="[
+              '/',
+              workspaceSlug,
+              projectSlug,
+              'releases',
+              originReleaseId,
+              'candidates',
+              originCandidateId
+            ]"
+          >
+            {{ 'workspace.runs.detail.returnToReadiness' | transloco }}
+          </a>
+        </app-callout>
+      }
     </section>
 
     <app-dialog

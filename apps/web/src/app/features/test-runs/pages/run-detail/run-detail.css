@@ -89,6 +89,10 @@ h1 {
   margin: 0;
 }
 
+.run-overview .readiness-origin p {
+  margin-bottom: var(--space-3);
+}
+
 app-run-progress-report,
 .progress-loading,
 .progress-error {

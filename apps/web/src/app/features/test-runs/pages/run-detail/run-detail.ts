@@ -66,6 +66,9 @@ export class RunDetail {
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly runId = this.route.snapshot.paramMap.get('runId') ?? '';
   readonly selectedItemId = signal(this.route.snapshot.queryParamMap.get('item') ?? '');
+  readonly originReleaseId = this.route.snapshot.queryParamMap.get('releaseId') ?? '';
+  readonly originCandidateId = this.route.snapshot.queryParamMap.get('candidateId') ?? '';
+  readonly hasReadinessOrigin = Boolean(this.originReleaseId && this.originCandidateId);
   readonly closeConfirmation = signal(false);
 
   readonly detail = injectInfiniteQuery(() => ({

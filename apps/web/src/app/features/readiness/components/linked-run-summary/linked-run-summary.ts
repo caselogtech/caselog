@@ -29,6 +29,8 @@ export class LinkedRunSummary {
   readonly runs = input.required<readonly CandidateTestRun[]>();
   readonly workspaceSlug = input.required<string>();
   readonly projectSlug = input.required<string>();
+  readonly releaseId = input.required<string>();
+  readonly candidateId = input.required<string>();
 
   statusLabel(status: TestRunStatus): string {
     return STATUS_LABEL[status];

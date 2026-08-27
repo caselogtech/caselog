@@ -8,6 +8,7 @@
           <a
             href="/{{ workspaceSlug() }}/{{ projectSlug() }}/runs/{{ run.testRunId }}"
             [routerLink]="['/', workspaceSlug(), projectSlug(), 'runs', run.testRunId]"
+            [queryParams]="{ releaseId: releaseId(), candidateId: candidateId() }"
           >
             {{ run.name }}
           </a>

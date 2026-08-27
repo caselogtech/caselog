@@ -14,6 +14,8 @@ const RUN_ID = 'b101eace-107c-4177-8d7c-f4f052785c16';
 const ITEM_ID = 'f230fe74-dd2d-40db-a0a4-21a8597526ef';
 const PASSED_ID = 'f03a1a64-f159-4f39-86ca-c21b135d6815';
 const USER_ID = '882c64fe-a728-40a0-91a9-96c74f585895';
+const RELEASE_ID = 'd6af7c6a-e18a-4d20-9ca1-2e4f3f73bbd2';
+const CANDIDATE_ID = '64f1b58b-0da7-4ef0-9c6d-ed945fd8bc12';
 const draftContext: RunDraftContext = {
   userId: USER_ID,
   workspaceSlug: 'acme',
@@ -147,7 +149,10 @@ describe('RunDetail', () => {
                 project: 'authentication',
                 runId: RUN_ID,
               }),
-              queryParamMap: convertToParamMap({}),
+              queryParamMap: convertToParamMap({
+                releaseId: RELEASE_ID,
+                candidateId: CANDIDATE_ID,
+              }),
             },
           },
         },
@@ -173,6 +178,9 @@ describe('RunDetail', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Enter valid credentials');
+    expect(fixture.nativeElement.querySelector('.readiness-origin a')?.getAttribute('href')).toBe(
+      `/acme/authentication/releases/${RELEASE_ID}/candidates/${CANDIDATE_ID}`,
+    );
     const execution = executionPanel(fixture).execution;
 
     execution.form.setValue({ comment: ' Works ', elapsedSeconds: 2 });

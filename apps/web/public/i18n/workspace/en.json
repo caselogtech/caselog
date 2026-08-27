@@ -457,6 +457,9 @@
       "shortcuts": "Keyboard: P passed · F failed · B blocked · Enter next case",
       "frozenTitle": "Execution is read-only",
       "frozen": "This run is not active. Its execution data is read-only.",
+      "readinessOriginTitle": "Opened from candidate readiness",
+      "readinessOriginDescription": "This run is linked as release evidence. Return to the candidate to review its current decision and gates.",
+      "returnToReadiness": "Return to candidate readiness",
       "emptyTitle": "This run has no test cases",
       "emptyDescription": "Test cases are fixed when the run is created and cannot be added later."
     },
