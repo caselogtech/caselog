@@ -3,7 +3,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import type { ReadinessGateInput } from '@caselog/schemas/readiness';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Button, FormControlStyle, FormField, StatusBadge } from '../../../../shared/ui/public-api';
-import { createPolicyGateForm, type PolicyCreateForm } from './policy-gate-editor-form';
+import { createPolicyGateForm, type PolicyGateEditorForm } from './policy-gate-editor-form';
 
 type MetricKey = ReadinessGateInput['metricKey'];
 type Operator = ReadinessGateInput['operator'];
@@ -48,7 +48,7 @@ const TRUST_LABEL: Record<MinimumTrust, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PolicyGateEditor {
-  readonly form = input.required<PolicyCreateForm>();
+  readonly form = input.required<PolicyGateEditorForm>();
 
   readonly metrics: MetricKey[] = ['test.pass_rate', 'test.completion_rate', 'test.failed_count'];
   readonly operators: Operator[] = ['eq', 'ne', 'gt', 'gte', 'lt', 'lte'];

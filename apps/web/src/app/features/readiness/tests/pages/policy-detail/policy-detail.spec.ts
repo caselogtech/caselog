@@ -81,4 +81,17 @@ describe('ReadinessPolicyDetail', () => {
       expect.stringMatching(/^[0-9a-f-]{36}$/),
     );
   });
+
+  it('offers successor authoring from a published version', async () => {
+    TestBed.inject(WorkspaceSession).role.set('lead');
+    const fixture = TestBed.createComponent(ReadinessPolicyDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.policyQuery.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    const successorLink = fixture.nativeElement.querySelector(
+      `a[href="/acme/authentication/release-policies/${policyId}/versions/new"]`,
+    ) as HTMLAnchorElement | null;
+    expect(successorLink?.textContent).toContain('Create successor draft');
+  });
 });

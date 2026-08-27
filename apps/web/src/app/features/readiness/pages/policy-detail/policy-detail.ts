@@ -73,6 +73,12 @@ export class ReadinessPolicyDetail {
   readonly draftVersion = computed(() =>
     this.policy()?.versions.find(({ state }) => state === 'draft'),
   );
+  readonly publishedVersion = computed(
+    () =>
+      this.policy()
+        ?.versions.filter(({ state }) => state === 'published')
+        .sort((left, right) => right.version - left.version)[0],
+  );
 
   readonly publishPolicy = injectMutation(() => ({
     mutationFn: (draftId: string) =>

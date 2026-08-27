@@ -16,6 +16,13 @@ export const readinessPolicyRoutes: Routes = [
           ),
       },
       {
+        path: ':policyId/versions/new',
+        loadComponent: () =>
+          import('./pages/policy-version-create/policy-version-create').then(
+            ({ ReadinessPolicyVersionCreate }) => ReadinessPolicyVersionCreate,
+          ),
+      },
+      {
         path: ':policyId',
         loadComponent: () =>
           import('./pages/policy-detail/policy-detail').then(

@@ -8,8 +8,10 @@ import {
 } from '@angular/forms';
 import {
   createReadinessPolicyRequestSchema,
+  createReadinessPolicyVersionRequestSchema,
   readinessGateInputSchema,
   type CreateReadinessPolicyRequest,
+  type CreateReadinessPolicyVersionRequest,
   type ReadinessGateInput,
 } from '@caselog/schemas/readiness';
 
@@ -31,6 +33,14 @@ export type PolicyCreateForm = FormGroup<{
   description: FormControl<string>;
   gates: FormArray<PolicyGateForm>;
 }>;
+
+export type PolicyVersionCreateForm = FormGroup<{
+  gates: FormArray<PolicyGateForm>;
+}>;
+
+export type PolicyGateEditorForm = {
+  controls: { gates: FormArray<PolicyGateForm> };
+};
 
 const trimmedRequired: ValidatorFn = (control) =>
   typeof control.value === 'string' && control.value.trim() ? null : { required: true };
@@ -117,10 +127,14 @@ export function createPolicyCreateForm(): PolicyCreateForm {
       nonNullable: true,
       validators: [Validators.maxLength(2_000)],
     }),
-    gates: new FormArray([createPolicyGateForm()], {
-      validators: [Validators.minLength(1), Validators.maxLength(50), uniqueGateKeys],
-    }),
+    gates: createPolicyGateArray(),
   });
+}
+
+export function createPolicyVersionCreateForm(
+  gates: ReadonlyArray<ReadinessGateInput> = [],
+): PolicyVersionCreateForm {
+  return new FormGroup({ gates: createPolicyGateArray(gates) });
 }
 
 export function toReadinessGateInput(form: PolicyGateForm): ReadinessGateInput {
@@ -152,4 +166,21 @@ export function toCreateReadinessPolicyRequest(
     description: value.description.trim() || null,
     gates: form.controls.gates.controls.map(toReadinessGateInput),
   });
+}
+
+export function toCreateReadinessPolicyVersionRequest(
+  form: PolicyVersionCreateForm,
+): CreateReadinessPolicyVersionRequest {
+  return createReadinessPolicyVersionRequestSchema.parse({
+    gates: form.controls.gates.controls.map(toReadinessGateInput),
+  });
+}
+
+function createPolicyGateArray(
+  gates: ReadonlyArray<ReadinessGateInput> = [],
+): FormArray<PolicyGateForm> {
+  return new FormArray(
+    gates.length > 0 ? gates.map((gate) => createPolicyGateForm(gate)) : [createPolicyGateForm()],
+    { validators: [Validators.minLength(1), Validators.maxLength(50), uniqueGateKeys] },
+  );
 }

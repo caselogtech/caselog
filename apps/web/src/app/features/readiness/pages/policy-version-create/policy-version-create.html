@@ -1,0 +1,105 @@
+<main class="policy-version-create-page" aria-labelledby="policy-version-create-title">
+  @if (policyQuery.isPending()) {
+    <section class="loading-state" [attr.aria-label]="'readiness.policies.successor.loading' | transloco">
+      <app-loading-skeleton preset="title" [label]="'readiness.policies.successor.loading' | transloco" />
+      <app-loading-skeleton preset="block" [label]="'readiness.policies.successor.loading' | transloco" />
+    </section>
+  } @else if (policyQuery.isError()) {
+    <app-page-state
+      [title]="'readiness.policies.successor.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="policyQuery.refetch()">
+        {{ 'readiness.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (policy(); as model) {
+    <header class="page-header">
+      <a
+        appButton="quiet"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies/{{ policyId }}"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies', policyId]"
+      >
+        <span aria-hidden="true">←</span>
+        {{ 'readiness.policies.successor.back' | transloco }}
+      </a>
+      <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>
+      <h1 id="policy-version-create-title">
+        {{ 'readiness.policies.successor.title' | transloco: { version: nextVersion() } }}
+      </h1>
+      <p class="description">
+        {{ 'readiness.policies.successor.description' | transloco: { name: model.name } }}
+      </p>
+    </header>
+
+    @if (existingDraft()) {
+      <app-page-state
+        [title]="'readiness.policies.successor.existingDraftTitle' | transloco"
+        [message]="'readiness.policies.successor.existingDraftDescription' | transloco"
+      >
+        <a
+          actions
+          appButton="primary"
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies/{{ policyId }}"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies', policyId]"
+        >
+          {{ 'readiness.policies.successor.back' | transloco }}
+        </a>
+      </app-page-state>
+    } @else if (!sourceVersion()) {
+      <app-page-state
+        [title]="'readiness.policies.successor.noPublishedTitle' | transloco"
+        [message]="'readiness.policies.successor.noPublishedDescription' | transloco"
+      />
+    } @else {
+      @if (!canManage()) {
+        <app-callout
+          tone="danger"
+          liveRole="alert"
+          [title]="'readiness.policies.successor.readOnlyTitle' | transloco"
+        >
+          <p>{{ 'readiness.policies.successor.readOnlyDescription' | transloco }}</p>
+        </app-callout>
+      }
+
+      @if (createVersion.isError()) {
+        <app-callout
+          tone="danger"
+          liveRole="alert"
+          [title]="'readiness.policies.successor.errorTitle' | transloco"
+        >
+          <p>{{ errorTranslationKey() | transloco }}</p>
+        </app-callout>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <app-callout [title]="'readiness.policies.successor.cloneTitle' | transloco">
+          <p>
+            {{ 'readiness.policies.successor.cloneDescription' | transloco: { version: sourceVersion()?.version } }}
+          </p>
+        </app-callout>
+
+        <section class="gates-section">
+          <app-policy-gate-editor [form]="form" />
+        </section>
+
+        <app-callout [title]="'readiness.policies.successor.immutableTitle' | transloco">
+          <p>{{ 'readiness.policies.successor.immutableDescription' | transloco }}</p>
+        </app-callout>
+
+        <footer class="form-actions">
+          <a
+            appButton="secondary"
+            href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies/{{ policyId }}"
+            [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies', policyId]"
+          >
+            {{ 'readiness.policies.successor.cancel' | transloco }}
+          </a>
+          <button appButton="primary" type="submit" [disabled]="!canManage() || createVersion.isPending()">
+            {{ (createVersion.isPending() ? 'readiness.policies.successor.creating' : 'readiness.policies.successor.submit') | transloco }}
+          </button>
+        </footer>
+      </form>
+    }
+  }
+</main>

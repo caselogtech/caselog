@@ -49,6 +49,14 @@
               >
                 {{ (publishPolicy.isPending() ? 'readiness.policies.publishing' : 'readiness.policies.publishDraft') | transloco }}
               </button>
+            } @else if (canManage() && publishedVersion()) {
+              <a
+                appButton="secondary"
+                href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies/{{ policyId }}/versions/new"
+                [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies', policyId, 'versions', 'new']"
+              >
+                {{ 'readiness.policies.createSuccessor' | transloco }}
+              </a>
             }
           </div>
         }
