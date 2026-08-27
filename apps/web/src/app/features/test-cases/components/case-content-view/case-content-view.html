@@ -1,0 +1,57 @@
+<article class="case-body">
+  <dl class="case-metadata">
+    <div>
+      <dt>{{ 'workspace.cases.detail.section' | transloco }}</dt>
+      <dd>{{ testCase().section.suiteName }} / {{ testCase().section.name }}</dd>
+    </div>
+    <div>
+      <dt>{{ 'workspace.cases.detail.template' | transloco }}</dt>
+      <dd>{{ templateTranslationKey() | transloco }}</dd>
+    </div>
+    <div>
+      <dt>{{ 'workspace.cases.detail.automation' | transloco }}</dt>
+      <dd>
+        @if (testCase().automationId; as automationId) {
+          <code>{{ automationId }}</code>
+        } @else {
+          {{ 'workspace.cases.manual' | transloco }}
+        }
+      </dd>
+    </div>
+  </dl>
+
+  @if (testCase().currentVersion.preconditions) {
+    <section class="content-section">
+      <h2>{{ 'workspace.cases.detail.preconditions' | transloco }}</h2>
+      <p class="preserve-lines">{{ testCase().currentVersion.preconditions }}</p>
+    </section>
+  }
+
+  <section class="content-section">
+    <h2>{{ 'workspace.cases.detail.content' | transloco }}</h2>
+    @if (testCase().currentVersion.template === 'steps') {
+      <ol class="case-steps">
+        @for (step of steps(); track $index) {
+          <li>
+            <span class="step-number">{{ $index + 1 }}</span>
+            <div>
+              <strong>{{ step.action }}</strong>
+              @if (step.expected) {
+                <p>{{ step.expected }}</p>
+              }
+            </div>
+          </li>
+        }
+      </ol>
+    } @else {
+      <p class="preserve-lines">{{ text() }}</p>
+    }
+  </section>
+
+  @if (testCase().currentVersion.expectedResult) {
+    <section class="content-section">
+      <h2>{{ 'workspace.cases.detail.expectedResult' | transloco }}</h2>
+      <p class="preserve-lines">{{ testCase().currentVersion.expectedResult }}</p>
+    </section>
+  }
+</article>

@@ -1,161 +1,105 @@
-<main class="case-create-page" aria-labelledby="case-detail-title">
+<main class="case-detail-page" aria-labelledby="case-detail-title">
   @if (detail.isPending()) {
-    <section class="page-state" aria-live="polite">
-      {{ 'workspace.cases.detail.loading' | transloco }}
+    <section class="detail-loading" [attr.aria-label]="'workspace.cases.detail.loading' | transloco">
+      <app-loading-skeleton
+        preset="title"
+        [label]="'workspace.cases.detail.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="block"
+        [label]="'workspace.cases.detail.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="block"
+        [label]="'workspace.cases.detail.loading' | transloco"
+      />
     </section>
   } @else if (detail.isError()) {
-    <section class="page-state error" role="alert">
-      <p>{{ errorTranslationKey() | transloco }}</p>
-      <button type="button" (click)="detail.refetch()">
+    <app-page-state
+      [title]="'workspace.cases.detail.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="detail.refetch()">
         {{ 'workspace.cases.retry' | transloco }}
       </button>
-    </section>
+    </app-page-state>
   } @else if (detail.data(); as result) {
-    <header class="case-create-header">
-      <div>
-        <p class="eyebrow">{{ result.project.key }}-{{ result.testCase.caseNumber }}</p>
+    <nav class="breadcrumbs" [attr.aria-label]="'workspace.cases.detail.breadcrumbs' | transloco">
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
+      >
+        {{ 'workspace.cases.titleFallback' | transloco }}
+      </a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ result.project.key }}-{{ result.testCase.caseNumber }}</span>
+    </nav>
+
+    <header class="case-detail-header">
+      <div class="title-group">
+        <div class="case-identity">
+          <code>{{ result.project.key }}-{{ result.testCase.caseNumber }}</code>
+          <app-status-badge
+            tone="neutral"
+            [label]="
+              'workspace.cases.detail.version'
+                | transloco: { version: result.testCase.currentVersion.version }
+            "
+          />
+        </div>
         <h1 id="case-detail-title">{{ result.testCase.currentVersion.title }}</h1>
-        <p>
-          {{
-            'workspace.cases.detail.version'
-              | transloco: { version: result.testCase.currentVersion.version }
-          }}
-        </p>
+        <p>{{ 'workspace.cases.detail.description' | transloco }}</p>
       </div>
-      <div class="detail-actions">
-        @if (canEdit() && !editing()) {
-          <button type="button" (click)="startEditing()">
-            {{ 'workspace.cases.detail.edit' | transloco }}
-          </button>
-        }
+      <div class="header-actions">
         <a
+          appButton="secondary"
           href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
           [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"
         >
           {{ 'workspace.cases.detail.back' | transloco }}
         </a>
+        @if (canEdit() && !editing()) {
+          <button appButton="primary" type="button" (click)="startEditing()">
+            {{ 'workspace.cases.detail.edit' | transloco }}
+          </button>
+        }
       </div>
     </header>
 
     @if (editing()) {
-      <form class="case-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        @if (updateCase.isError()) {
-          <div class="form-alert" role="alert">
-            <p>{{ errorTranslationKey() | transloco }}</p>
-            <button class="secondary-button" type="button" (click)="reload()">
-              {{ 'workspace.cases.detail.reload' | transloco }}
-            </button>
-          </div>
-        }
-
-        <div class="field full-width">
-          <label for="case-title">{{ 'workspace.cases.new.titleLabel' | transloco }}</label>
-          <input id="case-title" type="text" formControlName="title" autocomplete="off" />
-          @if (form.controls.title.touched && form.controls.title.invalid) {
-            <p class="field-error">{{ 'workspace.cases.new.titleInvalid' | transloco }}</p>
-          }
-        </div>
-
-        <div class="field">
-          <label for="case-section">{{ 'workspace.cases.new.sectionLabel' | transloco }}</label>
-          <select id="case-section" formControlName="sectionId">
-            @for (suite of structure.data()?.suites ?? []; track suite.id) {
-              <optgroup [label]="suite.name">
-                @for (section of suite.sections; track section.id) {
-                  <option [value]="section.id">{{ section.name }}</option>
-                }
-              </optgroup>
-            }
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="case-template">{{ 'workspace.cases.new.templateLabel' | transloco }}</label>
-          <select id="case-template" formControlName="template">
-            <option value="steps">{{ 'workspace.cases.templates.steps' | transloco }}</option>
-            <option value="text">{{ 'workspace.cases.templates.text' | transloco }}</option>
-            <option value="exploratory">
-              {{ 'workspace.cases.templates.exploratory' | transloco }}
-            </option>
-            <option value="bdd">{{ 'workspace.cases.templates.bdd' | transloco }}</option>
-          </select>
-        </div>
-
-        <div class="field full-width">
-          <label for="automation-id">{{ 'workspace.cases.new.automationLabel' | transloco }}</label>
-          <input id="automation-id" type="text" formControlName="automationId" autocomplete="off" />
-        </div>
-
-        <div class="field full-width">
-          <label for="preconditions">{{ 'workspace.cases.new.preconditionsLabel' | transloco }}</label>
-          <textarea id="preconditions" rows="3" formControlName="preconditions"></textarea>
-        </div>
-
-        @switch (form.controls.template.value) {
-          @case ('steps') {
-            <fieldset class="steps full-width" formArrayName="steps">
-              <legend>{{ 'workspace.cases.new.stepsTitle' | transloco }}</legend>
-              @for (step of form.controls.steps.controls; track step; let index = $index) {
-                <div class="step" [formGroupName]="index">
-                  <div class="field">
-                    <label>
-                      {{ 'workspace.cases.new.actionLabel' | transloco }}
-                      <textarea rows="3" formControlName="action"></textarea>
-                    </label>
-                  </div>
-                  <div class="field">
-                    <label>
-                      {{ 'workspace.cases.new.stepExpectedLabel' | transloco }}
-                      <textarea rows="3" formControlName="expected"></textarea>
-                    </label>
-                  </div>
-                  <button
-                    class="remove-step"
-                    type="button"
-                    [disabled]="form.controls.steps.length === 1"
-                    (click)="removeStep(index)"
-                  >
-                    {{ 'workspace.cases.new.removeStep' | transloco }}
-                  </button>
-                </div>
-              }
-              <button class="secondary-button" type="button" (click)="addStep()">
-                {{ 'workspace.cases.new.addStep' | transloco }}
+      <form
+        class="case-edit-form"
+        [formGroup]="form"
+        [attr.aria-busy]="updateCase.isPending()"
+        (ngSubmit)="submit()"
+        novalidate
+      >
+        <section class="editor-panel">
+          @if (updateCase.isError()) {
+            <app-callout
+              tone="danger"
+              liveRole="alert"
+              [title]="'workspace.cases.detail.saveErrorTitle' | transloco"
+            >
+              <p>{{ errorTranslationKey() | transloco }}</p>
+              <button appButton="secondary" type="button" (click)="reload()">
+                {{ 'workspace.cases.detail.reload' | transloco }}
               </button>
-            </fieldset>
+            </app-callout>
           }
-          @case ('text') {
-            <div class="field full-width">
-              <label for="case-text">{{ 'workspace.cases.new.textLabel' | transloco }}</label>
-              <textarea id="case-text" rows="8" formControlName="text"></textarea>
-            </div>
-          }
-          @case ('exploratory') {
-            <div class="field full-width">
-              <label for="case-charter">{{ 'workspace.cases.new.charterLabel' | transloco }}</label>
-              <textarea id="case-charter" rows="8" formControlName="charter"></textarea>
-            </div>
-          }
-          @case ('bdd') {
-            <div class="field full-width">
-              <label for="case-gherkin">{{ 'workspace.cases.new.gherkinLabel' | transloco }}</label>
-              <textarea id="case-gherkin" rows="10" formControlName="gherkin"></textarea>
-            </div>
-          }
-        }
 
-        <div class="field full-width">
-          <label for="expected-result">
-            {{ 'workspace.cases.new.expectedResultLabel' | transloco }}
-          </label>
-          <textarea id="expected-result" rows="3" formControlName="expectedResult"></textarea>
-        </div>
+          <app-case-editor
+            [form]="form"
+            [suites]="structure.data()?.suites ?? []"
+            idPrefix="edit-case"
+          />
+        </section>
 
-        <div class="form-actions full-width edit-actions">
-          <button class="secondary-button" type="button" (click)="cancelEditing()">
+        <div class="edit-actions">
+          <button appButton="secondary" type="button" (click)="cancelEditing()">
             {{ 'workspace.cases.detail.cancel' | transloco }}
           </button>
-          <button type="submit" [disabled]="updateCase.isPending()">
+          <button appButton="primary" type="submit" [disabled]="updateCase.isPending()">
             {{
               (updateCase.isPending()
                 ? 'workspace.cases.detail.saving'
@@ -166,304 +110,55 @@
       </form>
     } @else {
       <div class="detail-layout">
-        <article class="case-body">
-          <dl class="case-metadata">
-            <div>
-              <dt>{{ 'workspace.cases.detail.section' | transloco }}</dt>
-              <dd>{{ result.testCase.section.suiteName }} / {{ result.testCase.section.name }}</dd>
-            </div>
-            <div>
-              <dt>{{ 'workspace.cases.detail.template' | transloco }}</dt>
-              <dd>
-                {{ templateTranslationKey(result.testCase.currentVersion.template) | transloco }}
-              </dd>
-            </div>
-            <div>
-              <dt>{{ 'workspace.cases.detail.automation' | transloco }}</dt>
-              <dd>{{ result.testCase.automationId ?? ('workspace.cases.manual' | transloco) }}</dd>
-            </div>
-          </dl>
+        <app-case-content-view [testCase]="result.testCase" />
 
-          @if (result.testCase.currentVersion.preconditions) {
-            <section class="content-section">
-              <h2>{{ 'workspace.cases.detail.preconditions' | transloco }}</h2>
-              <p class="preserve-lines">{{ result.testCase.currentVersion.preconditions }}</p>
-            </section>
-          }
-
-          <section class="content-section">
-            <h2>{{ 'workspace.cases.detail.content' | transloco }}</h2>
-            @if (result.testCase.currentVersion.template === 'steps') {
-              <ol class="case-steps">
-                @for (step of currentSteps(); track $index) {
-                  <li>
-                    <strong>{{ step.action }}</strong>
-                    @if (step.expected) {
-                      <p>{{ step.expected }}</p>
-                    }
-                  </li>
-                }
-              </ol>
-            } @else {
-              <p class="preserve-lines">{{ currentText() }}</p>
-            }
-          </section>
-
-          @if (result.testCase.currentVersion.expectedResult) {
-            <section class="content-section">
-              <h2>{{ 'workspace.cases.detail.expectedResult' | transloco }}</h2>
-              <p class="preserve-lines">{{ result.testCase.currentVersion.expectedResult }}</p>
-            </section>
-          }
-        </article>
-
-        <aside class="version-panel">
-          <h2>{{ 'workspace.cases.detail.history' | transloco }}</h2>
-          <ol>
-            @for (version of result.testCase.versions; track version.id) {
-              <li>
-                <div>
-                  <strong>
-                    {{ 'workspace.cases.detail.version' | transloco: { version: version.version } }}
-                  </strong>
-                  @if (version.id === result.testCase.currentVersion.id) {
-                    <span>{{ 'workspace.cases.detail.current' | transloco }}</span>
-                  }
-                </div>
-                <p>{{ version.title }}</p>
-                <small>
-                  {{ version.createdAt | date: 'medium' }} ·
-                  {{
-                    version.createdBy
-                      ? ('workspace.cases.detail.createdBy'
-                        | transloco: { name: version.createdBy.displayName })
-                      : ('workspace.cases.detail.unknownAuthor' | transloco)
-                  }}
-                </small>
-                <button class="version-link" type="button" (click)="viewVersion(version.id)">
-                  {{ 'workspace.cases.detail.viewVersion' | transloco }}
-                </button>
-              </li>
-            }
-          </ol>
-
-          @if (selectedVersionId()) {
-            <section class="version-preview">
-              @if (selectedVersion.isPending()) {
-                <p>{{ 'workspace.cases.detail.loading' | transloco }}</p>
-              } @else if (selectedVersion.isError() || restoreVersion.isError()) {
-                <div role="alert">{{ errorTranslationKey() | transloco }}</div>
-              } @else if (selectedVersion.data(); as version) {
-                <h3>
-                  {{
-                    'workspace.cases.detail.historicalVersion'
-                      | transloco: { version: version.version }
-                  }}
-                </h3>
-                <strong>{{ version.title }}</strong>
-                @if (version.template === 'steps') {
-                  <ol class="preview-steps">
-                    @for (step of selectedSteps(); track $index) {
-                      <li>{{ step.action }}</li>
-                    }
-                  </ol>
-                } @else {
-                  <p class="preserve-lines">{{ selectedText() }}</p>
-                }
-                <div class="preview-actions">
-                  <button type="button" (click)="closeVersion()">
-                    {{ 'workspace.cases.detail.closeVersion' | transloco }}
-                  </button>
-                  @if (canEdit() && version.id !== result.testCase.currentVersion.id) {
-                    <button
-                      type="button"
-                      [disabled]="restoreVersion.isPending()"
-                      (click)="restoreSelectedVersion()"
-                    >
-                      {{
-                        (restoreVersion.isPending()
-                          ? 'workspace.cases.detail.restoring'
-                          : 'workspace.cases.detail.restore') | transloco
-                      }}
-                    </button>
-                  }
-                </div>
-              }
-            </section>
-          }
-        </aside>
+        <app-case-version-history
+          [versions]="result.testCase.versions"
+          [currentVersionId]="result.testCase.currentVersion.id"
+          [selectedVersionId]="selectedVersionId()"
+          [selectedVersion]="selectedVersion.data() ?? null"
+          [canEdit]="canEdit()"
+          [loading]="selectedVersion.isPending()"
+          [failed]="selectedVersion.isError() || restoreVersion.isError()"
+          [restoring]="restoreVersion.isPending()"
+          [errorMessage]="errorTranslationKey() | transloco"
+          (selectVersion)="viewVersion($event)"
+          (closePreview)="closeVersion()"
+          (restoreSelected)="restoreSelectedVersion()"
+        />
       </div>
 
-      <section class="case-attachments" aria-labelledby="case-attachments-title">
-        <div class="case-attachments-heading">
-          <div>
-            <p class="eyebrow">{{ 'workspace.cases.detail.attachmentsEyebrow' | transloco }}</p>
-            <h2 id="case-attachments-title">
-              {{ 'workspace.cases.detail.attachments' | transloco }}
-            </h2>
-            <p>{{ 'workspace.cases.detail.attachmentsDescription' | transloco }}</p>
-          </div>
-          @if (canEdit()) {
-            <label
-              class="attachment-upload"
-              [class.disabled]="uploadAttachment.isPending()"
-              for="case-attachment-upload"
-            >
-              {{
-                (uploadAttachment.isPending()
-                  ? 'workspace.cases.detail.attachmentUploading'
-                  : 'workspace.cases.detail.attachmentChoose') | transloco
-              }}
-            </label>
-            <input
-              id="case-attachment-upload"
-              class="attachment-input"
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain"
-              [disabled]="uploadAttachment.isPending()"
-              (change)="selectAttachment($event)"
-            />
-          }
-        </div>
-        <p class="attachment-types">
-          {{ 'workspace.cases.detail.attachmentAcceptedTypes' | transloco }}
-        </p>
+      <div class="detail-sections">
+        <app-case-attachments-panel
+          [items]="attachmentItems()"
+          [canEdit]="canEdit()"
+          [loading]="attachments.isPending()"
+          [failed]="attachments.isError()"
+          [uploading]="uploadAttachment.isPending()"
+          [downloading]="downloadAttachment.isPending()"
+          [actionFailed]="uploadAttachment.isError() || downloadAttachment.isError()"
+          [hasMore]="attachments.hasNextPage()"
+          [loadingMore]="attachments.isFetchingNextPage()"
+          [errorMessage]="attachmentErrorTranslationKey() | transloco"
+          (upload)="uploadFile($event)"
+          (download)="downloadAttachment.mutate($event)"
+          (retry)="attachments.refetch()"
+          (loadMore)="attachments.fetchNextPage()"
+        />
 
-        @if (uploadAttachment.isError() || downloadAttachment.isError()) {
-          <p role="alert">{{ attachmentErrorTranslationKey() | transloco }}</p>
-        }
-
-        @if (attachments.isPending()) {
-          <p aria-live="polite">{{ 'workspace.cases.detail.attachmentsLoading' | transloco }}</p>
-        } @else if (attachments.isError()) {
-          <div role="alert">
-            <p>{{ attachmentErrorTranslationKey() | transloco }}</p>
-            <button type="button" (click)="attachments.refetch()">
-              {{ 'workspace.cases.detail.attachmentsRetry' | transloco }}
-            </button>
-          </div>
-        } @else if (attachmentItems().length === 0) {
-          <p>{{ 'workspace.cases.detail.attachmentsEmpty' | transloco }}</p>
-        } @else {
-          <ul>
-            @for (attachment of attachmentItems(); track attachment.id) {
-              <li>
-                <div>
-                  <strong>{{ attachment.fileName }}</strong>
-                  <p>
-                    {{ formatFileSize(attachment.sizeBytes) }} ·
-                    {{ attachment.createdAt | date: 'medium' }}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  [disabled]="downloadAttachment.isPending()"
-                  (click)="downloadAttachment.mutate(attachment.id)"
-                >
-                  {{ 'workspace.cases.detail.attachmentDownload' | transloco }}
-                </button>
-              </li>
-            }
-          </ul>
-          @if (attachments.hasNextPage()) {
-            <button
-              type="button"
-              [disabled]="attachments.isFetchingNextPage()"
-              (click)="attachments.fetchNextPage()"
-            >
-              {{
-                (attachments.isFetchingNextPage()
-                  ? 'workspace.cases.detail.attachmentsLoadingMore'
-                  : 'workspace.cases.detail.attachmentsLoadMore') | transloco
-              }}
-            </button>
-          }
-        }
-      </section>
-
-      <section class="execution-history" aria-labelledby="execution-history-title">
-        <div class="execution-history-heading">
-          <div>
-            <p class="eyebrow">{{ 'workspace.cases.detail.executionHistoryEyebrow' | transloco }}</p>
-            <h2 id="execution-history-title">
-              {{ 'workspace.cases.detail.executionHistory' | transloco }}
-            </h2>
-          </div>
-        </div>
-
-        @if (executionHistory.isPending()) {
-          <p aria-live="polite">{{ 'workspace.cases.detail.executionHistoryLoading' | transloco }}</p>
-        } @else if (executionHistory.isError()) {
-          <div role="alert">
-            <p>{{ errorTranslationKey() | transloco }}</p>
-            <button type="button" (click)="executionHistory.refetch()">
-              {{ 'workspace.cases.detail.executionHistoryRetry' | transloco }}
-            </button>
-          </div>
-        } @else if (executionHistoryItems().length === 0) {
-          <p>{{ 'workspace.cases.detail.executionHistoryEmpty' | transloco }}</p>
-        } @else {
-          <ol>
-            @for (entry of executionHistoryItems(); track entry.result.id) {
-              <li>
-                <div class="execution-history-result">
-                  <span
-                    class="execution-status"
-                    [style.border-color]="entry.result.status.color"
-                  >
-                    {{ entry.result.status.name }}
-                  </span>
-                  <div>
-                    <a
-                      href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ entry.run.id }}/items/{{ entry.runItemId }}/results/{{ entry.result.id }}"
-                      [routerLink]="[
-                        '/',
-                        workspaceSlug,
-                        projectSlug,
-                        'runs',
-                        entry.run.id,
-                        'items',
-                        entry.runItemId,
-                        'results',
-                        entry.result.id
-                      ]"
-                    >
-                      {{ entry.run.name }} ·
-                      {{ 'workspace.cases.detail.executionAttempt' | transloco: { attempt: entry.result.attempt } }}
-                    </a>
-                    <p>
-                      {{ 'workspace.cases.detail.version' | transloco: { version: entry.caseVersion.version } }}
-                      @if (entry.result.build) {
-                        · {{ 'workspace.runs.build' | transloco }} {{ entry.result.build }}
-                      }
-                    </p>
-                  </div>
-                  <small>
-                    {{ entry.result.executedAt | date: 'medium' }} ·
-                    {{ entry.result.executedBy?.displayName ?? ('workspace.cases.detail.executionUnknownUser' | transloco) }}
-                  </small>
-                </div>
-                @if (entry.result.comment) {
-                  <p class="execution-comment">{{ entry.result.comment }}</p>
-                }
-              </li>
-            }
-          </ol>
-          @if (executionHistory.hasNextPage()) {
-            <button
-              type="button"
-              [disabled]="executionHistory.isFetchingNextPage()"
-              (click)="executionHistory.fetchNextPage()"
-            >
-              {{
-                (executionHistory.isFetchingNextPage()
-                  ? 'workspace.cases.detail.executionHistoryLoadingMore'
-                  : 'workspace.cases.detail.executionHistoryLoadMore') | transloco
-              }}
-            </button>
-          }
-        }
-      </section>
+        <app-case-execution-history
+          [items]="executionHistoryItems()"
+          [workspaceSlug]="workspaceSlug"
+          [projectSlug]="projectSlug"
+          [loading]="executionHistory.isPending()"
+          [failed]="executionHistory.isError()"
+          [hasMore]="executionHistory.hasNextPage()"
+          [loadingMore]="executionHistory.isFetchingNextPage()"
+          [errorMessage]="errorTranslationKey() | transloco"
+          (retry)="executionHistory.refetch()"
+          (loadMore)="executionHistory.fetchNextPage()"
+        />
+      </div>
     }
   }
 </main>

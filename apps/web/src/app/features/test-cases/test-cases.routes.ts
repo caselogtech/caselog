@@ -1,4 +1,5 @@
 import type { Routes } from '@angular/router';
+import { caseCreatePendingChangesGuard } from './pages/case-create/case-create.guard';
 
 export const testCasesRoutes: Routes = [
   {
@@ -7,6 +8,7 @@ export const testCasesRoutes: Routes = [
   },
   {
     path: 'new',
+    canDeactivate: [caseCreatePendingChangesGuard],
     loadComponent: () =>
       import('./pages/case-create/case-create').then(({ CaseCreate }) => CaseCreate),
   },

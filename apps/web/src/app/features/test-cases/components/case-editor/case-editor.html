@@ -1,0 +1,240 @@
+<div class="editor-fields" [formGroup]="form()">
+  <app-form-field
+    class="full-width"
+    [controlId]="idPrefix() + '-title'"
+    [label]="'workspace.cases.new.titleLabel' | transloco"
+    [required]="true"
+    [error]="
+      form().controls.title.touched && form().controls.title.invalid
+        ? ('workspace.cases.new.titleInvalid' | transloco)
+        : undefined
+    "
+  >
+    <input
+      appControl
+      [id]="idPrefix() + '-title'"
+      type="text"
+      formControlName="title"
+      autocomplete="off"
+      [attr.aria-invalid]="form().controls.title.touched && form().controls.title.invalid"
+      [attr.aria-describedby]="idPrefix() + '-title-description'"
+    />
+  </app-form-field>
+
+  <div class="metadata-fields full-width">
+    <app-form-field
+      [controlId]="idPrefix() + '-template'"
+      [label]="'workspace.cases.new.templateLabel' | transloco"
+      [required]="true"
+    >
+      <select appControl [id]="idPrefix() + '-template'" formControlName="template">
+        <option value="steps">{{ 'workspace.cases.templates.steps' | transloco }}</option>
+        <option value="text">{{ 'workspace.cases.templates.text' | transloco }}</option>
+        <option value="exploratory">
+          {{ 'workspace.cases.templates.exploratory' | transloco }}
+        </option>
+        <option value="bdd">{{ 'workspace.cases.templates.bdd' | transloco }}</option>
+      </select>
+    </app-form-field>
+
+    <app-form-field
+      [controlId]="idPrefix() + '-section'"
+      [label]="'workspace.cases.new.sectionLabel' | transloco"
+      [required]="true"
+      [error]="
+        form().controls.sectionId.touched && form().controls.sectionId.invalid
+          ? ('workspace.cases.new.sectionInvalid' | transloco)
+          : undefined
+      "
+    >
+      <select
+        appControl
+        [id]="idPrefix() + '-section'"
+        formControlName="sectionId"
+        [attr.aria-invalid]="
+          form().controls.sectionId.touched && form().controls.sectionId.invalid
+        "
+        [attr.aria-describedby]="idPrefix() + '-section-description'"
+      >
+        @for (suite of suites(); track suite.id) {
+          <optgroup [label]="suite.name">
+            @for (section of suite.sections; track section.id) {
+              <option [value]="section.id">{{ section.name }}</option>
+            }
+          </optgroup>
+        }
+      </select>
+    </app-form-field>
+  </div>
+
+  <app-form-field
+    class="full-width automation-field"
+    [controlId]="idPrefix() + '-automation-id'"
+    [label]="'workspace.cases.new.automationLabel' | transloco"
+    [hint]="'workspace.cases.new.automationHint' | transloco"
+  >
+    <input
+      appControl
+      [id]="idPrefix() + '-automation-id'"
+      type="text"
+      formControlName="automationId"
+      autocomplete="off"
+      [attr.aria-describedby]="idPrefix() + '-automation-id-description'"
+    />
+  </app-form-field>
+
+  <app-form-field
+    class="full-width"
+    [controlId]="idPrefix() + '-preconditions'"
+    [label]="'workspace.cases.new.preconditionsLabel' | transloco"
+  >
+    <textarea
+      appControl
+      [id]="idPrefix() + '-preconditions'"
+      rows="3"
+      formControlName="preconditions"
+    ></textarea>
+  </app-form-field>
+
+  @switch (form().controls.template.value) {
+    @case ('steps') {
+      <fieldset class="steps full-width" formArrayName="steps">
+        <div class="steps-heading">
+          <legend>{{ 'workspace.cases.new.stepsTitle' | transloco }}</legend>
+          <button appButton="secondary" type="button" (click)="addStep()">
+            {{ 'workspace.cases.new.addStep' | transloco }}
+          </button>
+        </div>
+        <div class="step-list">
+          @for (step of form().controls.steps.controls; track step; let index = $index) {
+            <div class="step" [formGroupName]="index">
+              <span class="step-number" aria-hidden="true">{{ index + 1 }}</span>
+              <app-form-field
+                [controlId]="idPrefix() + '-step-action-' + index"
+                [label]="'workspace.cases.new.actionLabel' | transloco"
+                [required]="true"
+                [error]="
+                  step.controls.action.touched && step.controls.action.invalid
+                    ? ('workspace.cases.new.actionInvalid' | transloco)
+                    : undefined
+                "
+              >
+                <textarea
+                  appControl
+                  [id]="idPrefix() + '-step-action-' + index"
+                  rows="3"
+                  formControlName="action"
+                  [attr.aria-invalid]="
+                    step.controls.action.touched && step.controls.action.invalid
+                  "
+                  [attr.aria-describedby]="idPrefix() + '-step-action-' + index + '-description'"
+                ></textarea>
+              </app-form-field>
+              <app-form-field
+                [controlId]="idPrefix() + '-step-expected-' + index"
+                [label]="'workspace.cases.new.stepExpectedLabel' | transloco"
+              >
+                <textarea
+                  appControl
+                  [id]="idPrefix() + '-step-expected-' + index"
+                  rows="3"
+                  formControlName="expected"
+                ></textarea>
+              </app-form-field>
+              <button
+                appButton="quiet"
+                class="remove-step"
+                type="button"
+                [disabled]="form().controls.steps.length === 1"
+                (click)="removeStep(index)"
+              >
+                {{ 'workspace.cases.new.removeStep' | transloco }}
+              </button>
+            </div>
+          }
+        </div>
+      </fieldset>
+    }
+    @case ('text') {
+      <app-form-field
+        class="full-width"
+        [controlId]="idPrefix() + '-text'"
+        [label]="'workspace.cases.new.textLabel' | transloco"
+        [required]="true"
+        [error]="
+          form().controls.text.touched && form().controls.text.invalid
+            ? ('workspace.cases.new.textInvalid' | transloco)
+            : undefined
+        "
+      >
+        <textarea
+          appControl
+          [id]="idPrefix() + '-text'"
+          rows="8"
+          formControlName="text"
+          [attr.aria-invalid]="form().controls.text.touched && form().controls.text.invalid"
+          [attr.aria-describedby]="idPrefix() + '-text-description'"
+        ></textarea>
+      </app-form-field>
+    }
+    @case ('exploratory') {
+      <app-form-field
+        class="full-width"
+        [controlId]="idPrefix() + '-charter'"
+        [label]="'workspace.cases.new.charterLabel' | transloco"
+        [required]="true"
+        [error]="
+          form().controls.charter.touched && form().controls.charter.invalid
+            ? ('workspace.cases.new.charterInvalid' | transloco)
+            : undefined
+        "
+      >
+        <textarea
+          appControl
+          [id]="idPrefix() + '-charter'"
+          rows="8"
+          formControlName="charter"
+          [attr.aria-invalid]="form().controls.charter.touched && form().controls.charter.invalid"
+          [attr.aria-describedby]="idPrefix() + '-charter-description'"
+        ></textarea>
+      </app-form-field>
+    }
+    @case ('bdd') {
+      <app-form-field
+        class="full-width"
+        [controlId]="idPrefix() + '-gherkin'"
+        [label]="'workspace.cases.new.gherkinLabel' | transloco"
+        [required]="true"
+        [error]="
+          form().controls.gherkin.touched && form().controls.gherkin.invalid
+            ? ('workspace.cases.new.gherkinInvalid' | transloco)
+            : undefined
+        "
+      >
+        <textarea
+          appControl
+          class="mono-control"
+          [id]="idPrefix() + '-gherkin'"
+          rows="10"
+          formControlName="gherkin"
+          spellcheck="false"
+          [attr.aria-invalid]="form().controls.gherkin.touched && form().controls.gherkin.invalid"
+          [attr.aria-describedby]="idPrefix() + '-gherkin-description'"
+        ></textarea>
+      </app-form-field>
+    }
+  }
+
+  <app-form-field
+    class="full-width"
+    [controlId]="idPrefix() + '-expected-result'"
+    [label]="'workspace.cases.new.expectedResultLabel' | transloco"
+  >
+    <textarea
+      appControl
+      [id]="idPrefix() + '-expected-result'"
+      rows="3"
+      formControlName="expectedResult"
+    ></textarea>
+  </app-form-field>
+</div>

@@ -1,0 +1,109 @@
+<section class="case-attachments" aria-labelledby="case-attachments-title">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">{{ 'workspace.cases.detail.attachmentsEyebrow' | transloco }}</p>
+      <h2 id="case-attachments-title">{{ 'workspace.cases.detail.attachments' | transloco }}</h2>
+      <p class="description">{{ 'workspace.cases.detail.attachmentsDescription' | transloco }}</p>
+    </div>
+    @if (canEdit()) {
+      <label
+        class="attachment-upload app-button app-button-secondary"
+        [class.disabled]="uploading()"
+        for="case-attachment-upload"
+      >
+        {{
+          (uploading()
+            ? 'workspace.cases.detail.attachmentUploading'
+            : 'workspace.cases.detail.attachmentChoose') | transloco
+        }}
+      </label>
+      <input
+        id="case-attachment-upload"
+        class="attachment-input"
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain"
+        [disabled]="uploading()"
+        (change)="selectFile($event)"
+      />
+    }
+  </div>
+  <p class="attachment-types">
+    {{ 'workspace.cases.detail.attachmentAcceptedTypes' | transloco }}
+  </p>
+
+  @if (actionFailed()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'workspace.cases.detail.attachmentActionErrorTitle' | transloco"
+    >
+      <p>{{ errorMessage() }}</p>
+    </app-callout>
+  }
+
+  @if (loading()) {
+    <div class="loading-list">
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspace.cases.detail.attachmentsLoading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="row"
+        [label]="'workspace.cases.detail.attachmentsLoading' | transloco"
+      />
+    </div>
+  } @else if (failed()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'workspace.cases.detail.attachmentsLoadErrorTitle' | transloco"
+    >
+      <p>{{ errorMessage() }}</p>
+      <button appButton="secondary" type="button" (click)="retry.emit()">
+        {{ 'workspace.cases.detail.attachmentsRetry' | transloco }}
+      </button>
+    </app-callout>
+  } @else if (items().length === 0) {
+    <div class="empty-state">
+      <span aria-hidden="true">↥</span>
+      <p>{{ 'workspace.cases.detail.attachmentsEmpty' | transloco }}</p>
+    </div>
+  } @else {
+    <ul>
+      @for (attachment of items(); track attachment.id) {
+        <li>
+          <div class="file-icon" aria-hidden="true">▤</div>
+          <div class="file-info">
+            <strong>{{ attachment.fileName }}</strong>
+            <p>
+              {{ formatFileSize(attachment.sizeBytes) }} ·
+              {{ attachment.createdAt | date: 'medium' }}
+            </p>
+          </div>
+          <button
+            appButton="quiet"
+            type="button"
+            [disabled]="downloading()"
+            (click)="download.emit(attachment.id)"
+          >
+            {{ 'workspace.cases.detail.attachmentDownload' | transloco }}
+          </button>
+        </li>
+      }
+    </ul>
+    @if (hasMore()) {
+      <button
+        appButton="secondary"
+        type="button"
+        [disabled]="loadingMore()"
+        (click)="loadMore.emit()"
+      >
+        {{
+          (loadingMore()
+            ? 'workspace.cases.detail.attachmentsLoadingMore'
+            : 'workspace.cases.detail.attachmentsLoadMore') | transloco
+        }}
+      </button>
+    }
+  }
+</section>

@@ -1,27 +1,44 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  type AbstractControl,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  HostListener,
+  inject,
+} from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import {
-  createTestCaseRequestSchema,
-  type CreateTestCaseRequest,
-  type TestCaseTemplate,
-} from '@caselog/schemas';
+import { createTestCaseRequestSchema, type CreateTestCaseRequest } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import {
+  Button,
+  Callout,
+  LoadingSkeleton,
+  PageState,
+  StatusBadge,
+} from '../../../../shared/ui/public-api';
+import { CaseEditor } from '../../components/case-editor/case-editor';
+import { createCaseEditorForm } from '../../components/case-editor/case-editor-form';
 import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
 import { TestCasesApi } from '../../data-access/test-cases-api';
+import { testCaseDraftContent } from '../../domain/test-case-draft';
 
 @Component({
   selector: 'app-case-create',
-  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe],
+  imports: [
+    Button,
+    Callout,
+    CaseEditor,
+    LoadingSkeleton,
+    PageState,
+    ReactiveFormsModule,
+    RouterLink,
+    StatusBadge,
+    TranslocoPipe,
+  ],
   templateUrl: './case-create.html',
   styleUrl: './case-create.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,18 +56,7 @@ export class CaseCreate {
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly canCreate = computed(() => this.workspaceSession.role() !== 'read_only');
 
-  readonly form = this.formBuilder.group({
-    title: ['', [Validators.required, Validators.maxLength(500)]],
-    sectionId: ['', Validators.required],
-    template: this.formBuilder.control<TestCaseTemplate>('steps'),
-    automationId: ['', Validators.maxLength(500)],
-    preconditions: ['', Validators.maxLength(50_000)],
-    expectedResult: ['', Validators.maxLength(50_000)],
-    text: ['', Validators.maxLength(50_000)],
-    charter: ['', Validators.maxLength(50_000)],
-    gherkin: ['', Validators.maxLength(50_000)],
-    steps: this.formBuilder.array([this.createStep()]),
-  });
+  readonly form = createCaseEditorForm(this.formBuilder);
 
   readonly structure = injectQuery(() => ({
     queryKey: ['project-structure', this.workspaceSlug, this.projectSlug],
@@ -65,6 +71,7 @@ export class CaseCreate {
     mutationFn: (request: CreateTestCaseRequest) =>
       this.testCasesApi.createTestCase(this.workspaceSlug, this.projectSlug, request),
     onSuccess: async ({ testCase }) => {
+      this.form.markAsPristine();
       await this.queryClient.invalidateQueries({
         queryKey: ['test-cases', this.workspaceSlug, this.projectSlug],
       });
@@ -81,25 +88,6 @@ export class CaseCreate {
         this.form.controls.sectionId.setValue(firstSection.id);
       }
     });
-
-    this.form.controls.template.valueChanges.pipe(takeUntilDestroyed()).subscribe((template) => {
-      this.updateTemplateValidators(template);
-    });
-    this.updateTemplateValidators(this.form.controls.template.value);
-  }
-
-  addStep(): void {
-    const step = this.createStep();
-    if (this.form.controls.template.value === 'steps') {
-      step.controls.action.addValidators(Validators.required);
-    }
-    this.form.controls.steps.push(step);
-  }
-
-  removeStep(index: number): void {
-    if (this.form.controls.steps.length > 1) {
-      this.form.controls.steps.removeAt(index);
-    }
   }
 
   submit(): void {
@@ -115,38 +103,15 @@ export class CaseCreate {
     return apiErrorTranslationKey(this.createCase.error() ?? this.structure.error());
   }
 
-  private createStep() {
-    return this.formBuilder.group({
-      action: ['', [Validators.required, Validators.maxLength(10_000)]],
-      expected: ['', Validators.maxLength(10_000)],
-    });
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty && !this.createCase.isSuccess();
   }
 
-  private updateTemplateValidators(template: TestCaseTemplate): void {
-    const contentControls: AbstractControl[] = [
-      this.form.controls.text,
-      this.form.controls.charter,
-      this.form.controls.gherkin,
-      ...this.form.controls.steps.controls.map((step) => step.controls.action),
-    ];
-    for (const control of contentControls) {
-      control.removeValidators(Validators.required);
-    }
-
-    if (template === 'steps') {
-      for (const step of this.form.controls.steps.controls) {
-        step.controls.action.addValidators(Validators.required);
-      }
-    } else if (template === 'text') {
-      this.form.controls.text.addValidators(Validators.required);
-    } else if (template === 'exploratory') {
-      this.form.controls.charter.addValidators(Validators.required);
-    } else {
-      this.form.controls.gherkin.addValidators(Validators.required);
-    }
-
-    for (const control of contentControls) {
-      control.updateValueAndValidity({ emitEvent: false });
+  @HostListener('window:beforeunload', ['$event'])
+  protectUnsavedChanges(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) {
+      event.preventDefault();
+      event.returnValue = '';
     }
   }
 
@@ -159,34 +124,8 @@ export class CaseCreate {
       automationId: value.automationId,
       preconditions: value.preconditions || undefined,
       expectedResult: value.expectedResult || undefined,
+      content: testCaseDraftContent(value),
     };
-
-    switch (value.template) {
-      case 'steps':
-        return createTestCaseRequestSchema.safeParse({
-          ...common,
-          content: {
-            steps: value.steps.map((step) => ({
-              action: step.action,
-              expected: step.expected || undefined,
-            })),
-          },
-        });
-      case 'text':
-        return createTestCaseRequestSchema.safeParse({
-          ...common,
-          content: { text: value.text },
-        });
-      case 'exploratory':
-        return createTestCaseRequestSchema.safeParse({
-          ...common,
-          content: { charter: value.charter },
-        });
-      case 'bdd':
-        return createTestCaseRequestSchema.safeParse({
-          ...common,
-          content: { gherkin: value.gherkin },
-        });
-    }
+    return createTestCaseRequestSchema.safeParse(common);
   }
 }

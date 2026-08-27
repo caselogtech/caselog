@@ -268,12 +268,8 @@ describe('CaseDetail', () => {
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
     const file = new File(['browser evidence'], 'browser-evidence.txt', { type: 'text/plain' });
-    const input = {
-      files: { item: () => file },
-      value: 'browser-evidence.txt',
-    } as unknown as HTMLInputElement;
 
-    fixture.componentInstance.selectAttachment({ target: input } as unknown as Event);
+    fixture.componentInstance.uploadFile(file);
 
     await vi.waitFor(() => expect(attachmentsApi.uploadTestCaseAttachment).toHaveBeenCalledOnce());
     expect(attachmentsApi.uploadTestCaseAttachment).toHaveBeenCalledWith(
@@ -283,7 +279,6 @@ describe('CaseDetail', () => {
       detail.testCase.currentVersion.id,
       file,
     );
-    expect(input.value).toBe('');
   });
 
   it('downloads an attachment through a short-lived URL', async () => {

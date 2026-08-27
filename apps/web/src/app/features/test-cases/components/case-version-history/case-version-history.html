@@ -1,0 +1,102 @@
+<aside class="version-panel" aria-labelledby="version-history-title">
+  <div class="panel-heading">
+    <div>
+      <p>{{ 'workspace.cases.detail.historyEyebrow' | transloco }}</p>
+      <h2 id="version-history-title">{{ 'workspace.cases.detail.history' | transloco }}</h2>
+    </div>
+    <span class="version-count">{{ versions().length }}</span>
+  </div>
+
+  <ol class="version-list">
+    @for (version of versions(); track version.id) {
+      <li [class.selected]="selectedVersionId() === version.id">
+        <div class="version-row">
+          <strong>
+            {{ 'workspace.cases.detail.version' | transloco: { version: version.version } }}
+          </strong>
+          @if (version.id === currentVersionId()) {
+            <app-status-badge
+              tone="success"
+              [label]="'workspace.cases.detail.current' | transloco"
+            />
+          }
+        </div>
+        <p>{{ version.title }}</p>
+        <small>
+          {{ version.createdAt | date: 'mediumDate' }} ·
+          {{
+            version.createdBy
+              ? ('workspace.cases.detail.createdBy'
+                | transloco: { name: version.createdBy.displayName })
+              : ('workspace.cases.detail.unknownAuthor' | transloco)
+          }}
+        </small>
+        <button appButton="quiet" type="button" (click)="selectVersion.emit(version.id)">
+          {{ 'workspace.cases.detail.viewVersion' | transloco }}
+        </button>
+      </li>
+    }
+  </ol>
+
+  @if (selectedVersionId()) {
+    <section class="version-preview" aria-live="polite">
+      @if (loading()) {
+        <app-loading-skeleton
+          preset="title"
+          [label]="'workspace.cases.detail.loading' | transloco"
+        />
+        <app-loading-skeleton
+          preset="block"
+          [label]="'workspace.cases.detail.loading' | transloco"
+        />
+      } @else if (failed()) {
+        <app-callout
+          tone="danger"
+          liveRole="alert"
+          [title]="'workspace.cases.detail.versionErrorTitle' | transloco"
+        >
+          <p>{{ errorMessage() }}</p>
+        </app-callout>
+        <button appButton="secondary" type="button" (click)="closePreview.emit()">
+          {{ 'workspace.cases.detail.closeVersion' | transloco }}
+        </button>
+      } @else if (selectedVersion(); as version) {
+        <p class="preview-label">
+          {{
+            'workspace.cases.detail.historicalVersion'
+              | transloco: { version: version.version }
+          }}
+        </p>
+        <h3>{{ version.title }}</h3>
+        @if (version.template === 'steps') {
+          <ol class="preview-steps">
+            @for (step of selectedSteps(); track $index) {
+              <li>{{ step.action }}</li>
+            }
+          </ol>
+        } @else {
+          <p class="preview-text">{{ selectedText() }}</p>
+        }
+        <div class="preview-actions">
+          <button appButton="secondary" type="button" (click)="closePreview.emit()">
+            {{ 'workspace.cases.detail.closeVersion' | transloco }}
+          </button>
+          @if (canEdit() && version.id !== currentVersionId()) {
+            <button
+              appButton="primary"
+              type="button"
+              [disabled]="restoring()"
+              (click)="restoreSelected.emit()"
+            >
+              {{
+                (restoring()
+                  ? 'workspace.cases.detail.restoring'
+                  : 'workspace.cases.detail.restore') | transloco
+              }}
+            </button>
+          }
+        </div>
+      }
+    </section>
+  }
+</aside>

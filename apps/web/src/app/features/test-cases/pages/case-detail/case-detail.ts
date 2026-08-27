@@ -1,18 +1,8 @@
-import { DatePipe, DOCUMENT } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  type AbstractControl,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import {
-  type TestCaseTemplate,
-  type UpdateTestCaseRequest,
-  updateTestCaseRequestSchema,
-} from '@caselog/schemas';
+import { type UpdateTestCaseRequest, updateTestCaseRequestSchema } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
   injectInfiniteQuery,
@@ -22,22 +12,46 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import {
+  Button,
+  Callout,
+  LoadingSkeleton,
+  PageState,
+  StatusBadge,
+} from '../../../../shared/ui/public-api';
+import { CaseAttachmentsPanel } from '../../components/case-attachments-panel/case-attachments-panel';
+import { CaseContentView } from '../../components/case-content-view/case-content-view';
+import { CaseEditor } from '../../components/case-editor/case-editor';
+import {
+  createCaseEditorForm,
+  createCaseStepForm,
+} from '../../components/case-editor/case-editor-form';
+import { CaseExecutionHistory } from '../../components/case-execution-history/case-execution-history';
+import { CaseVersionHistory } from '../../components/case-version-history/case-version-history';
 import { TestCaseAttachmentsApi } from '../../data-access/test-case-attachments-api';
 import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
 import { TestCasesApi } from '../../data-access/test-cases-api';
-
-const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
-  steps: 'workspace.cases.templates.steps',
-  text: 'workspace.cases.templates.text',
-  exploratory: 'workspace.cases.templates.exploratory',
-  bdd: 'workspace.cases.templates.bdd',
-};
+import { testCaseDraftContent } from '../../domain/test-case-draft';
 
 @Component({
   selector: 'app-case-detail',
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, TranslocoPipe],
+  imports: [
+    Button,
+    Callout,
+    CaseAttachmentsPanel,
+    CaseContentView,
+    CaseEditor,
+    CaseExecutionHistory,
+    CaseVersionHistory,
+    LoadingSkeleton,
+    PageState,
+    ReactiveFormsModule,
+    RouterLink,
+    StatusBadge,
+    TranslocoPipe,
+  ],
   templateUrl: './case-detail.html',
-  styleUrls: ['../case-create/case-create.css', './case-detail.css', './case-attachments.css'],
+  styleUrl: './case-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CaseDetail {
@@ -57,18 +71,7 @@ export class CaseDetail {
   readonly selectedVersionId = signal('');
   readonly canEdit = computed(() => this.workspaceSession.role() !== 'read_only');
 
-  readonly form = this.formBuilder.group({
-    title: ['', [Validators.required, Validators.maxLength(500)]],
-    sectionId: ['', Validators.required],
-    template: this.formBuilder.control<TestCaseTemplate>('steps'),
-    automationId: ['', Validators.maxLength(500)],
-    preconditions: ['', Validators.maxLength(50_000)],
-    expectedResult: ['', Validators.maxLength(50_000)],
-    text: ['', Validators.maxLength(50_000)],
-    charter: ['', Validators.maxLength(50_000)],
-    gherkin: ['', Validators.maxLength(50_000)],
-    steps: this.formBuilder.array([this.createStep()]),
-  });
+  readonly form = createCaseEditorForm(this.formBuilder);
 
   readonly detail = injectQuery(() => ({
     queryKey: ['test-case', this.workspaceSlug, this.projectSlug, this.caseId],
@@ -203,13 +206,6 @@ export class CaseDetail {
     },
   }));
 
-  constructor() {
-    this.form.controls.template.valueChanges.pipe(takeUntilDestroyed()).subscribe((template) => {
-      this.updateTemplateValidators(template);
-    });
-    this.updateTemplateValidators('steps');
-  }
-
   startEditing(): void {
     const detail = this.detail.data();
     if (!detail || !this.canEdit()) {
@@ -232,9 +228,10 @@ export class CaseDetail {
     const steps =
       'steps' in version.content ? version.content.steps : [{ action: '', expected: '' }];
     for (const step of steps) {
-      this.form.controls.steps.push(this.createStep(step.action, step.expected ?? ''));
+      this.form.controls.steps.push(
+        createCaseStepForm(this.formBuilder, step.action, step.expected ?? ''),
+      );
     }
-    this.updateTemplateValidators(version.template);
     this.form.markAsPristine();
     this.form.markAsUntouched();
     this.updateCase.reset();
@@ -244,16 +241,6 @@ export class CaseDetail {
   cancelEditing(): void {
     this.editing.set(false);
     this.updateCase.reset();
-  }
-
-  addStep(): void {
-    this.form.controls.steps.push(this.createStep());
-  }
-
-  removeStep(index: number): void {
-    if (this.form.controls.steps.length > 1) {
-      this.form.controls.steps.removeAt(index);
-    }
   }
 
   submit(): void {
@@ -291,47 +278,10 @@ export class CaseDetail {
     }
   }
 
-  selectAttachment(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.item(0);
-    if (file && this.canEdit()) {
+  uploadFile(file: File): void {
+    if (this.canEdit()) {
       this.uploadAttachment.mutate(file);
     }
-    input.value = '';
-  }
-
-  formatFileSize(sizeBytes: number): string {
-    if (sizeBytes < 1_024) return `${sizeBytes} B`;
-    if (sizeBytes < 1_048_576) return `${(sizeBytes / 1_024).toFixed(1)} KB`;
-    return `${(sizeBytes / 1_048_576).toFixed(1)} MB`;
-  }
-
-  currentSteps(): Array<{ action: string; expected?: string }> {
-    const content = this.current()?.content;
-    return content && 'steps' in content ? content.steps : [];
-  }
-
-  currentText(): string {
-    const content = this.current()?.content;
-    if (!content) return '';
-    if ('text' in content) return content.text;
-    if ('charter' in content) return content.charter;
-    if ('gherkin' in content) return content.gherkin;
-    return '';
-  }
-
-  selectedSteps(): Array<{ action: string; expected?: string }> {
-    const content = this.selectedVersion.data()?.content;
-    return content && 'steps' in content ? content.steps : [];
-  }
-
-  selectedText(): string {
-    const content = this.selectedVersion.data()?.content;
-    if (!content) return '';
-    if ('text' in content) return content.text;
-    if ('charter' in content) return content.charter;
-    if ('gherkin' in content) return content.gherkin;
-    return '';
   }
 
   errorTranslationKey(): string {
@@ -350,40 +300,6 @@ export class CaseDetail {
     );
   }
 
-  templateTranslationKey(template: TestCaseTemplate): string {
-    return TEMPLATE_TRANSLATION_KEYS[template];
-  }
-
-  private createStep(action = '', expected = '') {
-    return this.formBuilder.group({
-      action: [action, [Validators.required, Validators.maxLength(10_000)]],
-      expected: [expected, Validators.maxLength(10_000)],
-    });
-  }
-
-  private updateTemplateValidators(template: TestCaseTemplate): void {
-    const contentControls: AbstractControl[] = [
-      this.form.controls.text,
-      this.form.controls.charter,
-      this.form.controls.gherkin,
-      ...this.form.controls.steps.controls.map((step) => step.controls.action),
-    ];
-    for (const control of contentControls) control.removeValidators(Validators.required);
-
-    if (template === 'steps') {
-      for (const step of this.form.controls.steps.controls) {
-        step.controls.action.addValidators(Validators.required);
-      }
-    } else if (template === 'text') {
-      this.form.controls.text.addValidators(Validators.required);
-    } else if (template === 'exploratory') {
-      this.form.controls.charter.addValidators(Validators.required);
-    } else {
-      this.form.controls.gherkin.addValidators(Validators.required);
-    }
-    for (const control of contentControls) control.updateValueAndValidity({ emitEvent: false });
-  }
-
   private request(baseVersion: number) {
     const value = this.form.getRawValue();
     const common = {
@@ -394,31 +310,9 @@ export class CaseDetail {
       automationId: value.automationId,
       preconditions: value.preconditions || undefined,
       expectedResult: value.expectedResult || undefined,
+      content: testCaseDraftContent(value),
     };
-    if (value.template === 'steps') {
-      return updateTestCaseRequestSchema.safeParse({
-        ...common,
-        content: {
-          steps: value.steps.map((step) => ({
-            action: step.action,
-            expected: step.expected || undefined,
-          })),
-        },
-      });
-    }
-    if (value.template === 'text') {
-      return updateTestCaseRequestSchema.safeParse({ ...common, content: { text: value.text } });
-    }
-    if (value.template === 'exploratory') {
-      return updateTestCaseRequestSchema.safeParse({
-        ...common,
-        content: { charter: value.charter },
-      });
-    }
-    return updateTestCaseRequestSchema.safeParse({
-      ...common,
-      content: { gherkin: value.gherkin },
-    });
+    return updateTestCaseRequestSchema.safeParse(common);
   }
 
   private requireCurrentVersionId(): string {

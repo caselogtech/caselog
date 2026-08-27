@@ -1,0 +1,142 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.version-panel {
+  background: var(--surface-2);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.panel-heading {
+  align-items: center;
+  border-bottom: 1px solid var(--color-neutral-300);
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-4);
+}
+
+.panel-heading p,
+.panel-heading h2 {
+  margin: 0;
+}
+
+.panel-heading p {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.panel-heading h2 {
+  font-size: var(--font-size-md);
+  margin-top: 2px;
+}
+
+.version-count {
+  align-items: center;
+  background: var(--color-neutral-200);
+  border-radius: 999px;
+  color: var(--text-2);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  height: 26px;
+  justify-content: center;
+  min-width: 26px;
+  padding: 0 8px;
+}
+
+.version-list {
+  list-style: none;
+  margin: 0;
+  max-height: 440px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.version-list li {
+  border-bottom: 1px solid var(--color-neutral-300);
+  padding: var(--space-4);
+}
+
+.version-list li.selected {
+  background: var(--color-accent-100);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.version-row {
+  align-items: center;
+  display: flex;
+  gap: var(--space-2);
+  justify-content: space-between;
+}
+
+.version-list p {
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  margin: var(--space-2) 0;
+}
+
+.version-list small {
+  color: var(--text-3);
+  display: block;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+.version-list .app-button {
+  margin-top: var(--space-2);
+  min-height: 30px;
+  padding-inline: 0;
+}
+
+.version-preview {
+  background: var(--surface-1);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.preview-label {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.version-preview h3 {
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.preview-steps {
+  color: var(--text-2);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.preview-text {
+  color: var(--text-2);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+app-loading-skeleton,
+app-callout {
+  display: block;
+}
