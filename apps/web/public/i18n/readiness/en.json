@@ -369,6 +369,25 @@
           "label": "Superseded evidence",
           "description": "A later observation replaced this fact for current evaluation. It remains immutable and visible for historical reconstruction."
         }
+      },
+      "processing": {
+        "eyebrow": "Processing observability",
+        "title": "Evidence pipeline needs attention",
+        "description": "These are server-recorded processing failures for this candidate. Existing observations remain immutable while the failed input stays retryable.",
+        "ingestion": "Evidence ingestion",
+        "evaluation": "Policy evaluation",
+        "sourceEvent": "Source event",
+        "sourceRevision": "Source revision",
+        "attempts": "Attempts",
+        "lastFailure": "Last failure",
+        "evaluationRecovery": "Request another evaluation from Candidate Readiness after checking the evidence and policy inputs.",
+        "codes": {
+          "testRunUnavailable": "A linked test run referenced by this candidate is no longer available to the evidence producer.",
+          "invalidSourceData": "The source data violates the native evidence contract and cannot be materialized safely.",
+          "nativeMaterializationFailed": "The native evidence producer could not materialize this source revision. The input remains queued for retry.",
+          "evaluationRetriesExhausted": "Automatic policy evaluation exhausted its bounded retries for the current evidence revision.",
+          "evaluationFailed": "Policy evaluation failed for the current candidate input. The recorded failure code is shown above."
+        }
       }
     }
   },

@@ -13,6 +13,7 @@ import {
 } from '../../../../shared/ui/public-api';
 import { EvidenceFilters } from '../../components/evidence-filters/evidence-filters';
 import { EvidenceObservationList } from '../../components/evidence-observation-list/evidence-observation-list';
+import { EvidenceProcessingDiagnostics } from '../../components/evidence-processing-diagnostics/evidence-processing-diagnostics';
 import { ReadinessApi } from '../../data-access/readiness-api';
 import {
   evidenceExplorerQueryParams,
@@ -29,6 +30,7 @@ import {
     Callout,
     EvidenceFilters,
     EvidenceObservationList,
+    EvidenceProcessingDiagnostics,
     LoadingSkeleton,
     PageState,
     StatusBadge,
@@ -86,6 +88,16 @@ export class EvidenceExplorer {
           toEvidenceListQuery(state.filters, state.cursor),
         ),
       enabled: isUuid(state.filters.candidateId),
+      retry: false,
+    };
+  });
+
+  readonly readiness = injectQuery(() => {
+    const candidateId = this.filters().candidateId;
+    return {
+      queryKey: ['candidate-readiness', this.workspaceSlug, this.projectSlug, candidateId],
+      queryFn: () => this.readinessApi.current(this.workspaceSlug, this.projectSlug, candidateId),
+      enabled: isUuid(candidateId),
       retry: false,
     };
   });

@@ -118,6 +118,7 @@ export const readiness: CandidateReadinessResponse = {
 export const evidence: EvidenceListResponse = {
   candidateId,
   candidateRevision: 12,
+  issues: [],
   items: [
     {
       id: observationId,

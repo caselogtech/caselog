@@ -56,6 +56,11 @@
       </div>
     </div>
 
+    <app-evidence-processing-diagnostics
+      [issues]="response.issues"
+      [readiness]="readiness.data() ?? null"
+    />
+
     @if (!filters().currentOnly) {
       <app-callout [title]="'readiness.evidence.explorer.historyNoticeTitle' | transloco">
         <p>{{ 'readiness.evidence.explorer.historyNoticeDescription' | transloco }}</p>

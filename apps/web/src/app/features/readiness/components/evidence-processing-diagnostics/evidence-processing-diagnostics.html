@@ -1,0 +1,58 @@
+@if (visible()) {
+  <section class="processing-diagnostics" aria-labelledby="processing-diagnostics-title">
+    <header>
+      <p class="eyebrow">{{ 'readiness.evidence.explorer.processing.eyebrow' | transloco }}</p>
+      <h2 id="processing-diagnostics-title">
+        {{ 'readiness.evidence.explorer.processing.title' | transloco }}
+      </h2>
+      <p>{{ 'readiness.evidence.explorer.processing.description' | transloco }}</p>
+    </header>
+
+    <div class="diagnostic-list">
+      @for (issue of issues(); track issue.id) {
+        <article class="diagnostic-card">
+          <div class="diagnostic-heading">
+            <app-status-badge
+              [label]="'readiness.evidence.explorer.processing.ingestion' | transloco"
+              tone="danger"
+            />
+            <span class="mono">{{ issue.code }}</span>
+          </div>
+          <h3>{{ issueTranslationKey(issue) | transloco }}</h3>
+          <dl>
+            <div>
+              <dt>{{ 'readiness.evidence.explorer.processing.sourceEvent' | transloco }}</dt>
+              <dd class="mono">{{ issue.source.eventName }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'readiness.evidence.explorer.processing.sourceRevision' | transloco }}</dt>
+              <dd class="mono">{{ issue.source.revision }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'readiness.evidence.explorer.processing.attempts' | transloco }}</dt>
+              <dd>{{ issue.attempts }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'readiness.evidence.explorer.processing.lastFailure' | transloco }}</dt>
+              <dd>{{ issue.lastFailedAt | date: 'medium' }}</dd>
+            </div>
+          </dl>
+        </article>
+      }
+
+      @if (evaluationFailed()) {
+        <article class="diagnostic-card">
+          <div class="diagnostic-heading">
+            <app-status-badge
+              [label]="'readiness.evidence.explorer.processing.evaluation' | transloco"
+              tone="danger"
+            />
+            <span class="mono">{{ readiness()?.failureCode ?? 'evaluation_failed' }}</span>
+          </div>
+          <h3>{{ evaluationTranslationKey() | transloco }}</h3>
+          <p>{{ 'readiness.evidence.explorer.processing.evaluationRecovery' | transloco }}</p>
+        </article>
+      }
+    </div>
+  </section>
+}

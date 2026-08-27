@@ -67,6 +67,7 @@ h1 {
 
 app-page-state,
 app-callout,
+app-evidence-processing-diagnostics,
 app-evidence-observation-list {
   display: block;
   margin-top: var(--space-5);
