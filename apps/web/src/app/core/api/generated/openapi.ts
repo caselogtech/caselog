@@ -3903,6 +3903,12 @@ export interface components {
                 candidateId: string;
                 /** Format: uuid */
                 assignmentId: string;
+                policy: {
+                    /** Format: uuid */
+                    id: string;
+                    key: string;
+                    name: string;
+                };
                 policyVersion: {
                     /** Format: uuid */
                     id: string;
@@ -3925,6 +3931,8 @@ export interface components {
                     gateId: string;
                     gateKey: string;
                     position: number;
+                    /** @enum {string} */
+                    impact: "warning" | "blocking";
                     /** @enum {string} */
                     result: "passed" | "warning" | "failed" | "unknown";
                     /** @enum {string} */
@@ -4003,6 +4011,12 @@ export interface components {
                 candidateId: string;
                 /** Format: uuid */
                 assignmentId: string;
+                policy: {
+                    /** Format: uuid */
+                    id: string;
+                    key: string;
+                    name: string;
+                };
                 policyVersion: {
                     /** Format: uuid */
                     id: string;
@@ -4025,6 +4039,8 @@ export interface components {
                     gateId: string;
                     gateKey: string;
                     position: number;
+                    /** @enum {string} */
+                    impact: "warning" | "blocking";
                     /** @enum {string} */
                     result: "passed" | "warning" | "failed" | "unknown";
                     /** @enum {string} */
@@ -4104,6 +4120,12 @@ export interface components {
                 candidateId: string;
                 /** Format: uuid */
                 assignmentId: string;
+                policy: {
+                    /** Format: uuid */
+                    id: string;
+                    key: string;
+                    name: string;
+                };
                 policyVersion: {
                     /** Format: uuid */
                     id: string;
@@ -4126,6 +4148,8 @@ export interface components {
                     gateId: string;
                     gateKey: string;
                     position: number;
+                    /** @enum {string} */
+                    impact: "warning" | "blocking";
                     /** @enum {string} */
                     result: "passed" | "warning" | "failed" | "unknown";
                     /** @enum {string} */

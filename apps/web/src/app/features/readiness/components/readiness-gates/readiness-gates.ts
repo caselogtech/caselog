@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import type { GateEvaluation, ReadinessGateInput } from '@caselog/schemas';
+import type { GateEvaluation } from '@caselog/schemas';
 import type { EvidenceObservation } from '@caselog/schemas/evidence';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { StatusBadge } from '../../../../shared/ui/public-api';
@@ -14,13 +14,8 @@ import {
   gateResultPresentation,
   metricLabel,
   operatorSymbol,
+  type ReadinessGateRow,
 } from '../../domain/readiness-presentation';
-
-export type ReadinessGateRow = {
-  evaluation: GateEvaluation;
-  impact: ReadinessGateInput['impact'];
-  observation: EvidenceObservation | null;
-};
 
 @Component({
   selector: 'app-readiness-gates',

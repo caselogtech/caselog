@@ -53,6 +53,10 @@ p {
   overflow-wrap: anywhere;
 }
 
+.history-content > .app-button {
+  margin: var(--space-2) 0 0;
+}
+
 :host > .app-button {
   margin: var(--space-4) auto 0;
 }

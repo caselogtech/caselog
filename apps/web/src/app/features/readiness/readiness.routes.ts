@@ -5,6 +5,14 @@ const readinessTranslations = provideTranslocoScope('readiness');
 
 export const readinessRoutes: Routes = [
   {
+    path: 'decisions/:decisionId',
+    providers: readinessTranslations,
+    loadComponent: () =>
+      import('./pages/decision-detail/decision-detail').then(
+        ({ ReadinessDecisionDetail }) => ReadinessDecisionDetail,
+      ),
+  },
+  {
     path: '',
     providers: readinessTranslations,
     loadComponent: () =>

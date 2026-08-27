@@ -51,7 +51,11 @@ export async function hydrateReadinessDecisions(
   const policyVersionIds = [...new Set(decisions.map(({ policyVersionId }) => policyVersionId))];
   const versions = await transaction.releasePolicyVersion.findMany({
     where: { id: { in: policyVersionIds } },
-    select: { id: true, version: true },
+    select: {
+      id: true,
+      version: true,
+      policy: { select: { id: true, key: true, name: true } },
+    },
   });
   const evaluations = await transaction.gateEvaluation.findMany({
     where: { decisionId: { in: decisions.map(({ id }) => id) } },
@@ -60,7 +64,7 @@ export async function hydrateReadinessDecisions(
   });
   const gates = await transaction.readinessGate.findMany({
     where: { id: { in: [...new Set(evaluations.map(({ gateId }) => gateId))] } },
-    select: { id: true, key: true },
+    select: { id: true, key: true, impact: true },
   });
   const waivers = await transaction.readinessWaiver.findMany({
     where: { decisionId: { in: decisions.map(({ id }) => id) } },
@@ -68,7 +72,7 @@ export async function hydrateReadinessDecisions(
     select: READINESS_WAIVER_SELECTION,
   });
   const versionById = new Map(versions.map((version) => [version.id, version]));
-  const gateKeyById = new Map(gates.map((gate) => [gate.id, gate.key]));
+  const gateById = new Map(gates.map((gate) => [gate.id, gate]));
   return decisions.map((decision) => {
     const policyVersion = versionById.get(decision.policyVersionId);
     if (!policyVersion) throw new Error(`Policy version ${decision.policyVersionId} disappeared`);
@@ -78,9 +82,9 @@ export async function hydrateReadinessDecisions(
       gateEvaluations: evaluations
         .filter(({ decisionId }) => decisionId === decision.id)
         .map((evaluation) => {
-          const gateKey = gateKeyById.get(evaluation.gateId);
-          if (!gateKey) throw new Error(`Readiness gate ${evaluation.gateId} disappeared`);
-          return { ...evaluation, gateKey };
+          const gate = gateById.get(evaluation.gateId);
+          if (!gate) throw new Error(`Readiness gate ${evaluation.gateId} disappeared`);
+          return { ...evaluation, gateKey: gate.key, impact: gate.impact };
         }),
       waivers: waivers.filter(({ decisionId }) => decisionId === decision.id),
     };

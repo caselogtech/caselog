@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { apiErrorSchema } from '@caselog/schemas';
 
 const TRANSLATED_ERROR_KEYS = new Set([
+  'errors.active_readiness_waiver_exists',
   'errors.case_version_conflict',
   'errors.section_name_taken',
   'errors.section_not_empty',
@@ -30,6 +31,11 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.project_slug_taken',
   'errors.rate_limited',
   'errors.readiness_input_superseded',
+  'errors.readiness_decision_already_ready',
+  'errors.readiness_gate_already_passed',
+  'errors.readiness_waiver_already_revoked',
+  'errors.readiness_waiver_expired',
+  'errors.readiness_waiver_expiry_not_future',
   'errors.release_policy_assignment_changed',
   'errors.release_candidate_identity_taken',
   'errors.release_finalized',

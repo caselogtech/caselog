@@ -1,0 +1,199 @@
+<section class="waiver-manager" aria-labelledby="waiver-manager-title">
+  <div class="manager-heading">
+    <div>
+      <p class="eyebrow">{{ 'readiness.waivers.eyebrow' | transloco }}</p>
+      <h2 id="waiver-manager-title">{{ 'readiness.waivers.title' | transloco }}</h2>
+    </div>
+    <p>{{ 'readiness.waivers.immutableNote' | transloco }}</p>
+  </div>
+
+  @if (decision().status === 'ready') {
+    <p class="empty">{{ 'readiness.waivers.readyDescription' | transloco }}</p>
+  } @else if (!canManage()) {
+    <p class="empty">{{ 'readiness.waivers.readOnlyDescription' | transloco }}</p>
+  } @else if (canCreate()) {
+    <form class="create-form" [formGroup]="createForm" (ngSubmit)="requestCreate()">
+      <p class="exception-warning">{{ 'readiness.waivers.exceptionWarning' | transloco }}</p>
+      <div class="form-grid">
+        <app-form-field
+          controlId="waiver-scope"
+          [label]="'readiness.waivers.scope' | transloco"
+          [required]="true"
+        >
+          <select appControl id="waiver-scope" formControlName="scopeType">
+            <option value="decision" [disabled]="activeDecisionWaiver()">
+              {{ 'readiness.waivers.entireDecision' | transloco }}
+            </option>
+            <option value="gate_evaluation" [disabled]="eligibleGates().length === 0">
+              {{ 'readiness.waivers.singleGate' | transloco }}
+            </option>
+          </select>
+        </app-form-field>
+
+        @if (createForm.controls.scopeType.value === 'gate_evaluation') {
+          <app-form-field
+            controlId="waiver-gate"
+            [label]="'readiness.waivers.gate' | transloco"
+            [required]="true"
+            [error]="
+              createForm.controls.gateEvaluationId.touched &&
+              createForm.controls.gateEvaluationId.invalid
+                ? ('readiness.waivers.gateRequired' | transloco)
+                : undefined
+            "
+          >
+            <select appControl id="waiver-gate" formControlName="gateEvaluationId">
+              <option value="">{{ 'readiness.waivers.chooseGate' | transloco }}</option>
+              @for (gate of eligibleGates(); track gate.id) {
+                <option [value]="gate.id">
+                  {{ gate.gateKey }} · {{ gateResult(gate).labelKey | transloco }}
+                </option>
+              }
+            </select>
+          </app-form-field>
+        }
+
+        <app-form-field
+          class="wide"
+          controlId="waiver-reason"
+          [label]="'readiness.waivers.reason' | transloco"
+          [required]="true"
+          [hint]="'readiness.waivers.reasonHint' | transloco"
+          [error]="
+            createForm.controls.reason.touched && createForm.controls.reason.invalid
+              ? ('readiness.waivers.reasonRequired' | transloco)
+              : undefined
+          "
+        >
+          <textarea appControl id="waiver-reason" rows="4" formControlName="reason"></textarea>
+        </app-form-field>
+
+        <app-form-field
+          controlId="waiver-expiry"
+          [label]="'readiness.waivers.expiresAt' | transloco"
+          [hint]="'readiness.waivers.expiryHint' | transloco"
+          [error]="
+            createForm.controls.expiresAt.touched && createForm.controls.expiresAt.invalid
+              ? ('readiness.waivers.expiryInvalid' | transloco)
+              : undefined
+          "
+        >
+          <input appControl id="waiver-expiry" type="datetime-local" formControlName="expiresAt" />
+        </app-form-field>
+
+        <app-form-field
+          controlId="waiver-approval"
+          [label]="'readiness.waivers.externalApproval' | transloco"
+          [hint]="'readiness.waivers.externalApprovalHint' | transloco"
+        >
+          <input appControl id="waiver-approval" type="text" formControlName="externalApprovalReference" />
+        </app-form-field>
+      </div>
+      <button appButton="danger" type="submit" [disabled]="creating()">
+        {{ (creating() ? 'readiness.waivers.creating' : 'readiness.waivers.create') | transloco }}
+      </button>
+    </form>
+  } @else {
+    <p class="empty">{{ 'readiness.waivers.noAvailableTargets' | transloco }}</p>
+  }
+
+  <div class="history-heading">
+    <h3>{{ 'readiness.waivers.historyTitle' | transloco }}</h3>
+    <span>{{ 'readiness.waivers.historyCount' | transloco: { count: waivers().length } }}</span>
+  </div>
+
+  @if (waivers().length === 0) {
+    <p class="empty">{{ 'readiness.waivers.empty' | transloco }}</p>
+  } @else {
+    <ol class="waiver-list">
+      @for (waiver of waivers(); track waiver.id) {
+        @let waiverStatus = status(waiver.status);
+        <li>
+          <div class="waiver-heading">
+            <div class="scope">
+              <strong>{{ scopeLabel(waiver.scope) | transloco }}</strong>
+              @if (waiver.scope.type === 'gate_evaluation') {
+                <span class="mono">{{ gateLabel(waiver.scope.gateEvaluationId) }}</span>
+              }
+            </div>
+            <app-status-badge
+              [label]="waiverStatus.labelKey | transloco"
+              [tone]="waiverStatus.tone"
+            />
+          </div>
+          <p class="reason">{{ waiver.reason }}</p>
+          <dl>
+            <div>
+              <dt>{{ 'readiness.waivers.createdBy' | transloco }}</dt>
+              <dd class="mono">{{ waiver.createdById }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'readiness.waivers.createdAt' | transloco }}</dt>
+              <dd>{{ waiver.createdAt | date: 'medium' }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'readiness.waivers.expiresAt' | transloco }}</dt>
+              <dd>
+                {{
+                  waiver.expiresAt
+                    ? (waiver.expiresAt | date: 'medium')
+                    : ('readiness.waivers.noExpiry' | transloco)
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt>{{ 'readiness.waivers.externalApproval' | transloco }}</dt>
+              <dd>{{ waiver.externalApprovalReference ?? '—' }}</dd>
+            </div>
+          </dl>
+
+          @if (waiver.revocation; as revocation) {
+            <div class="revocation-record">
+              <strong>{{ 'readiness.waivers.revokedTitle' | transloco }}</strong>
+              <p>{{ revocation.reason }}</p>
+              <span>
+                {{ 'readiness.waivers.revokedBy' | transloco }}
+                <span class="mono">{{ revocation.revokedById }}</span>
+                · {{ revocation.revokedAt | date: 'medium' }}
+              </span>
+            </div>
+          } @else if (waiver.status === 'active' && canManage()) {
+            @if (revokingWaiverId() === waiver.id) {
+              <form class="revoke-form" [formGroup]="revokeForm" (ngSubmit)="requestRevocation()">
+                <app-form-field
+                  [controlId]="'revoke-reason-' + waiver.id"
+                  [label]="'readiness.waivers.revokeReason' | transloco"
+                  [required]="true"
+                  [error]="
+                    revokeForm.controls.reason.touched && revokeForm.controls.reason.invalid
+                      ? ('readiness.waivers.reasonRequired' | transloco)
+                      : undefined
+                  "
+                >
+                  <textarea
+                    appControl
+                    [id]="'revoke-reason-' + waiver.id"
+                    rows="3"
+                    formControlName="reason"
+                  ></textarea>
+                </app-form-field>
+                <div class="revoke-actions">
+                  <button appButton="secondary" type="button" [disabled]="revoking()" (click)="cancelRevocation()">
+                    {{ 'readiness.waivers.cancel' | transloco }}
+                  </button>
+                  <button appButton="danger" type="submit" [disabled]="revoking()">
+                    {{ (revoking() ? 'readiness.waivers.revoking' : 'readiness.waivers.confirmRevoke') | transloco }}
+                  </button>
+                </div>
+              </form>
+            } @else {
+              <button appButton="quiet" type="button" (click)="startRevocation(waiver.id)">
+                {{ 'readiness.waivers.revoke' | transloco }}
+              </button>
+            }
+          }
+        </li>
+      }
+    </ol>
+  }
+</section>

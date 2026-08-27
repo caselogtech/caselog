@@ -23,13 +23,10 @@ import { CandidateEvidence } from '../../components/candidate-evidence/candidate
 import { DecisionHistory } from '../../components/decision-history/decision-history';
 import { LinkedRunSummary } from '../../components/linked-run-summary/linked-run-summary';
 import { PolicyAssignment } from '../../components/policy-assignment/policy-assignment';
-import {
-  ReadinessGates,
-  type ReadinessGateRow,
-} from '../../components/readiness-gates/readiness-gates';
+import { ReadinessGates } from '../../components/readiness-gates/readiness-gates';
 import { ReadinessSummary } from '../../components/readiness-summary/readiness-summary';
 import { ReadinessApi } from '../../data-access/readiness-api';
-import { gateAttentionOrder, releasePresentation } from '../../domain/readiness-presentation';
+import { buildReadinessGateRows, releasePresentation } from '../../domain/readiness-presentation';
 
 @Component({
   selector: 'app-candidate-readiness',
@@ -102,14 +99,6 @@ export class CandidateReadiness {
     queryFn: () => this.readinessApi.policies(this.workspaceSlug, this.projectSlug),
     enabled: this.noPolicy() && this.canManage(),
   }));
-  readonly policy = injectQuery(() => {
-    const policyId = this.current.data()?.assignment.policy.id ?? '';
-    return {
-      queryKey: ['readiness-policy', this.workspaceSlug, this.projectSlug, policyId],
-      queryFn: () => this.readinessApi.policy(this.workspaceSlug, this.projectSlug, policyId),
-      enabled: Boolean(policyId),
-    };
-  });
   readonly evidence = injectInfiniteQuery(() => ({
     queryKey: ['candidate-evidence', this.workspaceSlug, this.projectSlug, this.candidateId],
     queryFn: ({ pageParam }) =>
@@ -142,39 +131,9 @@ export class CandidateReadiness {
   readonly decisions = computed(
     () => this.history.data()?.pages.flatMap(({ items }) => items) ?? [],
   );
-  readonly gateRows = computed<ReadinessGateRow[]>(() => {
-    const current = this.current.data();
-    const decision = current?.decision;
-    const policy = this.policy.data()?.policy;
-    if (!current || !decision || !policy) return [];
-    const version = policy.versions.find(({ id }) => id === current.assignment.policyVersion.id);
-    if (!version) return [];
-    const gates = new Map(version.gates.map((gate) => [gate.id, gate]));
-    const observations = new Map(this.observations().map((item) => [item.id, item]));
-    return decision.gates
-      .flatMap((evaluation): ReadinessGateRow[] => {
-        const gate = gates.get(evaluation.gateId);
-        if (!gate) return [];
-        return [
-          {
-            evaluation,
-            impact: gate.impact,
-            observation: evaluation.selectedObservationId
-              ? (observations.get(evaluation.selectedObservationId) ?? null)
-              : null,
-          },
-        ];
-      })
-      .sort(
-        (left, right) =>
-          gateAttentionOrder(left.evaluation.result) -
-            gateAttentionOrder(right.evaluation.result) ||
-          left.evaluation.position - right.evaluation.position,
-      );
-  });
-  readonly gateContractIncomplete = computed(() => {
-    const count = this.current.data()?.decision?.gates.length ?? 0;
-    return this.policy.isSuccess() && count > 0 && this.gateRows().length !== count;
+  readonly gateRows = computed(() => {
+    const decision = this.current.data()?.decision;
+    return decision ? buildReadinessGateRows(decision, this.observations()) : [];
   });
 
   readonly evaluate = injectMutation(() => ({

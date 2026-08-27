@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import type { ReadinessDecision } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Button, StatusBadge } from '../../../../shared/ui/public-api';
@@ -10,13 +11,17 @@ import {
 
 @Component({
   selector: 'app-decision-history',
-  imports: [Button, DatePipe, StatusBadge, TranslocoPipe],
+  imports: [Button, DatePipe, RouterLink, StatusBadge, TranslocoPipe],
   templateUrl: './decision-history.html',
   styleUrl: './decision-history.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DecisionHistory {
   readonly decisions = input.required<readonly ReadinessDecision[]>();
+  readonly workspaceSlug = input.required<string>();
+  readonly projectSlug = input.required<string>();
+  readonly releaseId = input.required<string>();
+  readonly candidateId = input.required<string>();
   readonly hasMore = input(false);
   readonly loadingMore = input(false);
   readonly loadMore = output<void>();

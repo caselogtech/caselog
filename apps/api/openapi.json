@@ -19056,6 +19056,27 @@
                     "format": "uuid",
                     "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                   },
+                  "policy": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "key": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "key",
+                      "name"
+                    ]
+                  },
                   "policyVersion": {
                     "type": "object",
                     "properties": {
@@ -19138,6 +19159,13 @@
                           "type": "integer",
                           "minimum": 0,
                           "maximum": 9007199254740991
+                        },
+                        "impact": {
+                          "type": "string",
+                          "enum": [
+                            "warning",
+                            "blocking"
+                          ]
                         },
                         "result": {
                           "type": "string",
@@ -19309,6 +19337,7 @@
                         "gateId",
                         "gateKey",
                         "position",
+                        "impact",
                         "result",
                         "diagnostic",
                         "metricKey",
@@ -19472,6 +19501,7 @@
                   "id",
                   "candidateId",
                   "assignmentId",
+                  "policy",
                   "policyVersion",
                   "evidenceRevision",
                   "evaluatorVersion",
@@ -19522,6 +19552,27 @@
                   "type": "string",
                   "format": "uuid",
                   "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "policy": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "key": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "key",
+                    "name"
+                  ]
                 },
                 "policyVersion": {
                   "type": "object",
@@ -19605,6 +19656,13 @@
                         "type": "integer",
                         "minimum": 0,
                         "maximum": 9007199254740991
+                      },
+                      "impact": {
+                        "type": "string",
+                        "enum": [
+                          "warning",
+                          "blocking"
+                        ]
                       },
                       "result": {
                         "type": "string",
@@ -19776,6 +19834,7 @@
                       "gateId",
                       "gateKey",
                       "position",
+                      "impact",
                       "result",
                       "diagnostic",
                       "metricKey",
@@ -19939,6 +19998,7 @@
                 "id",
                 "candidateId",
                 "assignmentId",
+                "policy",
                 "policyVersion",
                 "evidenceRevision",
                 "evaluatorVersion",
@@ -19989,6 +20049,27 @@
                 "type": "string",
                 "format": "uuid",
                 "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "policy": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "key",
+                  "name"
+                ]
               },
               "policyVersion": {
                 "type": "object",
@@ -20072,6 +20153,13 @@
                       "type": "integer",
                       "minimum": 0,
                       "maximum": 9007199254740991
+                    },
+                    "impact": {
+                      "type": "string",
+                      "enum": [
+                        "warning",
+                        "blocking"
+                      ]
                     },
                     "result": {
                       "type": "string",
@@ -20243,6 +20331,7 @@
                     "gateId",
                     "gateKey",
                     "position",
+                    "impact",
                     "result",
                     "diagnostic",
                     "metricKey",
@@ -20406,6 +20495,7 @@
               "id",
               "candidateId",
               "assignmentId",
+              "policy",
               "policyVersion",
               "evidenceRevision",
               "evaluatorVersion",

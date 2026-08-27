@@ -33,6 +33,23 @@
             }}
           </p>
           <span class="mono">{{ decision.id }}</span>
+          <a
+            appButton="quiet"
+            href="/{{ workspaceSlug() }}/{{ projectSlug() }}/releases/{{ releaseId() }}/candidates/{{ candidateId() }}/decisions/{{ decision.id }}"
+            [routerLink]="[
+              '/',
+              workspaceSlug(),
+              projectSlug(),
+              'releases',
+              releaseId(),
+              'candidates',
+              candidateId(),
+              'decisions',
+              decision.id
+            ]"
+          >
+            {{ 'readiness.history.viewDecision' | transloco }}
+          </a>
         </div>
       </li>
     }

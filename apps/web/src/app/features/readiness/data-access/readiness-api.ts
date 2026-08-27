@@ -2,16 +2,26 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { releaseDetailResponseSchema, type ReleaseDetailResponse } from '@caselog/schemas';
 import {
+  createReadinessWaiverRequestSchema,
   candidatePolicyAssignmentResponseSchema,
   candidateReadinessResponseSchema,
+  readinessDecisionResponseSchema,
   readinessDecisionListResponseSchema,
   readinessPolicyListResponseSchema,
   readinessPolicyResponseSchema,
+  readinessWaiverListResponseSchema,
+  readinessWaiverResponseSchema,
+  revokeReadinessWaiverRequestSchema,
+  type CreateReadinessWaiverRequest,
   type CandidatePolicyAssignmentResponse,
   type CandidateReadinessResponse,
+  type ReadinessDecisionResponse,
   type ReadinessDecisionListResponse,
   type ReadinessPolicyListResponse,
   type ReadinessPolicyResponse,
+  type ReadinessWaiverListResponse,
+  type ReadinessWaiverResponse,
+  type RevokeReadinessWaiverRequest,
 } from '@caselog/schemas/readiness';
 import { evidenceListResponseSchema, type EvidenceListResponse } from '@caselog/schemas/evidence';
 import { lastValueFrom } from 'rxjs';
@@ -77,6 +87,73 @@ export class ReadinessApi {
       }),
     );
     return readinessDecisionListResponseSchema.parse(response);
+  }
+
+  async decision(
+    workspaceSlug: string,
+    projectSlug: string,
+    decisionId: string,
+  ): Promise<ReadinessDecisionResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(this.readinessDecisionUrl(projectSlug, decisionId)),
+    );
+    return readinessDecisionResponseSchema.parse(response);
+  }
+
+  async waivers(
+    workspaceSlug: string,
+    projectSlug: string,
+    decisionId: string,
+    cursor?: string,
+    limit = 25,
+  ): Promise<ReadinessWaiverListResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.get<unknown>(`${this.readinessDecisionUrl(projectSlug, decisionId)}/waivers`, {
+        params: { limit, ...(cursor ? { cursor } : {}) },
+      }),
+    );
+    return readinessWaiverListResponseSchema.parse(response);
+  }
+
+  async createWaiver(
+    workspaceSlug: string,
+    projectSlug: string,
+    decisionId: string,
+    request: CreateReadinessWaiverRequest,
+    idempotencyKey: string,
+  ): Promise<ReadinessWaiverResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const payload = createReadinessWaiverRequestSchema.parse(request);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `${this.readinessDecisionUrl(projectSlug, decisionId)}/waivers`,
+        payload,
+        { headers: { 'Idempotency-Key': idempotencyKey } },
+      ),
+    );
+    return readinessWaiverResponseSchema.parse(response);
+  }
+
+  async revokeWaiver(
+    workspaceSlug: string,
+    projectSlug: string,
+    decisionId: string,
+    waiverId: string,
+    request: RevokeReadinessWaiverRequest,
+    idempotencyKey: string,
+  ): Promise<ReadinessWaiverResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const payload = revokeReadinessWaiverRequestSchema.parse(request);
+    const response = await lastValueFrom(
+      this.http.post<unknown>(
+        `${this.readinessDecisionUrl(projectSlug, decisionId)}/waivers/${encodeURIComponent(waiverId)}/revocation`,
+        payload,
+        { headers: { 'Idempotency-Key': idempotencyKey } },
+      ),
+    );
+    return readinessWaiverResponseSchema.parse(response);
   }
 
   async evidence(
@@ -150,5 +227,9 @@ export class ReadinessApi {
 
   private candidateReadinessUrl(projectSlug: string, candidateId: string): string {
     return `/api/v1/projects/${encodeURIComponent(projectSlug)}/candidates/${encodeURIComponent(candidateId)}/readiness`;
+  }
+
+  private readinessDecisionUrl(projectSlug: string, decisionId: string): string {
+    return `/api/v1/projects/${encodeURIComponent(projectSlug)}/readiness-decisions/${encodeURIComponent(decisionId)}`;
   }
 }

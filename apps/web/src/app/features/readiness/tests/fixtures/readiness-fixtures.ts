@@ -2,9 +2,12 @@ import type { ReleaseDetailResponse } from '@caselog/schemas';
 import type { EvidenceListResponse } from '@caselog/schemas/evidence';
 import type {
   CandidateReadinessResponse,
+  ReadinessDecisionResponse,
   ReadinessDecisionListResponse,
   ReadinessPolicyListResponse,
   ReadinessPolicyResponse,
+  ReadinessWaiverListResponse,
+  ReadinessWaiverResponse,
 } from '@caselog/schemas/readiness';
 
 export const releaseId = '11111111-1111-4111-8111-111111111111';
@@ -14,6 +17,7 @@ export const policyVersionId = '44444444-4444-4444-8444-444444444444';
 export const gateId = '55555555-5555-4555-8555-555555555555';
 export const observationId = '66666666-6666-4666-8666-666666666666';
 export const decisionId = '77777777-7777-4777-8777-777777777777';
+export const waiverId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 
 export const releaseDetail: ReleaseDetailResponse = {
   release: {
@@ -80,6 +84,7 @@ export const readiness: CandidateReadinessResponse = {
     id: decisionId,
     candidateId,
     assignmentId: '99999999-9999-4999-8999-999999999999',
+    policy: { id: policyId, key: 'production', name: 'Production promotion' },
     policyVersion: { id: policyVersionId, version: 3 },
     evidenceRevision: 12,
     evaluatorVersion: '1.0.0',
@@ -93,6 +98,7 @@ export const readiness: CandidateReadinessResponse = {
         gateId,
         gateKey: 'required-pass-rate',
         position: 0,
+        impact: 'blocking',
         result: 'failed',
         diagnostic: 'none',
         metricKey: 'test.pass_rate',
@@ -213,3 +219,36 @@ export const history: ReadinessDecisionListResponse = {
   items: readiness.decision ? [readiness.decision] : [],
   nextCursor: null,
 };
+
+export const decisionDetail: ReadinessDecisionResponse = {
+  decision: required(readiness.decision),
+};
+
+export const waiverList: ReadinessWaiverListResponse = {
+  items: [
+    {
+      id: waiverId,
+      decisionId,
+      scope: { type: 'decision' },
+      reason: 'Accepted deployment risk with product approval.',
+      externalApprovalReference: 'CHG-1042',
+      expiresAt: '2026-08-28T12:00:00.000Z',
+      status: 'active',
+      createdById: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+      createdAt: '2026-08-27T10:00:00.000Z',
+      revocation: null,
+    },
+  ],
+  nextCursor: null,
+};
+
+export const waiverResponse: ReadinessWaiverResponse = {
+  waiver: required(waiverList.items[0]),
+  effectiveDisposition: 'approved_with_waiver',
+};
+
+function required<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined)
+    throw new Error('Required readiness fixture is missing');
+  return value;
+}

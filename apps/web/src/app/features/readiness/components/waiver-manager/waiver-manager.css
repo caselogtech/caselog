@@ -1,0 +1,189 @@
+:host {
+  display: block;
+}
+
+.waiver-manager {
+  border-top: 2px solid var(--border);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+}
+
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+.manager-heading,
+.history-heading,
+.waiver-heading,
+.revoke-actions {
+  display: flex;
+}
+
+.manager-heading,
+.history-heading,
+.waiver-heading {
+  align-items: flex-start;
+  gap: var(--space-4);
+  justify-content: space-between;
+}
+
+.manager-heading > p,
+.history-heading > span,
+.empty {
+  color: var(--text-2);
+  font-size: var(--font-size-sm);
+}
+
+.manager-heading > p {
+  margin: 0;
+  max-width: 42rem;
+  text-align: right;
+}
+
+.eyebrow {
+  color: var(--color-accent-700);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 var(--space-1);
+  text-transform: uppercase;
+}
+
+h2 {
+  font-size: var(--font-size-lg);
+  margin-bottom: 0;
+}
+
+h3 {
+  font-size: var(--font-size-md);
+  margin-bottom: 0;
+}
+
+.create-form {
+  background: color-mix(in srgb, var(--color-danger-surface) 55%, var(--surface-1));
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-lg);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+}
+
+.exception-warning {
+  color: var(--color-danger-text);
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+}
+
+.form-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.create-form > .app-button {
+  margin-top: var(--space-4);
+}
+
+.history-heading {
+  align-items: baseline;
+  border-bottom: 1px solid var(--border);
+  margin-top: var(--space-5);
+  padding-bottom: var(--space-3);
+}
+
+.waiver-list {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.waiver-list > li {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.scope {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.scope .mono {
+  color: var(--text-2);
+  font-size: var(--font-size-xs);
+}
+
+.reason {
+  margin: var(--space-3) 0;
+  white-space: pre-wrap;
+}
+
+dl {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+dt {
+  color: var(--text-2);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+dd {
+  font-size: var(--font-size-sm);
+  margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.revocation-record,
+.revoke-form {
+  background: var(--surface-2);
+  border-left: 3px solid var(--color-danger);
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+}
+
+.revocation-record p {
+  margin: var(--space-2) 0;
+}
+
+.revocation-record > span {
+  color: var(--text-2);
+  font-size: var(--font-size-xs);
+}
+
+.waiver-list > li > .app-button {
+  margin-top: var(--space-3);
+}
+
+.revoke-actions {
+  gap: var(--space-2);
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 680px) {
+  .manager-heading,
+  .waiver-heading {
+    flex-direction: column;
+  }
+
+  .manager-heading > p {
+    text-align: left;
+  }
+
+  .form-grid,
+  dl {
+    grid-template-columns: 1fr;
+  }
+}

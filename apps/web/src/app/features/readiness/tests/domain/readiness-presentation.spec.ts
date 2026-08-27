@@ -25,7 +25,7 @@ describe('readiness presentation', () => {
     const ordered = results.sort(
       (left, right) => gateAttentionOrder(left) - gateAttentionOrder(right),
     );
-    expect(ordered).toEqual(['failed', 'unknown', 'warning', 'passed']);
+    expect(ordered).toEqual(['failed', 'warning', 'unknown', 'passed']);
     expect(gateResultPresentation('failed').tone).toBe('danger');
     expect(gateImpactPresentation('blocking').tone).toBe('danger');
   });

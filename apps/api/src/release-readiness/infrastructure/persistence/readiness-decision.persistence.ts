@@ -75,8 +75,14 @@ export type ReadinessEvaluationContext = {
 };
 
 export type HydratedReadinessDecisionRecord = ReadinessDecisionScalarRecord & {
-  policyVersion: { id: string; version: number };
-  gateEvaluations: Array<GateEvaluationScalarRecord & { gateKey: string }>;
+  policyVersion: {
+    id: string;
+    version: number;
+    policy: { id: string; key: string; name: string };
+  };
+  gateEvaluations: Array<
+    GateEvaluationScalarRecord & { gateKey: string; impact: ReadinessGateRecord['impact'] }
+  >;
   waivers: ReadinessWaiverRecord[];
 };
 
@@ -141,7 +147,11 @@ export function toReadinessDecision(
     id: record.id,
     candidateId: record.candidateId,
     assignmentId: record.assignmentId,
-    policyVersion: record.policyVersion,
+    policy: record.policyVersion.policy,
+    policyVersion: {
+      id: record.policyVersion.id,
+      version: record.policyVersion.version,
+    },
     evidenceRevision: record.evidenceRevision,
     evaluatorVersion: record.evaluatorVersion,
     trigger: record.trigger.toLowerCase() as ReadinessDecision['trigger'],
@@ -163,6 +173,7 @@ export function toReadinessDecision(
       gateId: gate.gateId,
       gateKey: gate.gateKey,
       position: gate.position,
+      impact: gate.impact.toLowerCase() as ReadinessDecision['gates'][number]['impact'],
       result: gate.result.toLowerCase() as ReadinessDecision['gates'][number]['result'],
       diagnostic: gate.diagnostic.toLowerCase() as ReadinessDecision['gates'][number]['diagnostic'],
       metricKey: gate.metricKey as ReadinessDecision['gates'][number]['metricKey'],

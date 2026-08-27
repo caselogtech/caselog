@@ -13,6 +13,7 @@
     }
   },
   "errors": {
+    "active_readiness_waiver_exists": "This decision target already has an active waiver.",
     "case_version_conflict": "This test case changed while you were editing it. Reload the latest version and try again.",
     "section_name_taken": "A section with this name already exists here.",
     "section_not_empty": "Move or delete this section's cases and child sections first.",
@@ -42,6 +43,11 @@
     "project_slug_taken": "This project URL is already used in this workspace.",
     "rate_limited": "Too many requests. Please wait and try again.",
     "readiness_input_superseded": "Readiness inputs changed during evaluation. Request a new evaluation.",
+    "readiness_decision_already_ready": "A ready decision does not require a waiver.",
+    "readiness_gate_already_passed": "A passed gate does not require a waiver.",
+    "readiness_waiver_already_revoked": "This waiver has already been revoked.",
+    "readiness_waiver_expired": "An expired waiver cannot be revoked.",
+    "readiness_waiver_expiry_not_future": "Choose a waiver expiry in the future.",
     "release_policy_assignment_changed": "The assigned release policy changed during evaluation. Request a new evaluation.",
     "release_candidate_identity_taken": "This candidate identity is already registered in the project.",
     "release_finalized": "This release is finalized and its candidates can no longer change.",

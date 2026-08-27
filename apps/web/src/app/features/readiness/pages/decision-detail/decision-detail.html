@@ -1,0 +1,151 @@
+<main class="decision-detail-page" aria-labelledby="decision-detail-title">
+  @if (releaseContext.isPending() || decisionQuery.isPending()) {
+    <section class="loading-state" [attr.aria-label]="'readiness.decisionDetail.loading' | transloco">
+      <app-loading-skeleton preset="title" [label]="'readiness.decisionDetail.loading' | transloco" />
+      <app-loading-skeleton preset="block" [label]="'readiness.decisionDetail.loading' | transloco" />
+    </section>
+  } @else if (releaseContext.isError() || decisionQuery.isError()) {
+    <app-page-state
+      [title]="'readiness.decisionDetail.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey(releaseContext.error() ?? decisionQuery.error()) | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="releaseContext.refetch(); decisionQuery.refetch()">
+        {{ 'readiness.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (!candidate() || !contextMatches()) {
+    <app-page-state
+      [title]="'readiness.decisionDetail.contextMismatchTitle' | transloco"
+      [message]="'readiness.decisionDetail.contextMismatchDescription' | transloco"
+    />
+  } @else if (decision(); as model) {
+    @let computedStatus = status(model);
+    @let effectiveDisposition = disposition(model);
+    <header>
+      <a
+        appButton="quiet"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}/candidates/{{ candidateId }}"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId, 'candidates', candidateId]"
+      >
+        <span aria-hidden="true">←</span>
+        {{ 'readiness.decisionDetail.backToCandidate' | transloco }}
+      </a>
+      <p class="eyebrow">{{ 'readiness.decisionDetail.eyebrow' | transloco }}</p>
+      <div class="title-row">
+        <div>
+          <h1 id="decision-detail-title">{{ 'readiness.decisionDetail.title' | transloco }}</h1>
+          <p class="subtitle">
+            {{ candidate()?.label }} · {{ model.evaluatedAt | date: 'medium' }}
+          </p>
+        </div>
+        <div class="badges">
+          <app-status-badge
+            [label]="computedStatus.labelKey | transloco"
+            [tone]="computedStatus.tone"
+          />
+          @if (model.effectiveDisposition !== model.status) {
+            <app-status-badge
+              [label]="effectiveDisposition.labelKey | transloco"
+              [tone]="effectiveDisposition.tone"
+            />
+          }
+        </div>
+      </div>
+    </header>
+
+    <app-callout [title]="'readiness.decisionDetail.immutableTitle' | transloco">
+      <p>{{ 'readiness.decisionDetail.immutableDescription' | transloco }}</p>
+    </app-callout>
+
+    @if (createWaiver.isError() || revokeWaiver.isError()) {
+      <app-callout tone="danger" liveRole="alert" [title]="'readiness.waivers.mutationErrorTitle' | transloco">
+        <p>{{ errorTranslationKey() | transloco }}</p>
+      </app-callout>
+    }
+
+    <section class="decision-summary" [attr.aria-label]="'readiness.decisionDetail.summaryTitle' | transloco">
+      <dl>
+        <div>
+          <dt>{{ 'readiness.decisionDetail.decisionId' | transloco }}</dt>
+          <dd class="mono">{{ model.id }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.summary.policy' | transloco }}</dt>
+          <dd>{{ model.policy.name }} <span class="mono">v{{ model.policyVersion.version }}</span></dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.summary.evaluator' | transloco }}</dt>
+          <dd class="mono">{{ model.evaluatorVersion }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.summary.evidenceRevision' | transloco }}</dt>
+          <dd class="mono">{{ model.evidenceRevision }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.decisionDetail.trigger' | transloco }}</dt>
+          <dd>{{ triggerLabel(model) | transloco }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'readiness.summary.evaluated' | transloco }}</dt>
+          <dd>{{ model.evaluatedAt | date: 'medium' }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="content-section" aria-labelledby="historical-gates-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ 'readiness.gates.eyebrow' | transloco }}</p>
+          <h2 id="historical-gates-title">{{ 'readiness.decisionDetail.gatesTitle' | transloco }}</h2>
+        </div>
+        <span>{{ 'readiness.decisionDetail.gatesSnapshot' | transloco }}</span>
+      </div>
+      @if (evidence.isPending()) {
+        <app-loading-skeleton preset="block" [label]="'readiness.gates.loading' | transloco" />
+      } @else if (evidence.isError()) {
+        <app-callout tone="danger" [title]="'readiness.gates.loadErrorTitle' | transloco">
+          <p>{{ errorTranslationKey(evidence.error()) | transloco }}</p>
+        </app-callout>
+      } @else {
+        <app-readiness-gates [rows]="gateRows()" />
+      }
+    </section>
+
+    @if (waiverHistory.isPending()) {
+      <section class="content-section">
+        <app-loading-skeleton preset="block" [label]="'readiness.waivers.loading' | transloco" />
+      </section>
+    } @else if (waiverHistory.isError()) {
+      <section class="content-section">
+        <app-callout tone="danger" [title]="'readiness.waivers.loadErrorTitle' | transloco">
+          <p>{{ errorTranslationKey(waiverHistory.error()) | transloco }}</p>
+        </app-callout>
+      </section>
+    } @else {
+      <app-waiver-manager
+        [decision]="model"
+        [waivers]="waivers()"
+        [canManage]="canManage()"
+        [creating]="createWaiver.isPending()"
+        [revoking]="revokeWaiver.isPending()"
+        (createRequested)="createWaiver.mutate($event)"
+        (revokeRequested)="revokeWaiver.mutate($event)"
+      />
+      @if (waiverHistory.hasNextPage()) {
+        <button
+          appButton="secondary"
+          class="load-more"
+          type="button"
+          [disabled]="waiverHistory.isFetchingNextPage()"
+          (click)="waiverHistory.fetchNextPage()"
+        >
+          {{
+            (waiverHistory.isFetchingNextPage()
+              ? 'readiness.waivers.loadingMore'
+              : 'readiness.waivers.loadMore') | transloco
+          }}
+        </button>
+      }
+    }
+  }
+</main>

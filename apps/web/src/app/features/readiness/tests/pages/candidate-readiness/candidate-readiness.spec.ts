@@ -10,7 +10,6 @@ import {
   candidateId,
   evidence,
   history,
-  policy,
   policyId,
   policyList,
   readiness,
@@ -23,7 +22,6 @@ describe('CandidateReadiness', () => {
     releaseDetail: vi.fn(),
     current: vi.fn(),
     policies: vi.fn(),
-    policy: vi.fn(),
     evidence: vi.fn(),
     history: vi.fn(),
     evaluate: vi.fn(),
@@ -36,7 +34,6 @@ describe('CandidateReadiness', () => {
     readinessApi.releaseDetail.mockReset().mockResolvedValue(releaseDetail);
     readinessApi.current.mockReset().mockResolvedValue(readiness);
     readinessApi.policies.mockReset().mockResolvedValue(policyList);
-    readinessApi.policy.mockReset().mockResolvedValue(policy);
     readinessApi.evidence.mockReset().mockResolvedValue(evidence);
     readinessApi.history.mockReset().mockResolvedValue(history);
     readinessApi.evaluate.mockReset().mockResolvedValue(readiness);
@@ -72,7 +69,6 @@ describe('CandidateReadiness', () => {
   it('renders candidate identity, separate decision states, gates, evidence, and history', async () => {
     const fixture = TestBed.createComponent(CandidateReadiness);
     fixture.detectChanges();
-    await vi.waitFor(() => expect(fixture.componentInstance.policy.isSuccess()).toBe(true));
     await vi.waitFor(() => expect(fixture.componentInstance.evidence.isSuccess()).toBe(true));
     fixture.detectChanges();
 

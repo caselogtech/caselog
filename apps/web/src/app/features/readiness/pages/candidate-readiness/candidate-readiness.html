@@ -192,23 +192,19 @@
               <span>{{ 'readiness.gates.orderNote' | transloco }}</span>
             </div>
 
-            @if (policy.isPending() || evidence.isPending()) {
+            @if (evidence.isPending()) {
               <div class="loading-state">
                 <app-loading-skeleton preset="row" [label]="'readiness.gates.loading' | transloco" />
                 <app-loading-skeleton preset="row" [label]="'readiness.gates.loading' | transloco" />
               </div>
-            } @else if (policy.isError() || evidence.isError() || gateContractIncomplete()) {
+            } @else if (evidence.isError()) {
               <app-callout
                 tone="danger"
                 liveRole="alert"
                 [title]="'readiness.gates.loadErrorTitle' | transloco"
               >
                 <p>
-                  {{
-                    (gateContractIncomplete()
-                      ? 'readiness.gates.contractError'
-                      : errorTranslationKey(policy.error() ?? evidence.error())) | transloco
-                  }}
+                  {{ errorTranslationKey(evidence.error()) | transloco }}
                 </p>
               </app-callout>
             } @else {
@@ -271,6 +267,10 @@
           } @else {
             <app-decision-history
               [decisions]="decisions()"
+              [workspaceSlug]="workspaceSlug"
+              [projectSlug]="projectSlug"
+              [releaseId]="releaseId"
+              [candidateId]="candidateId"
               [hasMore]="history.hasNextPage()"
               [loadingMore]="history.isFetchingNextPage()"
               (loadMore)="history.fetchNextPage()"

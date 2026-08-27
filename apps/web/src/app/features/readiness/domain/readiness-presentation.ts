@@ -5,12 +5,18 @@ import type {
   ReadinessDecision,
   ReadinessEffectiveDisposition,
   ReadinessGateInput,
+  ReadinessWaiver,
   ReleaseState,
 } from '@caselog/schemas';
 import type { EvidenceObservation } from '@caselog/schemas/evidence';
 import type { StatusBadgeTone } from '../../../shared/ui/public-api';
 
 export type StatusPresentation = { labelKey: string; tone: StatusBadgeTone };
+export type ReadinessGateRow = {
+  evaluation: GateEvaluation;
+  impact: ReadinessGateInput['impact'];
+  observation: EvidenceObservation | null;
+};
 
 const PROJECTION: Record<CandidateReadinessResponse['state'], StatusPresentation> = {
   pending: { labelKey: 'readiness.projection.pending', tone: 'pending' },
@@ -99,6 +105,19 @@ const FRESHNESS: Record<EvidenceObservation['freshness'], StatusPresentation> = 
   stale: { labelKey: 'readiness.evidence.freshness.stale', tone: 'warning' },
 };
 
+const TRIGGER: Record<ReadinessDecision['trigger'], string> = {
+  manual: 'readiness.decisionDetail.triggers.manual',
+  evidence_changed: 'readiness.decisionDetail.triggers.evidence_changed',
+  policy_assigned: 'readiness.decisionDetail.triggers.policy_assigned',
+  reconciliation: 'readiness.decisionDetail.triggers.reconciliation',
+};
+
+const WAIVER_STATUS: Record<ReadinessWaiver['status'], StatusPresentation> = {
+  active: { labelKey: 'readiness.waivers.status.active', tone: 'warning' },
+  expired: { labelKey: 'readiness.waivers.status.expired', tone: 'neutral' },
+  revoked: { labelKey: 'readiness.waivers.status.revoked', tone: 'danger' },
+};
+
 export const readinessProjectionPresentation = (state: CandidateReadinessResponse['state']) =>
   PROJECTION[state];
 export const releasePresentation = (state: ReleaseState) => RELEASE[state];
@@ -116,6 +135,9 @@ export const evidenceTrustPresentation = (trust: EvidenceObservation['producer']
   TRUST[trust];
 export const evidenceFreshnessPresentation = (freshness: EvidenceObservation['freshness']) =>
   FRESHNESS[freshness];
+export const readinessTriggerLabel = (trigger: ReadinessDecision['trigger']) => TRIGGER[trigger];
+export const readinessWaiverStatusPresentation = (status: ReadinessWaiver['status']) =>
+  WAIVER_STATUS[status];
 
 export function formatReadinessValue(value: GateEvaluation['actual']): string {
   if (!value || value.value === null) return '—';
@@ -123,5 +145,25 @@ export function formatReadinessValue(value: GateEvaluation['actual']): string {
 }
 
 export function gateAttentionOrder(result: GateEvaluation['result']): number {
-  return { failed: 0, unknown: 1, warning: 2, passed: 3 }[result];
+  return { failed: 0, warning: 1, unknown: 2, passed: 3 }[result];
+}
+
+export function buildReadinessGateRows(
+  decision: ReadinessDecision,
+  observations: readonly EvidenceObservation[],
+): ReadinessGateRow[] {
+  const observationById = new Map(observations.map((item) => [item.id, item]));
+  return decision.gates
+    .map((evaluation) => ({
+      evaluation,
+      impact: evaluation.impact,
+      observation: evaluation.selectedObservationId
+        ? (observationById.get(evaluation.selectedObservationId) ?? null)
+        : null,
+    }))
+    .sort(
+      (left, right) =>
+        gateAttentionOrder(left.evaluation.result) - gateAttentionOrder(right.evaluation.result) ||
+        left.evaluation.position - right.evaluation.position,
+    );
 }

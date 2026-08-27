@@ -5,6 +5,8 @@ import { WorkspaceAccess } from '../../../workspace/public-api';
 import { ReadinessApi } from '../../data-access/readiness-api';
 import {
   candidateId,
+  decisionDetail,
+  decisionId,
   evidence,
   history,
   policy,
@@ -13,6 +15,9 @@ import {
   readiness,
   releaseDetail,
   releaseId,
+  waiverId,
+  waiverList,
+  waiverResponse,
 } from '../fixtures/readiness-fixtures';
 
 describe('ReadinessApi', () => {
@@ -119,5 +124,60 @@ describe('ReadinessApi', () => {
     expect(assignRequest.request.headers.get('Idempotency-Key')).toBe('policy-browser-retry');
     assignRequest.flush({ assignment: readiness.assignment });
     await expect(assignment).resolves.toMatchObject({ assignment: { policy: { id: policyId } } });
+  });
+
+  it('loads an exact decision and creates, lists, and revokes waivers idempotently', async () => {
+    const api = TestBed.inject(ReadinessApi);
+    const http = TestBed.inject(HttpTestingController);
+    const baseUrl = `/api/v1/projects/checkout/readiness-decisions/${decisionId}`;
+
+    const detail = api.decision('acme', 'checkout', decisionId);
+    await Promise.resolve();
+    http.expectOne(baseUrl).flush(decisionDetail);
+    await expect(detail).resolves.toMatchObject({ decision: { policy: { id: policyId } } });
+
+    const waivers = api.waivers('acme', 'checkout', decisionId);
+    await Promise.resolve();
+    const listRequest = http.expectOne(
+      (request) => request.url === `${baseUrl}/waivers` && request.params.get('limit') === '25',
+    );
+    listRequest.flush(waiverList);
+    await expect(waivers).resolves.toMatchObject({ items: [{ id: waiverId }] });
+
+    const createRequest = {
+      scope: { type: 'decision' as const },
+      reason: 'Accepted risk',
+      expiresAt: null,
+      externalApprovalReference: null,
+    };
+    const created = api.createWaiver(
+      'acme',
+      'checkout',
+      decisionId,
+      createRequest,
+      'waiver-create-retry',
+    );
+    await Promise.resolve();
+    const createHttpRequest = http.expectOne(`${baseUrl}/waivers`);
+    expect(createHttpRequest.request.method).toBe('POST');
+    expect(createHttpRequest.request.headers.get('Idempotency-Key')).toBe('waiver-create-retry');
+    expect(createHttpRequest.request.body).toEqual(createRequest);
+    createHttpRequest.flush(waiverResponse);
+    await expect(created).resolves.toMatchObject({ effectiveDisposition: 'approved_with_waiver' });
+
+    const revoked = api.revokeWaiver(
+      'acme',
+      'checkout',
+      decisionId,
+      waiverId,
+      { reason: 'Risk no longer accepted' },
+      'waiver-revoke-retry',
+    );
+    await Promise.resolve();
+    const revokeHttpRequest = http.expectOne(`${baseUrl}/waivers/${waiverId}/revocation`);
+    expect(revokeHttpRequest.request.method).toBe('POST');
+    expect(revokeHttpRequest.request.headers.get('Idempotency-Key')).toBe('waiver-revoke-retry');
+    revokeHttpRequest.flush(waiverResponse);
+    await expect(revoked).resolves.toMatchObject({ waiver: { id: waiverId } });
   });
 });
