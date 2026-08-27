@@ -1,0 +1,283 @@
+<main class="candidate-readiness-page" aria-labelledby="candidate-readiness-title">
+  @if (releaseContext.isPending()) {
+    <section class="loading-state" [attr.aria-label]="'readiness.loadingContext' | transloco">
+      <app-loading-skeleton preset="title" [label]="'readiness.loadingContext' | transloco" />
+      <app-loading-skeleton preset="block" [label]="'readiness.loadingContext' | transloco" />
+    </section>
+  } @else if (releaseContext.isError()) {
+    <app-page-state
+      [title]="'readiness.contextErrorTitle' | transloco"
+      [message]="errorTranslationKey(releaseContext.error()) | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="releaseContext.refetch()">
+        {{ 'readiness.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (!candidate()) {
+    <app-page-state
+      [title]="'readiness.candidateNotFoundTitle' | transloco"
+      [message]="'readiness.candidateNotFoundDescription' | transloco"
+    />
+  } @else if (releaseContext.data(); as context) {
+    @if (candidate(); as releaseCandidate) {
+      @let lifecycleStatus = lifecycle(context.release.state);
+      <header class="candidate-header">
+        <a
+          appButton="quiet"
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId]"
+        >
+          <span aria-hidden="true">←</span>
+          {{ 'readiness.backToRelease' | transloco }}
+        </a>
+
+        <div class="heading-row">
+          <div>
+            <p class="breadcrumbs">
+              {{ context.release.name }} <span aria-hidden="true">/</span>
+              <span class="mono">{{ releaseCandidate.label }}</span>
+            </p>
+            <div class="title-row">
+              <h1 id="candidate-readiness-title">
+                {{ 'readiness.candidateTitle' | transloco: { label: releaseCandidate.label } }}
+              </h1>
+              <app-status-badge
+                [label]="lifecycleStatus.labelKey | transloco"
+                [tone]="lifecycleStatus.tone"
+              />
+              @if (context.release.environment; as environment) {
+                <span class="environment-badge">
+                  {{ 'readiness.target' | transloco: { name: environment.name } }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="page-actions">
+            <a
+              appButton="secondary"
+              href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}#candidate-list-title"
+              [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId]"
+              fragment="candidate-list-title"
+            >
+              {{ 'readiness.linkRuns' | transloco }}
+            </a>
+            @if (canManage() && current.isSuccess()) {
+              <button
+                appButton="secondary"
+                type="button"
+                [disabled]="evaluate.isPending()"
+                (click)="requestEvaluation()"
+              >
+                {{
+                  (evaluate.isPending()
+                    ? 'readiness.requestingEvaluation'
+                    : 'readiness.requestEvaluation') | transloco
+                }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <dl class="candidate-identity">
+          <div>
+            <dt>{{ 'readiness.identity.revision' | transloco }}</dt>
+            <dd class="mono">{{ releaseCandidate.sourceRevision ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'readiness.identity.build' | transloco }}</dt>
+            <dd class="mono">{{ releaseCandidate.buildIdentifier ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'readiness.identity.artifact' | transloco }}</dt>
+            <dd class="mono">{{ releaseCandidate.artifactDigest ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'readiness.identity.registered' | transloco }}</dt>
+            <dd>{{ releaseCandidate.createdAt | date: 'medium' }}</dd>
+          </div>
+        </dl>
+      </header>
+
+      @if (assignPolicy.isError() || evaluate.isError()) {
+        <app-callout
+          tone="danger"
+          liveRole="alert"
+          [title]="'readiness.mutationErrorTitle' | transloco"
+        >
+          <p>{{ errorTranslationKey() | transloco }}</p>
+        </app-callout>
+      }
+
+      @if (current.isPending()) {
+        <section class="loading-state" [attr.aria-label]="'readiness.loadingDecision' | transloco">
+          <app-loading-skeleton preset="block" [label]="'readiness.loadingDecision' | transloco" />
+          <app-loading-skeleton preset="row" [label]="'readiness.loadingDecision' | transloco" />
+        </section>
+      } @else if (noPolicy()) {
+        @if (!canManage()) {
+          <app-page-state
+            [title]="'readiness.assignment.requiredTitle' | transloco"
+            [message]="'readiness.assignment.readOnlyDescription' | transloco"
+          />
+        } @else if (policies.isPending()) {
+          <app-loading-skeleton preset="block" [label]="'readiness.assignment.loading' | transloco" />
+        } @else if (policies.isError()) {
+          <app-page-state
+            [title]="'readiness.assignment.loadErrorTitle' | transloco"
+            [message]="errorTranslationKey(policies.error()) | transloco"
+          >
+            <button actions appButton="secondary" type="button" (click)="policies.refetch()">
+              {{ 'readiness.retry' | transloco }}
+            </button>
+          </app-page-state>
+        } @else if (policies.data(); as policyList) {
+          <app-policy-assignment
+            [policies]="policyList.items"
+            [pending]="assignPolicy.isPending()"
+            (policySelected)="assignPolicy.mutate($event)"
+          />
+        }
+      } @else if (current.isError()) {
+        <app-page-state
+          [title]="'readiness.decisionErrorTitle' | transloco"
+          [message]="errorTranslationKey(current.error()) | transloco"
+        >
+          <button actions appButton="secondary" type="button" (click)="current.refetch()">
+            {{ 'readiness.retry' | transloco }}
+          </button>
+        </app-page-state>
+      } @else if (current.data(); as readinessModel) {
+        @if (readinessModel.state === 'pending') {
+          <app-callout [title]="'readiness.projection.pendingTitle' | transloco">
+            <p>{{ 'readiness.projection.pendingDescription' | transloco }}</p>
+          </app-callout>
+        } @else if (readinessModel.state === 'stale') {
+          <app-callout tone="warning" [title]="'readiness.projection.staleTitle' | transloco">
+            <p>{{ 'readiness.projection.staleDescription' | transloco }}</p>
+          </app-callout>
+        } @else if (readinessModel.state === 'failed') {
+          <app-callout
+            tone="danger"
+            liveRole="alert"
+            [title]="'readiness.projection.failedTitle' | transloco"
+          >
+            <p>{{ failureMessageKey() | transloco }}</p>
+          </app-callout>
+        }
+
+        <app-readiness-summary [readiness]="readinessModel" />
+
+        <section class="content-section" aria-labelledby="linked-runs-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">{{ 'readiness.linkedRuns.eyebrow' | transloco }}</p>
+              <h2 id="linked-runs-title">{{ 'readiness.linkedRuns.title' | transloco }}</h2>
+            </div>
+          </div>
+          <app-linked-run-summary
+            [runs]="releaseCandidate.testRuns"
+            [workspaceSlug]="workspaceSlug"
+            [projectSlug]="projectSlug"
+          />
+        </section>
+
+        @if (readinessModel.decision) {
+          <section class="content-section" aria-labelledby="readiness-gates-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">{{ 'readiness.gates.eyebrow' | transloco }}</p>
+                <h2 id="readiness-gates-title">{{ 'readiness.gates.title' | transloco }}</h2>
+              </div>
+              <span>{{ 'readiness.gates.orderNote' | transloco }}</span>
+            </div>
+
+            @if (policy.isPending() || evidence.isPending()) {
+              <div class="loading-state">
+                <app-loading-skeleton preset="row" [label]="'readiness.gates.loading' | transloco" />
+                <app-loading-skeleton preset="row" [label]="'readiness.gates.loading' | transloco" />
+              </div>
+            } @else if (policy.isError() || evidence.isError() || gateContractIncomplete()) {
+              <app-callout
+                tone="danger"
+                liveRole="alert"
+                [title]="'readiness.gates.loadErrorTitle' | transloco"
+              >
+                <p>
+                  {{
+                    (gateContractIncomplete()
+                      ? 'readiness.gates.contractError'
+                      : errorTranslationKey(policy.error() ?? evidence.error())) | transloco
+                  }}
+                </p>
+              </app-callout>
+            } @else {
+              <app-readiness-gates [rows]="gateRows()" />
+            }
+          </section>
+        } @else {
+          <app-page-state
+            [title]="'readiness.noDecisionTitle' | transloco"
+            [message]="'readiness.noDecisionDescription' | transloco"
+          />
+        }
+
+        <section class="content-section" aria-labelledby="candidate-evidence-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">{{ 'readiness.evidence.eyebrow' | transloco }}</p>
+              <h2 id="candidate-evidence-title">{{ 'readiness.evidence.title' | transloco }}</h2>
+            </div>
+          </div>
+          @if (evidence.isPending()) {
+            <app-loading-skeleton preset="block" [label]="'readiness.evidence.loading' | transloco" />
+          } @else if (evidence.isError()) {
+            <app-callout tone="danger" [title]="'readiness.evidence.loadErrorTitle' | transloco">
+              <p>{{ errorTranslationKey(evidence.error()) | transloco }}</p>
+            </app-callout>
+          } @else {
+            <app-candidate-evidence [observations]="observations()" />
+            @if (evidence.hasNextPage()) {
+              <button
+                appButton="secondary"
+                class="load-more"
+                type="button"
+                [disabled]="evidence.isFetchingNextPage()"
+                (click)="evidence.fetchNextPage()"
+              >
+                {{
+                  (evidence.isFetchingNextPage()
+                    ? 'readiness.evidence.loadingMore'
+                    : 'readiness.evidence.loadMore') | transloco
+                }}
+              </button>
+            }
+          }
+        </section>
+
+        <section class="content-section" aria-labelledby="decision-history-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">{{ 'readiness.history.eyebrow' | transloco }}</p>
+              <h2 id="decision-history-title">{{ 'readiness.history.title' | transloco }}</h2>
+            </div>
+          </div>
+          @if (history.isPending()) {
+            <app-loading-skeleton preset="block" [label]="'readiness.history.loading' | transloco" />
+          } @else if (history.isError()) {
+            <app-callout tone="danger" [title]="'readiness.history.loadErrorTitle' | transloco">
+              <p>{{ errorTranslationKey(history.error()) | transloco }}</p>
+            </app-callout>
+          } @else {
+            <app-decision-history
+              [decisions]="decisions()"
+              [hasMore]="history.hasNextPage()"
+              [loadingMore]="history.isFetchingNextPage()"
+              (loadMore)="history.fetchNextPage()"
+            />
+          }
+        </section>
+      }
+    }
+  }
+</main>

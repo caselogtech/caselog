@@ -23,6 +23,11 @@ export const releasesRoutes: Routes = [
           ),
       },
       {
+        path: ':releaseId/candidates/:candidateId',
+        loadChildren: () =>
+          import('../readiness/public-api').then(({ readinessRoutes }) => readinessRoutes),
+      },
+      {
         path: ':releaseId',
         loadComponent: () =>
           import('./pages/release-detail/release-detail').then(

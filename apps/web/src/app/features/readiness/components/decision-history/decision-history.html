@@ -1,0 +1,49 @@
+@if (decisions().length === 0) {
+  <p class="empty">{{ 'readiness.history.empty' | transloco }}</p>
+} @else {
+  <ol>
+    @for (decision of decisions(); track decision.id) {
+      @let computedStatus = status(decision);
+      @let effectiveDisposition = disposition(decision);
+      <li>
+        <time [dateTime]="decision.evaluatedAt">{{ decision.evaluatedAt | date: 'medium' }}</time>
+        <span class="marker" aria-hidden="true"></span>
+        <div class="history-content">
+          <div class="badges">
+            <app-status-badge
+              [label]="computedStatus.labelKey | transloco"
+              [tone]="computedStatus.tone"
+            />
+            @if (decision.effectiveDisposition !== decision.status) {
+              <app-status-badge
+                [label]="effectiveDisposition.labelKey | transloco"
+                [tone]="effectiveDisposition.tone"
+              />
+            }
+          </div>
+          <p>
+            {{
+              'readiness.history.summary'
+                | transloco:
+                  {
+                    version: decision.policyVersion.version,
+                    revision: decision.evidenceRevision,
+                    count: attentionCount(decision)
+                  }
+            }}
+          </p>
+          <span class="mono">{{ decision.id }}</span>
+        </div>
+      </li>
+    }
+  </ol>
+
+  @if (hasMore()) {
+    <button appButton="secondary" type="button" [disabled]="loadingMore()" (click)="loadMore.emit()">
+      {{
+        (loadingMore() ? 'readiness.history.loadingMore' : 'readiness.history.loadMore')
+          | transloco
+      }}
+    </button>
+  }
+}

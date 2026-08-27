@@ -19293,7 +19293,15 @@
                           ]
                         },
                         "explanationCode": {
-                          "type": "string"
+                          "type": "string",
+                          "enum": [
+                            "comparison_passed",
+                            "comparison_failed",
+                            "missing_evidence",
+                            "incomplete_evidence",
+                            "stale_evidence",
+                            "untrusted_evidence"
+                          ]
                         }
                       },
                       "required": [
@@ -19752,7 +19760,15 @@
                         ]
                       },
                       "explanationCode": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                          "comparison_passed",
+                          "comparison_failed",
+                          "missing_evidence",
+                          "incomplete_evidence",
+                          "stale_evidence",
+                          "untrusted_evidence"
+                        ]
                       }
                     },
                     "required": [
@@ -20211,7 +20227,15 @@
                       ]
                     },
                     "explanationCode": {
-                      "type": "string"
+                      "type": "string",
+                      "enum": [
+                        "comparison_passed",
+                        "comparison_failed",
+                        "missing_evidence",
+                        "incomplete_evidence",
+                        "stale_evidence",
+                        "untrusted_evidence"
+                      ]
                     }
                   },
                   "required": [

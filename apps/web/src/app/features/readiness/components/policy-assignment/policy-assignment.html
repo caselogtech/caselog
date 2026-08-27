@@ -1,0 +1,28 @@
+<section aria-labelledby="policy-assignment-title">
+  <h2 id="policy-assignment-title">{{ 'readiness.assignment.title' | transloco }}</h2>
+  <p>{{ 'readiness.assignment.description' | transloco }}</p>
+
+  @if (publishedPolicies().length === 0) {
+    <p class="empty">{{ 'readiness.assignment.noPublishedPolicies' | transloco }}</p>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        <span>{{ 'readiness.assignment.policy' | transloco }}</span>
+        <select appControl formControlName="policyId">
+          <option value="">{{ 'readiness.assignment.choosePolicy' | transloco }}</option>
+          @for (policy of publishedPolicies(); track policy.id) {
+            <option [value]="policy.id">
+              {{ policy.name }} · v{{ policy.publishedVersion?.version }}
+            </option>
+          }
+        </select>
+      </label>
+      <button appButton="primary" type="submit" [disabled]="pending()">
+        {{
+          (pending() ? 'readiness.assignment.assigning' : 'readiness.assignment.assign')
+            | transloco
+        }}
+      </button>
+    </form>
+  }
+</section>

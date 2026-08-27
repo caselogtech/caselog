@@ -117,7 +117,21 @@
               </td>
               <td [attr.data-label]="'releases.list.candidate' | transloco">
                 @if (item.latestCandidate; as candidate) {
-                  <span class="mono candidate-label">{{ candidate.label }}</span>
+                  <a
+                    class="mono candidate-label"
+                    href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ item.release.id }}/candidates/{{ candidate.id }}"
+                    [routerLink]="[
+                      '/',
+                      workspaceSlug,
+                      projectSlug,
+                      'releases',
+                      item.release.id,
+                      'candidates',
+                      candidate.id
+                    ]"
+                  >
+                    {{ candidate.label }}
+                  </a>
                   <small>
                     {{ 'releases.list.candidateCount' | transloco: { count: item.release.candidateCount } }}
                   </small>

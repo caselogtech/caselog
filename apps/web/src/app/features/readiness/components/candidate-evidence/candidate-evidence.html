@@ -1,0 +1,66 @@
+@if (observations().length === 0) {
+  <p class="empty">{{ 'readiness.evidence.empty' | transloco }}</p>
+} @else {
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">{{ 'readiness.evidence.metric' | transloco }}</th>
+          <th scope="col">{{ 'readiness.evidence.value' | transloco }}</th>
+          <th scope="col">{{ 'readiness.evidence.producer' | transloco }}</th>
+          <th scope="col">{{ 'readiness.evidence.trustLabel' | transloco }}</th>
+          <th scope="col">{{ 'readiness.evidence.freshnessLabel' | transloco }}</th>
+          <th scope="col">{{ 'readiness.evidence.revisionLabel' | transloco }}</th>
+          <th scope="col">{{ 'readiness.evidence.observed' | transloco }}</th>
+          <th scope="col">{{ 'readiness.evidence.source' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (observation of observations(); track observation.id) {
+          @let trustStatus = trust(observation);
+          @let freshnessStatus = freshness(observation);
+          @let revision = revisionStatus(observation);
+          <tr>
+            <td [attr.data-label]="'readiness.evidence.metric' | transloco">
+              <strong>{{ metric(observation) | transloco }}</strong>
+              <span>{{ observation.dimensions.testRunRole }}</span>
+            </td>
+            <td class="mono" [attr.data-label]="'readiness.evidence.value' | transloco">
+              {{ value(observation) }}
+            </td>
+            <td class="mono" [attr.data-label]="'readiness.evidence.producer' | transloco">
+              {{ observation.producer.key }}
+            </td>
+            <td [attr.data-label]="'readiness.evidence.trustLabel' | transloco">
+              <app-status-badge
+                [label]="trustStatus.labelKey | transloco"
+                [tone]="trustStatus.tone"
+              />
+            </td>
+            <td [attr.data-label]="'readiness.evidence.freshnessLabel' | transloco">
+              <app-status-badge
+                [label]="freshnessStatus.labelKey | transloco"
+                [tone]="freshnessStatus.tone"
+              />
+            </td>
+            <td [attr.data-label]="'readiness.evidence.revisionLabel' | transloco">
+              <app-status-badge [label]="revision.labelKey | transloco" [tone]="revision.tone" />
+            </td>
+            <td [attr.data-label]="'readiness.evidence.observed' | transloco">
+              {{ observation.observedAt | date: 'medium' }}
+            </td>
+            <td [attr.data-label]="'readiness.evidence.source' | transloco">
+              @if (observation.source.url) {
+                <a href="{{ observation.source.url }}" target="_blank" rel="noopener noreferrer">
+                  {{ observation.source.type }} · {{ observation.source.id }}
+                </a>
+              } @else {
+                {{ observation.source.type }} · {{ observation.source.id }}
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

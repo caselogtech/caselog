@@ -3957,7 +3957,8 @@ export interface components {
                         value: number;
                     }) | null;
                     selectedObservationId: string | null;
-                    explanationCode: string;
+                    /** @enum {string} */
+                    explanationCode: "comparison_passed" | "comparison_failed" | "missing_evidence" | "incomplete_evidence" | "stale_evidence" | "untrusted_evidence";
                 }[];
                 waivers: {
                     /** Format: uuid */
@@ -4056,7 +4057,8 @@ export interface components {
                         value: number;
                     }) | null;
                     selectedObservationId: string | null;
-                    explanationCode: string;
+                    /** @enum {string} */
+                    explanationCode: "comparison_passed" | "comparison_failed" | "missing_evidence" | "incomplete_evidence" | "stale_evidence" | "untrusted_evidence";
                 }[];
                 waivers: {
                     /** Format: uuid */
@@ -4156,7 +4158,8 @@ export interface components {
                         value: number;
                     }) | null;
                     selectedObservationId: string | null;
-                    explanationCode: string;
+                    /** @enum {string} */
+                    explanationCode: "comparison_passed" | "comparison_failed" | "missing_evidence" | "incomplete_evidence" | "stale_evidence" | "untrusted_evidence";
                 }[];
                 waivers: {
                     /** Format: uuid */

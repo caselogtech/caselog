@@ -180,7 +180,8 @@ export function toReadinessDecision(
         gate.actualInteger,
       ),
       selectedObservationId: gate.selectedObservationId,
-      explanationCode: gate.explanationCode,
+      explanationCode:
+        gate.explanationCode as ReadinessDecision['gates'][number]['explanationCode'],
     })),
     waivers,
   };

@@ -144,7 +144,21 @@
             <article class="candidate-card">
               <header>
                 <div>
-                  <span class="candidate-label mono">{{ candidate.label }}</span>
+                  <a
+                    class="candidate-label mono"
+                    href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}/candidates/{{ candidate.id }}"
+                    [routerLink]="[
+                      '/',
+                      workspaceSlug,
+                      projectSlug,
+                      'releases',
+                      releaseId,
+                      'candidates',
+                      candidate.id
+                    ]"
+                  >
+                    {{ candidate.label }}
+                  </a>
                   <time [dateTime]="candidate.createdAt">
                     {{ candidate.createdAt | date: 'medium' }}
                   </time>

@@ -29,8 +29,12 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.project_key_taken',
   'errors.project_slug_taken',
   'errors.rate_limited',
+  'errors.readiness_input_superseded',
+  'errors.release_policy_assignment_changed',
   'errors.release_candidate_identity_taken',
   'errors.release_finalized',
+  'errors.release_policy_not_assigned',
+  'errors.release_policy_not_published',
   'errors.run_case_unavailable',
   'errors.run_closed',
   'errors.invalid_release_transition',
@@ -54,13 +58,19 @@ const TRANSLATED_ERROR_KEYS = new Set([
 ]);
 
 export function apiErrorTranslationKey(error: unknown): string {
-  if (error instanceof HttpErrorResponse) {
-    const parsed = apiErrorSchema.safeParse(error.error);
-    const translationKey = parsed.success ? `errors.${parsed.data.error.code}` : null;
+  const code = apiErrorCode(error);
+  if (code) {
+    const translationKey = `errors.${code}`;
     if (translationKey && TRANSLATED_ERROR_KEYS.has(translationKey)) {
       return translationKey;
     }
   }
 
   return 'errors.default';
+}
+
+export function apiErrorCode(error: unknown): string | null {
+  if (!(error instanceof HttpErrorResponse)) return null;
+  const parsed = apiErrorSchema.safeParse(error.error);
+  return parsed.success ? parsed.data.error.code : null;
 }

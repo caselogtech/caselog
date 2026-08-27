@@ -135,9 +135,11 @@ dd {
 }
 
 .candidate-label {
+  color: var(--text-1);
   display: block;
   font-size: var(--font-size-lg);
   font-weight: 500;
+  text-decoration: none;
 }
 
 .candidate-card time,

@@ -1,0 +1,184 @@
+{
+  "loadingContext": "Loading candidate context…",
+  "contextErrorTitle": "Unable to load candidate context",
+  "candidateNotFoundTitle": "Candidate not found in this release",
+  "candidateNotFoundDescription": "The candidate URL does not match the selected release.",
+  "retry": "Try again",
+  "backToRelease": "Back to release",
+  "candidateTitle": "Release candidate {{label}}",
+  "target": "Target: {{name}}",
+  "linkRuns": "Manage linked runs",
+  "requestEvaluation": "Request evaluation",
+  "requestingEvaluation": "Evaluating…",
+  "loadingDecision": "Loading readiness decision…",
+  "mutationErrorTitle": "Unable to update candidate readiness",
+  "decisionErrorTitle": "Unable to load readiness decision",
+  "noDecisionTitle": "No decision recorded yet",
+  "noDecisionDescription": "The assigned policy is waiting for its first deterministic evaluation.",
+  "identity": {
+    "revision": "Source revision",
+    "build": "Build identifier",
+    "artifact": "Artifact digest",
+    "registered": "Registered"
+  },
+  "releaseStates": {
+    "draft": "Release draft",
+    "active": "Release active",
+    "released": "Release released",
+    "cancelled": "Release cancelled"
+  },
+  "projection": {
+    "pending": "Pending",
+    "current": "Current",
+    "stale": "Stale",
+    "failed": "Evaluation failed",
+    "pendingTitle": "Evaluation is pending",
+    "pendingDescription": "Caselog is evaluating the assigned policy. No decision is synthesized while processing is incomplete.",
+    "staleTitle": "This decision is stale",
+    "staleDescription": "Newer evidence exists than the decision shown below. Request another evaluation before relying on it.",
+    "failedTitle": "The latest evaluation failed",
+    "failureRetriesExhausted": "Automatic evaluation exhausted its retries. You can safely request another evaluation.",
+    "failureUnknown": "The evaluation could not complete. Request another evaluation or inspect the service diagnostics."
+  },
+  "status": {
+    "ready": "Ready",
+    "atRisk": "At risk",
+    "blocked": "Blocked",
+    "unknown": "Unknown"
+  },
+  "disposition": {
+    "ready": "Ready",
+    "atRisk": "At risk",
+    "blocked": "Blocked",
+    "unknown": "Unknown",
+    "approvedWithWaiver": "Approved with waiver"
+  },
+  "summary": {
+    "title": "Current readiness summary",
+    "computed": "Computed readiness",
+    "disposition": "Effective disposition",
+    "freshness": "Decision freshness",
+    "policy": "Policy",
+    "evaluator": "Evaluator",
+    "evidenceRevision": "Decision / current evidence",
+    "evaluated": "Evaluated",
+    "notEvaluated": "Not evaluated",
+    "notAvailable": "Not available"
+  },
+  "assignment": {
+    "title": "Assign a release policy",
+    "description": "A candidate needs an immutable published policy version before Caselog can evaluate readiness.",
+    "requiredTitle": "No release policy is assigned",
+    "readOnlyDescription": "Ask a workspace owner, administrator, or lead to assign a published release policy.",
+    "loading": "Loading release policies…",
+    "loadErrorTitle": "Unable to load release policies",
+    "noPublishedPolicies": "This project has no published release policy. Create and publish a policy before assigning it.",
+    "policy": "Published policy",
+    "choosePolicy": "Choose a policy",
+    "assign": "Assign policy",
+    "assigning": "Assigning policy…"
+  },
+  "gates": {
+    "eyebrow": "Deterministic policy evaluation",
+    "title": "Gates",
+    "orderNote": "Needs attention first, then passed gates.",
+    "loading": "Loading gate evaluations…",
+    "loadErrorTitle": "Unable to load complete gate details",
+    "contractError": "The evaluated gate set no longer matches its immutable policy version.",
+    "metricVersion": "Metric version",
+    "testRunRole": "Test-run role",
+    "diagnostic": "Diagnostic",
+    "observation": "Observation ID",
+    "selectedEvidence": "Selected evidence",
+    "noSelectedEvidence": "No evidence observation was selected for this gate.",
+    "results": {
+      "passed": "Passed",
+      "warning": "Warning",
+      "failed": "Failed",
+      "unknown": "Unknown"
+    },
+    "impacts": {
+      "blocking": "Blocking",
+      "warning": "Warning"
+    },
+    "roles": {
+      "required": "Required",
+      "informational": "Informational"
+    },
+    "diagnostics": {
+      "none": "None",
+      "missing": "Missing evidence",
+      "incomplete": "Incomplete evidence",
+      "stale": "Stale evidence",
+      "untrusted": "Insufficient trust"
+    },
+    "explanations": {
+      "comparisonPassed": "The selected evidence satisfies the published gate expression.",
+      "comparisonFailed": "The selected evidence does not satisfy the published gate expression.",
+      "missingEvidence": "No matching evidence exists for this metric and test-run role.",
+      "incompleteEvidence": "Matching evidence exists but is incomplete.",
+      "staleEvidence": "Matching evidence expired before this evaluation.",
+      "untrustedEvidence": "Matching evidence does not meet the gate's minimum trust level."
+    }
+  },
+  "metrics": {
+    "passRate": "Test pass rate",
+    "completionRate": "Test completion rate",
+    "failedCount": "Failed test count"
+  },
+  "linkedRuns": {
+    "eyebrow": "Native test evidence",
+    "title": "Linked test runs",
+    "empty": "No test runs are linked to this candidate.",
+    "required": "Required",
+    "informational": "Informational",
+    "statuses": {
+      "draft": "Draft",
+      "active": "Active",
+      "completed": "Completed",
+      "archived": "Archived"
+    }
+  },
+  "evidence": {
+    "eyebrow": "Auditable observations",
+    "title": "Evidence for this candidate",
+    "loading": "Loading candidate evidence…",
+    "loadErrorTitle": "Unable to load candidate evidence",
+    "empty": "No current evidence observations exist for this candidate.",
+    "metric": "Metric",
+    "value": "Value",
+    "producer": "Producer",
+    "trustLabel": "Trust",
+    "freshnessLabel": "Freshness",
+    "revisionLabel": "Revision status",
+    "observed": "Observed",
+    "expires": "Expires",
+    "source": "Source",
+    "noExpiry": "No expiry",
+    "loadMore": "Load more evidence",
+    "loadingMore": "Loading more evidence…",
+    "trust": {
+      "verified": "Verified",
+      "authenticated": "Authenticated",
+      "unverified": "Unverified"
+    },
+    "freshness": {
+      "current": "Current",
+      "stale": "Stale"
+    },
+    "revision": {
+      "current": "Current",
+      "superseded": "Superseded"
+    }
+  },
+  "history": {
+    "eyebrow": "Immutable audit trail",
+    "title": "Decision history",
+    "loading": "Loading decision history…",
+    "loadErrorTitle": "Unable to load decision history",
+    "empty": "No readiness decisions have been recorded yet.",
+    "summary": "Policy v{{version}} · evidence revision {{revision}} · {{count}} gates need attention",
+    "loadMore": "Load more decisions",
+    "loadingMore": "Loading more decisions…"
+  }
+}

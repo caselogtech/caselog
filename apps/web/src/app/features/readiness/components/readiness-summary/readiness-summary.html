@@ -1,0 +1,66 @@
+@let model = readiness();
+@let decision = model.decision;
+@let projectionStatus = projection();
+<section class="summary" [attr.aria-label]="'readiness.summary.title' | transloco">
+  <div class="primary-card">
+    <span class="label">{{ 'readiness.summary.computed' | transloco }}</span>
+    @if (status(); as computedStatus) {
+      <app-status-badge
+        [label]="computedStatus.labelKey | transloco"
+        [tone]="computedStatus.tone"
+      />
+    } @else {
+      <span class="empty-value">{{ 'readiness.summary.notEvaluated' | transloco }}</span>
+    }
+  </div>
+
+  <div>
+    <span class="label">{{ 'readiness.summary.disposition' | transloco }}</span>
+    @if (disposition(); as effectiveDisposition) {
+      <app-status-badge
+        [label]="effectiveDisposition.labelKey | transloco"
+        [tone]="effectiveDisposition.tone"
+      />
+    } @else {
+      <span class="empty-value">{{ 'readiness.summary.notAvailable' | transloco }}</span>
+    }
+  </div>
+
+  <div>
+    <span class="label">{{ 'readiness.summary.freshness' | transloco }}</span>
+    <app-status-badge
+      [label]="projectionStatus.labelKey | transloco"
+      [tone]="projectionStatus.tone"
+    />
+  </div>
+
+  <dl>
+    <div>
+      <dt>{{ 'readiness.summary.policy' | transloco }}</dt>
+      <dd>
+        {{ model.assignment.policy.name }}
+        <span class="mono">v{{ model.assignment.policyVersion.version }}</span>
+      </dd>
+    </div>
+    <div>
+      <dt>{{ 'readiness.summary.evaluator' | transloco }}</dt>
+      <dd class="mono">{{ decision?.evaluatorVersion ?? model.targetEvaluatorVersion }}</dd>
+    </div>
+    <div>
+      <dt>{{ 'readiness.summary.evidenceRevision' | transloco }}</dt>
+      <dd class="mono">
+        {{ decision?.evidenceRevision ?? '—' }} / {{ model.currentEvidenceRevision }}
+      </dd>
+    </div>
+    <div>
+      <dt>{{ 'readiness.summary.evaluated' | transloco }}</dt>
+      <dd>
+        {{
+          decision?.evaluatedAt
+            ? (decision?.evaluatedAt | date: 'medium')
+            : ('readiness.summary.notAvailable' | transloco)
+        }}
+      </dd>
+    </div>
+  </dl>
+</section>

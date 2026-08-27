@@ -21,6 +21,14 @@ export const gateEvaluationDiagnosticSchema = z.enum([
   'stale',
   'untrusted',
 ]);
+export const gateEvaluationExplanationCodeSchema = z.enum([
+  'comparison_passed',
+  'comparison_failed',
+  'missing_evidence',
+  'incomplete_evidence',
+  'stale_evidence',
+  'untrusted_evidence',
+]);
 export const readinessDecisionStatusSchema = z.enum(['ready', 'at_risk', 'blocked', 'unknown']);
 export const readinessEffectiveDispositionSchema = z.enum([
   'ready',
@@ -281,7 +289,7 @@ export const gateEvaluationSchema = z.object({
   expected: readinessExpectedValueSchema,
   actual: readinessExpectedValueSchema.nullable(),
   selectedObservationId: z.uuid().nullable(),
-  explanationCode: z.string(),
+  explanationCode: gateEvaluationExplanationCodeSchema,
 });
 export const readinessWaiverRevocationSchema = z.object({
   id: z.uuid(),
@@ -361,6 +369,7 @@ export type CandidatePolicyAssignmentResponse = z.infer<
   typeof candidatePolicyAssignmentResponseSchema
 >;
 export type GateEvaluation = z.infer<typeof gateEvaluationSchema>;
+export type GateEvaluationExplanationCode = z.infer<typeof gateEvaluationExplanationCodeSchema>;
 export type ReadinessDecision = z.infer<typeof readinessDecisionSchema>;
 export type CandidateReadinessResponse = z.infer<typeof candidateReadinessResponseSchema>;
 export type ReadinessDecisionListQuery = z.infer<typeof readinessDecisionListQuerySchema>;

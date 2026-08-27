@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { apiErrorTranslationKey } from './api-error';
+import { apiErrorCode, apiErrorTranslationKey } from './api-error';
 
 describe('apiErrorTranslationKey', () => {
   it('maps a supported API error code to a translation key', () => {
@@ -16,6 +16,7 @@ describe('apiErrorTranslationKey', () => {
     });
 
     expect(apiErrorTranslationKey(error)).toBe('errors.workspace_slug_taken');
+    expect(apiErrorCode(error)).toBe('workspace_slug_taken');
   });
 
   it('does not display an unknown server message', () => {

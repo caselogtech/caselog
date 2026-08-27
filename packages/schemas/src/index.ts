@@ -244,6 +244,7 @@ export type {
   CandidatePolicyAssignmentResponse,
   CandidateReadinessResponse,
   GateEvaluation,
+  GateEvaluationExplanationCode,
   ReadinessDecision,
   ReadinessDecisionListQuery,
   ReadinessDecisionListResponse,

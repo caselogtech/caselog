@@ -1,0 +1,31 @@
+@if (runs().length === 0) {
+  <p class="empty">{{ 'readiness.linkedRuns.empty' | transloco }}</p>
+} @else {
+  <ul>
+    @for (run of runs(); track run.testRunId) {
+      <li>
+        <div>
+          <a
+            href="/{{ workspaceSlug() }}/{{ projectSlug() }}/runs/{{ run.testRunId }}"
+            [routerLink]="['/', workspaceSlug(), projectSlug(), 'runs', run.testRunId]"
+          >
+            {{ run.name }}
+          </a>
+          <span class="mono">{{ run.testRunId }}</span>
+        </div>
+        <app-status-badge
+          [label]="statusLabel(run.status) | transloco"
+          [tone]="statusTone(run.status)"
+        />
+        <app-status-badge
+          [label]="
+            (run.role === 'required'
+              ? 'readiness.linkedRuns.required'
+              : 'readiness.linkedRuns.informational') | transloco
+          "
+          [tone]="run.role === 'required' ? 'pending' : 'neutral'"
+        />
+      </li>
+    }
+  </ul>
+}

@@ -13,6 +13,7 @@ const translations = {
   ...readJson('public/i18n/en.json'),
   auth: readJson('public/i18n/auth/en.json'),
   projectSettings: readJson('public/i18n/projectSettings/en.json'),
+  readiness: readJson('public/i18n/readiness/en.json'),
   releases: readJson('public/i18n/releases/en.json'),
   workspace: readJson('public/i18n/workspace/en.json'),
 };
@@ -50,7 +51,7 @@ const availableKeys = flattenKeys(translations);
 const usedKeys = new Set();
 const hardcodedTemplateText = [];
 const translationKeyPattern =
-  /['"]((?:app|auth|errors|projectSettings|releases|workspace)\.[A-Za-z0-9_.-]+)['"]/g;
+  /['"]((?:app|auth|errors|projectSettings|readiness|releases|workspace)\.[A-Za-z0-9_.-]+)['"]/g;
 const visibleTextPattern = />\s*([^<>{]*[A-Za-z][^<>{]*)\s*</g;
 
 for (const path of sourceFiles(sourceRoot)) {

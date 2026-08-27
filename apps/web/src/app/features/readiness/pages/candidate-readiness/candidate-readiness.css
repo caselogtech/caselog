@@ -1,0 +1,174 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+.candidate-readiness-page {
+  margin-inline: auto;
+  max-width: calc(var(--content-width) + 2 * var(--content-gutter));
+  padding: var(--space-5) var(--content-gutter) 48px;
+}
+
+.loading-state {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.candidate-header > .app-button {
+  margin: 0 0 var(--space-4) -14px;
+}
+
+.heading-row,
+.title-row,
+.page-actions,
+.section-heading {
+  display: flex;
+}
+
+.heading-row {
+  align-items: flex-start;
+  gap: var(--space-5);
+  justify-content: space-between;
+}
+
+.title-row {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.breadcrumbs,
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+.breadcrumbs {
+  color: var(--text-2);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-2);
+}
+
+.breadcrumbs span {
+  margin-left: var(--space-1);
+}
+
+h1 {
+  font-size: clamp(2rem, 3vw, 2.4rem);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin-bottom: 0;
+}
+
+h2 {
+  font-size: var(--font-size-lg);
+  margin-bottom: 0;
+}
+
+.environment-badge {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  padding: var(--space-1) var(--space-2);
+}
+
+.page-actions {
+  flex: none;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.candidate-identity {
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: var(--space-5) 0 0;
+  padding-top: var(--space-4);
+}
+
+.candidate-identity dt {
+  color: var(--text-2);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.candidate-identity dd {
+  font-size: var(--font-size-sm);
+  margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+app-callout,
+app-page-state,
+app-policy-assignment,
+app-readiness-summary {
+  display: block;
+}
+
+app-callout,
+app-page-state,
+app-policy-assignment,
+app-readiness-summary,
+.loading-state {
+  margin-top: var(--space-5);
+}
+
+.content-section {
+  border-top: 2px solid var(--border);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+}
+
+.section-heading {
+  align-items: flex-end;
+  gap: var(--space-4);
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.section-heading > span {
+  color: var(--text-2);
+  font-size: var(--font-size-xs);
+}
+
+.eyebrow {
+  color: var(--color-accent-700);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 var(--space-1);
+  text-transform: uppercase;
+}
+
+.load-more {
+  margin: var(--space-4) auto 0;
+}
+
+@media (max-width: 800px) {
+  .heading-row {
+    flex-direction: column;
+  }
+
+  .candidate-identity {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .page-actions,
+  .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .candidate-identity {
+    grid-template-columns: 1fr;
+  }
+}

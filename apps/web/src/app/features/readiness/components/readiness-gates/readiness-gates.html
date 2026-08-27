@@ -1,0 +1,108 @@
+<div class="gate-list">
+  @for (row of rows(); track row.evaluation.id) {
+    @let evaluation = row.evaluation;
+    @let resultStatus = result(row);
+    @let impactStatus = impact(row);
+    <details>
+      <summary>
+        <div class="gate-identity">
+          <strong>{{ metric(row) | transloco }}</strong>
+          <span class="mono">{{ evaluation.gateKey }}</span>
+        </div>
+        <app-status-badge
+          [label]="impactStatus.labelKey | transloco"
+          [tone]="impactStatus.tone"
+        />
+        <app-status-badge
+          [label]="resultStatus.labelKey | transloco"
+          [tone]="resultStatus.tone"
+        />
+        <div class="comparison mono">
+          <strong>{{ value(evaluation.actual) }}</strong>
+          <span>{{ operator(row) }} {{ value(evaluation.expected) }}</span>
+        </div>
+        <p>{{ explanation(row) | transloco }}</p>
+        <span class="chevron" aria-hidden="true">›</span>
+      </summary>
+
+      <div class="gate-detail">
+        <dl>
+          <div>
+            <dt>{{ 'readiness.gates.metricVersion' | transloco }}</dt>
+            <dd class="mono">{{ evaluation.metricVersion }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'readiness.gates.testRunRole' | transloco }}</dt>
+            <dd>
+              {{
+                (evaluation.dimensions.testRunRole === 'required'
+                  ? 'readiness.gates.roles.required'
+                  : 'readiness.gates.roles.informational') | transloco
+              }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ 'readiness.gates.diagnostic' | transloco }}</dt>
+            <dd>{{ diagnostic(row) | transloco }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'readiness.gates.observation' | transloco }}</dt>
+            <dd class="mono">{{ evaluation.selectedObservationId ?? '—' }}</dd>
+          </div>
+        </dl>
+
+        @if (row.observation; as observation) {
+          @let trustStatus = trust(observation);
+          @let freshnessStatus = freshness(observation);
+          <section class="evidence" [attr.aria-label]="'readiness.gates.selectedEvidence' | transloco">
+            <div class="evidence-heading">
+              <strong>{{ 'readiness.gates.selectedEvidence' | transloco }}</strong>
+              <app-status-badge
+                [label]="trustStatus.labelKey | transloco"
+                [tone]="trustStatus.tone"
+              />
+              <app-status-badge
+                [label]="freshnessStatus.labelKey | transloco"
+                [tone]="freshnessStatus.tone"
+              />
+            </div>
+            <dl>
+              <div>
+                <dt>{{ 'readiness.evidence.producer' | transloco }}</dt>
+                <dd class="mono">{{ observation.producer.key }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'readiness.evidence.observed' | transloco }}</dt>
+                <dd>{{ observation.observedAt | date: 'medium' }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'readiness.evidence.expires' | transloco }}</dt>
+                <dd>
+                  {{
+                    observation.expiresAt
+                      ? (observation.expiresAt | date: 'medium')
+                      : ('readiness.evidence.noExpiry' | transloco)
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt>{{ 'readiness.evidence.source' | transloco }}</dt>
+                <dd>
+                  @if (observation.source.url) {
+                    <a href="{{ observation.source.url }}" target="_blank" rel="noopener noreferrer">
+                      {{ observation.source.type }} · {{ observation.source.id }}
+                    </a>
+                  } @else {
+                    {{ observation.source.type }} · {{ observation.source.id }}
+                  }
+                </dd>
+              </div>
+            </dl>
+          </section>
+        } @else {
+          <p class="no-evidence">{{ 'readiness.gates.noSelectedEvidence' | transloco }}</p>
+        }
+      </div>
+    </details>
+  }
+</div>

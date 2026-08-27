@@ -1,0 +1,57 @@
+:host {
+  display: block;
+}
+
+section {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+h2,
+p {
+  margin-top: 0;
+}
+
+h2 {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-1);
+}
+
+section > p {
+  color: var(--text-2);
+}
+
+.empty {
+  margin-bottom: 0;
+}
+
+form {
+  align-items: end;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(220px, 1fr) auto;
+  margin-top: var(--space-4);
+}
+
+label {
+  display: grid;
+  gap: var(--space-2);
+}
+
+label span {
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+}
+
+@media (max-width: 560px) {
+  section {
+    padding: var(--space-4);
+  }
+
+  form {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+}
