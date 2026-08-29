@@ -54,8 +54,8 @@
   --surface-1: var(--color-surface);
   --surface-2: var(--color-surface-raised);
   --text-1: var(--color-text);
-  --text-2: var(--color-neutral-800);
-  --text-3: var(--color-neutral-700);
+  --text-2: var(--color-neutral-900);
+  --text-3: var(--color-neutral-800);
   --border: var(--color-divider);
   --accent: var(--color-accent);
   --error-surface: var(--color-danger-surface);
