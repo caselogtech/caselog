@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import type { EnvironmentSummary } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ProjectEnvironmentsApi } from '../../../data-access/project-environments-api';
 import { EnvironmentSettings } from '../../../pages/environments/environment-settings';
 
@@ -60,6 +60,12 @@ describe('EnvironmentSettings', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Checkout');
+    expect(breadcrumbs?.textContent).toContain('Project settings');
+    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain(
+      'Environments',
+    );
     expect(text).toContain('Project settings');
     expect(text).toContain('Production');
     expect(text).toContain('Archive');

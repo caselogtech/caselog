@@ -1,4 +1,12 @@
 <main class="environment-settings-page" aria-labelledby="environment-settings-title">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
+    <span>{{ projectLabel }}</span>
+    <span aria-hidden="true">/</span>
+    <span>{{ 'projectSettings.title' | transloco }}</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'projectSettings.environments.navigation' | transloco }}</span>
+  </nav>
+
   <header class="page-header">
     <div>
       <p class="eyebrow">{{ 'projectSettings.eyebrow' | transloco }}</p>

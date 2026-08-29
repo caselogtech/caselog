@@ -12,6 +12,12 @@
       </a>
     </section>
   } @else if (workspace.data(); as session) {
+    <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
+      <span>{{ session.organization.name }}</span>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ 'workspace.home.gettingStarted' | transloco }}</span>
+    </nav>
+
     <header class="workspace-heading">
       <div>
         <p class="eyebrow">{{ 'workspace.home.eyebrow' | transloco }}</p>

@@ -6,7 +6,9 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
+import { labelFromSlug } from '../../../../shared/models/slug-label';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   Dialog,
@@ -28,6 +30,7 @@ type EnvironmentSubmission = {
 @Component({
   selector: 'app-environment-settings',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     Dialog,
@@ -50,6 +53,7 @@ export class EnvironmentSettings {
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
+  readonly projectLabel = labelFromSlug(this.projectSlug);
   readonly showCreate = signal(false);
   readonly confirmation = signal<EnvironmentStateChangeRequest | null>(null);
   readonly canManage = computed(() =>

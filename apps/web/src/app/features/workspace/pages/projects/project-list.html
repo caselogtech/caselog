@@ -1,13 +1,16 @@
 <main class="projects-page" aria-labelledby="projects-title">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
+    <span>{{ workspaceLabel }}</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'workspace.projects.title' | transloco }}</span>
+  </nav>
+
   <header class="projects-header">
     <div>
       <p class="eyebrow">{{ 'workspace.projects.eyebrow' | transloco }}</p>
       <h1 id="projects-title">{{ 'workspace.projects.title' | transloco }}</h1>
       <p>{{ 'workspace.projects.description' | transloco }}</p>
     </div>
-    <button class="back-link" type="button" [routerLink]="['/', workspaceSlug]">
-      {{ 'workspace.projects.back' | transloco }}
-    </button>
   </header>
 
   @if (projects.isPending()) {

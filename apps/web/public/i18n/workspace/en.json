@@ -63,7 +63,6 @@
     "eyebrow": "Test management",
     "title": "Projects",
     "description": "Projects organize test cases, runs, and result settings.",
-    "back": "Back to workspace",
     "loading": "Loading projects…",
     "retry": "Try again",
     "emptyTitle": "No active projects",

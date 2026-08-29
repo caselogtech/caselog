@@ -48,6 +48,11 @@ describe('WorkspaceHome', () => {
     fixture.detectChanges();
 
     expect(workspaceApi.open).toHaveBeenCalledWith('acme-quality');
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Acme Quality');
+    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain(
+      'Getting started',
+    );
     expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain('Acme Quality');
   });
 });

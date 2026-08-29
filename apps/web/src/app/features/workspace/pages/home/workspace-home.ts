@@ -3,12 +3,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { WorkspaceApi } from '../../data-access/workspace-api';
 import { workspaceRoleTranslationKey } from '../../../../shared/models/workspace-role';
+import { Breadcrumbs } from '../../../../shared/ui/public-api';
+import { WorkspaceApi } from '../../data-access/workspace-api';
 
 @Component({
   selector: 'app-workspace-home',
-  imports: [RouterLink, TranslocoPipe],
+  imports: [Breadcrumbs, RouterLink, TranslocoPipe],
   templateUrl: './workspace-home.html',
   styleUrl: './workspace-home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

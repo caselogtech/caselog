@@ -3,11 +3,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { labelFromSlug } from '../../../../shared/models/slug-label';
+import { Breadcrumbs } from '../../../../shared/ui/public-api';
 import { WorkspaceApi } from '../../data-access/workspace-api';
 
 @Component({
   selector: 'app-project-list',
-  imports: [RouterLink, TranslocoPipe],
+  imports: [Breadcrumbs, RouterLink, TranslocoPipe],
   templateUrl: './project-list.html',
   styleUrl: './project-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,6 +18,7 @@ export class ProjectList {
   private readonly route = inject(ActivatedRoute);
   private readonly workspaceApi = inject(WorkspaceApi);
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
+  readonly workspaceLabel = labelFromSlug(this.workspaceSlug);
 
   readonly projects = injectInfiniteQuery(() => ({
     queryKey: ['projects', this.workspaceSlug],

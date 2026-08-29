@@ -1,30 +1,36 @@
 <main class="settings-layout" aria-labelledby="workspace-settings-title">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
+    <span>{{ workspaceName() }}</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'workspaceSettings.title' | transloco }}</span>
+  </nav>
+
   <header>
     <p class="eyebrow">{{ workspaceName() }}</p>
     <h1 id="workspace-settings-title">{{ 'workspaceSettings.title' | transloco }}</h1>
     <p>{{ 'workspaceSettings.description' | transloco }}</p>
   </header>
 
-  <nav [attr.aria-label]="'workspaceSettings.navigation.label' | transloco">
+  <nav class="settings-navigation" [attr.aria-label]="'workspaceSettings.navigation.label' | transloco">
     <a
-      href="/{{ workspaceSlug }}/settings/general"
-      [routerLink]="['/', workspaceSlug, 'settings', 'general']"
+      href="/{{ workspaceSlug() }}/settings/general"
+      [routerLink]="['/', workspaceSlug(), 'settings', 'general']"
       routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >
       {{ 'workspaceSettings.navigation.general' | transloco }}
     </a>
     <a
-      href="/{{ workspaceSlug }}/settings/members"
-      [routerLink]="['/', workspaceSlug, 'settings', 'members']"
+      href="/{{ workspaceSlug() }}/settings/members"
+      [routerLink]="['/', workspaceSlug(), 'settings', 'members']"
       routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >
       {{ 'workspaceSettings.navigation.members' | transloco }}
     </a>
     <a
-      href="/{{ workspaceSlug }}/settings/danger"
-      [routerLink]="['/', workspaceSlug, 'settings', 'danger']"
+      href="/{{ workspaceSlug() }}/settings/danger"
+      [routerLink]="['/', workspaceSlug(), 'settings', 'danger']"
       routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >

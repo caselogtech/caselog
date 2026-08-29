@@ -45,18 +45,6 @@
   margin: 0 0 8px;
 }
 
-.back-link {
-  background: transparent;
-  border: 0;
-  color: var(--accent);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 600;
-  padding: 0;
-  text-decoration: underline;
-}
-
-.back-link:focus-visible,
 button:focus-visible {
   border-radius: var(--radius-sm);
   outline: 2px solid var(--accent);

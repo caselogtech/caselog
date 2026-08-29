@@ -54,6 +54,9 @@ describe('ProjectList', () => {
     fixture.detectChanges();
 
     expect(workspaceApi.listProjects).toHaveBeenCalledWith('acme-quality', undefined);
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Acme Quality');
+    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain('Projects');
     expect(fixture.nativeElement.querySelector('.project-card')?.textContent).toContain(
       'Demo Project',
     );

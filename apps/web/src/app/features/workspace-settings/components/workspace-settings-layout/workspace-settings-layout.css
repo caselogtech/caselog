@@ -32,7 +32,7 @@ header > p:last-child {
   margin: var(--space-2) 0 0;
 }
 
-nav {
+.settings-navigation {
   border-bottom: 1px solid var(--color-neutral-400);
   display: flex;
   gap: var(--space-5);
@@ -40,7 +40,7 @@ nav {
   overflow-x: auto;
 }
 
-nav a {
+.settings-navigation a {
   border-bottom: 2px solid transparent;
   color: var(--text-2);
   flex: none;
@@ -51,11 +51,11 @@ nav a {
   text-decoration: none;
 }
 
-nav a:hover {
+.settings-navigation a:hover {
   color: var(--text-1);
 }
 
-nav a.active {
+.settings-navigation a.active {
   border-bottom-color: var(--accent);
   color: var(--color-accent-700);
 }
@@ -65,7 +65,7 @@ nav a.active {
     padding-top: var(--space-4);
   }
 
-  nav {
+  .settings-navigation {
     gap: var(--space-4);
   }
 }
