@@ -1,0 +1,97 @@
+<section class="audit-settings" aria-labelledby="workspace-audit-title">
+  <header class="section-header">
+    <p class="eyebrow">{{ 'workspaceSettings.audit.eyebrow' | transloco }}</p>
+    <h2 id="workspace-audit-title">{{ 'workspaceSettings.audit.title' | transloco }}</h2>
+    <p>{{ 'workspaceSettings.audit.description' | transloco }}</p>
+  </header>
+
+  <form class="audit-filter" [formGroup]="filterForm" (ngSubmit)="applyFilter()">
+    <app-form-field
+      controlId="audit-action-filter"
+      [label]="'workspaceSettings.audit.filterLabel' | transloco"
+      [hint]="'workspaceSettings.audit.filterHint' | transloco"
+      [error]="
+        filterForm.controls.action.touched && filterForm.controls.action.invalid
+          ? ('workspaceSettings.audit.filterInvalid' | transloco)
+          : undefined
+      "
+    >
+      <input
+        appControl
+        id="audit-action-filter"
+        class="mono"
+        type="search"
+        formControlName="action"
+        autocomplete="off"
+        [placeholder]="'workspaceSettings.audit.filterPlaceholder' | transloco"
+        [attr.aria-invalid]="
+          filterForm.controls.action.touched && filterForm.controls.action.invalid
+        "
+        aria-describedby="audit-action-filter-description"
+      />
+    </app-form-field>
+    <div class="filter-actions">
+      @if (action()) {
+        <button appButton="quiet" type="button" (click)="clearFilter()">
+          {{ 'workspaceSettings.audit.clearFilter' | transloco }}
+        </button>
+      }
+      <button appButton="secondary" type="submit">
+        {{ 'workspaceSettings.audit.applyFilter' | transloco }}
+      </button>
+    </div>
+  </form>
+
+  @if (auditLogs.isPending()) {
+    <div class="loading-state" [attr.aria-label]="'workspaceSettings.audit.loading' | transloco">
+      @for (row of [1, 2, 3, 4]; track row) {
+        <app-loading-skeleton preset="block" [label]="'workspaceSettings.audit.loading' | transloco" />
+      }
+    </div>
+  } @else if (auditLogs.isError()) {
+    <app-page-state
+      [title]="'workspaceSettings.audit.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="auditLogs.refetch()">
+        {{ 'workspaceSettings.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (items().length === 0) {
+    <app-page-state
+      [title]="
+        (action() ? 'workspaceSettings.audit.noMatchesTitle' : 'workspaceSettings.audit.emptyTitle')
+          | transloco
+      "
+      [message]="
+        (action()
+          ? 'workspaceSettings.audit.noMatchesDescription'
+          : 'workspaceSettings.audit.emptyDescription') | transloco
+      "
+    >
+      @if (action()) {
+        <button actions appButton="secondary" type="button" (click)="clearFilter()">
+          {{ 'workspaceSettings.audit.clearFilter' | transloco }}
+        </button>
+      }
+    </app-page-state>
+  } @else {
+    <app-audit-log-list [items]="items()" />
+
+    @if (auditLogs.hasNextPage()) {
+      <button
+        appButton="secondary"
+        class="load-more"
+        type="button"
+        [disabled]="auditLogs.isFetchingNextPage()"
+        (click)="auditLogs.fetchNextPage()"
+      >
+        {{
+          (auditLogs.isFetchingNextPage()
+            ? 'workspaceSettings.audit.loadingMore'
+            : 'workspaceSettings.audit.loadMore') | transloco
+        }}
+      </button>
+    }
+  }
+</section>

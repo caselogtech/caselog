@@ -1,0 +1,49 @@
+<ol class="audit-list">
+  @for (item of items(); track item.id) {
+    <li>
+      <article>
+        <header>
+          <strong>{{ actionLabel(item.action) }}</strong>
+          <time [attr.datetime]="item.createdAt">{{ item.createdAt | date: 'medium' }}</time>
+        </header>
+
+        <dl class="audit-context">
+          <div>
+            <dt>{{ 'workspaceSettings.audit.actor' | transloco }}</dt>
+            <dd>
+              <span>{{ actorLabelKey(item.actor.type) | transloco }}</span>
+              <code>{{ item.actor.id }}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>{{ 'workspaceSettings.audit.target' | transloco }}</dt>
+            <dd>
+              <span>{{ item.target.type }}</span>
+              @if (item.target.id) {
+                <code>{{ item.target.id }}</code>
+              } @else {
+                <span>{{ 'workspaceSettings.audit.noTargetId' | transloco }}</span>
+              }
+            </dd>
+          </div>
+        </dl>
+
+        @if (metadataEntries(item.metadata); as entries) {
+          @if (entries.length > 0) {
+            <details>
+              <summary>{{ 'workspaceSettings.audit.metadata' | transloco }}</summary>
+              <dl class="metadata-list">
+                @for (entry of entries; track entry.key) {
+                  <div>
+                    <dt class="mono">{{ entry.key }}</dt>
+                    <dd><code>{{ entry.value }}</code></dd>
+                  </div>
+                }
+              </dl>
+            </details>
+          }
+        }
+      </article>
+    </li>
+  }
+</ol>

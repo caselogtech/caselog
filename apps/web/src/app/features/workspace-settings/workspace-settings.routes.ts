@@ -1,5 +1,6 @@
 import type { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
+import { requireWorkspacePermission } from '../workspace/public-api';
 
 const workspaceSettingsTranslations = provideTranslocoScope('workspaceSettings');
 
@@ -25,6 +26,14 @@ export const workspaceSettingsRoutes: Routes = [
         loadComponent: () =>
           import('./pages/members/workspace-members-settings').then(
             ({ WorkspaceMembersSettings }) => WorkspaceMembersSettings,
+          ),
+      },
+      {
+        path: 'audit',
+        canActivate: [requireWorkspacePermission('admin')],
+        loadComponent: () =>
+          import('./pages/audit/workspace-audit-settings').then(
+            ({ WorkspaceAuditSettings }) => WorkspaceAuditSettings,
           ),
       },
       {

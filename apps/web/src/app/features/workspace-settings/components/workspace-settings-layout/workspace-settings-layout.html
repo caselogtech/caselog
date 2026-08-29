@@ -28,6 +28,16 @@
     >
       {{ 'workspaceSettings.navigation.members' | transloco }}
     </a>
+    @if (canAdminister()) {
+      <a
+        href="/{{ workspaceSlug() }}/settings/audit"
+        [routerLink]="['/', workspaceSlug(), 'settings', 'audit']"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+      >
+        {{ 'workspaceSettings.navigation.audit' | transloco }}
+      </a>
+    }
     <a
       href="/{{ workspaceSlug() }}/settings/danger"
       [routerLink]="['/', workspaceSlug(), 'settings', 'danger']"

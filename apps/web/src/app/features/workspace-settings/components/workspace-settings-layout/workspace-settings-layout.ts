@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@ang
 import { TranslocoPipe } from '@jsverse/transloco';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { labelFromSlug } from '../../../../shared/models/slug-label';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { Breadcrumbs } from '../../../../shared/ui/public-api';
 
 @Component({
@@ -21,6 +22,9 @@ export class WorkspaceSettingsLayout {
   });
 
   readonly workspaceSlug = computed(() => this.routeParams().get('org') ?? '');
+  readonly canAdminister = computed(() =>
+    hasWorkspacePermission(this.workspaceSession.role(), 'admin'),
+  );
   readonly workspaceName = computed(() => {
     const slug = this.workspaceSlug();
     return this.workspaceSession.organization()?.slug === slug

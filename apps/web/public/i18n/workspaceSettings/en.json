@@ -7,6 +7,7 @@
     "label": "Workspace settings sections",
     "general": "General",
     "members": "Members",
+    "audit": "Audit log",
     "danger": "Danger zone"
   },
   "general": {
@@ -123,6 +124,34 @@
       "confirmationInvalid": "Enter exactly “{{name}}”.",
       "transferring": "Transferring ownership…",
       "transfer": "Transfer ownership"
+    }
+  },
+  "audit": {
+    "eyebrow": "Workspace accountability",
+    "title": "Audit log",
+    "description": "Review immutable, server-recorded workspace activity in reverse chronological order.",
+    "filterLabel": "Exact action",
+    "filterHint": "Use a server action such as workspace.updated or member.role_updated.",
+    "filterPlaceholder": "workspace.updated",
+    "filterInvalid": "Enter a dot-separated lowercase action name.",
+    "applyFilter": "Apply filter",
+    "clearFilter": "Clear filter",
+    "loading": "Loading audit history…",
+    "loadingMore": "Loading more…",
+    "loadMore": "Load more",
+    "loadErrorTitle": "Unable to load audit history",
+    "emptyTitle": "No audit activity",
+    "emptyDescription": "Server-recorded workspace actions will appear here.",
+    "noMatchesTitle": "No matching audit activity",
+    "noMatchesDescription": "No recorded action matches this exact filter.",
+    "actor": "Actor",
+    "target": "Target",
+    "noTargetId": "No target identifier",
+    "metadata": "Recorded metadata",
+    "actorTypes": {
+      "user": "User",
+      "api_token": "API token",
+      "system": "System"
     }
   },
   "danger": {

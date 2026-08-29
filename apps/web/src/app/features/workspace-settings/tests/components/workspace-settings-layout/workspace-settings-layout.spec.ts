@@ -49,6 +49,7 @@ describe('WorkspaceSettingsLayout', () => {
     expect(layout.querySelector('.settings-navigation a')?.getAttribute('href')).toBe(
       '/acme/settings/general',
     );
+    expect(layout.querySelector('.settings-navigation')?.textContent).toContain('Audit log');
 
     await TestBed.inject(Router).navigateByUrl('/mobile-guild/settings/general');
     harness.detectChanges();
@@ -57,5 +58,16 @@ describe('WorkspaceSettingsLayout', () => {
     expect(layout.querySelector('.settings-navigation a')?.getAttribute('href')).toBe(
       '/mobile-guild/settings/general',
     );
+  });
+
+  it('hides admin-only audit navigation from read-only members', async () => {
+    TestBed.inject(WorkspaceSession).role.set('read_only');
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/acme/settings/general');
+    harness.detectChanges();
+
+    expect(
+      harness.routeNativeElement?.querySelector('.settings-navigation')?.textContent,
+    ).not.toContain('Audit log');
   });
 });
