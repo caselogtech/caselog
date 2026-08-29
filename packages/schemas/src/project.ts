@@ -44,7 +44,12 @@ export const createProjectRequestSchema = z.object({
   slug: projectSlugSchema,
 });
 
-export const createProjectResponseSchema = z.object({ project: projectSummarySchema });
+export const projectResponseSchema = z.object({ project: projectSummarySchema });
+export const createProjectResponseSchema = projectResponseSchema;
+
+export const updateProjectRequestSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+});
 
 export const projectParamsSchema = z.object({ projectSlug: projectSlugSchema });
 
@@ -58,6 +63,8 @@ export type ProjectSummary = z.infer<typeof projectSummarySchema>;
 export type ProjectListResponse = z.infer<typeof projectListResponseSchema>;
 export type CreateProjectRequest = z.infer<typeof createProjectRequestSchema>;
 export type CreateProjectResponse = z.infer<typeof createProjectResponseSchema>;
+export type ProjectResponse = z.infer<typeof projectResponseSchema>;
+export type UpdateProjectRequest = z.infer<typeof updateProjectRequestSchema>;
 export type ProjectParams = z.infer<typeof projectParamsSchema>;
 export type ProjectLifecycleResponse = z.infer<typeof projectLifecycleResponseSchema>;
 export type ProjectState = z.infer<typeof projectStateSchema>;

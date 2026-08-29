@@ -5,12 +5,31 @@ import type {
   ProjectLifecycleResponse,
   ProjectState,
   ProjectSummary,
+  UpdateProjectRequest,
 } from '@caselog/schemas';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import { Prisma } from '../../../generated/prisma/client';
 import { RunStatus } from '../../../generated/prisma/enums';
 import { appendAuditLog } from '../../../audit/public-api';
 import { DEFAULT_PROJECT_STATUSES } from '../../domain/policies/project-defaults';
+
+const PROJECT_SUMMARY_SELECT = {
+  id: true,
+  key: true,
+  slug: true,
+  name: true,
+  deletedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      testCases: { where: { deletedAt: null } },
+      testRuns: { where: { deletedAt: null, status: RunStatus.ACTIVE } },
+    },
+  },
+} satisfies Prisma.ProjectSelect;
+
+type ProjectSummaryRecord = Prisma.ProjectGetPayload<{ select: typeof PROJECT_SUMMARY_SELECT }>;
 
 type ProjectPage = {
   items: ProjectSummary[];
@@ -31,11 +50,25 @@ export type RestoreProjectResult =
   | { kind: 'restored'; value: ProjectLifecycleResponse }
   | { kind: 'project_not_found' };
 
+export type UpdateProjectResult =
+  | { kind: 'updated'; value: ProjectSummary }
+  | { kind: 'project_not_found' };
+
 @Injectable()
 export class ProjectRepository {
   constructor(
     @Inject(TenantDatabaseService) private readonly tenantDatabase: TenantDatabaseService,
   ) {}
+
+  async findActive(organizationId: string, projectSlug: string): Promise<ProjectSummary | null> {
+    const project = await this.tenantDatabase.run(organizationId, (transaction) =>
+      transaction.project.findFirst({
+        where: { organizationId, slug: projectSlug, deletedAt: null },
+        select: PROJECT_SUMMARY_SELECT,
+      }),
+    );
+    return project ? this.toSummary(project) : null;
+  }
 
   async create(
     organizationId: string,
@@ -113,6 +146,49 @@ export class ProjectRepository {
         : String(error.meta?.target ?? '');
       return target.includes('slug') ? { kind: 'slug_conflict' } : { kind: 'key_conflict' };
     }
+  }
+
+  update(
+    organizationId: string,
+    projectSlug: string,
+    actorId: string,
+    request: UpdateProjectRequest,
+  ): Promise<UpdateProjectResult> {
+    return this.tenantDatabase.run(organizationId, async (transaction) => {
+      const [current] = await transaction.$queryRaw<Array<{ id: string; name: string }>>`
+        SELECT id, name
+        FROM projects
+        WHERE organization_id = ${organizationId}::UUID
+          AND slug = ${projectSlug}
+          AND deleted_at IS NULL
+        FOR UPDATE
+      `;
+      if (!current) return { kind: 'project_not_found' };
+
+      const project =
+        current.name === request.name
+          ? await transaction.project.findUniqueOrThrow({
+              where: { organizationId_id: { organizationId, id: current.id } },
+              select: PROJECT_SUMMARY_SELECT,
+            })
+          : await transaction.project.update({
+              where: { organizationId_id: { organizationId, id: current.id } },
+              data: { name: request.name },
+              select: PROJECT_SUMMARY_SELECT,
+            });
+      if (project.name !== current.name) {
+        await appendAuditLog(transaction, {
+          organizationId,
+          actorId,
+          actorType: 'user',
+          action: 'project.updated',
+          targetType: 'project',
+          targetId: project.id,
+          metadata: { changedFields: ['name'] },
+        });
+      }
+      return { kind: 'updated', value: this.toSummary(project) };
+    });
   }
 
   async archive(
@@ -201,36 +277,32 @@ export class ProjectRepository {
         skip: cursor ? 1 : undefined,
         take: limit + 1,
         orderBy: { id: 'asc' },
-        select: {
-          id: true,
-          key: true,
-          slug: true,
-          name: true,
-          deletedAt: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              testCases: { where: { deletedAt: null } },
-              testRuns: { where: { deletedAt: null, status: 'ACTIVE' } },
-            },
-          },
-        },
+        select: PROJECT_SUMMARY_SELECT,
       });
 
       const hasNextPage = projects.length > limit;
       const page = hasNextPage ? projects.slice(0, limit) : projects;
       return {
-        items: page.map(({ _count, deletedAt, createdAt, updatedAt, ...project }) => ({
-          ...project,
-          state: deletedAt ? 'archived' : 'active',
-          caseCount: _count.testCases,
-          activeRunCount: _count.testRuns,
-          createdAt: createdAt.toISOString(),
-          updatedAt: updatedAt.toISOString(),
-        })),
+        items: page.map((project) => this.toSummary(project)),
         nextCursor: hasNextPage ? (page.at(-1)?.id ?? null) : null,
       };
     });
+  }
+
+  private toSummary({
+    _count,
+    deletedAt,
+    createdAt,
+    updatedAt,
+    ...project
+  }: ProjectSummaryRecord): ProjectSummary {
+    return {
+      ...project,
+      state: deletedAt ? 'archived' : 'active',
+      caseCount: _count.testCases,
+      activeRunCount: _count.testRuns,
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
+    };
   }
 }

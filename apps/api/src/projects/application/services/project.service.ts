@@ -3,12 +3,15 @@ import {
   createProjectResponseSchema,
   projectLifecycleResponseSchema,
   projectListResponseSchema,
+  projectResponseSchema,
   type CreateProjectRequest,
   type CreateProjectResponse,
   type OrganizationAccessPrincipal,
   type ProjectLifecycleResponse,
   type ProjectListQuery,
   type ProjectListResponse,
+  type ProjectResponse,
+  type UpdateProjectRequest,
 } from '@caselog/schemas';
 import {
   AuthorizationDeniedError,
@@ -25,6 +28,12 @@ export class ProjectService {
     return projectListResponseSchema.parse(
       await this.projects.list(organizationId, query.cursor, query.limit, query.state),
     );
+  }
+
+  async get(principal: OrganizationAccessPrincipal, projectSlug: string): Promise<ProjectResponse> {
+    const project = await this.projects.findActive(principal.organizationId, projectSlug);
+    if (!project) throw new ResourceNotFoundError('project');
+    return projectResponseSchema.parse({ project });
   }
 
   async create(
@@ -46,6 +55,22 @@ export class ProjectService {
       );
     }
     return createProjectResponseSchema.parse({ project: result.value });
+  }
+
+  async update(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    request: UpdateProjectRequest,
+  ): Promise<ProjectResponse> {
+    this.assertManage(principal);
+    const result = await this.projects.update(
+      principal.organizationId,
+      projectSlug,
+      principal.sub,
+      request,
+    );
+    if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
+    return projectResponseSchema.parse({ project: result.value });
   }
 
   async archive(principal: OrganizationAccessPrincipal, projectSlug: string): Promise<void> {
@@ -79,7 +104,10 @@ export class ProjectService {
   }
 
   private assertManage(principal: OrganizationAccessPrincipal): void {
-    if (!['owner', 'admin', 'lead'].includes(principal.role)) {
+    if (
+      principal.tokenType !== 'organization' ||
+      !['owner', 'admin', 'lead'].includes(principal.role)
+    ) {
       throw new AuthorizationDeniedError();
     }
   }

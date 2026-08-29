@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Inject,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -16,6 +17,7 @@ import type {
   OrganizationAccessPrincipal,
   ProjectLifecycleResponse,
   ProjectListResponse,
+  ProjectResponse,
 } from '@caselog/schemas';
 import {
   ApiBearerAuth,
@@ -30,12 +32,18 @@ import {
   RequireOrganizationAccess,
 } from '../../../auth/public-api';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
-import { CreateProjectRequestDto, ProjectListQueryDto, ProjectParamsDto } from '../dto/project.dto';
+import {
+  CreateProjectRequestDto,
+  ProjectListQueryDto,
+  ProjectParamsDto,
+  UpdateProjectRequestDto,
+} from '../dto/project.dto';
 import { ProjectService } from '../../application/services/project.service';
 import {
   CreateProjectResponseDto,
   ProjectLifecycleResponseDto,
   ProjectListResponseDto,
+  ProjectResponseDto,
 } from '../dto/project-response.dto';
 
 @Controller('projects')
@@ -53,6 +61,16 @@ export class ProjectController {
     return this.projects.list(principal.organizationId, query);
   }
 
+  @Get(':projectSlug')
+  @RequireOrganizationAccess('read')
+  @ApiOkResponse({ type: ProjectResponseDto })
+  get(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: ProjectParamsDto,
+  ): Promise<ProjectResponse> {
+    return this.projects.get(principal, params.projectSlug);
+  }
+
   @Post()
   @RequireOrganizationAccess('lead')
   @ApiCreatedResponse({ type: CreateProjectResponseDto })
@@ -61,6 +79,17 @@ export class ProjectController {
     @Body() request: CreateProjectRequestDto,
   ): Promise<CreateProjectResponse> {
     return this.projects.create(principal, request);
+  }
+
+  @Patch(':projectSlug')
+  @RequireOrganizationAccess('lead')
+  @ApiOkResponse({ type: ProjectResponseDto })
+  update(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: ProjectParamsDto,
+    @Body() request: UpdateProjectRequestDto,
+  ): Promise<ProjectResponse> {
+    return this.projects.update(principal, params.projectSlug, request);
   }
 
   @Delete(':projectSlug')

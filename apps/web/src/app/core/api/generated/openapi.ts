@@ -779,13 +779,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ProjectController_get"];
         put?: never;
         post?: never;
         delete: operations["ProjectController_archive"];
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["ProjectController_update"];
         trace?: never;
     };
     "/api/v1/projects/{projectSlug}/restore": {
@@ -2329,6 +2329,23 @@ export interface components {
             }[];
             nextCursor: string | null;
         };
+        ProjectResponseDto: {
+            project: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                slug: string;
+                name: string;
+                /** @enum {string} */
+                state: "active" | "archived";
+                caseCount: number;
+                activeRunCount: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+            };
+        };
         CreateProjectRequestDto: {
             name: string;
             key: string;
@@ -2350,6 +2367,9 @@ export interface components {
                 /** Format: date-time */
                 updatedAt: string;
             };
+        };
+        UpdateProjectRequestDto: {
+            name: string;
         };
         ProjectLifecycleResponseDto: {
             /** Format: uuid */
@@ -6333,6 +6353,36 @@ export interface operations {
             };
         };
     };
+    ProjectController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
     ProjectController_archive: {
         parameters: {
             query?: never;
@@ -6349,6 +6399,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ProjectController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProjectRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponseDto"];
+                };
             };
             /** @description API error */
             default: {
