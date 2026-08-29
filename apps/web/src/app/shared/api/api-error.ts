@@ -21,6 +21,7 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.idempotency_conflict',
   'errors.idempotency_key_reused',
   'errors.invalid_credentials',
+  'errors.invalid_api_token_expiry',
   'errors.invalid_csv',
   'errors.invalid_csv_rows',
   'errors.invalid_or_expired_token',

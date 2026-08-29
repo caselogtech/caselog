@@ -50,6 +50,7 @@ describe('WorkspaceSettingsLayout', () => {
       '/acme/settings/general',
     );
     expect(layout.querySelector('.settings-navigation')?.textContent).toContain('Audit log');
+    expect(layout.querySelector('.settings-navigation')?.textContent).toContain('API tokens');
 
     await TestBed.inject(Router).navigateByUrl('/mobile-guild/settings/general');
     harness.detectChanges();
@@ -69,5 +70,8 @@ describe('WorkspaceSettingsLayout', () => {
     expect(
       harness.routeNativeElement?.querySelector('.settings-navigation')?.textContent,
     ).not.toContain('Audit log');
+    expect(
+      harness.routeNativeElement?.querySelector('.settings-navigation')?.textContent,
+    ).not.toContain('API tokens');
   });
 });

@@ -1,0 +1,62 @@
+<div class="token-list">
+  @for (token of tokens(); track token.id) {
+    <article>
+      <header>
+        <div>
+          <strong>{{ token.name }}</strong>
+          <code>{{ token.tokenPrefix }}…</code>
+        </div>
+        <app-status-badge
+          [tone]="expired(token.expiresAt) ? 'neutral' : 'success'"
+          [label]="
+            (expired(token.expiresAt)
+              ? 'workspaceSettings.tokens.expired'
+              : 'workspaceSettings.tokens.active') | transloco
+          "
+        />
+      </header>
+
+      <div class="scope-list" [attr.aria-label]="'workspaceSettings.tokens.scopesLabel' | transloco">
+        @for (scope of token.scopes; track trackScope($index, scope)) {
+          <span>{{ scopeLabelKey(scope) | transloco }}</span>
+        }
+      </div>
+
+      <dl>
+        <div>
+          <dt>{{ 'workspaceSettings.tokens.createdBy' | transloco }}</dt>
+          <dd>{{ token.createdBy.displayName }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'workspaceSettings.tokens.createdAt' | transloco }}</dt>
+          <dd>{{ token.createdAt | date: 'medium' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'workspaceSettings.tokens.expiresAt' | transloco }}</dt>
+          <dd>{{ token.expiresAt | date: 'medium' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'workspaceSettings.tokens.lastUsedAt' | transloco }}</dt>
+          <dd>
+            {{
+              token.lastUsedAt
+                ? (token.lastUsedAt | date: 'medium')
+                : ('workspaceSettings.tokens.neverUsed' | transloco)
+            }}
+          </dd>
+        </div>
+      </dl>
+
+      <footer>
+        <button
+          appButton="danger"
+          type="button"
+          [disabled]="pending()"
+          (click)="revokeRequested.emit(token)"
+        >
+          {{ 'workspaceSettings.tokens.revoke' | transloco }}
+        </button>
+      </footer>
+    </article>
+  }
+</div>

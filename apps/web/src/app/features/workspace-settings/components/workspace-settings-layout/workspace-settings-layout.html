@@ -37,6 +37,14 @@
       >
         {{ 'workspaceSettings.navigation.audit' | transloco }}
       </a>
+      <a
+        href="/{{ workspaceSlug() }}/settings/tokens"
+        [routerLink]="['/', workspaceSlug(), 'settings', 'tokens']"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+      >
+        {{ 'workspaceSettings.navigation.tokens' | transloco }}
+      </a>
     }
     <a
       href="/{{ workspaceSlug() }}/settings/danger"

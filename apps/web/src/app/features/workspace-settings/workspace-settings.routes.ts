@@ -37,6 +37,14 @@ export const workspaceSettingsRoutes: Routes = [
           ),
       },
       {
+        path: 'tokens',
+        canActivate: [requireWorkspacePermission('admin')],
+        loadComponent: () =>
+          import('./pages/tokens/workspace-api-tokens-settings').then(
+            ({ WorkspaceApiTokensSettings }) => WorkspaceApiTokensSettings,
+          ),
+      },
+      {
         path: 'danger',
         loadComponent: () =>
           import('./pages/danger/workspace-danger-settings').then(

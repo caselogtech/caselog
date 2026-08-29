@@ -1,0 +1,152 @@
+.section-header {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--space-4);
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.eyebrow {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--space-1);
+  text-transform: uppercase;
+}
+
+h2,
+h3 {
+  margin: 0;
+}
+
+h2 {
+  font-size: var(--font-size-lg);
+}
+
+h3 {
+  font-size: var(--font-size-md);
+}
+
+.section-header p:last-child {
+  color: var(--text-2);
+  margin: var(--space-1) 0 0;
+}
+
+.token-form {
+  background: var(--surface-2);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius);
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  padding: var(--space-5);
+}
+
+.form-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  font-weight: 650;
+  padding: 0;
+}
+
+fieldset > p {
+  color: var(--text-3);
+  font-size: var(--font-size-sm);
+  margin: var(--space-1) 0 var(--space-2);
+}
+
+.scope-options {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.scope-options label {
+  align-items: start;
+  background: var(--color-neutral-100);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: grid;
+  gap: var(--space-1) var(--space-2);
+  grid-template-columns: auto 1fr;
+  min-height: var(--control-min-size);
+  padding: var(--space-3);
+}
+
+.scope-options input {
+  height: 18px;
+  margin: 2px 0 0;
+  width: 18px;
+}
+
+.scope-options span {
+  font-weight: 650;
+}
+
+.scope-options code {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  grid-column: 2;
+}
+
+.scope-error {
+  color: var(--error-text);
+}
+
+.token-form footer {
+  border-top: 1px solid var(--color-neutral-300);
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  padding-top: var(--space-4);
+}
+
+app-callout {
+  display: block;
+  margin-bottom: var(--space-4);
+}
+
+app-callout p {
+  margin: 0;
+}
+
+.loading-state {
+  display: grid;
+  gap: var(--space-3);
+}
+
+@media (max-width: 760px) {
+  .form-grid,
+  .scope-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .section-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .token-form {
+    padding: var(--space-4);
+  }
+
+  .token-form footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}

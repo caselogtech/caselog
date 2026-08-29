@@ -8,6 +8,7 @@
     "general": "General",
     "members": "Members",
     "audit": "Audit log",
+    "tokens": "API tokens",
     "danger": "Danger zone"
   },
   "general": {
@@ -152,6 +153,56 @@
       "user": "User",
       "api_token": "API token",
       "system": "System"
+    }
+  },
+  "tokens": {
+    "eyebrow": "Automation access",
+    "title": "API tokens",
+    "description": "Create narrowly scoped credentials for CI and external automation. Active tokens inherit the creator's current workspace access.",
+    "create": "Create API token",
+    "loading": "Loading API tokens…",
+    "loadErrorTitle": "Unable to load API tokens",
+    "mutationErrorTitle": "Unable to update API tokens",
+    "emptyTitle": "No active API tokens",
+    "emptyDescription": "Create a scoped token when CI or another trusted automation client needs workspace access.",
+    "active": "Active",
+    "expired": "Expired",
+    "scopesLabel": "Granted scopes",
+    "createdBy": "Created by",
+    "createdAt": "Created",
+    "expiresAt": "Expires",
+    "lastUsedAt": "Last used",
+    "neverUsed": "Never used",
+    "revoke": "Revoke token",
+    "confirmRevokeTitle": "Revoke {{name}}?",
+    "confirmRevokeMessage": "This credential stops authenticating immediately. The secret cannot be restored and existing automation must receive a replacement token.",
+    "scopes": {
+      "runsRead": "Read test runs",
+      "resultsWrite": "Write test results",
+      "evidenceWrite": "Write quality evidence"
+    },
+    "form": {
+      "title": "New API token",
+      "name": "Token name",
+      "nameInvalid": "Enter a token name between 1 and 100 characters.",
+      "expiry": "Expires at",
+      "expiryHint": "Choose a future time no more than 366 days away.",
+      "expiryInvalid": "Choose a valid future expiry within 366 days.",
+      "scopes": "Scopes",
+      "scopesHint": "Grant only the operations this automation requires.",
+      "scopesInvalid": "Select at least one API token scope.",
+      "creating": "Creating token…",
+      "submit": "Create token"
+    },
+    "secret": {
+      "eyebrow": "Shown once",
+      "title": "Save the token for {{name}}",
+      "description": "Copy this secret now and store it in your CI secret manager. Caselog stores only its hash and cannot display it again.",
+      "copy": "Copy token",
+      "copied": "Copied",
+      "copyConfirmed": "The token was copied to the clipboard.",
+      "copyFailed": "Clipboard access is unavailable. Select and copy the token manually.",
+      "saved": "I have saved this token"
     }
   },
   "danger": {

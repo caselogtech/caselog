@@ -63,6 +63,7 @@
     "idempotency_conflict": "This request conflicts with an earlier retry. Reload the page and try again.",
     "idempotency_key_reused": "This import request conflicts with an earlier request. Select the file again and retry.",
     "invalid_credentials": "Email or password is incorrect.",
+    "invalid_api_token_expiry": "Choose an API token expiry in the future and no more than 366 days away.",
     "invalid_csv": "The CSV document could not be parsed. Check its header, delimiter and quoted values.",
     "invalid_csv_rows": "Resolve every row validation error before importing test cases.",
     "invalid_or_expired_token": "This link is invalid or has expired.",

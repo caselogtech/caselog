@@ -1,0 +1,156 @@
+<section class="token-settings" aria-labelledby="workspace-tokens-title">
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">{{ 'workspaceSettings.tokens.eyebrow' | transloco }}</p>
+      <h2 id="workspace-tokens-title">{{ 'workspaceSettings.tokens.title' | transloco }}</h2>
+      <p>{{ 'workspaceSettings.tokens.description' | transloco }}</p>
+    </div>
+    @if (!showCreateForm()) {
+      <button appButton="primary" type="button" (click)="openCreateForm()">
+        {{ 'workspaceSettings.tokens.create' | transloco }}
+      </button>
+    }
+  </header>
+
+  @if (showCreateForm()) {
+    <form class="token-form" [formGroup]="form" (ngSubmit)="submit()">
+      <h3>{{ 'workspaceSettings.tokens.form.title' | transloco }}</h3>
+      <div class="form-grid">
+        <app-form-field
+          controlId="api-token-name"
+          [label]="'workspaceSettings.tokens.form.name' | transloco"
+          [error]="
+            form.controls.name.touched && form.controls.name.invalid
+              ? ('workspaceSettings.tokens.form.nameInvalid' | transloco)
+              : undefined
+          "
+          [required]="true"
+        >
+          <input
+            appControl
+            id="api-token-name"
+            type="text"
+            formControlName="name"
+            autocomplete="off"
+            [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+            aria-describedby="api-token-name-description"
+          />
+        </app-form-field>
+
+        <app-form-field
+          controlId="api-token-expiry"
+          [label]="'workspaceSettings.tokens.form.expiry' | transloco"
+          [hint]="'workspaceSettings.tokens.form.expiryHint' | transloco"
+          [error]="
+            form.controls.expiresAt.touched && form.controls.expiresAt.invalid
+              ? ('workspaceSettings.tokens.form.expiryInvalid' | transloco)
+              : undefined
+          "
+          [required]="true"
+        >
+          <input
+            appControl
+            id="api-token-expiry"
+            type="datetime-local"
+            formControlName="expiresAt"
+            [min]="minimumExpiry"
+            [max]="maximumExpiry"
+            [attr.aria-invalid]="
+              form.controls.expiresAt.touched && form.controls.expiresAt.invalid
+            "
+            aria-describedby="api-token-expiry-description"
+          />
+        </app-form-field>
+      </div>
+
+      <fieldset formGroupName="scopes">
+        <legend>{{ 'workspaceSettings.tokens.form.scopes' | transloco }}</legend>
+        <p>{{ 'workspaceSettings.tokens.form.scopesHint' | transloco }}</p>
+        <div class="scope-options">
+          @for (scope of scopes; track scope) {
+            <label>
+              <input type="checkbox" [formControlName]="scopeControlName(scope)" />
+              <span>{{ scopeLabelKey(scope) | transloco }}</span>
+              <code>{{ scope }}</code>
+            </label>
+          }
+        </div>
+        @if (form.controls.scopes.touched && form.controls.scopes.invalid) {
+          <p class="scope-error" role="alert">
+            {{ 'workspaceSettings.tokens.form.scopesInvalid' | transloco }}
+          </p>
+        }
+      </fieldset>
+
+      <footer>
+        <button appButton="secondary" type="button" [disabled]="createToken.isPending()" (click)="cancelCreate()">
+          {{ 'workspaceSettings.cancel' | transloco }}
+        </button>
+        <button appButton="primary" type="submit" [disabled]="createToken.isPending()">
+          {{
+            (createToken.isPending()
+              ? 'workspaceSettings.tokens.form.creating'
+              : 'workspaceSettings.tokens.form.submit') | transloco
+          }}
+        </button>
+      </footer>
+    </form>
+  }
+
+  @if (createToken.isError() || revokeToken.isError()) {
+    <app-callout
+      tone="danger"
+      liveRole="alert"
+      [title]="'workspaceSettings.tokens.mutationErrorTitle' | transloco"
+    >
+      <p>{{ errorTranslationKey() | transloco }}</p>
+    </app-callout>
+  }
+
+  @if (tokens.isPending()) {
+    <div class="loading-state" [attr.aria-label]="'workspaceSettings.tokens.loading' | transloco">
+      <app-loading-skeleton preset="block" [label]="'workspaceSettings.tokens.loading' | transloco" />
+      <app-loading-skeleton preset="block" [label]="'workspaceSettings.tokens.loading' | transloco" />
+    </div>
+  } @else if (tokens.isError()) {
+    <app-page-state
+      [title]="'workspaceSettings.tokens.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="tokens.refetch()">
+        {{ 'workspaceSettings.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (tokenItems().length === 0) {
+    <app-page-state
+      [title]="'workspaceSettings.tokens.emptyTitle' | transloco"
+      [message]="'workspaceSettings.tokens.emptyDescription' | transloco"
+    />
+  } @else {
+    <app-api-token-list
+      [tokens]="tokenItems()"
+      [pending]="revokeToken.isPending()"
+      (revokeRequested)="requestRevoke($event)"
+    />
+  }
+
+  <app-api-token-secret-dialog
+    [token]="createdToken()?.token ?? null"
+    [tokenName]="createdToken()?.apiToken?.name ?? ''"
+    (closed)="closeSecret()"
+  />
+
+  <app-dialog
+    [open]="revokeConfirmationOpen()"
+    [title]="
+      'workspaceSettings.tokens.confirmRevokeTitle'
+        | transloco: { name: revokeTarget()?.name ?? '' }
+    "
+    [message]="'workspaceSettings.tokens.confirmRevokeMessage' | transloco"
+    [confirmLabel]="'workspaceSettings.tokens.revoke' | transloco"
+    [cancelLabel]="'workspaceSettings.cancel' | transloco"
+    confirmVariant="danger"
+    (confirmed)="confirmRevoke()"
+    (cancelled)="cancelRevoke()"
+  />
+</section>
