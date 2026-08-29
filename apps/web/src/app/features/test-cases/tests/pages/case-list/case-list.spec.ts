@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
 import type { ProjectStructureResponse, TestCaseListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { TestCaseStructureApi } from '../../../data-access/test-case-structure-api';
 import { TestCasesApi } from '../../../data-access/test-cases-api';
@@ -72,9 +73,11 @@ describe('CaseList', () => {
     restoreArchivedTestCase: vi.fn(),
   };
   let queryClient: QueryClient;
+  let queryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryParams = new BehaviorSubject(convertToParamMap({}));
     testCasesApi.listTestCases.mockReset();
     structureApi.projectStructure.mockReset();
     testCasesApi.duplicateTestCase.mockReset();
@@ -101,8 +104,9 @@ describe('CaseList', () => {
           useValue: {
             snapshot: {
               paramMap: convertToParamMap({ org: 'acme-quality', project: 'authentication' }),
-              queryParamMap: convertToParamMap({}),
+              queryParamMap: queryParams.value,
             },
+            queryParamMap: queryParams.asObservable(),
           },
         },
       ],
@@ -148,6 +152,7 @@ describe('CaseList', () => {
 
     fixture.componentInstance.searchForm.controls.search.setValue(' invalid password ');
     await fixture.componentInstance.applySearch();
+    queryParams.next(convertToParamMap({ search: ' invalid password ' }));
     await vi.waitFor(() =>
       expect(testCasesApi.listTestCases).toHaveBeenLastCalledWith(
         'acme-quality',
@@ -165,6 +170,11 @@ describe('CaseList', () => {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+
+    queryParams.next(convertToParamMap({ search: 'restored search' }));
+    await vi.waitFor(() =>
+      expect(fixture.componentInstance.searchForm.controls.search.value).toBe('restored search'),
+    );
   });
 
   it('filters cases by section and stores the selection in the URL', async () => {
@@ -175,6 +185,7 @@ describe('CaseList', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.cases.isSuccess()).toBe(true));
 
     await fixture.componentInstance.selectSection(SECTION_ID);
+    queryParams.next(convertToParamMap({ section: SECTION_ID }));
     await vi.waitFor(() =>
       expect(testCasesApi.listTestCases).toHaveBeenLastCalledWith(
         'acme-quality',
@@ -196,8 +207,8 @@ describe('CaseList', () => {
 
   it('shows a search-aware empty state', async () => {
     testCasesApi.listTestCases.mockResolvedValue({ ...response, items: [] });
+    queryParams.next(convertToParamMap({ search: 'missing case' }));
     const fixture = TestBed.createComponent(CaseList);
-    fixture.componentInstance.search.set('missing case');
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.cases.isSuccess()).toBe(true));
     fixture.detectChanges();
@@ -220,6 +231,7 @@ describe('CaseList', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.cases.isSuccess()).toBe(true));
 
     await fixture.componentInstance.selectState('archived');
+    queryParams.next(convertToParamMap({ state: 'archived' }));
     await vi.waitFor(() =>
       expect(testCasesApi.listTestCases).toHaveBeenLastCalledWith(
         'acme-quality',

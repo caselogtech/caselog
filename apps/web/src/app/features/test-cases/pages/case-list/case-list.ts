@@ -1,5 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  untracked,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { TestCaseTemplate } from '@caselog/schemas';
@@ -11,6 +19,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { enumQueryParam, textQueryParam } from '../../../../shared/routing/query-param';
 import {
   Button,
   Callout,
@@ -27,6 +36,8 @@ const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
   exploratory: 'workspace.cases.templates.exploratory',
   bdd: 'workspace.cases.templates.bdd',
 };
+
+const CASE_STATES = ['active', 'archived'] as const;
 
 @Component({
   selector: 'app-case-list',
@@ -53,13 +64,16 @@ export class CaseList {
   private readonly testCasesApi = inject(TestCasesApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
-  readonly search = signal(this.route.snapshot.queryParamMap.get('search')?.trim() ?? '');
-  readonly sectionId = signal(this.route.snapshot.queryParamMap.get('section') ?? '');
-  readonly state = signal<'active' | 'archived'>(
-    this.route.snapshot.queryParamMap.get('state') === 'archived' ? 'archived' : 'active',
+  readonly search = computed(() => textQueryParam(this.queryParams().get('search')));
+  readonly sectionId = computed(() => textQueryParam(this.queryParams().get('section')));
+  readonly state = computed(
+    () => enumQueryParam(this.queryParams().get('state'), CASE_STATES) ?? 'active',
   );
   readonly searchForm = this.formBuilder.group({ search: [this.search()] });
 
@@ -109,9 +123,19 @@ export class CaseList {
     onSuccess: () => this.invalidateCases(),
   }));
 
+  constructor() {
+    effect(() => {
+      const search = this.search();
+      untracked(() => {
+        if (this.searchForm.controls.search.value !== search) {
+          this.searchForm.controls.search.setValue(search);
+        }
+      });
+    });
+  }
+
   async applySearch(): Promise<void> {
     const search = this.searchForm.controls.search.value.trim();
-    this.search.set(search);
     await this.updateQueryParams({ search: search || null });
   }
 
@@ -122,18 +146,14 @@ export class CaseList {
 
   async clearFilters(): Promise<void> {
     this.searchForm.controls.search.setValue('');
-    this.search.set('');
-    this.sectionId.set('');
     await this.updateQueryParams({ search: null, section: null });
   }
 
   async selectSection(sectionId: string): Promise<void> {
-    this.sectionId.set(sectionId);
     await this.updateQueryParams({ section: sectionId || null });
   }
 
   async selectState(state: 'active' | 'archived'): Promise<void> {
-    this.state.set(state);
     await this.updateQueryParams({ state: state === 'archived' ? state : null });
   }
 

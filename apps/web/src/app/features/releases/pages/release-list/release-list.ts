@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { ReleaseState } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -7,6 +8,7 @@ import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { labelFromSlug } from '../../../../shared/models/slug-label';
+import { enumQueryParam } from '../../../../shared/routing/query-param';
 import {
   Breadcrumbs,
   Button,
@@ -42,12 +44,17 @@ export class ReleaseList {
   private readonly router = inject(Router);
   private readonly releasesApi = inject(ReleasesApi);
   private readonly workspaceSession = inject(WorkspaceSession);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly projectLabel = labelFromSlug(this.projectSlug);
   readonly lifecycleOptions: ReleaseState[] = ['draft', 'active', 'released', 'cancelled'];
-  readonly state = signal<ReleaseState | undefined>(this.readState());
+  readonly state = computed(() =>
+    enumQueryParam(this.queryParams().get('state'), this.lifecycleOptions),
+  );
   readonly canManage = computed(() =>
     ['owner', 'admin', 'lead'].includes(this.workspaceSession.role() ?? ''),
   );
@@ -68,7 +75,6 @@ export class ReleaseList {
   readonly items = computed(() => this.releases.data()?.pages.flatMap(({ items }) => items) ?? []);
 
   async selectState(state?: ReleaseState): Promise<void> {
-    this.state.set(state);
     await this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { state: state ?? null },
@@ -91,12 +97,5 @@ export class ReleaseList {
 
   errorTranslationKey(): string {
     return apiErrorTranslationKey(this.releases.error());
-  }
-
-  private readState(): ReleaseState | undefined {
-    const state = this.route.snapshot.queryParamMap.get('state');
-    return state === 'draft' || state === 'active' || state === 'released' || state === 'cancelled'
-      ? state
-      : undefined;
   }
 }

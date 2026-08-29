@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
 import type { TestRunListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { TestRunsApi } from '../../../data-access/test-runs-api';
 import { RunList } from '../../../pages/run-list/run-list';
@@ -32,9 +33,11 @@ const response: TestRunListResponse = {
 describe('RunList', () => {
   const workspaceApi = { listTestRuns: vi.fn() };
   let queryClient: QueryClient;
+  let queryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryParams = new BehaviorSubject(convertToParamMap({}));
     workspaceApi.listTestRuns.mockReset().mockResolvedValue(response);
     await TestBed.configureTestingModule({
       imports: [RunList, i18nTestingModule()],
@@ -47,8 +50,9 @@ describe('RunList', () => {
           useValue: {
             snapshot: {
               paramMap: convertToParamMap({ org: 'acme', project: 'authentication' }),
-              queryParamMap: convertToParamMap({}),
+              queryParamMap: queryParams.value,
             },
+            queryParamMap: queryParams.asObservable(),
           },
         },
       ],
@@ -69,6 +73,7 @@ describe('RunList', () => {
     expect(fixture.nativeElement.querySelector('.status-active').textContent).toContain('Active');
 
     await fixture.componentInstance.selectStatus('completed');
+    queryParams.next(convertToParamMap({ status: 'completed' }));
     await vi.waitFor(() =>
       expect(workspaceApi.listTestRuns).toHaveBeenLastCalledWith(
         'acme',
@@ -83,6 +88,16 @@ describe('RunList', () => {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+
+    queryParams.next(convertToParamMap({}));
+    await vi.waitFor(() =>
+      expect(workspaceApi.listTestRuns).toHaveBeenLastCalledWith(
+        'acme',
+        'authentication',
+        undefined,
+        undefined,
+      ),
+    );
   });
 
   it('calculates progress safely for empty and partially completed runs', () => {

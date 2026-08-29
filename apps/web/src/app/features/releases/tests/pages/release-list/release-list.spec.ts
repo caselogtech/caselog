@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import type { ReleaseReadinessListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { ReleasesApi } from '../../../data-access/releases-api';
 import { ReleaseList } from '../../../pages/release-list/release-list';
@@ -62,9 +63,11 @@ const response: ReleaseReadinessListResponse = {
 describe('ReleaseList', () => {
   const releasesApi = { listReadiness: vi.fn() };
   let queryClient: QueryClient;
+  let queryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryParams = new BehaviorSubject(convertToParamMap({}));
     releasesApi.listReadiness.mockReset().mockResolvedValue(response);
     await TestBed.configureTestingModule({
       imports: [ReleaseList, i18nTestingModule()],
@@ -77,8 +80,9 @@ describe('ReleaseList', () => {
           useValue: {
             snapshot: {
               paramMap: convertToParamMap({ org: 'acme', project: 'authentication' }),
-              queryParamMap: convertToParamMap({}),
+              queryParamMap: queryParams.value,
             },
+            queryParamMap: queryParams.asObservable(),
           },
         },
       ],
@@ -111,6 +115,7 @@ describe('ReleaseList', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.releases.isSuccess()).toBe(true));
 
     await fixture.componentInstance.selectState('released');
+    queryParams.next(convertToParamMap({ state: 'released' }));
     await vi.waitFor(() =>
       expect(releasesApi.listReadiness).toHaveBeenLastCalledWith(
         'acme',
@@ -125,5 +130,15 @@ describe('ReleaseList', () => {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+
+    queryParams.next(convertToParamMap({}));
+    await vi.waitFor(() =>
+      expect(releasesApi.listReadiness).toHaveBeenLastCalledWith(
+        'acme',
+        'authentication',
+        undefined,
+        undefined,
+      ),
+    );
   });
 });

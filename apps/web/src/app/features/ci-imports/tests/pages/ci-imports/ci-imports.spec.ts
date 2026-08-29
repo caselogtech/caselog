@@ -3,6 +3,7 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
 import type { ResultIngestionListResponse, TestRunListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { TestRunsApi } from '../../../../test-runs/public-api';
 import { CiUploadPanel } from '../../../components/ci-upload-panel/ci-upload-panel';
@@ -69,9 +70,11 @@ describe('CiImports', () => {
     uploadJUnitResults: vi.fn(),
   };
   let queryClient: QueryClient;
+  let queryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryParams = new BehaviorSubject(convertToParamMap({}));
     workspaceApi.listResultIngestions.mockReset().mockResolvedValue(history);
     workspaceApi.listTestRuns.mockReset().mockResolvedValue(activeRuns);
     workspaceApi.uploadJUnitResults.mockReset().mockResolvedValue({
@@ -93,8 +96,9 @@ describe('CiImports', () => {
           useValue: {
             snapshot: {
               paramMap: convertToParamMap({ org: 'acme', project: 'authentication' }),
-              queryParamMap: convertToParamMap({}),
+              queryParamMap: queryParams.value,
             },
+            queryParamMap: queryParams.asObservable(),
           },
         },
       ],
@@ -116,6 +120,7 @@ describe('CiImports', () => {
     expect(fixture.nativeElement.textContent).toContain('3 unmatched');
 
     await fixture.componentInstance.selectStatus('failed');
+    queryParams.next(convertToParamMap({ status: 'failed' }));
     await vi.waitFor(() =>
       expect(workspaceApi.listResultIngestions).toHaveBeenLastCalledWith(
         'acme',
@@ -130,6 +135,16 @@ describe('CiImports', () => {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+
+    queryParams.next(convertToParamMap({}));
+    await vi.waitFor(() =>
+      expect(workspaceApi.listResultIngestions).toHaveBeenLastCalledWith(
+        'acme',
+        'authentication',
+        undefined,
+        undefined,
+      ),
+    );
   });
 
   it('validates the selected report and uploads it to the active run', async () => {

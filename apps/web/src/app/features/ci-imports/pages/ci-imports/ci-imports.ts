@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import type { JUnitUploadResponse, ResultIngestionStatus } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -9,6 +10,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { enumQueryParam } from '../../../../shared/routing/query-param';
 import { Breadcrumbs, Button } from '../../../../shared/ui/public-api';
 import { TestRunsApi } from '../../../test-runs/public-api';
 import { CiImportHistory } from '../../components/ci-import-history/ci-import-history';
@@ -32,10 +34,14 @@ export class CiImports {
   private readonly testRunsApi = inject(TestRunsApi);
   private readonly ciImportsApi = inject(CiImportsApi);
   private readonly workspaceSession = inject(WorkspaceSession);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
-  readonly status = signal<ResultIngestionStatus | undefined>(this.readStatus());
+  readonly statuses: ResultIngestionStatus[] = ['completed', 'failed'];
+  readonly status = computed(() => enumQueryParam(this.queryParams().get('status'), this.statuses));
   readonly lastUpload = signal<JUnitUploadResponse | null>(null);
   readonly canUpload = computed(() => this.workspaceSession.role() !== 'read_only');
 
@@ -79,7 +85,6 @@ export class CiImports {
   }));
 
   async selectStatus(status?: ResultIngestionStatus): Promise<void> {
-    this.status.set(status);
     await this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { status: status ?? null },
@@ -103,10 +108,5 @@ export class CiImports {
 
   activeRunsErrorTranslationKey(): string {
     return apiErrorTranslationKey(this.activeRuns.error());
-  }
-
-  private readStatus(): ResultIngestionStatus | undefined {
-    const status = this.route.snapshot.queryParamMap.get('status');
-    return status === 'completed' || status === 'failed' ? status : undefined;
   }
 }

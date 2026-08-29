@@ -9,7 +9,8 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { CreateTestResultRequest, TestRunItemResponse, TestRunStatus } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
@@ -60,14 +61,18 @@ import { RunExecutionSession } from '../../state/run-execution-session';
 })
 export class RunDetail {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly testRunsApi = inject(TestRunsApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
   private readonly execution = inject(RunExecutionSession);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly runId = this.route.snapshot.paramMap.get('runId') ?? '';
-  readonly selectedItemId = signal(this.route.snapshot.queryParamMap.get('item') ?? '');
+  readonly selectedItemId = computed(() => this.queryParams().get('item') ?? '');
   readonly originReleaseId = this.route.snapshot.queryParamMap.get('releaseId') ?? '';
   readonly originCandidateId = this.route.snapshot.queryParamMap.get('candidateId') ?? '';
   readonly hasReadinessOrigin = Boolean(this.originReleaseId && this.originCandidateId);
@@ -164,7 +169,12 @@ export class RunDetail {
   }
 
   selectItem(itemId: string): void {
-    this.selectedItemId.set(itemId);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { item: itemId },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   assign(itemId: string, assigneeId: string): void {

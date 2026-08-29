@@ -1,8 +1,9 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import type { RunProgressResponse, TestRunDetailResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { BrowserSession } from '../../../../../core/auth/browser-session';
 import { RunExecutionPanel } from '../../../components/run-execution-panel/run-execution-panel';
@@ -115,10 +116,14 @@ describe('RunDetail', () => {
     recordTestResult: vi.fn(),
   };
   let queryClient: QueryClient;
+  let queryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     localStorage.clear();
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryParams = new BehaviorSubject(
+      convertToParamMap({ releaseId: RELEASE_ID, candidateId: CANDIDATE_ID }),
+    );
     workspaceApi.testRun.mockReset().mockResolvedValue(detail);
     workspaceApi.runProgress.mockReset().mockResolvedValue(progress);
     workspaceApi.recordTestResult.mockReset().mockResolvedValue({
@@ -149,11 +154,9 @@ describe('RunDetail', () => {
                 project: 'authentication',
                 runId: RUN_ID,
               }),
-              queryParamMap: convertToParamMap({
-                releaseId: RELEASE_ID,
-                candidateId: CANDIDATE_ID,
-              }),
+              queryParamMap: queryParams.value,
             },
+            queryParamMap: queryParams.asObservable(),
           },
         },
       ],
@@ -231,12 +234,26 @@ describe('RunDetail', () => {
       items: [firstItem, secondItem],
     });
     const fixture = TestBed.createComponent(RunDetail);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
     fixture.detectChanges();
 
     const queueButtons = fixture.nativeElement.querySelectorAll('.queue-items button');
     queueButtons[1]?.click();
+    expect(navigate).toHaveBeenCalledWith([], {
+      relativeTo: TestBed.inject(ActivatedRoute),
+      queryParams: { item: secondItem.id },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    queryParams.next(
+      convertToParamMap({
+        releaseId: RELEASE_ID,
+        candidateId: CANDIDATE_ID,
+        item: secondItem.id,
+      }),
+    );
     fixture.detectChanges();
 
     expect(fixture.componentInstance.selectedItem()?.id).toBe(secondItem.id);

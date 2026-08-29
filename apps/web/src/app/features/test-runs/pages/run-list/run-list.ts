@@ -1,11 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { TestRunStatus, TestRunSummary } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { enumQueryParam } from '../../../../shared/routing/query-param';
 import {
   Breadcrumbs,
   Button,
@@ -44,10 +46,13 @@ export class RunList {
   private readonly router = inject(Router);
   private readonly testRunsApi = inject(TestRunsApi);
   private readonly workspaceSession = inject(WorkspaceSession);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly statuses: TestRunStatus[] = ['active', 'completed', 'draft', 'archived'];
-  readonly status = signal<TestRunStatus | undefined>(this.readStatus());
+  readonly status = computed(() => enumQueryParam(this.queryParams().get('status'), this.statuses));
   readonly canCreate = computed(() => this.workspaceSession.role() !== 'read_only');
 
   readonly runs = injectInfiniteQuery(() => ({
@@ -67,7 +72,6 @@ export class RunList {
   readonly project = computed(() => this.runs.data()?.pages[0]?.project ?? null);
 
   async selectStatus(status?: TestRunStatus): Promise<void> {
-    this.status.set(status);
     await this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { status: status ?? null },
@@ -92,15 +96,5 @@ export class RunList {
     if (status === 'active') return 'pending';
     if (status === 'completed') return 'success';
     return 'neutral';
-  }
-
-  private readStatus(): TestRunStatus | undefined {
-    const status = this.route.snapshot.queryParamMap.get('status');
-    return status === 'draft' ||
-      status === 'active' ||
-      status === 'completed' ||
-      status === 'archived'
-      ? status
-      : undefined;
   }
 }
