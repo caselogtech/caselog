@@ -1,0 +1,190 @@
+<section aria-labelledby="project-general-title">
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">{{ 'projectSettings.general.eyebrow' | transloco }}</p>
+      <h2 id="project-general-title">{{ 'projectSettings.general.title' | transloco }}</h2>
+      <p>{{ 'projectSettings.general.description' | transloco }}</p>
+    </div>
+  </header>
+
+  @if (settings.isPending()) {
+    <div class="loading-state" [attr.aria-label]="'projectSettings.general.loading' | transloco">
+      <app-loading-skeleton
+        preset="block"
+        [label]="'projectSettings.general.loading' | transloco"
+      />
+      <app-loading-skeleton
+        preset="row"
+        [label]="'projectSettings.general.loading' | transloco"
+      />
+    </div>
+  } @else if (settings.isError()) {
+    <app-page-state
+      [title]="'projectSettings.general.loadErrorTitle' | transloco"
+      [message]="errorTranslationKey() | transloco"
+    >
+      <button actions appButton="secondary" type="button" (click)="settings.refetch()">
+        {{ 'projectSettings.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (project(); as currentProject) {
+    @if (!canManage()) {
+      <app-callout [title]="'projectSettings.general.readOnlyTitle' | transloco">
+        <p>{{ 'projectSettings.general.readOnlyDescription' | transloco }}</p>
+      </app-callout>
+    }
+
+    @if (saved()) {
+      <app-callout
+        tone="success"
+        liveRole="status"
+        [title]="'projectSettings.general.savedTitle' | transloco"
+      >
+        <p>{{ 'projectSettings.general.savedDescription' | transloco }}</p>
+      </app-callout>
+    }
+
+    @if (updateSettings.isError() || archiveProject.isError()) {
+      <app-callout
+        tone="danger"
+        liveRole="alert"
+        [title]="'projectSettings.general.mutationErrorTitle' | transloco"
+      >
+        <p>{{ errorTranslationKey() | transloco }}</p>
+      </app-callout>
+    }
+
+    <div class="settings-grid">
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="field-grid">
+          <app-form-field
+            controlId="project-settings-name"
+            [label]="'projectSettings.general.name' | transloco"
+            [error]="
+              form.controls.name.touched && form.controls.name.invalid
+                ? ('projectSettings.general.nameInvalid' | transloco)
+                : undefined
+            "
+            [required]="true"
+          >
+            <input
+              appControl
+              id="project-settings-name"
+              type="text"
+              formControlName="name"
+              autocomplete="off"
+              [readOnly]="!canManage()"
+              [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+              aria-describedby="project-settings-name-description"
+            />
+          </app-form-field>
+
+          <app-form-field
+            controlId="project-settings-key"
+            [label]="'projectSettings.general.key' | transloco"
+            [hint]="'projectSettings.general.keyHint' | transloco"
+          >
+            <input
+              appControl
+              id="project-settings-key"
+              class="mono"
+              type="text"
+              [value]="currentProject.key"
+              readonly
+              aria-describedby="project-settings-key-description"
+            />
+          </app-form-field>
+
+          <app-form-field
+            controlId="project-settings-slug"
+            [label]="'projectSettings.general.slug' | transloco"
+            [hint]="'projectSettings.general.slugHint' | transloco"
+          >
+            <input
+              appControl
+              id="project-settings-slug"
+              class="mono"
+              type="text"
+              [value]="currentProject.slug"
+              readonly
+              aria-describedby="project-settings-slug-description"
+            />
+          </app-form-field>
+        </div>
+
+        @if (canManage()) {
+          <footer>
+            <button
+              appButton="secondary"
+              type="button"
+              [disabled]="updateSettings.isPending() || form.pristine"
+              (click)="discard()"
+            >
+              {{ 'projectSettings.general.discard' | transloco }}
+            </button>
+            <button
+              appButton="primary"
+              type="submit"
+              [disabled]="updateSettings.isPending() || form.invalid || form.pristine"
+            >
+              {{
+                (updateSettings.isPending()
+                  ? 'projectSettings.general.saving'
+                  : 'projectSettings.general.save') | transloco
+              }}
+            </button>
+          </footer>
+        }
+      </form>
+
+      <aside class="identity-summary">
+        <div class="summary-heading">
+          <strong>{{ 'projectSettings.general.summaryTitle' | transloco }}</strong>
+          <app-status-badge
+            tone="success"
+            [label]="'projectSettings.general.active' | transloco"
+          />
+        </div>
+        <dl>
+          <div>
+            <dt>{{ 'projectSettings.general.caseCount' | transloco }}</dt>
+            <dd>{{ currentProject.caseCount }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'projectSettings.general.activeRunCount' | transloco }}</dt>
+            <dd>{{ currentProject.activeRunCount }}</dd>
+          </div>
+        </dl>
+        <p>{{ 'projectSettings.general.identityDescription' | transloco }}</p>
+      </aside>
+    </div>
+
+    @if (canManage()) {
+      <section class="lifecycle-card" aria-labelledby="archive-project-title">
+        <div>
+          <h3 id="archive-project-title">{{ 'projectSettings.general.archiveTitle' | transloco }}</h3>
+          <p>{{ 'projectSettings.general.archiveDescription' | transloco }}</p>
+        </div>
+        <button
+          appButton="danger"
+          type="button"
+          [disabled]="archiveProject.isPending()"
+          (click)="requestArchive()"
+        >
+          {{ 'projectSettings.general.archive' | transloco }}
+        </button>
+      </section>
+    }
+  }
+
+  <app-dialog
+    [open]="archiveConfirmationOpen()"
+    [title]="'projectSettings.general.confirmArchiveTitle' | transloco: { name: project()?.name ?? '' }"
+    [message]="'projectSettings.general.confirmArchiveMessage' | transloco"
+    [confirmLabel]="'projectSettings.general.archive' | transloco"
+    [cancelLabel]="'projectSettings.cancel' | transloco"
+    confirmVariant="danger"
+    (confirmed)="confirmArchive()"
+    (cancelled)="cancelArchive()"
+  />
+</section>

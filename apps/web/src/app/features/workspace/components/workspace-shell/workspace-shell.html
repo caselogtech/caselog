@@ -139,8 +139,8 @@
           {{ 'app.navigation.ciImports' | transloco }}
         </a>
         <a
-          href="/{{ workspaceSlug() }}/{{ projectSlug() }}/settings/environments"
-          [routerLink]="['/', workspaceSlug(), projectSlug(), 'settings', 'environments']"
+          href="/{{ workspaceSlug() }}/{{ projectSlug() }}/settings/general"
+          [routerLink]="['/', workspaceSlug(), projectSlug(), 'settings', 'general']"
           routerLinkActive="active"
           ariaCurrentWhenActive="page"
           (click)="closeNavigation(false)"

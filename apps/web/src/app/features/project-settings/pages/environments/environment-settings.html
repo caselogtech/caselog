@@ -1,16 +1,8 @@
-<main class="environment-settings-page" aria-labelledby="environment-settings-title">
-  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
-    <span>{{ projectLabel }}</span>
-    <span aria-hidden="true">/</span>
-    <span>{{ 'projectSettings.title' | transloco }}</span>
-    <span aria-hidden="true">/</span>
-    <span aria-current="page">{{ 'projectSettings.environments.navigation' | transloco }}</span>
-  </nav>
-
-  <header class="page-header">
+<section aria-labelledby="environment-settings-title">
+  <header class="section-header">
     <div>
-      <p class="eyebrow">{{ 'projectSettings.eyebrow' | transloco }}</p>
-      <h1 id="environment-settings-title">{{ 'projectSettings.title' | transloco }}</h1>
+      <p class="eyebrow">{{ 'projectSettings.environments.eyebrow' | transloco }}</p>
+      <h2 id="environment-settings-title">{{ 'projectSettings.environments.title' | transloco }}</h2>
       <p class="description">{{ 'projectSettings.environments.description' | transloco }}</p>
     </div>
     @if (canManage() && !showCreate()) {
@@ -20,10 +12,6 @@
       </button>
     }
   </header>
-
-  <nav class="settings-navigation" [attr.aria-label]="'projectSettings.navigation' | transloco">
-    <span aria-current="page">{{ 'projectSettings.environments.navigation' | transloco }}</span>
-  </nav>
 
   @if (!canManage() && environments.isSuccess()) {
     <app-callout [title]="'projectSettings.environments.readOnlyTitle' | transloco">
@@ -118,4 +106,4 @@
     (confirmed)="confirmStateChange()"
     (cancelled)="confirmation.set(null)"
   />
-</main>
+</section>

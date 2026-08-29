@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import type { CreateEnvironmentRequest } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -6,10 +7,8 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
-import { labelFromSlug } from '../../../../shared/models/slug-label';
 import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
-  Breadcrumbs,
   Button,
   Callout,
   Dialog,
@@ -31,7 +30,6 @@ type EnvironmentSubmission = {
 @Component({
   selector: 'app-environment-settings',
   imports: [
-    Breadcrumbs,
     Button,
     Callout,
     Dialog,
@@ -50,22 +48,29 @@ export class EnvironmentSettings {
   private readonly environmentsApi = inject(ProjectEnvironmentsApi);
   private readonly workspaceSession = inject(WorkspaceSession);
   private readonly queryClient = inject(QueryClient);
+  private readonly routeParams = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
   private readonly idempotency = new IdempotencyIdentity();
 
-  readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
-  readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
-  readonly projectLabel = labelFromSlug(this.projectSlug);
+  readonly workspaceSlug = computed(() => this.routeParams().get('org') ?? '');
+  readonly projectSlug = computed(() => this.routeParams().get('project') ?? '');
   readonly showCreate = signal(false);
   readonly confirmation = signal<EnvironmentStateChangeRequest | null>(null);
   readonly canManage = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'lead'));
 
   readonly environments = injectQuery(() => ({
-    queryKey: ['project-environments', this.workspaceSlug, this.projectSlug],
-    queryFn: () => this.environmentsApi.list(this.workspaceSlug, this.projectSlug),
+    queryKey: ['project-environments', this.workspaceSlug(), this.projectSlug()],
+    queryFn: () => this.environmentsApi.list(this.workspaceSlug(), this.projectSlug()),
   }));
   readonly createEnvironment = injectMutation(() => ({
     mutationFn: ({ idempotencyKey, request }: EnvironmentSubmission) =>
-      this.environmentsApi.create(this.workspaceSlug, this.projectSlug, request, idempotencyKey),
+      this.environmentsApi.create(
+        this.workspaceSlug(),
+        this.projectSlug(),
+        request,
+        idempotencyKey,
+      ),
     onSuccess: async () => {
       this.idempotency.clear();
       this.showCreate.set(false);
@@ -75,8 +80,8 @@ export class EnvironmentSettings {
   readonly changeState = injectMutation(() => ({
     mutationFn: ({ action, environment }: EnvironmentStateChangeRequest) =>
       this.environmentsApi.changeState(
-        this.workspaceSlug,
-        this.projectSlug,
+        this.workspaceSlug(),
+        this.projectSlug(),
         environment.id,
         action,
       ),
@@ -108,10 +113,10 @@ export class EnvironmentSettings {
   private invalidateEnvironmentQueries(): Promise<void> {
     return Promise.all([
       this.queryClient.invalidateQueries({
-        queryKey: ['project-environments', this.workspaceSlug, this.projectSlug],
+        queryKey: ['project-environments', this.workspaceSlug(), this.projectSlug()],
       }),
       this.queryClient.invalidateQueries({
-        queryKey: ['release-environments', this.workspaceSlug, this.projectSlug],
+        queryKey: ['release-environments', this.workspaceSlug(), this.projectSlug()],
       }),
     ]).then(() => undefined);
   }

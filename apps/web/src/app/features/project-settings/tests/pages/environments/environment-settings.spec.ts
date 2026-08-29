@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, type ParamMap } from '@angular/router';
 import type { EnvironmentSummary } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ProjectEnvironmentsApi } from '../../../data-access/project-environments-api';
@@ -24,9 +25,11 @@ describe('EnvironmentSettings', () => {
     changeState: vi.fn(),
   };
   let queryClient: QueryClient;
+  let routeParams: BehaviorSubject<ParamMap>;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    routeParams = new BehaviorSubject(convertToParamMap({ org: 'acme', project: 'checkout' }));
     environmentsApi.list.mockReset().mockResolvedValue({ items: [production] });
     environmentsApi.create.mockReset().mockResolvedValue({ environment: production });
     environmentsApi.changeState.mockReset().mockResolvedValue({
@@ -41,9 +44,8 @@ describe('EnvironmentSettings', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: {
-              paramMap: convertToParamMap({ org: 'acme', project: 'checkout' }),
-            },
+            paramMap: routeParams,
+            snapshot: { paramMap: routeParams.value },
           },
         },
       ],
@@ -60,13 +62,7 @@ describe('EnvironmentSettings', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
-    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
-    expect(breadcrumbs?.textContent).toContain('Checkout');
-    expect(breadcrumbs?.textContent).toContain('Project settings');
-    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain(
-      'Environments',
-    );
-    expect(text).toContain('Project settings');
+    expect(text).toContain('Environments');
     expect(text).toContain('Production');
     expect(text).toContain('Archive');
   });
@@ -112,5 +108,15 @@ describe('EnvironmentSettings', () => {
       production.id,
       'archive',
     );
+  });
+
+  it('re-scopes environment queries when Angular reuses the route', async () => {
+    const fixture = TestBed.createComponent(EnvironmentSettings);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(environmentsApi.list).toHaveBeenCalledWith('acme', 'checkout'));
+
+    routeParams.next(convertToParamMap({ org: 'acme', project: 'mobile-app' }));
+
+    await vi.waitFor(() => expect(environmentsApi.list).toHaveBeenCalledWith('acme', 'mobile-app'));
   });
 });
