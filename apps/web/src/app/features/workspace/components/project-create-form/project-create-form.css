@@ -1,0 +1,55 @@
+:host {
+  display: block;
+}
+
+form {
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  padding: var(--space-5);
+}
+
+h2,
+p {
+  margin-top: 0;
+}
+
+h2 {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-1);
+}
+
+header p {
+  color: var(--text-2);
+  margin-bottom: 0;
+}
+
+.field-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 2fr) minmax(160px, 1fr) minmax(200px, 1fr);
+}
+
+footer {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+@media (max-width: 760px) {
+  form {
+    padding: var(--space-4);
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}

@@ -54,4 +54,44 @@ describe('WorkspaceApi', () => {
     await expect(response).resolves.toEqual({ items: [], nextCursor: null });
     expect(TestBed.inject(WorkspaceSession).organization()?.slug).toBe('acme-quality');
   });
+
+  it('creates a project after opening workspace access', async () => {
+    authApi.organizationToken.mockResolvedValue(organizationSession);
+    const response = TestBed.inject(WorkspaceApi).createProject('acme-quality', {
+      name: 'Mobile App',
+      key: 'MOBILE',
+      slug: 'mobile-app',
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const request = TestBed.inject(HttpTestingController).expectOne('/api/v1/projects');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer organization-access-token');
+    expect(request.request.body).toEqual({
+      name: 'Mobile App',
+      key: 'MOBILE',
+      slug: 'mobile-app',
+    });
+    request.flush({ project: project() });
+
+    await expect(response).resolves.toMatchObject({
+      project: { name: 'Mobile App', key: 'MOBILE', slug: 'mobile-app' },
+    });
+  });
 });
+
+function project() {
+  return {
+    id: '77bcbeb6-1c8d-49ac-8358-e2c80ab0e188',
+    key: 'MOBILE',
+    slug: 'mobile-app',
+    name: 'Mobile App',
+    state: 'active',
+    caseCount: 0,
+    activeRunCount: 0,
+    createdAt: '2026-08-29T12:00:00.000Z',
+    updatedAt: '2026-08-29T12:00:00.000Z',
+  };
+}

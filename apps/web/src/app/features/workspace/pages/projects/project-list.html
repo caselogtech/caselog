@@ -1,6 +1,6 @@
 <main class="projects-page" aria-labelledby="projects-title">
   <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
-    <span>{{ workspaceLabel }}</span>
+    <span>{{ workspaceLabel() }}</span>
     <span aria-hidden="true">/</span>
     <span aria-current="page">{{ 'workspace.projects.title' | transloco }}</span>
   </nav>
@@ -11,7 +11,30 @@
       <h1 id="projects-title">{{ 'workspace.projects.title' | transloco }}</h1>
       <p>{{ 'workspace.projects.description' | transloco }}</p>
     </div>
+    @if (canManage() && !createFormOpen()) {
+      <button appButton="primary" type="button" (click)="openCreateForm()">
+        {{ 'workspace.projects.createProject' | transloco }}
+      </button>
+    }
   </header>
+
+  @if (createFormOpen()) {
+    @if (createProject.isError()) {
+      <app-callout
+        class="create-error"
+        tone="danger"
+        liveRole="alert"
+        [title]="'workspace.projects.createErrorTitle' | transloco"
+      >
+        <p>{{ createErrorTranslationKey() | transloco }}</p>
+      </app-callout>
+    }
+    <app-project-create-form
+      [pending]="createProject.isPending()"
+      (submitted)="submitProject($event)"
+      (cancelled)="closeCreateForm()"
+    />
+  }
 
   @if (projects.isPending()) {
     <section class="projects-state" aria-live="polite">
@@ -20,7 +43,7 @@
   } @else if (projects.isError()) {
     <section class="projects-state error" role="alert">
       <p>{{ errorTranslationKey() | transloco }}</p>
-      <button type="button" (click)="projects.refetch()">
+      <button appButton="secondary" type="button" (click)="projects.refetch()">
         {{ 'workspace.projects.retry' | transloco }}
       </button>
     </section>
@@ -48,7 +71,7 @@
           <button
             class="open-project"
             type="button"
-            [routerLink]="['/', workspaceSlug, project.slug, 'cases']"
+            [routerLink]="['/', workspaceSlug(), project.slug, 'cases']"
           >
             {{ 'workspace.projects.openProject' | transloco }}
           </button>
@@ -58,6 +81,7 @@
 
     @if (projects.hasNextPage()) {
       <button
+        appButton="secondary"
         class="load-more"
         type="button"
         [disabled]="projects.isFetchingNextPage()"

@@ -1,0 +1,90 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <header>
+    <h2>{{ 'workspace.projects.createTitle' | transloco }}</h2>
+    <p>{{ 'workspace.projects.createDescription' | transloco }}</p>
+  </header>
+
+  <div class="field-grid">
+    <app-form-field
+      class="name-field"
+      controlId="project-name"
+      [label]="'workspace.projects.name' | transloco"
+      [error]="
+        form.controls.name.touched && form.controls.name.invalid
+          ? ('workspace.projects.nameInvalid' | transloco)
+          : undefined
+      "
+      [required]="true"
+    >
+      <input
+        appControl
+        id="project-name"
+        type="text"
+        formControlName="name"
+        autocomplete="off"
+        [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+        aria-describedby="project-name-description"
+      />
+    </app-form-field>
+
+    <app-form-field
+      controlId="project-key"
+      [label]="'workspace.projects.key' | transloco"
+      [hint]="'workspace.projects.keyHint' | transloco"
+      [error]="
+        form.controls.key.touched && form.controls.key.invalid
+          ? ('workspace.projects.keyInvalid' | transloco)
+          : undefined
+      "
+      [required]="true"
+    >
+      <input
+        appControl
+        id="project-key"
+        class="mono"
+        type="text"
+        formControlName="key"
+        autocomplete="off"
+        maxlength="12"
+        (input)="normalizeKey()"
+        [attr.aria-invalid]="form.controls.key.touched && form.controls.key.invalid"
+        aria-describedby="project-key-description"
+      />
+    </app-form-field>
+
+    <app-form-field
+      controlId="project-slug"
+      [label]="'workspace.projects.slug' | transloco"
+      [hint]="'workspace.projects.slugHint' | transloco"
+      [error]="
+        form.controls.slug.touched && form.controls.slug.invalid
+          ? ('workspace.projects.slugInvalid' | transloco)
+          : undefined
+      "
+      [required]="true"
+    >
+      <input
+        appControl
+        id="project-slug"
+        class="mono"
+        type="text"
+        formControlName="slug"
+        autocomplete="off"
+        maxlength="50"
+        [attr.aria-invalid]="form.controls.slug.touched && form.controls.slug.invalid"
+        aria-describedby="project-slug-description"
+      />
+    </app-form-field>
+  </div>
+
+  <footer>
+    <button appButton="secondary" type="button" [disabled]="pending()" (click)="cancelled.emit()">
+      {{ 'workspace.projects.cancel' | transloco }}
+    </button>
+    <button appButton="primary" type="submit" [disabled]="pending()">
+      {{
+        (pending() ? 'workspace.projects.creating' : 'workspace.projects.createProject') | transloco
+      }}
+    </button>
+  </footer>
+</form>

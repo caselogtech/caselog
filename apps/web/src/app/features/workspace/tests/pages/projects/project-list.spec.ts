@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import type { ProjectListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { of } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { WorkspaceApi } from '../../../data-access/workspace-api';
 import { ProjectList } from '../../../pages/projects/project-list';
 
@@ -24,12 +26,14 @@ const firstPage: ProjectListResponse = {
 };
 
 describe('ProjectList', () => {
-  const workspaceApi = { listProjects: vi.fn() };
+  const workspaceApi = { listProjects: vi.fn(), createProject: vi.fn() };
   let queryClient: QueryClient;
 
   beforeEach(async () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     workspaceApi.listProjects.mockReset();
+    workspaceApi.createProject.mockReset();
+    const paramMap = convertToParamMap({ org: 'acme-quality' });
     await TestBed.configureTestingModule({
       imports: [ProjectList, i18nTestingModule()],
       providers: [
@@ -38,10 +42,11 @@ describe('ProjectList', () => {
         { provide: WorkspaceApi, useValue: workspaceApi },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ org: 'acme-quality' }) } },
+          useValue: { paramMap: of(paramMap), snapshot: { paramMap } },
         },
       ],
     }).compileComponents();
+    TestBed.inject(WorkspaceSession).role.set('owner');
   });
 
   afterEach(() => queryClient.clear());
@@ -115,5 +120,40 @@ describe('ProjectList', () => {
       firstPage.nextCursor,
     );
     expect(fixture.nativeElement.querySelectorAll('.project-card')).toHaveLength(2);
+  });
+
+  it('creates a project and opens its test cases', async () => {
+    workspaceApi.listProjects.mockResolvedValue({ ...firstPage, nextCursor: null });
+    workspaceApi.createProject.mockResolvedValue({
+      project: { ...firstPage.items[0], key: 'WEB', slug: 'web', name: 'Web Project' },
+    });
+    const fixture = TestBed.createComponent(ProjectList);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.projects.isSuccess()).toBe(true));
+
+    fixture.componentInstance.openCreateForm();
+    fixture.componentInstance.submitProject({ name: 'Web Project', key: 'WEB', slug: 'web' });
+    await vi.waitFor(() => expect(workspaceApi.createProject).toHaveBeenCalled());
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalled());
+
+    expect(workspaceApi.createProject).toHaveBeenCalledWith('acme-quality', {
+      name: 'Web Project',
+      key: 'WEB',
+      slug: 'web',
+    });
+    expect(navigate).toHaveBeenCalledWith(['/', 'acme-quality', 'web', 'cases']);
+  });
+
+  it('hides project creation from members below lead role', async () => {
+    TestBed.inject(WorkspaceSession).role.set('tester');
+    workspaceApi.listProjects.mockResolvedValue({ ...firstPage, nextCursor: null });
+    const fixture = TestBed.createComponent(ProjectList);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.projects.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-project-create-form')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Create project');
   });
 });
