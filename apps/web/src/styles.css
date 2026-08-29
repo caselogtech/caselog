@@ -83,7 +83,7 @@
   --font-size-lg: 1.2667rem;
   --font-size-xl: 1.7333rem;
   --content-width: 1180px;
-  --content-gutter: clamp(16px, 3vw, 32px);
+  --content-gutter: clamp(16px, 5vw, 96px);
   --control-min-size: 44px;
   --skeleton-animation-duration: 1.4s;
   --skeleton-animation-iteration-count: infinite;

@@ -6,7 +6,7 @@
   margin: 12px auto 64px;
   max-width: 520px;
   padding: 28px;
-  width: calc(100% - 40px);
+  width: calc(100% - 2 * var(--content-gutter));
 }
 
 .workspace-header {
@@ -267,7 +267,7 @@ button:focus-visible {
     border-radius: 0;
     box-shadow: none;
     margin: 0;
-    padding: 12px 20px 40px;
+    padding: 12px var(--content-gutter) 40px;
     width: 100%;
   }
 

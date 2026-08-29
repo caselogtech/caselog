@@ -9,7 +9,7 @@
   display: grid;
   grid-template-rows: auto 1fr;
   min-height: 100dvh;
-  padding: var(--space-5);
+  padding: var(--space-5) var(--content-gutter);
 }
 
 .brand {
@@ -90,7 +90,7 @@ h1 {
 
 @media (max-width: 520px) {
   .route-state-page {
-    padding: var(--space-3);
+    padding: var(--space-3) var(--content-gutter);
   }
 
   .state-card {

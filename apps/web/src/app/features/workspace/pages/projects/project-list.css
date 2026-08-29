@@ -1,7 +1,8 @@
 .projects-page {
   margin: 0 auto;
-  max-width: 1040px;
-  padding: 40px 20px 72px;
+  max-width: calc(1040px + 2 * var(--content-gutter));
+  padding: 40px var(--content-gutter) 72px;
+  width: 100%;
 }
 
 .projects-header {
@@ -143,7 +144,7 @@ button:focus-visible {
 
 @media (max-width: 600px) {
   .projects-page {
-    padding: 28px 14px 48px;
+    padding: 28px var(--content-gutter) 48px;
   }
 
   .projects-header {
