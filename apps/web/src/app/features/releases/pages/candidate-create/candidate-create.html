@@ -1,13 +1,25 @@
 <main class="candidate-create-page" aria-labelledby="candidate-create-title">
-  <header class="page-header">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
     <a
-      appButton="quiet"
+      href="/{{ workspaceSlug }}/{{ projectSlug }}/releases"
+      [routerLink]="['/', workspaceSlug, projectSlug, 'releases']"
+    >
+      {{ 'releases.list.title' | transloco }}
+    </a>
+    <span aria-hidden="true">/</span>
+    <a
       href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}"
       [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId]"
     >
-      <span aria-hidden="true">←</span>
-      {{ 'releases.candidateCreate.back' | transloco }}
+      {{
+        release.data()?.release?.key ?? ('releases.candidateCreate.releaseFallback' | transloco)
+      }}
     </a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'releases.candidateCreate.title' | transloco }}</span>
+  </nav>
+
+  <header class="page-header">
     <p class="eyebrow">{{ 'releases.detail.candidateEyebrow' | transloco }}</p>
     <h1 id="candidate-create-title">{{ 'releases.candidateCreate.title' | transloco }}</h1>
     <p class="description">{{ 'releases.candidateCreate.description' | transloco }}</p>

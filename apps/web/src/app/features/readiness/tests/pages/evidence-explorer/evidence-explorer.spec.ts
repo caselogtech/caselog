@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
@@ -62,6 +62,11 @@ describe('EvidenceExplorer', () => {
       currentOnly: false,
       limit: 25,
     });
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Authentication');
+    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain(
+      'Evidence explorer',
+    );
     expect(fixture.nativeElement.textContent).toContain('Evidence revision');
     expect(fixture.nativeElement.textContent).toContain('Test pass rate');
 

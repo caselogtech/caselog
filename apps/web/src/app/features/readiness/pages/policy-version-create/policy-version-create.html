@@ -14,15 +14,27 @@
       </button>
     </app-page-state>
   } @else if (policy(); as model) {
-    <header class="page-header">
+    <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
       <a
-        appButton="quiet"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies']"
+      >
+        {{ 'readiness.policies.title' | transloco }}
+      </a>
+      <span aria-hidden="true">/</span>
+      <a
         href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies/{{ policyId }}"
         [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies', policyId]"
       >
-        <span aria-hidden="true">←</span>
-        {{ 'readiness.policies.successor.back' | transloco }}
+        {{ model.name }}
       </a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">
+        {{ 'readiness.policies.successor.title' | transloco: { version: nextVersion() } }}
+      </span>
+    </nav>
+
+    <header class="page-header">
       <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>
       <h1 id="policy-version-create-title">
         {{ 'readiness.policies.successor.title' | transloco: { version: nextVersion() } }}

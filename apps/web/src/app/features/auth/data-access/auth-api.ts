@@ -1,33 +1,33 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
+  type AcceptWorkspaceInvitationResponse,
   acceptWorkspaceInvitationResponseSchema,
+  type CreateWorkspaceRequest,
+  type CreateWorkspaceResponse,
   createWorkspaceResponseSchema,
+  type EmailVerificationRequest,
+  type EmailVerificationResponse,
   emailVerificationResponseSchema,
+  type ForgotPasswordRequest,
+  type LoginRequest,
+  type MessageResponse,
   messageResponseSchema,
+  type OrganizationTokenResponse,
   organizationTokenResponseSchema,
+  type RegisterInvitationAccountRequest,
+  type RegisterRequest,
+  type ResetPasswordRequest,
+  type SessionResponse,
   sessionResponseSchema,
+  type WorkspaceInvitationPreview,
+  type WorkspaceListResponse,
+  type WorkspaceSettingsResponse,
+  type WorkspaceSlugAvailabilityResponse,
   workspaceInvitationPreviewSchema,
   workspaceListResponseSchema,
   workspaceSettingsResponseSchema,
   workspaceSlugAvailabilityResponseSchema,
-  type AcceptWorkspaceInvitationResponse,
-  type CreateWorkspaceRequest,
-  type CreateWorkspaceResponse,
-  type EmailVerificationRequest,
-  type EmailVerificationResponse,
-  type ForgotPasswordRequest,
-  type LoginRequest,
-  type MessageResponse,
-  type OrganizationTokenResponse,
-  type RegisterRequest,
-  type RegisterInvitationAccountRequest,
-  type ResetPasswordRequest,
-  type SessionResponse,
-  type WorkspaceListResponse,
-  type WorkspaceSettingsResponse,
-  type WorkspaceInvitationPreview,
-  type WorkspaceSlugAvailabilityResponse,
 } from '@caselog/schemas';
 import { lastValueFrom } from 'rxjs';
 
@@ -54,6 +54,12 @@ export class AuthApi {
       this.http.post<unknown>('/api/v1/auth/refresh', null, { withCredentials: true }),
     );
     return sessionResponseSchema.parse(response);
+  }
+
+  async logout(): Promise<void> {
+    await lastValueFrom(
+      this.http.post<void>('/api/v1/auth/logout', null, { withCredentials: true }),
+    );
   }
 
   async resendEmailVerification(): Promise<MessageResponse> {

@@ -7,6 +7,7 @@ import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import {
+  Breadcrumbs,
   Button,
   LoadingSkeleton,
   PageState,
@@ -24,7 +25,16 @@ const STATUS_TRANSLATION_KEYS: Record<TestRunStatus, string> = {
 
 @Component({
   selector: 'app-run-list',
-  imports: [Button, DatePipe, LoadingSkeleton, PageState, RouterLink, StatusBadge, TranslocoPipe],
+  imports: [
+    Breadcrumbs,
+    Button,
+    DatePipe,
+    LoadingSkeleton,
+    PageState,
+    RouterLink,
+    StatusBadge,
+    TranslocoPipe,
+  ],
   templateUrl: './run-list.html',
   styleUrl: './run-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -24,7 +24,7 @@
       </button>
     </app-page-state>
   } @else if (detail.data(); as result) {
-    <nav class="breadcrumbs" [attr.aria-label]="'workspace.cases.detail.breadcrumbs' | transloco">
+    <nav appBreadcrumbs [attr.aria-label]="'workspace.cases.detail.breadcrumbs' | transloco">
       <a
         href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
         [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"

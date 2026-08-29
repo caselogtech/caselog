@@ -1,5 +1,5 @@
 <main class="runs-page" aria-labelledby="runs-title">
-  <nav class="breadcrumbs" [attr.aria-label]="'workspace.runs.breadcrumbs' | transloco">
+  <nav appBreadcrumbs [attr.aria-label]="'workspace.runs.breadcrumbs' | transloco">
     <span>{{ project()?.name ?? projectSlug }}</span>
     <span aria-hidden="true">/</span>
     <span aria-current="page">{{ 'workspace.runs.title' | transloco }}</span>

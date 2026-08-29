@@ -21,15 +21,32 @@
   } @else if (decision(); as model) {
     @let computedStatus = status(model);
     @let effectiveDisposition = disposition(model);
-    <header>
+    <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
       <a
-        appButton="quiet"
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/releases"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'releases']"
+      >
+        {{ 'app.navigation.releases' | transloco }}
+      </a>
+      <span aria-hidden="true">/</span>
+      <a
+        href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}"
+        [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId]"
+      >
+        {{ releaseContext.data()?.release?.key }}
+      </a>
+      <span aria-hidden="true">/</span>
+      <a
         href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}/candidates/{{ candidateId }}"
         [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId, 'candidates', candidateId]"
       >
-        <span aria-hidden="true">←</span>
-        {{ 'readiness.decisionDetail.backToCandidate' | transloco }}
+        {{ candidate()?.label }}
       </a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ 'readiness.decisionDetail.title' | transloco }}</span>
+    </nav>
+
+    <header>
       <p class="eyebrow">{{ 'readiness.decisionDetail.eyebrow' | transloco }}</p>
       <div class="title-row">
         <div>

@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import type { ReleaseDetailResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ReleasesApi } from '../../../data-access/releases-api';
 import { ReleaseDetail } from '../../../pages/release-detail/release-detail';
 
@@ -150,6 +150,9 @@ describe('ReleaseDetail', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Releases');
+    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain('2026.08');
     expect(text).toContain('August release');
     expect(text).toContain('RC-1');
     expect(text).toContain('abc123');

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import type { ReleaseReadinessListResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
@@ -94,6 +94,9 @@ describe('ReleaseList', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Authentication');
+    expect(breadcrumbs?.textContent).toContain('Releases');
     expect(text).toContain('Authentication August release');
     expect(text).toContain('RC-2');
     expect(text).toContain('Ready');

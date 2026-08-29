@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { AuthApi } from '../../data-access/auth-api';
 
-describe('AuthApi workspace recovery', () => {
+describe('AuthApi', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -44,6 +44,16 @@ describe('AuthApi workspace recovery', () => {
     });
 
     await expect(response).resolves.toMatchObject({ workspace: { deletedAt: null } });
+  });
+
+  it('revokes the refresh session and includes credentials', async () => {
+    const response = TestBed.inject(AuthApi).logout();
+    const request = TestBed.inject(HttpTestingController).expectOne('/api/v1/auth/logout');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.withCredentials).toBe(true);
+    request.flush(null, { status: 204, statusText: 'No Content' });
+
+    await expect(response).resolves.toBeUndefined();
   });
 });
 

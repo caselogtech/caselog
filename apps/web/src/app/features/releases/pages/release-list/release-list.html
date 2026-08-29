@@ -1,4 +1,10 @@
 <main class="release-page" aria-labelledby="release-list-title">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
+    <span>{{ projectLabel }}</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'releases.list.title' | transloco }}</span>
+  </nav>
+
   <header class="page-header">
     <div>
       <p class="eyebrow">{{ 'releases.list.eyebrow' | transloco }}</p>

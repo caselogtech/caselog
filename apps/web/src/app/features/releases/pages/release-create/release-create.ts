@@ -13,6 +13,7 @@ import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   FormControlStyle,
@@ -32,6 +33,7 @@ const trimmedRequired: ValidatorFn = (control) =>
 @Component({
   selector: 'app-release-create',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     FormControlStyle,

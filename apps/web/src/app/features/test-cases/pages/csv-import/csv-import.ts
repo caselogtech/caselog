@@ -10,16 +10,16 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
-  csvImportRequestSchema,
   type CsvImportPreviewResponse,
   type CsvImportRequest,
   type CsvImportResponse,
+  csvImportRequestSchema,
 } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { Button, LoadingSkeleton, PageState } from '../../../../shared/ui/public-api';
+import { Breadcrumbs, Button, LoadingSkeleton, PageState } from '../../../../shared/ui/public-api';
 import { CsvImportFile } from '../../components/csv-import-file/csv-import-file';
 import { CsvImportMapping } from '../../components/csv-import-mapping/csv-import-mapping';
 import { createCsvImportMappingForm } from '../../components/csv-import-mapping/csv-import-mapping-form';
@@ -28,7 +28,7 @@ import { CsvImportProgress } from '../../components/csv-import-progress/csv-impo
 import { CsvImportResult } from '../../components/csv-import-result/csv-import-result';
 import { TestCaseImportsApi } from '../../data-access/test-case-imports-api';
 import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
-import { CSV_DELIMITERS, parseCsvHeader, type CsvDelimiter } from '../../domain/csv-header';
+import { CSV_DELIMITERS, type CsvDelimiter, parseCsvHeader } from '../../domain/csv-header';
 import {
   type CsvFileError,
   type CsvSourceResult,
@@ -47,6 +47,7 @@ const FILE_ERROR_TRANSLATIONS: Record<CsvFileError, string> = {
 @Component({
   selector: 'app-csv-import',
   imports: [
+    Breadcrumbs,
     Button,
     CsvImportFile,
     CsvImportMapping,

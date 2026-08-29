@@ -14,16 +14,18 @@
       </button>
     </app-page-state>
   } @else if (policy(); as model) {
-    <header>
+    <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
       <a
-        appButton="quiet"
         href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies"
         [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies']"
       >
-        <span aria-hidden="true">←</span>
-        {{ 'readiness.policies.backToPolicies' | transloco }}
+        {{ 'readiness.policies.title' | transloco }}
       </a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ model.name }}</span>
+    </nav>
 
+    <header>
       <div class="title-row">
         <div>
           <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>

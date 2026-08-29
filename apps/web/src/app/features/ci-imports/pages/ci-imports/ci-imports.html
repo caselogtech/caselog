@@ -1,5 +1,5 @@
 <main class="ci-imports-page" aria-labelledby="imports-title">
-  <nav class="breadcrumbs" [attr.aria-label]="'workspace.automation.breadcrumbs' | transloco">
+  <nav appBreadcrumbs [attr.aria-label]="'workspace.automation.breadcrumbs' | transloco">
     @if (project(); as currentProject) {
       <span>{{ currentProject.name }}</span>
       <span aria-hidden="true">/</span>

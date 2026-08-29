@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import type { ReleaseDetailResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ReleasesApi } from '../../../data-access/releases-api';
 import { CandidateCreate } from '../../../pages/candidate-create/candidate-create';
 
@@ -83,6 +83,12 @@ describe('CandidateCreate', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.release.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Releases');
+    expect(breadcrumbs?.textContent).toContain('2026.08');
+    expect(breadcrumbs?.textContent).toContain('Register candidate');
 
     fixture.componentInstance.form.setValue({
       sourceRevision: ' abc123 ',

@@ -12,20 +12,21 @@ import {
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import {
+  Breadcrumbs,
   Button,
+  type ButtonVariant,
   Callout,
   Dialog,
   LoadingSkeleton,
   PageState,
   StatusBadge,
-  type ButtonVariant,
 } from '../../../../shared/ui/public-api';
-import { ReleasesApi } from '../../data-access/releases-api';
 import {
-  CandidateRunManager,
   type CandidateRunLinkRequest,
+  CandidateRunManager,
   type CandidateRunUnlinkRequest,
 } from '../../components/candidate-run-manager/candidate-run-manager';
+import { ReleasesApi } from '../../data-access/releases-api';
 import {
   type ReleaseLifecycleAction,
   releaseLifecycleActions,
@@ -53,6 +54,7 @@ const CONFIRMATION_MESSAGE: Record<ReleaseLifecycleAction, string> = {
 @Component({
   selector: 'app-release-detail',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     CandidateRunManager,

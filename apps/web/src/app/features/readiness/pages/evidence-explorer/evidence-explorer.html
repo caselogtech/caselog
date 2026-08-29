@@ -1,4 +1,10 @@
 <main class="evidence-explorer-page" aria-labelledby="evidence-explorer-title">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
+    <span>{{ projectLabel }}</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'readiness.evidence.explorer.title' | transloco }}</span>
+  </nav>
+
   <header class="page-header">
     <div>
       <p class="eyebrow">{{ 'readiness.evidence.explorer.eyebrow' | transloco }}</p>

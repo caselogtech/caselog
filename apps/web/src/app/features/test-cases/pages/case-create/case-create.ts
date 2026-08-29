@@ -8,12 +8,13 @@ import {
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { createTestCaseRequestSchema, type CreateTestCaseRequest } from '@caselog/schemas';
+import { type CreateTestCaseRequest, createTestCaseRequestSchema } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   LoadingSkeleton,
@@ -29,6 +30,7 @@ import { testCaseDraftContent } from '../../domain/test-case-draft';
 @Component({
   selector: 'app-case-create',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     CaseEditor,

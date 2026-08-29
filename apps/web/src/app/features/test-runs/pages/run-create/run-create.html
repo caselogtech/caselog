@@ -1,5 +1,5 @@
 <main class="run-create-page" aria-labelledby="run-create-title">
-  <nav class="breadcrumbs" [attr.aria-label]="'workspace.runs.new.breadcrumbs' | transloco">
+  <nav appBreadcrumbs [attr.aria-label]="'workspace.runs.new.breadcrumbs' | transloco">
     <a
       href="/{{ workspaceSlug }}/{{ projectSlug }}/runs"
       [routerLink]="['/', workspaceSlug, projectSlug, 'runs']"

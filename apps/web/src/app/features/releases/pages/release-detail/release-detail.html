@@ -16,16 +16,18 @@
     </app-page-state>
   } @else if (detail.data(); as model) {
     @let lifecycleStatus = lifecycle(model.release.state);
-    <header class="detail-header">
+    <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
       <a
-        appButton="quiet"
         href="/{{ workspaceSlug }}/{{ projectSlug }}/releases"
         [routerLink]="['/', workspaceSlug, projectSlug, 'releases']"
       >
-        <span aria-hidden="true">←</span>
-        {{ 'releases.detail.back' | transloco }}
+        {{ 'releases.list.title' | transloco }}
       </a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ model.release.key }}</span>
+    </nav>
 
+    <header class="detail-header">
       <div class="title-row">
         <div>
           <p class="release-key mono">{{ model.release.key }}</p>

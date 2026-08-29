@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ReadinessApi } from '../../../data-access/readiness-api';
 import { ReadinessDecisionDetail } from '../../../pages/decision-detail/decision-detail';
 import {
@@ -71,6 +71,12 @@ describe('ReadinessDecisionDetail', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('2026.08');
+    expect(breadcrumbs?.textContent).toContain('RC-4');
+    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain(
+      'Readiness decision detail',
+    );
     expect(text).toContain('Readiness decision detail');
     expect(text).toContain('Production promotion');
     expect(text).toContain('required-pass-rate');

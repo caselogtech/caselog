@@ -1,13 +1,16 @@
 <main class="policy-create-page" aria-labelledby="policy-create-title">
-  <header class="page-header">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
     <a
-      appButton="quiet"
       href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies"
       [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies']"
     >
-      <span aria-hidden="true">←</span>
-      {{ 'readiness.policies.backToPolicies' | transloco }}
+      {{ 'readiness.policies.title' | transloco }}
     </a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'readiness.policies.create.title' | transloco }}</span>
+  </nav>
+
+  <header class="page-header">
     <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>
     <h1 id="policy-create-title">{{ 'readiness.policies.create.title' | transloco }}</h1>
     <p class="description">{{ 'readiness.policies.create.description' | transloco }}</p>

@@ -63,49 +63,13 @@
   width: 22px;
 }
 
-.context-switchers,
-.context-link,
 .account-context summary {
   align-items: center;
   display: flex;
 }
 
-.context-switchers {
-  gap: var(--space-2);
+app-context-switchers {
   min-width: 0;
-}
-
-.context-link {
-  border: 1px solid var(--color-neutral-300);
-  border-radius: var(--radius-sm);
-  color: var(--text-1);
-  gap: var(--space-2);
-  max-width: 230px;
-  min-height: 38px;
-  padding: var(--space-1) var(--space-2);
-  text-decoration: none;
-}
-
-.context-link:hover {
-  background: var(--color-neutral-100);
-  border-color: var(--color-neutral-400);
-}
-
-.context-link strong {
-  font-size: var(--font-size-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.context-kind {
-  color: var(--text-3);
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-}
-
-.context-separator {
-  color: var(--color-neutral-400);
 }
 
 .account-context {
@@ -175,6 +139,16 @@
   color: var(--text-2);
   font-size: var(--font-size-xs);
   overflow-wrap: anywhere;
+}
+
+.account-popover .account-error {
+  color: var(--color-danger-text);
+}
+
+.account-popover .sign-out {
+  justify-content: flex-start;
+  margin-top: var(--space-2);
+  width: 100%;
 }
 
 .workspace-layout {
@@ -326,20 +300,7 @@
   }
 
   .brand-wordmark,
-  .context-kind,
   .account-name {
-    display: none;
-  }
-
-  .context-switchers {
-    overflow: hidden;
-  }
-
-  .context-link {
-    max-width: 155px;
-  }
-
-  .context-link:first-child:not(:last-child) {
     display: none;
   }
 }

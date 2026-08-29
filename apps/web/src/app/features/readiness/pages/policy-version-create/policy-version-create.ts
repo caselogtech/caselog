@@ -11,7 +11,13 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
-import { Button, Callout, LoadingSkeleton, PageState } from '../../../../shared/ui/public-api';
+import {
+  Breadcrumbs,
+  Button,
+  Callout,
+  LoadingSkeleton,
+  PageState,
+} from '../../../../shared/ui/public-api';
 import { PolicyGateEditor } from '../../components/policy-gate-editor/policy-gate-editor';
 import {
   createPolicyVersionCreateForm,
@@ -25,6 +31,7 @@ type PolicyGate = PolicyVersion['gates'][number];
 @Component({
   selector: 'app-readiness-policy-version-create',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     LoadingSkeleton,

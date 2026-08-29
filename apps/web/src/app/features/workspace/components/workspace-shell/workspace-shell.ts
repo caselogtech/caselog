@@ -3,8 +3,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   type ElementRef,
+  effect,
   HostListener,
   inject,
   signal,
@@ -22,13 +22,24 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { filter, map, startWith } from 'rxjs';
 import { BrowserSession } from '../../../../core/auth/browser-session';
-import { InstanceCapabilities } from '../../../../core/instance/instance-capabilities';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
-import { BrandMark } from '../../../../shared/ui/public-api';
+import { InstanceCapabilities } from '../../../../core/instance/instance-capabilities';
+import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { BrandMark, Button } from '../../../../shared/ui/public-api';
+import { AuthApi } from '../../../auth/public-api';
+import { ContextSwitchers } from '../context-switchers/context-switchers';
 
 @Component({
   selector: 'app-workspace-shell',
-  imports: [BrandMark, RouterLink, RouterLinkActive, RouterOutlet, TranslocoPipe],
+  imports: [
+    BrandMark,
+    Button,
+    ContextSwitchers,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    TranslocoPipe,
+  ],
   templateUrl: './workspace-shell.html',
   styleUrl: './workspace-shell.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,6 +48,7 @@ export class WorkspaceShell {
   private readonly document = inject(DOCUMENT);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly authApi = inject(AuthApi);
   readonly browserSession = inject(BrowserSession);
   readonly capabilities = inject(InstanceCapabilities);
   readonly workspaceSession = inject(WorkspaceSession);
@@ -48,11 +60,18 @@ export class WorkspaceShell {
     ),
     { initialValue: this.router.url },
   );
+  private readonly routeParams = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
   private readonly navigation = viewChild<ElementRef<HTMLElement>>('navigation');
   private readonly navigationToggle = viewChild<ElementRef<HTMLButtonElement>>('navigationToggle');
+  private readonly accountMenu = viewChild<ElementRef<HTMLDetailsElement>>('accountMenu');
+  private readonly accountSummary = viewChild<ElementRef<HTMLElement>>('accountSummary');
 
-  readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
+  readonly workspaceSlug = computed(() => this.routeParams().get('org') ?? '');
   readonly navigationOpen = signal(false);
+  readonly signingOut = signal(false);
+  readonly signOutErrorKey = signal<string | null>(null);
   readonly projectSlug = computed(() => {
     const segments = this.currentUrl().split('?')[0]?.split('/').filter(Boolean) ?? [];
     const project = segments[1];
@@ -60,16 +79,6 @@ export class WorkspaceShell {
       ? decodeURIComponent(project)
       : '';
   });
-  readonly workspaceName = computed(
-    () => this.workspaceSession.organization()?.name ?? this.workspaceSlug,
-  );
-  readonly projectName = computed(() =>
-    this.projectSlug()
-      .split('-')
-      .filter(Boolean)
-      .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
-      .join(' '),
-  );
   readonly displayName = computed(
     () => this.browserSession.user()?.displayName || this.browserSession.user()?.email || '',
   );
@@ -81,6 +90,9 @@ export class WorkspaceShell {
       .map((part) => part[0]?.toUpperCase())
       .join('');
   });
+  readonly roleLabelKey = computed(
+    () => `workspace.roles.${this.workspaceSession.role() ?? 'read_only'}`,
+  );
 
   constructor() {
     effect((onCleanup) => {
@@ -104,8 +116,40 @@ export class WorkspaceShell {
     if (restoreFocus) queueMicrotask(() => this.navigationToggle()?.nativeElement.focus());
   }
 
+  async signOut(): Promise<void> {
+    if (this.signingOut()) return;
+    this.signingOut.set(true);
+    this.signOutErrorKey.set(null);
+    try {
+      await this.authApi.logout();
+      this.workspaceSession.clear();
+      this.browserSession.clear();
+      await this.router.navigateByUrl('/auth/login');
+    } catch (error) {
+      this.signOutErrorKey.set(apiErrorTranslationKey(error));
+    } finally {
+      this.signingOut.set(false);
+    }
+  }
+
+  closeAccountMenu(restoreFocus = false): void {
+    const menu = this.accountMenu()?.nativeElement;
+    if (!menu?.open) return;
+    menu.open = false;
+    if (restoreFocus) this.accountSummary()?.nativeElement.focus();
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeAccountMenuFromOutsideClick(event: MouseEvent): void {
+    const menu = this.accountMenu()?.nativeElement;
+    if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) {
+      this.closeAccountMenu();
+    }
+  }
+
   @HostListener('document:keydown.escape')
-  closeNavigationFromKeyboard(): void {
-    this.closeNavigation();
+  closeOverlaysFromKeyboard(): void {
+    if (this.navigationOpen()) this.closeNavigation();
+    else this.closeAccountMenu(true);
   }
 }

@@ -1,4 +1,5 @@
 export { BrandMark } from './brand-mark/brand-mark';
+export { Breadcrumbs } from './breadcrumbs/breadcrumbs';
 export { Button, type ButtonVariant } from './button/button';
 export { Callout } from './callout/callout';
 export { Dialog } from './dialog/dialog';

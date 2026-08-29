@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ReadinessApi } from '../../../data-access/readiness-api';
 import { ReadinessPolicyVersionCreate } from '../../../pages/policy-version-create/policy-version-create';
 import { policy, policyId } from '../../fixtures/readiness-fixtures';
@@ -48,6 +48,12 @@ describe('ReadinessPolicyVersionCreate', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.policyQuery.isSuccess()).toBe(true));
     fixture.detectChanges();
 
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Release policies');
+    expect(breadcrumbs?.textContent).toContain('Production promotion');
+    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain(
+      'Create draft version 4',
+    );
     const gate = fixture.componentInstance.form.controls.gates.at(0);
     expect(gate.controls.key.value).toBe('required-pass-rate');
     gate.controls.expectedValue.setValue('99');

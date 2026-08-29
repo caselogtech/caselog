@@ -46,7 +46,6 @@
     "noPolicy": "No policy"
   },
   "create": {
-    "back": "Back to releases",
     "title": "Create release",
     "description": "Define the release identity and delivery context. A release starts in draft state.",
     "readOnlyTitle": "Release creation is unavailable",
@@ -78,7 +77,6 @@
   "detail": {
     "loading": "Loading release…",
     "errorTitle": "Unable to load release",
-    "back": "Back to releases",
     "lifecycleActions": "Release lifecycle actions",
     "transitionErrorTitle": "Unable to change release lifecycle",
     "summary": "Release summary",
@@ -126,7 +124,7 @@
     }
   },
   "candidateCreate": {
-    "back": "Back to release",
+    "releaseFallback": "Release",
     "title": "Register candidate",
     "description": "Capture an immutable build identity. Later evidence and readiness decisions refer to this exact candidate.",
     "unavailableTitle": "Candidate registration is unavailable",

@@ -7,6 +7,7 @@ import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   LoadingSkeleton,
@@ -28,6 +29,7 @@ const STATE_LABEL: Record<ReadinessPolicyVersion['state'], string> = {
 @Component({
   selector: 'app-readiness-policy-detail',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     LoadingSkeleton,

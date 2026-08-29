@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ReleasesApi } from '../../../data-access/releases-api';
 import { ReleaseCreate } from '../../../pages/release-create/release-create';
 
@@ -71,6 +71,9 @@ describe('ReleaseCreate', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.environments.isSuccess()).toBe(true));
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Releases');
+    expect(breadcrumbs?.textContent).toContain('Create release');
     fixture.componentInstance.form.setValue({
       key: ' 2026.08 ',
       name: ' August release ',

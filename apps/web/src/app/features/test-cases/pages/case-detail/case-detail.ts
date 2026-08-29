@@ -13,6 +13,7 @@ import {
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   LoadingSkeleton,
@@ -36,6 +37,7 @@ import { testCaseDraftContent } from '../../domain/test-case-draft';
 @Component({
   selector: 'app-case-detail',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     CaseAttachmentsPanel,

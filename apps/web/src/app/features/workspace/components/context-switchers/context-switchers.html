@@ -1,0 +1,132 @@
+<div class="context-switchers" [class.has-project]="projectSlug()">
+  <details #workspaceMenu class="context-switcher workspace-switcher" name="context-switcher">
+    <summary
+      #workspaceSummary
+      [attr.aria-label]="
+        'app.navigation.workspaceContext' | transloco: { name: workspaceName() }
+      "
+    >
+      <span class="context-kind">{{ 'app.navigation.workspace' | transloco }}</span>
+      <strong>{{ workspaceName() }}</strong>
+      <span class="context-chevron" aria-hidden="true">⌄</span>
+    </summary>
+
+    <div class="context-popover">
+      <p class="context-menu-heading">{{ 'app.navigation.switchWorkspace' | transloco }}</p>
+      @if (workspaces.isPending()) {
+        <p class="context-menu-state" aria-live="polite">
+          {{ 'app.navigation.loadingWorkspaces' | transloco }}
+        </p>
+      } @else if (workspaces.isError()) {
+        <div class="context-menu-state error" role="alert">
+          <span>{{ 'app.navigation.workspacesUnavailable' | transloco }}</span>
+          <button type="button" (click)="workspaces.refetch()">
+            {{ 'app.navigation.retry' | transloco }}
+          </button>
+        </div>
+      } @else {
+        <nav [attr.aria-label]="'app.navigation.switchWorkspace' | transloco">
+          @for (workspace of workspaces.data()?.workspaces; track workspace.id) {
+            <a
+              href="/{{ workspace.slug }}/projects"
+              [routerLink]="['/', workspace.slug, 'projects']"
+              [class.current]="workspace.slug === workspaceSlug()"
+              [attr.aria-current]="workspace.slug === workspaceSlug() ? 'true' : null"
+              (click)="closeMenus()"
+            >
+              <span>
+                <strong>{{ workspace.name }}</strong>
+                <small>{{ workspace.slug }}</small>
+              </span>
+              @if (workspace.slug === workspaceSlug()) {
+                <span class="current-label">{{ 'app.navigation.current' | transloco }}</span>
+              }
+            </a>
+          }
+          <a
+            class="manage-contexts"
+            href="/auth/workspaces"
+            routerLink="/auth/workspaces"
+            (click)="closeMenus()"
+          >
+            {{ 'app.navigation.allWorkspaces' | transloco }}
+          </a>
+        </nav>
+      }
+    </div>
+  </details>
+
+  @if (projectSlug()) {
+    <span class="context-separator" aria-hidden="true">/</span>
+    <details #projectMenu class="context-switcher project-switcher" name="context-switcher">
+      <summary
+        #projectSummary
+        [attr.aria-label]="
+          'app.navigation.projectContext' | transloco: { name: projectName() }
+        "
+      >
+        <span class="context-kind">{{ 'app.navigation.project' | transloco }}</span>
+        <strong>{{ projectName() }}</strong>
+        <span class="context-chevron" aria-hidden="true">⌄</span>
+      </summary>
+
+      <div class="context-popover">
+        <p class="context-menu-heading">{{ 'app.navigation.switchProject' | transloco }}</p>
+        @if (projects.isPending()) {
+          <p class="context-menu-state" aria-live="polite">
+            {{ 'app.navigation.loadingProjects' | transloco }}
+          </p>
+        } @else if (projects.isError()) {
+          <div class="context-menu-state error" role="alert">
+            <span>{{ 'app.navigation.projectsUnavailable' | transloco }}</span>
+            <button type="button" (click)="projects.refetch()">
+              {{ 'app.navigation.retry' | transloco }}
+            </button>
+          </div>
+        } @else {
+          <nav [attr.aria-label]="'app.navigation.switchProject' | transloco">
+            @for (project of projectOptions(); track project.id) {
+              <a
+                href="/{{ workspaceSlug() }}/{{ project.slug }}/releases"
+                [routerLink]="['/', workspaceSlug(), project.slug, 'releases']"
+                [class.current]="project.slug === projectSlug()"
+                [attr.aria-current]="project.slug === projectSlug() ? 'true' : null"
+                (click)="closeMenus()"
+              >
+                <span>
+                  <strong>{{ project.name }}</strong>
+                  <small>{{ project.key }}</small>
+                </span>
+                @if (project.slug === projectSlug()) {
+                  <span class="current-label">{{ 'app.navigation.current' | transloco }}</span>
+                }
+              </a>
+            }
+            @if (projects.hasNextPage()) {
+              <button
+                class="load-contexts"
+                type="button"
+                [disabled]="projects.isFetchingNextPage()"
+                (click)="projects.fetchNextPage()"
+              >
+                {{
+                  (projects.isFetchingNextPage()
+                    ? 'app.navigation.loadingMoreProjects'
+                    : 'app.navigation.loadMoreProjects') | transloco
+                }}
+              </button>
+            }
+            <a
+              class="manage-contexts"
+              href="/{{ workspaceSlug() }}/projects"
+              [routerLink]="['/', workspaceSlug(), 'projects']"
+              (click)="closeMenus()"
+            >
+              {{ 'app.navigation.allProjects' | transloco }}
+            </a>
+          </nav>
+        }
+      </div>
+    </details>
+  }
+</div>

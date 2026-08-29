@@ -1,4 +1,10 @@
 <main class="policy-list-page" aria-labelledby="policy-list-title">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
+    <span>{{ projectLabel }}</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'readiness.policies.title' | transloco }}</span>
+  </nav>
+
   <header class="page-header">
     <div>
       <p class="eyebrow">{{ 'readiness.policies.eyebrow' | transloco }}</p>

@@ -19,6 +19,7 @@ import { injectInfiniteQuery, injectMutation } from '@tanstack/angular-query-exp
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   FormControlStyle,
@@ -40,6 +41,7 @@ const TEMPLATE_TRANSLATION_KEYS: Record<TestCaseTemplate, string> = {
 @Component({
   selector: 'app-run-create',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     FormControlStyle,

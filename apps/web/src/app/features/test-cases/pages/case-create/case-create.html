@@ -1,5 +1,5 @@
 <main class="case-create-page" aria-labelledby="case-create-title">
-  <nav class="breadcrumbs" [attr.aria-label]="'workspace.cases.new.breadcrumbs' | transloco">
+  <nav appBreadcrumbs [attr.aria-label]="'workspace.cases.new.breadcrumbs' | transloco">
     <a
       href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
       [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"

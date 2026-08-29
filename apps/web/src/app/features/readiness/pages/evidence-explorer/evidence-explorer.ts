@@ -4,7 +4,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { labelFromSlug } from '../../../../shared/models/slug-label';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   LoadingSkeleton,
@@ -16,8 +18,8 @@ import { EvidenceObservationList } from '../../components/evidence-observation-l
 import { EvidenceProcessingDiagnostics } from '../../components/evidence-processing-diagnostics/evidence-processing-diagnostics';
 import { ReadinessApi } from '../../data-access/readiness-api';
 import {
-  evidenceExplorerQueryParams,
   type EvidenceExplorerFilters as EvidenceExplorerFilterValue,
+  evidenceExplorerQueryParams,
   isUuid,
   parseEvidenceExplorerState,
   toEvidenceListQuery,
@@ -26,6 +28,7 @@ import {
 @Component({
   selector: 'app-evidence-explorer',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     EvidenceFilters,
@@ -50,6 +53,7 @@ export class EvidenceExplorer {
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
+  readonly projectLabel = labelFromSlug(this.projectSlug);
   readonly explorerState = computed(() =>
     parseEvidenceExplorerState((name) => this.queryParams().get(name)),
   );

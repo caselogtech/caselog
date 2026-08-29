@@ -5,6 +5,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import {
+  Breadcrumbs,
   Button,
   LoadingSkeleton,
   PageState,
@@ -18,6 +19,7 @@ import { TestRunsApi } from '../../data-access/test-runs-api';
 @Component({
   selector: 'app-result-detail',
   imports: [
+    Breadcrumbs,
     Button,
     DatePipe,
     LoadingSkeleton,

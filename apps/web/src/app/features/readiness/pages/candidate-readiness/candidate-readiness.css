@@ -14,10 +14,6 @@
   gap: var(--space-3);
 }
 
-.candidate-header > .app-button {
-  margin: 0 0 var(--space-4) -14px;
-}
-
 .heading-row,
 .title-row,
 .page-actions,
@@ -37,21 +33,16 @@
   gap: var(--space-3);
 }
 
-.breadcrumbs,
 h1,
 h2,
 p {
   margin-top: 0;
 }
 
-.breadcrumbs {
+.candidate-context {
   color: var(--text-2);
   font-size: var(--font-size-sm);
   margin-bottom: var(--space-2);
-}
-
-.breadcrumbs span {
-  margin-left: var(--space-1);
 }
 
 h1 {

@@ -9,7 +9,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { Button } from '../../../../shared/ui/public-api';
+import { Breadcrumbs, Button } from '../../../../shared/ui/public-api';
 import { TestRunsApi } from '../../../test-runs/public-api';
 import { CiImportHistory } from '../../components/ci-import-history/ci-import-history';
 import { CiImportSummary } from '../../components/ci-import-summary/ci-import-summary';
@@ -21,7 +21,7 @@ import { CiImportsApi } from '../../data-access/ci-imports-api';
 
 @Component({
   selector: 'app-ci-imports',
-  imports: [Button, CiImportHistory, CiImportSummary, CiUploadPanel, TranslocoPipe],
+  imports: [Breadcrumbs, Button, CiImportHistory, CiImportSummary, CiUploadPanel, TranslocoPipe],
   templateUrl: './ci-imports.html',
   styleUrl: './ci-imports.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -7,7 +7,13 @@ import { injectMutation, QueryClient } from '@tanstack/angular-query-experimenta
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
-import { Button, Callout, FormControlStyle, FormField } from '../../../../shared/ui/public-api';
+import {
+  Breadcrumbs,
+  Button,
+  Callout,
+  FormControlStyle,
+  FormField,
+} from '../../../../shared/ui/public-api';
 import { PolicyGateEditor } from '../../components/policy-gate-editor/policy-gate-editor';
 import {
   createPolicyCreateForm,
@@ -18,6 +24,7 @@ import { ReadinessApi } from '../../data-access/readiness-api';
 @Component({
   selector: 'app-readiness-policy-create',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     FormControlStyle,

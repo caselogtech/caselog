@@ -21,6 +21,7 @@ import {
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   Dialog,
@@ -38,6 +39,7 @@ import { RunExecutionSession } from '../../state/run-execution-session';
 @Component({
   selector: 'app-run-detail',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     DatePipe,

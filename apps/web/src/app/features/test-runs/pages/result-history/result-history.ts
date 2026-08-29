@@ -3,13 +3,21 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { Button, LoadingSkeleton, PageState } from '../../../../shared/ui/public-api';
+import { Breadcrumbs, Button, LoadingSkeleton, PageState } from '../../../../shared/ui/public-api';
 import { ResultAttemptList } from '../../components/result-attempt-list/result-attempt-list';
 import { TestRunsApi } from '../../data-access/test-runs-api';
 
 @Component({
   selector: 'app-result-history',
-  imports: [Button, LoadingSkeleton, PageState, ResultAttemptList, RouterLink, TranslocoPipe],
+  imports: [
+    Breadcrumbs,
+    Button,
+    LoadingSkeleton,
+    PageState,
+    ResultAttemptList,
+    RouterLink,
+    TranslocoPipe,
+  ],
   templateUrl: './result-history.html',
   styleUrl: './result-history.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -13,6 +13,7 @@ import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorCode, apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   LoadingSkeleton,
@@ -31,6 +32,7 @@ import { buildReadinessGateRows, releasePresentation } from '../../domain/readin
 @Component({
   selector: 'app-candidate-readiness',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     CandidateEvidence,

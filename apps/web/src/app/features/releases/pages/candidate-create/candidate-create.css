@@ -9,10 +9,6 @@
   padding: var(--space-5) var(--content-gutter) 48px;
 }
 
-.page-header > .app-button {
-  margin: 0 0 var(--space-4) -14px;
-}
-
 .eyebrow {
   color: var(--color-accent-700);
   font-size: var(--font-size-xs);

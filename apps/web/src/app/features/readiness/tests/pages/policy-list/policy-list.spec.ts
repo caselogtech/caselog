@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ReadinessApi } from '../../../data-access/readiness-api';
 import { ReadinessPolicyList } from '../../../pages/policy-list/policy-list';
 import { policyList } from '../../fixtures/readiness-fixtures';
@@ -42,6 +42,11 @@ describe('ReadinessPolicyList', () => {
     fixture.detectChanges();
 
     expect(readinessApi.policies).toHaveBeenCalledWith('acme', 'authentication', undefined);
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Authentication');
+    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain(
+      'Release policies',
+    );
     expect(fixture.nativeElement.textContent).toContain('Production promotion');
     expect(fixture.nativeElement.textContent).toContain('Version 3');
     expect(fixture.nativeElement.textContent).toContain('1 policies loaded');

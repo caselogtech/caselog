@@ -13,6 +13,7 @@ import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
 import {
+  Breadcrumbs,
   Button,
   Callout,
   LoadingSkeleton,
@@ -35,6 +36,7 @@ import {
 @Component({
   selector: 'app-readiness-decision-detail',
   imports: [
+    Breadcrumbs,
     Button,
     Callout,
     DatePipe,

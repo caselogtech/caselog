@@ -18,7 +18,7 @@
       </button>
     </app-page-state>
   } @else if (item(); as currentItem) {
-    <nav class="breadcrumbs" [attr.aria-label]="'workspace.runs.history.breadcrumbs' | transloco">
+    <nav appBreadcrumbs [attr.aria-label]="'workspace.runs.history.breadcrumbs' | transloco">
       <a
         class="back-link"
         href="/{{ workspaceSlug }}/{{ projectSlug }}/runs/{{ runId }}?item={{ itemId }}"

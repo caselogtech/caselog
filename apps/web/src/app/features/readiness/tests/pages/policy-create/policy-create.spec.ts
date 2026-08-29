@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ReadinessApi } from '../../../data-access/readiness-api';
 import { ReadinessPolicyCreate } from '../../../pages/policy-create/policy-create';
 import { policy, policyId } from '../../fixtures/readiness-fixtures';
@@ -40,6 +40,11 @@ describe('ReadinessPolicyCreate', () => {
     const fixture = TestBed.createComponent(ReadinessPolicyCreate);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
     fixture.detectChanges();
+    const breadcrumbs = fixture.nativeElement.querySelector('nav[aria-label="Breadcrumbs"]');
+    expect(breadcrumbs?.textContent).toContain('Release policies');
+    expect(breadcrumbs?.querySelector('[aria-current="page"]')?.textContent).toContain(
+      'Create release policy',
+    );
     fixture.componentInstance.form.patchValue({
       key: ' production ',
       name: ' Production promotion ',

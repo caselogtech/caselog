@@ -14,10 +14,6 @@
   gap: var(--space-3);
 }
 
-.page-header > .app-button {
-  margin: 0 0 var(--space-4) -14px;
-}
-
 .eyebrow {
   color: var(--color-accent-700);
   font-size: var(--font-size-xs);

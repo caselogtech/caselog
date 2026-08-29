@@ -1,5 +1,5 @@
 <main class="csv-import-page" aria-labelledby="csv-import-title">
-  <nav class="breadcrumbs" [attr.aria-label]="'workspace.cases.csvImport.breadcrumbs' | transloco">
+  <nav appBreadcrumbs [attr.aria-label]="'workspace.cases.csvImport.breadcrumbs' | transloco">
     <a
       href="/{{ workspaceSlug }}/{{ projectSlug }}/cases"
       [routerLink]="['/', workspaceSlug, projectSlug, 'cases']"

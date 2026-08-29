@@ -6,7 +6,14 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { Button, LoadingSkeleton, PageState, StatusBadge } from '../../../../shared/ui/public-api';
+import { labelFromSlug } from '../../../../shared/models/slug-label';
+import {
+  Breadcrumbs,
+  Button,
+  LoadingSkeleton,
+  PageState,
+  StatusBadge,
+} from '../../../../shared/ui/public-api';
 import { ReleasesApi } from '../../data-access/releases-api';
 import {
   type ReleaseListItem,
@@ -16,7 +23,16 @@ import {
 
 @Component({
   selector: 'app-release-list',
-  imports: [Button, DatePipe, LoadingSkeleton, PageState, RouterLink, StatusBadge, TranslocoPipe],
+  imports: [
+    Breadcrumbs,
+    Button,
+    DatePipe,
+    LoadingSkeleton,
+    PageState,
+    RouterLink,
+    StatusBadge,
+    TranslocoPipe,
+  ],
   templateUrl: './release-list.html',
   styleUrl: './release-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +45,7 @@ export class ReleaseList {
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
+  readonly projectLabel = labelFromSlug(this.projectSlug);
   readonly lifecycleOptions: ReleaseState[] = ['draft', 'active', 'released', 'cancelled'];
   readonly state = signal<ReleaseState | undefined>(this.readState());
   readonly canManage = computed(() =>

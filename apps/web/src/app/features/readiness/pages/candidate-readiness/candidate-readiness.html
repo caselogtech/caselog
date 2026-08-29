@@ -21,22 +21,28 @@
   } @else if (releaseContext.data(); as context) {
     @if (candidate(); as releaseCandidate) {
       @let lifecycleStatus = lifecycle(context.release.state);
-      <header class="candidate-header">
+      <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
         <a
-          appButton="quiet"
+          href="/{{ workspaceSlug }}/{{ projectSlug }}/releases"
+          [routerLink]="['/', workspaceSlug, projectSlug, 'releases']"
+        >
+          {{ 'app.navigation.releases' | transloco }}
+        </a>
+        <span aria-hidden="true">/</span>
+        <a
           href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}"
           [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId]"
         >
-          <span aria-hidden="true">←</span>
-          {{ 'readiness.backToRelease' | transloco }}
+          {{ context.release.key }}
         </a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{{ releaseCandidate.label }}</span>
+      </nav>
 
+      <header class="candidate-header">
         <div class="heading-row">
           <div>
-            <p class="breadcrumbs">
-              {{ context.release.name }} <span aria-hidden="true">/</span>
-              <span class="mono">{{ releaseCandidate.label }}</span>
-            </p>
+            <p class="candidate-context">{{ context.release.name }}</p>
             <div class="title-row">
               <h1 id="candidate-readiness-title">
                 {{ 'readiness.candidateTitle' | transloco: { label: releaseCandidate.label } }}

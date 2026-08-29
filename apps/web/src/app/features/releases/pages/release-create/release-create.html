@@ -1,13 +1,16 @@
 <main class="release-create-page" aria-labelledby="release-create-title">
-  <header class="page-header">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
     <a
-      appButton="quiet"
       href="/{{ workspaceSlug }}/{{ projectSlug }}/releases"
       [routerLink]="['/', workspaceSlug, projectSlug, 'releases']"
     >
-      <span aria-hidden="true">←</span>
-      {{ 'releases.create.back' | transloco }}
+      {{ 'releases.list.title' | transloco }}
     </a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'releases.create.title' | transloco }}</span>
+  </nav>
+
+  <header class="page-header">
     <p class="eyebrow">{{ 'releases.list.eyebrow' | transloco }}</p>
     <h1 id="release-create-title">{{ 'releases.create.title' | transloco }}</h1>
     <p class="description">{{ 'releases.create.description' | transloco }}</p>
