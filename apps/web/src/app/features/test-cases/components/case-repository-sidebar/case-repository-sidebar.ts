@@ -14,6 +14,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { TestCaseStructureApi } from '../../data-access/test-case-structure-api';
 
 const INITIAL_SECTION_LIMIT = 100;
@@ -50,7 +51,9 @@ export class CaseRepositorySidebar {
   readonly structureFilter = signal('');
   readonly suiteExpansion = signal<Record<string, boolean>>({});
   readonly sectionLimits = signal<Record<string, number>>({});
-  readonly canManage = computed(() => this.workspaceSession.role() !== 'read_only');
+  readonly canManage = computed(() =>
+    hasWorkspacePermission(this.workspaceSession.role(), 'write'),
+  );
 
   readonly suiteForm = this.formBuilder.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],

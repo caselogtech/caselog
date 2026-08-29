@@ -6,6 +6,7 @@ import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-exper
 import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
 import { BrowserSession } from '../../../../../core/auth/browser-session';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { RunExecutionPanel } from '../../../components/run-execution-panel/run-execution-panel';
 import { TestRunsApi } from '../../../data-access/test-runs-api';
 import { RunDraftStore, type RunDraftContext } from '../../../state/run-draft-store';
@@ -167,6 +168,7 @@ describe('RunDetail', () => {
       displayName: 'Ada',
       emailVerified: true,
     });
+    TestBed.inject(WorkspaceSession).role.set('tester');
   });
 
   afterEach(() => {

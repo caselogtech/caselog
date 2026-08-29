@@ -7,6 +7,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { enumQueryParam } from '../../../../shared/routing/query-param';
 import {
   Breadcrumbs,
@@ -53,7 +54,9 @@ export class RunList {
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly statuses: TestRunStatus[] = ['active', 'completed', 'draft', 'archived'];
   readonly status = computed(() => enumQueryParam(this.queryParams().get('status'), this.statuses));
-  readonly canCreate = computed(() => this.workspaceSession.role() !== 'read_only');
+  readonly canCreate = computed(() =>
+    hasWorkspacePermission(this.workspaceSession.role(), 'write'),
+  );
 
   readonly runs = injectInfiniteQuery(() => ({
     queryKey: ['test-runs', this.workspaceSlug, this.projectSlug, this.status()],

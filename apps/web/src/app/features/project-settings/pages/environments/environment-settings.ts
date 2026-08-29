@@ -7,6 +7,7 @@ import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
 import { labelFromSlug } from '../../../../shared/models/slug-label';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Breadcrumbs,
   Button,
@@ -56,9 +57,7 @@ export class EnvironmentSettings {
   readonly projectLabel = labelFromSlug(this.projectSlug);
   readonly showCreate = signal(false);
   readonly confirmation = signal<EnvironmentStateChangeRequest | null>(null);
-  readonly canManage = computed(() =>
-    ['owner', 'admin', 'lead'].includes(this.workspaceSession.role() ?? ''),
-  );
+  readonly canManage = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'lead'));
 
   readonly environments = injectQuery(() => ({
     queryKey: ['project-environments', this.workspaceSlug, this.projectSlug],

@@ -7,6 +7,7 @@ import type {
 } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { TestCaseImportsApi } from '../../../data-access/test-case-imports-api';
 import { TestCaseStructureApi } from '../../../data-access/test-case-structure-api';
 import { CsvImport } from '../../../pages/csv-import/csv-import';
@@ -97,6 +98,7 @@ describe('CsvImport', () => {
         },
       ],
     }).compileComponents();
+    TestBed.inject(WorkspaceSession).role.set('contributor');
   });
 
   afterEach(() => queryClient.clear());

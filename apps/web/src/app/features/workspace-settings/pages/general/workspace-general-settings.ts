@@ -18,6 +18,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Button,
   Callout,
@@ -59,7 +60,7 @@ export class WorkspaceGeneralSettings {
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly saved = signal(false);
   readonly canManage = computed(() =>
-    ['owner', 'admin'].includes(this.workspaceSession.role() ?? ''),
+    hasWorkspacePermission(this.workspaceSession.role(), 'admin'),
   );
   readonly form = this.formBuilder.group({
     name: ['', [trimmedRequired, Validators.minLength(2), Validators.maxLength(120)]],

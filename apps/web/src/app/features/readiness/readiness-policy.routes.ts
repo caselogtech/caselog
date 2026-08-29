@@ -1,5 +1,6 @@
 import type { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
+import { requireWorkspacePermission } from '../workspace/public-api';
 
 const readinessTranslations = provideTranslocoScope('readiness');
 
@@ -10,6 +11,7 @@ export const readinessPolicyRoutes: Routes = [
     children: [
       {
         path: 'new',
+        canActivate: [requireWorkspacePermission('lead')],
         loadComponent: () =>
           import('./pages/policy-create/policy-create').then(
             ({ ReadinessPolicyCreate }) => ReadinessPolicyCreate,
@@ -17,6 +19,7 @@ export const readinessPolicyRoutes: Routes = [
       },
       {
         path: ':policyId/versions/new',
+        canActivate: [requireWorkspacePermission('lead')],
         loadComponent: () =>
           import('./pages/policy-version-create/policy-version-create').then(
             ({ ReadinessPolicyVersionCreate }) => ReadinessPolicyVersionCreate,

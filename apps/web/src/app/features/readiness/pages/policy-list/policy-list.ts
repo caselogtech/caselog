@@ -4,6 +4,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { labelFromSlug } from '../../../../shared/models/slug-label';
 import { Breadcrumbs, Button, LoadingSkeleton, PageState } from '../../../../shared/ui/public-api';
 import { PolicyCatalog } from '../../components/policy-catalog/policy-catalog';
@@ -32,9 +33,7 @@ export class ReadinessPolicyList {
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly projectLabel = labelFromSlug(this.projectSlug);
-  readonly canManage = computed(() =>
-    ['owner', 'admin', 'lead'].includes(this.workspaceSession.role() ?? ''),
-  );
+  readonly canManage = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'lead'));
 
   readonly policies = injectInfiniteQuery(() => ({
     queryKey: ['readiness-policies', this.workspaceSlug, this.projectSlug],

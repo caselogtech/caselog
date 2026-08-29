@@ -11,6 +11,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorCode, apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
 import {
   Breadcrumbs,
@@ -69,9 +70,7 @@ export class CandidateReadiness {
     this.projectSlug,
     this.candidateId,
   ] as const;
-  readonly canManage = computed(() =>
-    ['owner', 'admin', 'lead'].includes(this.workspaceSession.role() ?? ''),
-  );
+  readonly canManage = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'lead'));
 
   readonly releaseContext = injectQuery(() => ({
     queryKey: ['release', this.workspaceSlug, this.projectSlug, this.releaseId],

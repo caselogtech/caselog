@@ -19,6 +19,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { Breadcrumbs, Button, LoadingSkeleton, PageState } from '../../../../shared/ui/public-api';
 import { CsvImportFile } from '../../components/csv-import-file/csv-import-file';
 import { CsvImportMapping } from '../../components/csv-import-mapping/csv-import-mapping';
@@ -73,7 +74,9 @@ export class CsvImport {
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
-  readonly canImport = computed(() => this.workspaceSession.role() !== 'read_only');
+  readonly canImport = computed(() =>
+    hasWorkspacePermission(this.workspaceSession.role(), 'write'),
+  );
   readonly selectedFile = signal<File | null>(null);
   readonly csv = signal('');
   readonly delimiter = signal<CsvDelimiter>(',');

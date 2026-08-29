@@ -6,6 +6,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Button,
   Callout,
@@ -43,7 +44,9 @@ export class WorkspaceDangerSettings {
   private readonly queryClient = inject(QueryClient);
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
-  readonly canDelete = computed(() => this.workspaceSession.role() === 'owner');
+  readonly canDelete = computed(() =>
+    hasWorkspacePermission(this.workspaceSession.role(), 'owner'),
+  );
   readonly form = this.formBuilder.group({
     confirmation: ['', [Validators.required, Validators.maxLength(120)]],
   });

@@ -8,6 +8,7 @@ import { injectInfiniteQuery } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { labelFromSlug } from '../../../../shared/models/slug-label';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { enumQueryParam } from '../../../../shared/routing/query-param';
 import {
   Breadcrumbs,
@@ -55,9 +56,7 @@ export class ReleaseList {
   readonly state = computed(() =>
     enumQueryParam(this.queryParams().get('state'), this.lifecycleOptions),
   );
-  readonly canManage = computed(() =>
-    ['owner', 'admin', 'lead'].includes(this.workspaceSession.role() ?? ''),
-  );
+  readonly canManage = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'lead'));
 
   readonly releases = injectInfiniteQuery(() => ({
     queryKey: ['release-readiness', this.workspaceSlug, this.projectSlug, this.state()],

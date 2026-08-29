@@ -1,9 +1,11 @@
 import type { Routes } from '@angular/router';
+import { requireWorkspacePermission } from '../workspace/public-api';
 import { runCreatePendingChangesGuard } from './pages/run-create/run-create.guard';
 
 export const testRunsRoutes: Routes = [
   {
     path: 'new',
+    canActivate: [requireWorkspacePermission('write')],
     canDeactivate: [runCreatePendingChangesGuard],
     loadComponent: () => import('./pages/run-create/run-create').then(({ RunCreate }) => RunCreate),
   },

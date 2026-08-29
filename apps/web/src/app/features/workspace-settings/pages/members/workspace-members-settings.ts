@@ -16,6 +16,7 @@ import {
 import { BrowserSession } from '../../../../core/auth/browser-session';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Button,
   Callout,
@@ -69,7 +70,7 @@ export class WorkspaceMembersSettings {
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly view = computed(() => parseMemberSettingsView(this.queryParams().get('view')));
   readonly canManage = computed(() =>
-    ['owner', 'admin'].includes(this.workspaceSession.role() ?? ''),
+    hasWorkspacePermission(this.workspaceSession.role(), 'admin'),
   );
   readonly workspaceName = computed(
     () => this.workspaceSession.organization()?.name ?? this.workspaceSlug,
@@ -203,7 +204,7 @@ export class WorkspaceMembersSettings {
   }
 
   requestOwnership(member: WorkspaceMember): void {
-    if (this.workspaceSession.role() === 'owner' && !this.operationPending()) {
+    if (hasWorkspacePermission(this.workspaceSession.role(), 'owner') && !this.operationPending()) {
       this.ownershipTarget.set(member);
     }
   }

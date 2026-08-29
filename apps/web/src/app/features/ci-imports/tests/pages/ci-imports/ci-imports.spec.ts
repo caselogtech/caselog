@@ -5,6 +5,7 @@ import type { ResultIngestionListResponse, TestRunListResponse } from '@caselog/
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { TestRunsApi } from '../../../../test-runs/public-api';
 import { CiUploadPanel } from '../../../components/ci-upload-panel/ci-upload-panel';
 import { CiImportsApi } from '../../../data-access/ci-imports-api';
@@ -103,6 +104,7 @@ describe('CiImports', () => {
         },
       ],
     }).compileComponents();
+    TestBed.inject(WorkspaceSession).role.set('contributor');
   });
 
   afterEach(() => queryClient.clear());

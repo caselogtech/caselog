@@ -10,6 +10,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { enumQueryParam } from '../../../../shared/routing/query-param';
 import { Breadcrumbs, Button } from '../../../../shared/ui/public-api';
 import { TestRunsApi } from '../../../test-runs/public-api';
@@ -43,7 +44,9 @@ export class CiImports {
   readonly statuses: ResultIngestionStatus[] = ['completed', 'failed'];
   readonly status = computed(() => enumQueryParam(this.queryParams().get('status'), this.statuses));
   readonly lastUpload = signal<JUnitUploadResponse | null>(null);
-  readonly canUpload = computed(() => this.workspaceSession.role() !== 'read_only');
+  readonly canUpload = computed(() =>
+    hasWorkspacePermission(this.workspaceSession.role(), 'write'),
+  );
 
   readonly imports = injectInfiniteQuery(() => ({
     queryKey: ['result-ingestions', this.workspaceSlug, this.projectSlug, this.status()],

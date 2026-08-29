@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap, Router, provideRouter } from '@angul
 import type { CreateTestCaseResponse, ProjectStructureResponse } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
+import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { TestCaseStructureApi } from '../../../data-access/test-case-structure-api';
 import { TestCasesApi } from '../../../data-access/test-cases-api';
 import { CaseCreate } from '../../../pages/case-create/case-create';
@@ -76,6 +77,7 @@ describe('CaseCreate', () => {
         },
       ],
     }).compileComponents();
+    TestBed.inject(WorkspaceSession).role.set('contributor');
   });
 
   afterEach(() => queryClient.clear());

@@ -5,6 +5,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
 import {
   Breadcrumbs,
@@ -59,9 +60,7 @@ export class ReadinessPolicyDetail {
     this.projectSlug,
     this.policyId,
   ] as const;
-  readonly canManage = computed(() =>
-    ['owner', 'admin', 'lead'].includes(this.workspaceSession.role() ?? ''),
-  );
+  readonly canManage = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'lead'));
 
   readonly policyQuery = injectQuery(() => ({
     queryKey: this.policyQueryKey,

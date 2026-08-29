@@ -19,6 +19,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { enumQueryParam, textQueryParam } from '../../../../shared/routing/query-param';
 import {
   Button,
@@ -104,7 +105,9 @@ export class CaseList {
   readonly selectedSectionName = computed(
     () => this.items().find(({ section }) => section.id === this.sectionId())?.section.name ?? '',
   );
-  readonly canCreate = computed(() => this.workspaceSession.role() !== 'read_only');
+  readonly canCreate = computed(() =>
+    hasWorkspacePermission(this.workspaceSession.role(), 'write'),
+  );
   readonly hasFilters = computed(() => Boolean(this.search() || this.sectionId()));
 
   readonly duplicateCase = injectMutation(() => ({

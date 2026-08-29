@@ -21,6 +21,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Breadcrumbs,
   Button,
@@ -101,11 +102,11 @@ export class RunDetail {
   readonly selectedItem = computed(
     () => this.items().find(({ id }) => id === this.selectedItemId()) ?? this.items()[0] ?? null,
   );
-  readonly canManage = computed(() =>
-    ['owner', 'admin', 'lead'].includes(this.workspaceSession.role() ?? ''),
-  );
+  readonly canManage = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'lead'));
   readonly canExecute = computed(
-    () => this.workspaceSession.role() !== 'read_only' && this.metadata()?.run.status === 'active',
+    () =>
+      hasWorkspacePermission(this.workspaceSession.role(), 'write') &&
+      this.metadata()?.run.status === 'active',
   );
   readonly lifecycle = injectMutation(() => ({
     mutationFn: (action: 'start' | 'close') => {

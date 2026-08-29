@@ -1,5 +1,6 @@
 import type { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
+import { requireWorkspacePermission } from '../workspace/public-api';
 
 const releasesTranslations = provideTranslocoScope('releases');
 
@@ -10,6 +11,7 @@ export const releasesRoutes: Routes = [
     children: [
       {
         path: 'new',
+        canActivate: [requireWorkspacePermission('lead')],
         loadComponent: () =>
           import('./pages/release-create/release-create').then(
             ({ ReleaseCreate }) => ReleaseCreate,
@@ -17,6 +19,7 @@ export const releasesRoutes: Routes = [
       },
       {
         path: ':releaseId/candidates/new',
+        canActivate: [requireWorkspacePermission('lead')],
         loadComponent: () =>
           import('./pages/candidate-create/candidate-create').then(
             ({ CandidateCreate }) => CandidateCreate,

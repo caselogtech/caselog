@@ -11,6 +11,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Breadcrumbs,
   Button,
@@ -80,9 +81,7 @@ export class ReleaseDetail {
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
   readonly releaseId = this.route.snapshot.paramMap.get('releaseId') ?? '';
   readonly confirmation = signal<ReleaseLifecycleAction | null>(null);
-  readonly canManage = computed(() =>
-    ['owner', 'admin', 'lead'].includes(this.workspaceSession.role() ?? ''),
-  );
+  readonly canManage = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'lead'));
 
   readonly detail = injectQuery(() => ({
     queryKey: ['release', this.workspaceSlug, this.projectSlug, this.releaseId],

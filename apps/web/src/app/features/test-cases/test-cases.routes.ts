@@ -1,13 +1,16 @@
 import type { Routes } from '@angular/router';
+import { requireWorkspacePermission } from '../workspace/public-api';
 import { caseCreatePendingChangesGuard } from './pages/case-create/case-create.guard';
 
 export const testCasesRoutes: Routes = [
   {
     path: 'import',
+    canActivate: [requireWorkspacePermission('write')],
     loadComponent: () => import('./pages/csv-import/csv-import').then(({ CsvImport }) => CsvImport),
   },
   {
     path: 'new',
+    canActivate: [requireWorkspacePermission('write')],
     canDeactivate: [caseCreatePendingChangesGuard],
     loadComponent: () =>
       import('./pages/case-create/case-create').then(({ CaseCreate }) => CaseCreate),

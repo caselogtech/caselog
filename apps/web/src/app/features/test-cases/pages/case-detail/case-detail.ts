@@ -12,6 +12,7 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Breadcrumbs,
   Button,
@@ -71,7 +72,7 @@ export class CaseDetail {
   readonly caseId = this.route.snapshot.paramMap.get('caseId') ?? '';
   readonly editing = signal(false);
   readonly selectedVersionId = signal('');
-  readonly canEdit = computed(() => this.workspaceSession.role() !== 'read_only');
+  readonly canEdit = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'write'));
 
   readonly form = createCaseEditorForm(this.formBuilder);
 

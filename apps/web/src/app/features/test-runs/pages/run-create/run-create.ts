@@ -18,6 +18,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectInfiniteQuery, injectMutation } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Breadcrumbs,
   Button,
@@ -70,7 +71,9 @@ export class RunCreate {
   readonly selectedIds = signal<ReadonlySet<string>>(new Set());
   readonly search = signal('');
   readonly submissionAttempted = signal(false);
-  readonly canCreate = computed(() => this.workspaceSession.role() !== 'read_only');
+  readonly canCreate = computed(() =>
+    hasWorkspacePermission(this.workspaceSession.role(), 'write'),
+  );
   readonly form = this.formBuilder.group({
     name: ['', [Validators.required, Validators.maxLength(200)]],
     build: ['', Validators.maxLength(200)],

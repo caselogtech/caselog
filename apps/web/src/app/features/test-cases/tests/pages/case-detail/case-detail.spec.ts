@@ -198,6 +198,7 @@ describe('CaseDetail', () => {
         },
       ],
     }).compileComponents();
+    TestBed.inject(WorkspaceSession).role.set('contributor');
   });
 
   afterEach(() => queryClient.clear());

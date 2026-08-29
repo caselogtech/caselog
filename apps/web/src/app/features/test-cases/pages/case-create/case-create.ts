@@ -13,6 +13,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Breadcrumbs,
   Button,
@@ -56,7 +57,9 @@ export class CaseCreate {
 
   readonly workspaceSlug = this.route.snapshot.paramMap.get('org') ?? '';
   readonly projectSlug = this.route.snapshot.paramMap.get('project') ?? '';
-  readonly canCreate = computed(() => this.workspaceSession.role() !== 'read_only');
+  readonly canCreate = computed(() =>
+    hasWorkspacePermission(this.workspaceSession.role(), 'write'),
+  );
 
   readonly form = createCaseEditorForm(this.formBuilder);
 
