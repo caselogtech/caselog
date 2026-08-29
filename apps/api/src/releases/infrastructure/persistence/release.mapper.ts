@@ -1,6 +1,7 @@
 import type {
   CandidateTestRun,
   EnvironmentState,
+  EnvironmentSettingsSummary,
   EnvironmentSummary,
   ReleaseCandidate,
   ReleaseState,
@@ -54,6 +55,15 @@ export function toEnvironmentSummary(record: EnvironmentRecord): EnvironmentSumm
     state: ENVIRONMENT_STATE[record.state],
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
+export function toEnvironmentSettingsSummary(
+  record: EnvironmentRecord & { _count: { releases: number } },
+): EnvironmentSettingsSummary {
+  return {
+    ...toEnvironmentSummary(record),
+    activeReleaseCount: record._count.releases,
   };
 }
 

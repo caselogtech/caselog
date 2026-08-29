@@ -1,9 +1,20 @@
-import { Body, Controller, Get, Headers, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import type {
   CreateEnvironmentResponse,
   EnvironmentLifecycleResponse,
   EnvironmentListResponse,
   OrganizationAccessPrincipal,
+  UpdateEnvironmentResponse,
 } from '@caselog/schemas';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import {
@@ -19,11 +30,13 @@ import {
   CreateEnvironmentRequestDto,
   EnvironmentParamsDto,
   ReleaseProjectParamsDto,
+  UpdateEnvironmentRequestDto,
 } from '../dto/release.dto';
 import {
   CreateEnvironmentResponseDto,
   EnvironmentLifecycleResponseDto,
   EnvironmentListResponseDto,
+  UpdateEnvironmentResponseDto,
 } from '../dto/release-response.dto';
 
 @Controller('projects/:projectSlug/environments')
@@ -56,6 +69,17 @@ export class EnvironmentController {
       headers['idempotency-key'],
       request,
     );
+  }
+
+  @Patch(':environmentId')
+  @RequireOrganizationAccess('lead')
+  @ApiOkResponse({ type: UpdateEnvironmentResponseDto })
+  update(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: EnvironmentParamsDto,
+    @Body() request: UpdateEnvironmentRequestDto,
+  ): Promise<UpdateEnvironmentResponse> {
+    return this.environments.update(principal, params.projectSlug, params.environmentId, request);
   }
 
   @Post(':environmentId/archive')

@@ -5,10 +5,12 @@ import {
   createEnvironmentResponseSchema,
   createReleaseCandidateResponseSchema,
   createReleaseResponseSchema,
+  environmentListResponseSchema,
   releaseDetailResponseSchema,
   releaseCandidateListResponseSchema,
   releaseLifecycleResponseSchema,
   sessionResponseSchema,
+  updateEnvironmentResponseSchema,
 } from '@caselog/schemas';
 import {
   evidenceIngestResponseSchema,
@@ -158,6 +160,31 @@ describe('release foundations API', () => {
       payload: { name: 'Staging', slug: 'staging' },
     });
     expect(forbidden.statusCode, forbidden.body).toBe(403);
+
+    const updatedResponse = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/projects/${projectSlug}/environments/${environmentId}`,
+      headers: { authorization: `Bearer ${organizationToken}` },
+      payload: { name: 'Production EU', slug: 'production-eu', description: null },
+    });
+    expect(updatedResponse.statusCode, updatedResponse.body).toBe(200);
+    expect(updateEnvironmentResponseSchema.parse(updatedResponse.json()).environment).toMatchObject(
+      {
+        id: environmentId,
+        name: 'Production EU',
+        slug: 'production-eu',
+        description: null,
+        activeReleaseCount: 0,
+      },
+    );
+
+    const updateForbidden = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/projects/${projectSlug}/environments/${environmentId}`,
+      headers: { authorization: `Bearer ${readOnlyToken}` },
+      payload: request,
+    });
+    expect(updateForbidden.statusCode, updateForbidden.body).toBe(403);
   });
 
   it('creates an idempotent release for an active environment', async () => {
@@ -192,6 +219,18 @@ describe('release foundations API', () => {
     });
     expect(replay.statusCode, replay.body).toBe(201);
     expect(replay.json()).toEqual(response.json());
+
+    const environmentListResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/projects/${projectSlug}/environments`,
+      headers: { authorization: `Bearer ${organizationToken}` },
+    });
+    expect(environmentListResponse.statusCode, environmentListResponse.body).toBe(200);
+    expect(
+      environmentListResponseSchema
+        .parse(environmentListResponse.json())
+        .items.find(({ id }) => id === environmentId),
+    ).toMatchObject({ activeReleaseCount: 1 });
 
     const archiveBlocked = await app.inject({
       method: 'POST',
@@ -637,6 +676,7 @@ describe('release foundations API', () => {
     expect(actions.map(({ action }) => action)).toEqual(
       expect.arrayContaining([
         'environment.created',
+        'environment.updated',
         'environment.archived',
         'release.created',
         'release.activated',

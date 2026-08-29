@@ -13,6 +13,7 @@ import {
   releaseListQuerySchema,
   releaseParamsSchema,
   releaseProjectParamsSchema,
+  updateEnvironmentRequestSchema,
 } from '@caselog/schemas';
 import { createZodDto } from 'nestjs-zod';
 
@@ -25,6 +26,7 @@ export class CandidateTestRunParamsDto extends createZodDto(candidateTestRunPara
 export class ReleaseListQueryDto extends createZodDto(releaseListQuerySchema) {}
 export class CreateEnvironmentHeadersDto extends createZodDto(createEnvironmentHeadersSchema) {}
 export class CreateEnvironmentRequestDto extends createZodDto(createEnvironmentRequestSchema) {}
+export class UpdateEnvironmentRequestDto extends createZodDto(updateEnvironmentRequestSchema) {}
 export class CreateReleaseHeadersDto extends createZodDto(createReleaseHeadersSchema) {}
 export class CreateReleaseRequestDto extends createZodDto(createReleaseRequestSchema) {}
 export class CreateReleaseCandidateHeadersDto extends createZodDto(

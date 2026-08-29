@@ -34,7 +34,12 @@ export const environmentSummarySchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
-export const environmentListResponseSchema = z.object({ items: z.array(environmentSummarySchema) });
+export const environmentSettingsSummarySchema = environmentSummarySchema.extend({
+  activeReleaseCount: z.number().int().nonnegative(),
+});
+export const environmentListResponseSchema = z.object({
+  items: z.array(environmentSettingsSummarySchema),
+});
 export const createEnvironmentRequestSchema = z.object({
   name: z.string().trim().min(1).max(120),
   slug: z
@@ -49,6 +54,19 @@ export const createEnvironmentRequestSchema = z.object({
     .transform((value) => value || undefined),
 });
 export const createEnvironmentResponseSchema = z.object({ environment: environmentSummarySchema });
+export const updateEnvironmentRequestSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  slug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(50)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  description: z.string().trim().max(2_000).nullable(),
+});
+export const updateEnvironmentResponseSchema = z.object({
+  environment: environmentSettingsSummarySchema,
+});
 export const environmentLifecycleResponseSchema = z.object({
   environmentId: z.uuid(),
   state: environmentStateSchema,
@@ -191,9 +209,12 @@ export type ReleaseState = z.infer<typeof releaseStateSchema>;
 export type CandidateTestRunRole = z.infer<typeof candidateTestRunRoleSchema>;
 export type ReleaseListQuery = z.infer<typeof releaseListQuerySchema>;
 export type EnvironmentSummary = z.infer<typeof environmentSummarySchema>;
+export type EnvironmentSettingsSummary = z.infer<typeof environmentSettingsSummarySchema>;
 export type EnvironmentListResponse = z.infer<typeof environmentListResponseSchema>;
 export type CreateEnvironmentRequest = z.infer<typeof createEnvironmentRequestSchema>;
 export type CreateEnvironmentResponse = z.infer<typeof createEnvironmentResponseSchema>;
+export type UpdateEnvironmentRequest = z.infer<typeof updateEnvironmentRequestSchema>;
+export type UpdateEnvironmentResponse = z.infer<typeof updateEnvironmentResponseSchema>;
 export type EnvironmentLifecycleResponse = z.infer<typeof environmentLifecycleResponseSchema>;
 export type ReleaseSummary = z.infer<typeof releaseSummarySchema>;
 export type ReleaseListResponse = z.infer<typeof releaseListResponseSchema>;

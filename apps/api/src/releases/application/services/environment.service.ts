@@ -4,11 +4,14 @@ import {
   createEnvironmentResponseSchema,
   environmentLifecycleResponseSchema,
   environmentListResponseSchema,
+  updateEnvironmentResponseSchema,
   type CreateEnvironmentRequest,
   type CreateEnvironmentResponse,
   type EnvironmentLifecycleResponse,
   type EnvironmentListResponse,
   type OrganizationAccessPrincipal,
+  type UpdateEnvironmentRequest,
+  type UpdateEnvironmentResponse,
 } from '@caselog/schemas';
 import {
   AuthorizationDeniedError,
@@ -54,6 +57,31 @@ export class EnvironmentService {
     }
     if (result.kind === 'idempotency_conflict') throw this.idempotencyConflict();
     return createEnvironmentResponseSchema.parse({ environment: result.value });
+  }
+
+  async update(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    environmentId: string,
+    request: UpdateEnvironmentRequest,
+  ): Promise<UpdateEnvironmentResponse> {
+    this.assertManage(principal);
+    const result = await this.environments.update(
+      principal.organizationId,
+      projectSlug,
+      environmentId,
+      principal.sub,
+      request,
+    );
+    if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
+    if (result.kind === 'environment_not_found') throw new ResourceNotFoundError('environment');
+    if (result.kind === 'slug_conflict') {
+      throw new ResourceConflictError(
+        'environment_slug_taken',
+        'This environment URL is already in use in the project',
+      );
+    }
+    return updateEnvironmentResponseSchema.parse({ environment: result.value });
   }
 
   async archive(
@@ -103,7 +131,10 @@ export class EnvironmentService {
   }
 
   private assertManage(principal: OrganizationAccessPrincipal): void {
-    if (!['owner', 'admin', 'lead'].includes(principal.role)) {
+    if (
+      principal.tokenType !== 'organization' ||
+      !['owner', 'admin', 'lead'].includes(principal.role)
+    ) {
       throw new AuthorizationDeniedError();
     }
   }

@@ -86,6 +86,7 @@ function environment() {
     slug: 'production',
     description: 'Customer-facing production',
     state: 'active',
+    activeReleaseCount: 0,
     createdAt: '2026-08-20T12:00:00.000Z',
     updatedAt: '2026-08-20T12:00:00.000Z',
   };

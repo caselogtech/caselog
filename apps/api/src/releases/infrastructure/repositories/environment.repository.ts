@@ -3,8 +3,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import type {
   CreateEnvironmentRequest,
   EnvironmentLifecycleResponse,
+  EnvironmentSettingsSummary,
   EnvironmentState as PublicEnvironmentState,
   EnvironmentSummary,
+  UpdateEnvironmentRequest,
 } from '@caselog/schemas';
 import { appendAuditLog } from '../../../audit/public-api';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
@@ -16,9 +18,10 @@ import { EnvironmentState, Prisma, ReleaseState } from '../../../generated/prism
 import {
   environmentCreatedEvent,
   environmentStateChangedEvent,
+  environmentUpdatedEvent,
 } from '../../application/events/release-integration-event';
 import { appendReleaseIntegrationEvent } from '../persistence/release-event.persistence';
-import { toEnvironmentSummary } from '../persistence/release.mapper';
+import { toEnvironmentSettingsSummary, toEnvironmentSummary } from '../persistence/release.mapper';
 import type { IdempotentCreateResult, ProjectResult } from './release.repository.types';
 
 export type CreateEnvironmentResult =
@@ -29,6 +32,28 @@ export type EnvironmentLifecycleResult =
   | ProjectResult<EnvironmentLifecycleResponse>
   | { kind: 'environment_not_found' }
   | { kind: 'open_releases' };
+
+export type UpdateEnvironmentResult =
+  | ProjectResult<EnvironmentSettingsSummary>
+  | { kind: 'environment_not_found' }
+  | { kind: 'slug_conflict' };
+
+const ENVIRONMENT_SETTINGS_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  description: true,
+  state: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      releases: {
+        where: { state: { in: [ReleaseState.DRAFT, ReleaseState.ACTIVE] } },
+      },
+    },
+  },
+} satisfies Prisma.EnvironmentSelect;
 
 @Injectable()
 export class EnvironmentRepository {
@@ -46,9 +71,95 @@ export class EnvironmentRepository {
       const records = await transaction.environment.findMany({
         where: { projectId: project.id },
         orderBy: [{ state: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+        select: ENVIRONMENT_SETTINGS_SELECT,
       });
-      return { kind: 'found', value: records.map(toEnvironmentSummary) };
+      return { kind: 'found', value: records.map(toEnvironmentSettingsSummary) };
     });
+  }
+
+  async update(
+    organizationId: string,
+    projectSlug: string,
+    environmentId: string,
+    actorId: string,
+    request: UpdateEnvironmentRequest,
+  ): Promise<UpdateEnvironmentResult> {
+    try {
+      return await this.tenantDatabase.run(organizationId, async (transaction) => {
+        const projects = await transaction.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM projects
+          WHERE organization_id = ${organizationId}::uuid
+            AND slug = ${projectSlug}
+            AND deleted_at IS NULL
+          FOR SHARE
+        `;
+        const projectId = projects[0]?.id;
+        if (!projectId) return { kind: 'project_not_found' };
+
+        const records = await transaction.$queryRaw<
+          Array<{ id: string; name: string; slug: string; description: string | null }>
+        >`
+          SELECT id, name, slug, description
+          FROM environments
+          WHERE organization_id = ${organizationId}::uuid
+            AND project_id = ${projectId}::uuid
+            AND id = ${environmentId}::uuid
+          FOR UPDATE
+        `;
+        const current = records[0];
+        if (!current) return { kind: 'environment_not_found' };
+
+        const changedFields = [
+          ...(current.name !== request.name ? ['name'] : []),
+          ...(current.slug !== request.slug ? ['slug'] : []),
+          ...(current.description !== request.description ? ['description'] : []),
+        ];
+        const environment =
+          changedFields.length === 0
+            ? await transaction.environment.findUniqueOrThrow({
+                where: { organizationId_id: { organizationId, id: environmentId } },
+                select: ENVIRONMENT_SETTINGS_SELECT,
+              })
+            : await transaction.environment.update({
+                where: { organizationId_id: { organizationId, id: environmentId } },
+                data: request,
+                select: ENVIRONMENT_SETTINGS_SELECT,
+              });
+
+        if (changedFields.length > 0) {
+          await appendReleaseIntegrationEvent(
+            transaction,
+            environmentUpdatedEvent(
+              { organizationId, actorId, occurredAt: environment.updatedAt },
+              {
+                id: environment.id,
+                projectId,
+                name: environment.name,
+                slug: environment.slug,
+                description: environment.description,
+                changedFields,
+                sourceRevision: environment.updatedAt.toISOString(),
+              },
+            ),
+          );
+          await appendAuditLog(transaction, {
+            organizationId,
+            actorId,
+            actorType: 'user',
+            action: 'environment.updated',
+            targetType: 'environment',
+            targetId: environment.id,
+            metadata: { projectId, changedFields },
+          });
+        }
+        return { kind: 'found', value: toEnvironmentSettingsSummary(environment) };
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return { kind: 'slug_conflict' };
+      }
+      throw error;
+    }
   }
 
   async create(

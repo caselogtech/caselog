@@ -302,6 +302,7 @@ export {
   environmentLifecycleResponseSchema,
   environmentListResponseSchema,
   environmentParamsSchema,
+  environmentSettingsSummarySchema,
   environmentStateSchema,
   environmentSummarySchema,
   linkCandidateTestRunRequestSchema,
@@ -318,6 +319,8 @@ export {
   releaseProjectParamsSchema,
   releaseStateSchema,
   releaseSummarySchema,
+  updateEnvironmentRequestSchema,
+  updateEnvironmentResponseSchema,
   type CandidateTestRun,
   type CandidateTestRunListResponse,
   type CandidateTestRunResponse,
@@ -330,6 +333,7 @@ export {
   type CreateReleaseResponse,
   type EnvironmentLifecycleResponse,
   type EnvironmentListResponse,
+  type EnvironmentSettingsSummary,
   type EnvironmentState,
   type EnvironmentSummary,
   type LinkCandidateTestRunRequest,
@@ -342,6 +346,8 @@ export {
   type ReleaseListResponse,
   type ReleaseState,
   type ReleaseSummary,
+  type UpdateEnvironmentRequest,
+  type UpdateEnvironmentResponse,
 } from './release.js';
 export {
   caseExecutionHistoryItemSchema,

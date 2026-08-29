@@ -3,6 +3,7 @@ import type { IntegrationEventContract } from '../../../core/integration-events/
 
 export const RELEASE_INTEGRATION_EVENT = {
   environmentCreated: 'releases.environment_created',
+  environmentUpdated: 'releases.environment_updated',
   environmentStateChanged: 'releases.environment_state_changed',
   releaseCreated: 'releases.release_created',
   releaseStateChanged: 'releases.release_state_changed',
@@ -70,6 +71,34 @@ export function environmentStateChangedEvent(
       environmentId: change.environmentId,
       fromState: change.fromState,
       toState: change.toState,
+    },
+  });
+}
+
+export function environmentUpdatedEvent(
+  context: EventContext,
+  environment: {
+    id: string;
+    projectId: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    changedFields: string[];
+    sourceRevision: string;
+  },
+): ReleaseIntegrationEvent {
+  return event(context, RELEASE_INTEGRATION_EVENT.environmentUpdated, {
+    sourceType: 'environment',
+    sourceId: environment.id,
+    sourceRevision: environment.sourceRevision,
+    payload: {
+      actorId: context.actorId,
+      projectId: environment.projectId,
+      environmentId: environment.id,
+      name: environment.name,
+      slug: environment.slug,
+      description: environment.description,
+      changedFields: environment.changedFields.join(','),
     },
   });
 }
