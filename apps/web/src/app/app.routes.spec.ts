@@ -22,4 +22,14 @@ describe('application routes', () => {
   it('keeps reserved organization slugs unique', () => {
     expect(new Set(RESERVED_ORGANIZATION_SLUGS).size).toBe(RESERVED_ORGANIZATION_SLUGS.length);
   });
+
+  it('renders explicit system states and keeps the wildcard as not found', () => {
+    const statusRoute = routes.find(({ path }) => path === 'status');
+    expect(statusRoute?.children?.map(({ path }) => path)).toEqual([
+      'forbidden',
+      'offline',
+      'server-error',
+    ]);
+    expect(routes.at(-1)).toMatchObject({ path: '**', data: { kind: 'notFound' } });
+  });
 });

@@ -1,0 +1,33 @@
+{
+  "actions": {
+    "retry": "Try again",
+    "signIn": "Go to sign in",
+    "workspaces": "Go to workspaces"
+  },
+  "states": {
+    "forbidden": {
+      "code": "403",
+      "eyebrow": "Access denied",
+      "title": "You cannot open this page",
+      "description": "Your account does not have access to this workspace resource. Choose another workspace or ask an administrator to review your role."
+    },
+    "notFound": {
+      "code": "404",
+      "eyebrow": "Page not found",
+      "title": "This page does not exist",
+      "description": "The address may be incorrect, or the resource may have moved. Return to a workspace and continue from a known location."
+    },
+    "offline": {
+      "code": "OFF",
+      "eyebrow": "Connection unavailable",
+      "title": "Caselog is offline",
+      "description": "Check your network connection, then retry the page. Any locally preserved execution draft remains on this device."
+    },
+    "serverError": {
+      "code": "500",
+      "eyebrow": "Service unavailable",
+      "title": "Caselog could not load this page",
+      "description": "The service returned an unexpected error. Retry the page, or return to your workspaces if the problem continues."
+    }
+  }
+}

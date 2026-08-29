@@ -6,15 +6,17 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter, withRouterConfig } from '@angular/router';
+import { provideRouter, withNavigationErrorHandler, withRouterConfig } from '@angular/router';
 import { provideTransloco } from '@jsverse/transloco';
-import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { provideTanStackQuery } from '@tanstack/angular-query-experimental';
 
 import { routes } from './app.routes';
 import { BrowserSession } from './core/auth/browser-session';
-import { InstanceCapabilities } from './core/instance/instance-capabilities';
-import { TranslocoHttpLoader } from './core/i18n/transloco-loader';
 import { sessionAuthInterceptor } from './core/auth/session-auth.interceptor';
+import { TranslocoHttpLoader } from './core/i18n/transloco-loader';
+import { InstanceCapabilities } from './core/instance/instance-capabilities';
+import { APP_QUERY_CLIENT } from './core/query/app-query-client';
+import { navigationErrorRedirect } from './core/routing/navigation-error-redirect';
 import { AuthApi } from './features/auth/public-api';
 
 function restoreSession(): Promise<void> {
@@ -39,7 +41,11 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([sessionAuthInterceptor])),
     provideAppInitializer(restoreSession),
     provideAppInitializer(loadInstanceCapabilities),
-    provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' })),
+    provideRouter(
+      routes,
+      withRouterConfig({ paramsInheritanceStrategy: 'always' }),
+      withNavigationErrorHandler(navigationErrorRedirect),
+    ),
     provideTransloco({
       config: {
         availableLangs: ['en'],
@@ -50,13 +56,6 @@ export const appConfig: ApplicationConfig = {
       },
       loader: TranslocoHttpLoader,
     }),
-    provideTanStackQuery(
-      new QueryClient({
-        defaultOptions: {
-          queries: { retry: 1 },
-          mutations: { retry: false },
-        },
-      }),
-    ),
+    provideTanStackQuery(APP_QUERY_CLIENT),
   ],
 };

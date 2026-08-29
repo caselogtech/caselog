@@ -1,1 +1,10 @@
+@if (navigationProgress.visible()) {
+  <div
+    class="route-progress"
+    role="status"
+    [attr.aria-label]="'app.navigation.loadingRoute' | transloco"
+  >
+    <span></span>
+  </div>
+}
 <router-outlet />

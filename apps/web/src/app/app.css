@@ -2,3 +2,37 @@
   display: block;
   min-height: 100vh;
 }
+
+.route-progress {
+  background: var(--color-accent-100);
+  height: 3px;
+  left: 0;
+  overflow: hidden;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 100;
+}
+
+.route-progress span {
+  animation: route-progress 1.1s ease-in-out infinite;
+  background: var(--accent);
+  display: block;
+  height: 100%;
+  transform: translateX(-100%);
+  width: 45%;
+}
+
+@keyframes route-progress {
+  to {
+    transform: translateX(325%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-progress span {
+    animation: none;
+    transform: none;
+    width: 100%;
+  }
+}
