@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, type ParamMap } from '@angular/router';
-import type { EnvironmentSummary } from '@caselog/schemas';
+import type { EnvironmentSettingsSummary } from '@caselog/schemas';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { BehaviorSubject } from 'rxjs';
 import { i18nTestingModule } from '../../../../../../testing/i18n-testing';
@@ -8,12 +8,13 @@ import { WorkspaceSession } from '../../../../../core/auth/workspace-session';
 import { ProjectEnvironmentsApi } from '../../../data-access/project-environments-api';
 import { EnvironmentSettings } from '../../../pages/environments/environment-settings';
 
-const production: EnvironmentSummary = {
+const production: EnvironmentSettingsSummary = {
   id: '11111111-1111-4111-8111-111111111111',
   name: 'Production',
   slug: 'production',
   description: 'Customer-facing production',
   state: 'active',
+  activeReleaseCount: 2,
   createdAt: '2026-08-20T12:00:00.000Z',
   updatedAt: '2026-08-20T12:00:00.000Z',
 };
@@ -22,6 +23,7 @@ describe('EnvironmentSettings', () => {
   const environmentsApi = {
     list: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
     changeState: vi.fn(),
   };
   let queryClient: QueryClient;
@@ -32,6 +34,7 @@ describe('EnvironmentSettings', () => {
     routeParams = new BehaviorSubject(convertToParamMap({ org: 'acme', project: 'checkout' }));
     environmentsApi.list.mockReset().mockResolvedValue({ items: [production] });
     environmentsApi.create.mockReset().mockResolvedValue({ environment: production });
+    environmentsApi.update.mockReset().mockResolvedValue({ environment: production });
     environmentsApi.changeState.mockReset().mockResolvedValue({
       environmentId: production.id,
       state: 'archived',
@@ -88,6 +91,24 @@ describe('EnvironmentSettings', () => {
       expect.stringMatching(/^[0-9a-f-]{36}$/),
     );
     await vi.waitFor(() => expect(fixture.componentInstance.showCreate()).toBe(false));
+  });
+
+  it('updates the selected environment and closes the edit form', async () => {
+    const fixture = TestBed.createComponent(EnvironmentSettings);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.environments.isSuccess()).toBe(true));
+    const request = {
+      name: 'Production EU',
+      slug: 'production-eu',
+      description: null,
+    };
+
+    fixture.componentInstance.openEdit(production);
+    fixture.componentInstance.update(request);
+    await vi.waitFor(() => expect(environmentsApi.update).toHaveBeenCalledOnce());
+
+    expect(environmentsApi.update).toHaveBeenCalledWith('acme', 'checkout', production.id, request);
+    await vi.waitFor(() => expect(fixture.componentInstance.editTarget()).toBeNull());
   });
 
   it('requires confirmation before archiving an environment', async () => {

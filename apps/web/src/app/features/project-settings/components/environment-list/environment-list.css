@@ -65,8 +65,15 @@ dt {
 dl {
   display: grid;
   gap: var(--space-2);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
 }
 
 dt {
@@ -85,7 +92,8 @@ dd {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .environment-list > li > .app-button {
+  .actions {
+    justify-content: flex-start;
     justify-self: start;
   }
 }
@@ -99,5 +107,11 @@ dd {
 
   dl {
     grid-template-columns: 1fr;
+  }
+
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+    justify-self: stretch;
   }
 }

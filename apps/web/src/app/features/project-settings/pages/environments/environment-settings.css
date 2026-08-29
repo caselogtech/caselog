@@ -37,6 +37,7 @@ h2 {
 
 app-callout,
 app-environment-create-form,
+app-environment-edit-form,
 app-page-state {
   display: block;
   margin-bottom: var(--space-4);

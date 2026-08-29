@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import type { CreateEnvironmentRequest } from '@caselog/schemas';
+import type {
+  CreateEnvironmentRequest,
+  EnvironmentSettingsSummary,
+  UpdateEnvironmentRequest,
+} from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
@@ -16,6 +20,7 @@ import {
   PageState,
 } from '../../../../shared/ui/public-api';
 import { EnvironmentCreateForm } from '../../components/environment-create-form/environment-create-form';
+import { EnvironmentEditForm } from '../../components/environment-edit-form/environment-edit-form';
 import {
   EnvironmentList,
   type EnvironmentStateChangeRequest,
@@ -27,6 +32,11 @@ type EnvironmentSubmission = {
   request: CreateEnvironmentRequest;
 };
 
+type EnvironmentUpdateSubmission = {
+  environmentId: string;
+  request: UpdateEnvironmentRequest;
+};
+
 @Component({
   selector: 'app-environment-settings',
   imports: [
@@ -34,6 +44,7 @@ type EnvironmentSubmission = {
     Callout,
     Dialog,
     EnvironmentCreateForm,
+    EnvironmentEditForm,
     EnvironmentList,
     LoadingSkeleton,
     PageState,
@@ -56,6 +67,7 @@ export class EnvironmentSettings {
   readonly workspaceSlug = computed(() => this.routeParams().get('org') ?? '');
   readonly projectSlug = computed(() => this.routeParams().get('project') ?? '');
   readonly showCreate = signal(false);
+  readonly editTarget = signal<EnvironmentSettingsSummary | null>(null);
   readonly confirmation = signal<EnvironmentStateChangeRequest | null>(null);
   readonly canManage = computed(() => hasWorkspacePermission(this.workspaceSession.role(), 'lead'));
 
@@ -87,9 +99,20 @@ export class EnvironmentSettings {
       ),
     onSuccess: () => this.invalidateEnvironmentQueries(),
   }));
+  readonly updateEnvironment = injectMutation(() => ({
+    mutationFn: ({ environmentId, request }: EnvironmentUpdateSubmission) =>
+      this.environmentsApi.update(this.workspaceSlug(), this.projectSlug(), environmentId, request),
+    onSuccess: async () => {
+      this.editTarget.set(null);
+      await this.invalidateEnvironmentQueries();
+    },
+  }));
 
   openCreate(): void {
-    if (this.canManage() && !this.createEnvironment.isPending()) this.showCreate.set(true);
+    if (this.canManage() && !this.createEnvironment.isPending()) {
+      this.editTarget.set(null);
+      this.showCreate.set(true);
+    }
   }
 
   create(request: CreateEnvironmentRequest): void {
@@ -98,6 +121,19 @@ export class EnvironmentSettings {
       request,
       idempotencyKey: this.idempotency.keyFor(request),
     });
+  }
+
+  openEdit(environment: EnvironmentSettingsSummary): void {
+    if (this.canManage() && !this.updateEnvironment.isPending()) {
+      this.showCreate.set(false);
+      this.editTarget.set(environment);
+    }
+  }
+
+  update(request: UpdateEnvironmentRequest): void {
+    const environment = this.editTarget();
+    if (!environment || !this.canManage() || this.updateEnvironment.isPending()) return;
+    this.updateEnvironment.mutate({ environmentId: environment.id, request });
   }
 
   requestStateChange(request: EnvironmentStateChangeRequest): void {
@@ -123,7 +159,10 @@ export class EnvironmentSettings {
 
   errorTranslationKey(): string {
     return apiErrorTranslationKey(
-      this.createEnvironment.error() ?? this.changeState.error() ?? this.environments.error(),
+      this.createEnvironment.error() ??
+        this.updateEnvironment.error() ??
+        this.changeState.error() ??
+        this.environments.error(),
     );
   }
 }

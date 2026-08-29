@@ -57,6 +57,30 @@ describe('ProjectEnvironmentsApi', () => {
     await expect(response).resolves.toMatchObject({ environment: { name: 'Production' } });
   });
 
+  it('updates the full editable environment snapshot', async () => {
+    const environmentId = environment().id;
+    const requestBody = {
+      name: 'Production EU',
+      slug: 'production-eu',
+      description: null,
+    };
+    const response = TestBed.inject(ProjectEnvironmentsApi).update(
+      'acme',
+      'checkout',
+      environmentId,
+      requestBody,
+    );
+    await Promise.resolve();
+    const request = TestBed.inject(HttpTestingController).expectOne(
+      `/api/v1/projects/checkout/environments/${environmentId}`,
+    );
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual(requestBody);
+    request.flush({ environment: { ...environment(), ...requestBody } });
+
+    await expect(response).resolves.toMatchObject({ environment: requestBody });
+  });
+
   it('posts explicit archive and restore lifecycle actions', async () => {
     const api = TestBed.inject(ProjectEnvironmentsApi);
     const http = TestBed.inject(HttpTestingController);

@@ -5,7 +5,7 @@
       <h2 id="environment-settings-title">{{ 'projectSettings.environments.title' | transloco }}</h2>
       <p class="description">{{ 'projectSettings.environments.description' | transloco }}</p>
     </div>
-    @if (canManage() && !showCreate()) {
+    @if (canManage() && !showCreate() && !editTarget()) {
       <button appButton="primary" type="button" (click)="openCreate()">
         <span aria-hidden="true">＋</span>
         {{ 'projectSettings.environments.create' | transloco }}
@@ -27,7 +27,16 @@
     />
   }
 
-  @if (createEnvironment.isError() || changeState.isError()) {
+  @if (editTarget(); as environment) {
+    <app-environment-edit-form
+      [environment]="environment"
+      [pending]="updateEnvironment.isPending()"
+      (submitted)="update($event)"
+      (cancelled)="editTarget.set(null)"
+    />
+  }
+
+  @if (createEnvironment.isError() || updateEnvironment.isError() || changeState.isError()) {
     <app-callout
       tone="danger"
       liveRole="alert"
@@ -77,7 +86,8 @@
       <app-environment-list
         [environments]="response.items"
         [canManage]="canManage()"
-        [pending]="changeState.isPending()"
+        [pending]="changeState.isPending() || updateEnvironment.isPending()"
+        (editRequested)="openEdit($event)"
         (stateChangeRequested)="requestStateChange($event)"
       />
     }

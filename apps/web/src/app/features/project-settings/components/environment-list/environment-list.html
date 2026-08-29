@@ -16,6 +16,10 @@
 
       <dl>
         <div>
+          <dt>{{ 'projectSettings.environments.openReleases' | transloco }}</dt>
+          <dd>{{ environment.activeReleaseCount }}</dd>
+        </div>
+        <div>
           <dt>{{ 'projectSettings.environments.created' | transloco }}</dt>
           <dd>{{ environment.createdAt | date: 'mediumDate' }}</dd>
         </div>
@@ -26,14 +30,24 @@
       </dl>
 
       @if (canManage()) {
-        <button
-          [appButton]="actionVariant(environment)"
-          type="button"
-          [disabled]="pending()"
-          (click)="requestStateChange(environment)"
-        >
-          {{ state.actionLabelKey | transloco }}
-        </button>
+        <div class="actions">
+          <button
+            appButton="secondary"
+            type="button"
+            [disabled]="pending()"
+            (click)="requestEdit(environment)"
+          >
+            {{ 'projectSettings.environments.edit' | transloco }}
+          </button>
+          <button
+            [appButton]="actionVariant(environment)"
+            type="button"
+            [disabled]="pending()"
+            (click)="requestStateChange(environment)"
+          >
+            {{ state.actionLabelKey | transloco }}
+          </button>
+        </div>
       }
     </li>
   }

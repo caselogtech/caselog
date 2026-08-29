@@ -4,10 +4,13 @@ import {
   createEnvironmentResponseSchema,
   environmentLifecycleResponseSchema,
   environmentListResponseSchema,
+  updateEnvironmentResponseSchema,
   type CreateEnvironmentRequest,
   type CreateEnvironmentResponse,
   type EnvironmentLifecycleResponse,
   type EnvironmentListResponse,
+  type UpdateEnvironmentRequest,
+  type UpdateEnvironmentResponse,
 } from '@caselog/schemas';
 import { lastValueFrom } from 'rxjs';
 import { WorkspaceAccess } from '../../workspace/public-api';
@@ -42,6 +45,22 @@ export class ProjectEnvironmentsApi {
       ),
     );
     return createEnvironmentResponseSchema.parse(response);
+  }
+
+  async update(
+    workspaceSlug: string,
+    projectSlug: string,
+    environmentId: string,
+    request: UpdateEnvironmentRequest,
+  ): Promise<UpdateEnvironmentResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.patch<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/environments/${encodeURIComponent(environmentId)}`,
+        request,
+      ),
+    );
+    return updateEnvironmentResponseSchema.parse(response);
   }
 
   async changeState(
