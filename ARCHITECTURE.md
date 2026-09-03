@@ -135,6 +135,7 @@ an accepted target row reserves its boundary but does not claim that code alread
 | Module | Owns |
 |---|---|
 | `instance` | public deployment identity and server-enforced capability configuration |
+| `billing` | managed-service billing accounts, account membership, and commercial workspace grouping; never workspace data access |
 | `auth` | identities, sessions, workspace lifecycle, org-scoped token exchange |
 | `members` | membership and invitation workflows |
 | `projects` | project lifecycle and project defaults |
@@ -300,6 +301,32 @@ Tenant isolation applies to every path to tenant-owned data:
 Direct access to tenant-owned Prisma models outside repositories is forbidden. Global
 tables and bootstrap queries are explicit exceptions, not ways to bypass tenant
 scope. ADR 0002 and ADR 0006 describe the complete decision.
+
+### Billing account boundary
+
+`BillingAccount` is a managed-service commercial boundary above organizations; it is not
+a data tenant. One billing account may group many organizations/workspaces, while every
+organization keeps its own memberships, tokens, repositories, transaction context, and
+PostgreSQL RLS boundary.
+
+- Billing-account membership authorizes billing-account administration only and never
+  grants implicit access to a workspace.
+- Creating a workspace under a billing account requires account owner/admin authority and
+  creates an explicit workspace owner membership.
+- Retryable billing-account and managed-workspace creation is idempotent in the global
+  session boundary, scoped by user and use case; its records are protected by user-context
+  RLS and do not reuse organization-scoped idempotency storage.
+- The `billing` module verifies account authority, then calls the stable workspace
+  provisioning service exported by `auth`. `auth` receives the authorized account ID and
+  persists it on the organization; it never reads billing tables or decides commercial
+  policy.
+- Self-hosted organizations may keep a null billing-account reference. Core feature modules
+  never branch on a price, subscription plan, or paid entitlement.
+- Usage aggregation may roll workspace-attributed operational measurements up to a billing
+  account, but source records remain tenant-scoped and cannot be queried across workspaces
+  through a product-domain repository.
+
+ADR 0014 defines the hierarchy and commercial implications.
 
 ## 5. API and contracts
 

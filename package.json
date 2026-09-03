@@ -2,7 +2,7 @@
   "name": "caselog",
   "version": "0.0.0",
   "private": true,
-  "description": "Open-source test management for manual and automated testing",
+  "description": "Open-source release readiness with built-in test management",
   "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.15.0",
   "engines": {

@@ -7,13 +7,17 @@ Caselog is being built to answer one question for an immutable release candidate
 external evidence feed deterministic, explainable policies that can be inspected by a
 person and enforced by CI.
 
-The repository is under active development. The test-management foundation and backend
-release-candidate lifecycle are usable in development. Quality evidence, versioned
-policies, readiness decisions, and their product UI are the next product-defining scope.
+The repository is under active development. Test management, immutable release
+candidates, normalized evidence, versioned readiness policies, deterministic decisions,
+waivers, and their primary UI workflows are usable in development. The committed feature
+set is now closed while those capabilities are hardened for real self-hosted use.
 
-Caselog is intended to run as a complete self-hosted OSS product. A future managed
-service may operate the same application artifacts and features for teams that do not
-want to run it themselves.
+Caselog is intended to run as a complete self-hosted OSS product. An optional managed
+service will operate the same application artifacts and features for teams that do not
+want to run it themselves. Its planned shared-service launch offer is USD 199 per billing
+account/month with unlimited users, workspaces, projects, and product features, plus
+published allowances for cost-driving infrastructure usage. A billing account is only a
+commercial grouping: every workspace remains an independently authorized RLS tenant.
 
 ## Architecture
 

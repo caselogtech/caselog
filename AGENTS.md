@@ -22,9 +22,17 @@ Keep these invariants visible in every design:
   or proprietary control plane;
 - a future managed service must run the same application artifacts, schema, migrations,
   and core features as the self-hosted product;
+- the managed shared-service launch offer is USD 199 per billing account/month, with
+  unlimited users, workspaces, projects, and product features plus explicit allowances for
+  cost-driving usage;
+- a billing account is a commercial grouping above workspaces, never a tenant or an
+  implicit source of workspace access;
 - API and CLI behavior are first-class product surfaces, not secondary wrappers around UI;
 - implement validated product scope only; avoid speculative integrations and generic
-  platform abstractions.
+  platform abstractions;
+- the committed feature set is intentionally closed while it is hardened; prioritize
+  correctness, UX, accessibility, performance, operability, and documentation over new
+  feature categories.
 
 ## 2. Sources of truth
 
@@ -208,6 +216,19 @@ Tenant isolation is a system invariant:
   levels where applicable;
 - tenant context comes from the authenticated principal, never from a trusted body field;
 - authorization is enforced server-side; hidden UI controls are convenience only.
+
+Managed billing uses a separate hierarchy:
+
+```text
+Billing account / company -> workspace / organization -> project
+```
+
+Billing-account membership authorizes commercial administration only. It never replaces
+workspace membership, organization tokens, repository tenant context, or RLS. A workspace
+created under an account still receives an explicit owner. Self-hosted workspaces may have
+no billing account. Prices and allowances belong to product documentation and managed
+configuration; never hard-code them into readiness, test-management, or tenant-domain
+behavior.
 
 Never place secrets, tokens, credentials, raw sensitive evidence, or unnecessary PII in
 source, fixtures, logs, errors, or commits. Validate and bound all external input, parsing,
