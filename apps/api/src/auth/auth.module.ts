@@ -33,6 +33,10 @@ import { WorkspacePurgeService } from './application/services/workspace-purge.se
 import { WorkspacePurgeRepository } from './infrastructure/repositories/workspace-purge.repository';
 import { WorkspacePurgeWorker } from './presentation/workers/workspace-purge.worker';
 import { RefreshSessionCookieService } from './infrastructure/cookies/refresh-session-cookie.service';
+import {
+  createWorkspaceProvisioningConfig,
+  WORKSPACE_PROVISIONING_CONFIG,
+} from './infrastructure/config/workspace-provisioning.config';
 
 @Module({
   imports: [InstanceModule, JwtModule.register({}), PassportModule.register({ session: false })],
@@ -45,6 +49,10 @@ import { RefreshSessionCookieService } from './infrastructure/cookies/refresh-se
   providers: [
     { provide: AUTH_CONFIG, useFactory: createAuthConfig },
     { provide: WORKSPACE_PURGE_CONFIG, useFactory: createWorkspacePurgeConfig },
+    {
+      provide: WORKSPACE_PROVISIONING_CONFIG,
+      useFactory: createWorkspaceProvisioningConfig,
+    },
     AccountTokenRepository,
     ApiTokenRepository,
     ApiTokenService,

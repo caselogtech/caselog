@@ -322,11 +322,38 @@ PostgreSQL RLS boundary.
   policy.
 - Self-hosted organizations may keep a null billing-account reference. Core feature modules
   never branch on a price, subscription plan, or paid entitlement.
+- Workspace quantity is unlimited by default. An operator may configure a positive
+  per-user provisioning safety limit, but it is deployment protection rather than a plan
+  entitlement and managed billing-account provisioning does not use it.
 - Usage aggregation may roll workspace-attributed operational measurements up to a billing
   account, but source records remain tenant-scoped and cannot be queried across workspaces
   through a product-domain repository.
 
 ADR 0014 defines the hierarchy and commercial implications.
+
+### Identity and role scopes
+
+`User` is a global identity and has no global product role. Authority is attached to an
+explicit relationship and therefore remains scoped:
+
+- workspace roles live on `Membership`: `owner`, `admin`, `lead`, `tester`,
+  `contributor`, or `read_only`;
+- billing roles live on `BillingAccountMembership`: `owner` or `admin`, and grant no
+  workspace authority;
+- instance operation is a deployment responsibility and must not be inferred from either
+  membership type.
+
+Creating a workspace creates its first `owner` membership. Invitations may assign any
+workspace role except `owner`; ownership changes only through the atomic ownership-transfer
+use case. A user accepting an invitation receives its stored role. The account creator is
+the initial billing-account owner; adding billing-account administrators requires the
+dedicated account-administration use case rather than writing workspace membership.
+
+The authorization guard currently maps `read_only -> read`, `contributor/tester -> write`,
+`lead -> lead`, and `admin/owner -> admin`, with stricter ownership and peer-management
+rules enforced by the owning application service. `tester` and `contributor` are currently
+authorization-equivalent; they must either receive an explicitly documented distinction or
+be consolidated before the stable public release.
 
 ## 5. API and contracts
 

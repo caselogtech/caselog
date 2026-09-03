@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { InstanceCapabilitiesService } from '../../../instance/public-api';
 import { AuthService } from '../../application/services/auth.service';
 import { WorkspaceService } from '../../application/services/workspace.service';
@@ -35,6 +35,7 @@ describe('auth instance policies', () => {
       {} as never,
       {} as never,
       capabilities({ workspaceCreationEnabled: false }),
+      { maximumWorkspacesPerUser: null },
     );
 
     await expect(
@@ -50,6 +51,7 @@ describe('auth instance policies', () => {
       {} as never,
       {} as never,
       capabilities({ deployment: 'managed', managedBillingEnabled: true }),
+      { maximumWorkspacesPerUser: null },
     );
 
     await expect(
@@ -58,6 +60,38 @@ describe('auth instance policies', () => {
         slug: 'managed-workspace',
       }),
     ).rejects.toMatchObject({ code: 'billing_account_required' });
+  });
+
+  it('passes the configured operational limit to atomic workspace provisioning', async () => {
+    const provision = vi.fn().mockResolvedValue({ kind: 'limit_reached' });
+    const service = new WorkspaceService(
+      { provision } as never,
+      {
+        findById: vi.fn().mockResolvedValue({
+          id: 'e1243c05-c62a-4f74-9719-ae8e498cbfcc',
+          email: 'verified@example.com',
+          displayName: 'Verified User',
+          emailVerified: true,
+        }),
+      } as never,
+      capabilities({}),
+      { maximumWorkspacesPerUser: 25 },
+    );
+
+    await expect(
+      service.create('e1243c05-c62a-4f74-9719-ae8e498cbfcc', {
+        name: 'Limited Workspace',
+        slug: 'limited-workspace',
+      }),
+    ).rejects.toMatchObject({ code: 'workspace_limit_reached' });
+    expect(provision).toHaveBeenCalledWith(
+      'e1243c05-c62a-4f74-9719-ae8e498cbfcc',
+      'Limited Workspace',
+      'limited-workspace',
+      null,
+      25,
+      undefined,
+    );
   });
 });
 

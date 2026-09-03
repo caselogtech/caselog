@@ -19,6 +19,10 @@ import {
   WorkspaceCreationDisabledError,
 } from '../../../common/errors/domain.error';
 import { InstanceCapabilitiesService } from '../../../instance/public-api';
+import {
+  WORKSPACE_PROVISIONING_CONFIG,
+  type WorkspaceProvisioningConfig,
+} from '../../infrastructure/config/workspace-provisioning.config';
 import { IdentityRepository } from '../../infrastructure/repositories/identity.repository';
 import { WorkspaceRepository } from '../../infrastructure/repositories/workspace.repository';
 
@@ -29,6 +33,8 @@ export class WorkspaceService {
     @Inject(IdentityRepository) private readonly identities: IdentityRepository,
     @Inject(InstanceCapabilitiesService)
     private readonly capabilities: InstanceCapabilitiesService,
+    @Inject(WORKSPACE_PROVISIONING_CONFIG)
+    private readonly provisioningConfig: WorkspaceProvisioningConfig,
   ) {}
 
   async list(userId: string, query: WorkspaceListQuery): Promise<WorkspaceListResponse> {
@@ -50,7 +56,7 @@ export class WorkspaceService {
     if (this.capabilities.managedBillingEnabled()) {
       throw new BillingAccountRequiredError();
     }
-    return this.provision(userId, request, null, true);
+    return this.provision(userId, request, null, this.provisioningConfig.maximumWorkspacesPerUser);
   }
 
   async createForBillingAccount(
@@ -59,7 +65,7 @@ export class WorkspaceService {
     idempotencyKey: string,
     request: CreateWorkspaceRequest,
   ): Promise<CreateWorkspaceResponse> {
-    return this.provision(userId, request, billingAccountId, false, {
+    return this.provision(userId, request, billingAccountId, null, {
       key: idempotencyKey,
       requestHash: hashRequest(request),
       scope: `billing-account:${billingAccountId}:workspaces:create`,
@@ -70,7 +76,7 @@ export class WorkspaceService {
     userId: string,
     request: CreateWorkspaceRequest,
     billingAccountId: string | null,
-    enforceUserLimit: boolean,
+    maximumWorkspacesPerUser: number | null,
     idempotency?: { key: string; requestHash: string; scope: string },
   ): Promise<CreateWorkspaceResponse> {
     if (!this.capabilities.workspaceCreationEnabled()) {
@@ -89,13 +95,13 @@ export class WorkspaceService {
       request.name,
       request.slug,
       billingAccountId,
-      enforceUserLimit,
+      maximumWorkspacesPerUser,
       idempotency,
     );
     if (result.kind === 'limit_reached') {
       throw new ResourceConflictError(
         'workspace_limit_reached',
-        'This account has reached its workspace limit',
+        'This account has reached the configured workspace safety limit',
       );
     }
     if (result.kind === 'slug_conflict') {

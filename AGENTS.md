@@ -228,7 +228,8 @@ workspace membership, organization tokens, repository tenant context, or RLS. A 
 created under an account still receives an explicit owner. Self-hosted workspaces may have
 no billing account. Prices and allowances belong to product documentation and managed
 configuration; never hard-code them into readiness, test-management, or tenant-domain
-behavior.
+behavior. Logical workspace count is unlimited by default. Any deployment safety limit
+must be explicit, validated configuration rather than a product or licensing restriction.
 
 Never place secrets, tokens, credentials, raw sensitive evidence, or unnecessary PII in
 source, fixtures, logs, errors, or commits. Validate and bound all external input, parsing,

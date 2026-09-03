@@ -109,7 +109,7 @@
     "upload_limit_reached": "Too many files are waiting to upload. Finish or remove existing uploads first.",
     "upload_incomplete": "A file did not finish uploading or failed integrity checks. Upload it again.",
     "validation_failed": "Check the entered information and try again.",
-    "workspace_limit_reached": "This account has reached its workspace limit.",
+    "workspace_limit_reached": "This account has reached the configured workspace safety limit.",
     "workspace_creation_disabled": "Workspace creation is disabled on this instance.",
     "workspace_confirmation_mismatch": "Enter the workspace name exactly as shown.",
     "workspace_recovery_window_expired": "This workspace can no longer be restored because its recovery window has expired.",

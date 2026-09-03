@@ -11,8 +11,6 @@ import {
 } from '../../../core/database/infrastructure/persistence/session-idempotency';
 import { DEFAULT_PROJECT_STATUSES } from '../../../projects/public-api';
 
-const MAX_WORKSPACES_PER_USER = 5;
-
 const ROLE_MAP: Record<MembershipRole, WorkspaceSummary['role']> = {
   OWNER: 'owner',
   ADMIN: 'admin',
@@ -99,7 +97,7 @@ export class WorkspaceRepository {
     name: string,
     slug: string,
     billingAccountId: string | null,
-    enforceUserLimit: boolean,
+    maximumWorkspacesPerUser: number | null,
     idempotency?: { key: string; requestHash: string; scope: string },
   ): Promise<ProvisionWorkspaceResult> {
     try {
@@ -122,11 +120,13 @@ export class WorkspaceRepository {
           if (previous?.kind === 'replay') return { kind: 'replayed', value: previous.value };
         }
 
-        const existing = await transaction.$queryRaw<Array<{ count: bigint }>>`
-          SELECT public.count_current_user_workspaces() AS count
-        `;
-        if (enforceUserLimit && (existing[0]?.count ?? 0n) >= BigInt(MAX_WORKSPACES_PER_USER)) {
-          return { kind: 'limit_reached' };
+        if (maximumWorkspacesPerUser !== null) {
+          const existing = await transaction.$queryRaw<Array<{ count: bigint }>>`
+            SELECT public.count_current_user_workspaces() AS count
+          `;
+          if ((existing[0]?.count ?? 0n) >= BigInt(maximumWorkspacesPerUser)) {
+            return { kind: 'limit_reached' };
+          }
         }
         const [availability] = await transaction.$queryRaw<Array<{ available: boolean }>>`
           SELECT public.workspace_slug_is_available(${slug}::VARCHAR(30)) AS available
