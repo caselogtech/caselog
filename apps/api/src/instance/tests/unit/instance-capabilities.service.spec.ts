@@ -16,6 +16,7 @@ describe('InstanceCapabilitiesService', () => {
     expect(service.current()).toEqual(capabilities);
     expect(service.publicRegistrationEnabled()).toBe(false);
     expect(service.workspaceCreationEnabled()).toBe(false);
+    expect(service.managedBillingEnabled()).toBe(false);
     expect(service.managedTermsRequired()).toBe(false);
   });
 
@@ -30,5 +31,6 @@ describe('InstanceCapabilitiesService', () => {
 
     expect(service.publicRegistrationEnabled()).toBe(true);
     expect(service.managedTermsRequired()).toBe(true);
+    expect(service.managedBillingEnabled()).toBe(true);
   });
 });

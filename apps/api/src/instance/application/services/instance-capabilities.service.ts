@@ -18,6 +18,10 @@ export class InstanceCapabilitiesService {
     return this.capabilities.workspaceCreationEnabled;
   }
 
+  managedBillingEnabled(): boolean {
+    return this.capabilities.managedBillingEnabled;
+  }
+
   managedTermsRequired(): boolean {
     return this.capabilities.deployment === 'managed';
   }

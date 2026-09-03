@@ -74,6 +74,8 @@ import { RefreshSessionCookieService } from './infrastructure/cookies/refresh-se
     OrganizationAuthGuard,
     OrganizationRoleGuard,
     RefreshSessionCookieService,
+    SessionAuthGuard,
+    WorkspaceService,
   ],
 })
 export class AuthModule {}

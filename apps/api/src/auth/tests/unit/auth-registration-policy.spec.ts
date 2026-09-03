@@ -44,6 +44,21 @@ describe('auth instance policies', () => {
       }),
     ).rejects.toMatchObject({ code: 'workspace_creation_disabled' });
   });
+
+  it('requires the billing-account provisioning route on managed billing instances', async () => {
+    const service = new WorkspaceService(
+      {} as never,
+      {} as never,
+      capabilities({ deployment: 'managed', managedBillingEnabled: true }),
+    );
+
+    await expect(
+      service.create('e1243c05-c62a-4f74-9719-ae8e498cbfcc', {
+        name: 'Managed Workspace',
+        slug: 'managed-workspace',
+      }),
+    ).rejects.toMatchObject({ code: 'billing_account_required' });
+  });
 });
 
 function authService(instanceCapabilities: InstanceCapabilitiesService): AuthService {

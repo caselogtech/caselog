@@ -29,7 +29,7 @@ export class InvalidAccountTokenError extends DomainError {
 
 export class EmailVerificationRequiredError extends DomainError {
   constructor() {
-    super('email_verification_required', 'Verify your email before creating a workspace');
+    super('email_verification_required', 'Verify your email to continue');
   }
 }
 
@@ -48,6 +48,15 @@ export class ManagedTermsRequiredError extends DomainError {
 export class WorkspaceCreationDisabledError extends DomainError {
   constructor() {
     super('workspace_creation_disabled', 'Workspace creation is disabled on this instance');
+  }
+}
+
+export class BillingAccountRequiredError extends DomainError {
+  constructor() {
+    super(
+      'billing_account_required',
+      'Select a billing account before creating a managed workspace',
+    );
   }
 }
 

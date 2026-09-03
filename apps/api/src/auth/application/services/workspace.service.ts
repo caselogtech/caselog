@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   createWorkspaceResponseSchema,
@@ -11,6 +12,7 @@ import {
   type WorkspaceSlugAvailabilityResponse,
 } from '@caselog/schemas';
 import {
+  BillingAccountRequiredError,
   EmailVerificationRequiredError,
   InvalidSessionError,
   ResourceConflictError,
@@ -45,6 +47,32 @@ export class WorkspaceService {
   }
 
   async create(userId: string, request: CreateWorkspaceRequest): Promise<CreateWorkspaceResponse> {
+    if (this.capabilities.managedBillingEnabled()) {
+      throw new BillingAccountRequiredError();
+    }
+    return this.provision(userId, request, null, true);
+  }
+
+  async createForBillingAccount(
+    userId: string,
+    billingAccountId: string,
+    idempotencyKey: string,
+    request: CreateWorkspaceRequest,
+  ): Promise<CreateWorkspaceResponse> {
+    return this.provision(userId, request, billingAccountId, false, {
+      key: idempotencyKey,
+      requestHash: hashRequest(request),
+      scope: `billing-account:${billingAccountId}:workspaces:create`,
+    });
+  }
+
+  private async provision(
+    userId: string,
+    request: CreateWorkspaceRequest,
+    billingAccountId: string | null,
+    enforceUserLimit: boolean,
+    idempotency?: { key: string; requestHash: string; scope: string },
+  ): Promise<CreateWorkspaceResponse> {
     if (!this.capabilities.workspaceCreationEnabled()) {
       throw new WorkspaceCreationDisabledError();
     }
@@ -56,7 +84,14 @@ export class WorkspaceService {
       throw new EmailVerificationRequiredError();
     }
 
-    const result = await this.workspaces.provision(userId, request.name, request.slug);
+    const result = await this.workspaces.provision(
+      userId,
+      request.name,
+      request.slug,
+      billingAccountId,
+      enforceUserLimit,
+      idempotency,
+    );
     if (result.kind === 'limit_reached') {
       throw new ResourceConflictError(
         'workspace_limit_reached',
@@ -66,6 +101,16 @@ export class WorkspaceService {
     if (result.kind === 'slug_conflict') {
       throw new ResourceConflictError('workspace_slug_taken', 'This workspace URL is unavailable');
     }
+    if (result.kind === 'idempotency_conflict') {
+      throw new ResourceConflictError(
+        'idempotency_conflict',
+        'This idempotency key was already used for a different request',
+      );
+    }
     return createWorkspaceResponseSchema.parse(result.value);
   }
+}
+
+function hashRequest(request: unknown): string {
+  return createHash('sha256').update(JSON.stringify(request)).digest('hex');
 }

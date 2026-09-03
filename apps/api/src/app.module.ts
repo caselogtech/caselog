@@ -5,6 +5,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { AttachmentModule } from './attachments/attachment.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
+import { BillingModule } from './billing/public-api';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { DatabaseModule } from './core/database/database.module';
 import { HealthModule } from './core/health/health.module';
@@ -39,6 +40,7 @@ import { QualityEvidenceModule } from './quality-evidence/public-api';
     IntegrationModule,
     InstanceModule,
     AuthModule,
+    BillingModule,
     MembersModule,
     ProjectModule,
     ReportingModule,

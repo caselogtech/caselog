@@ -596,6 +596,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/billing/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["BillingAccountController_list"];
+        put?: never;
+        post: operations["BillingAccountController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/accounts/{billingAccountId}/workspaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BillingAccountController_createWorkspace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invitations/{token}": {
         parameters: {
             query?: never;
@@ -2156,6 +2188,58 @@ export interface components {
                 createdAt: string;
             };
             attachmentWarnings: string[];
+        };
+        BillingAccountListResponseDto: {
+            billingAccounts: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                /** @enum {string} */
+                role: "owner" | "admin";
+                workspaceCount: number;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        CreateBillingAccountRequestDto: {
+            name: string;
+        };
+        CreateBillingAccountResponseDto: {
+            billingAccount: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                /** @enum {string} */
+                role: "owner" | "admin";
+                workspaceCount: number;
+                /** Format: date-time */
+                createdAt: string;
+            };
+        };
+        CreateBillingAccountWorkspaceRequestDto: {
+            name: string;
+            slug: string;
+        };
+        CreateBillingAccountWorkspaceResponseDto: {
+            workspace: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+                /** Format: uuid */
+                membershipId: string;
+                /** @enum {string} */
+                role: "owner" | "admin" | "lead" | "tester" | "contributor" | "read_only";
+                deletedAt: string | null;
+                recoverableUntil: string | null;
+            };
+            demoProject: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                name: string;
+                slug: string;
+            };
         };
         WorkspaceInvitationPreviewDto: {
             email: string;
@@ -5945,6 +6029,104 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    BillingAccountController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingAccountListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    BillingAccountController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBillingAccountRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateBillingAccountResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    BillingAccountController_createWorkspace: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                billingAccountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBillingAccountWorkspaceRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateBillingAccountWorkspaceResponseDto"];
+                };
             };
             /** @description API error */
             default: {

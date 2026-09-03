@@ -20,6 +20,13 @@ enum MembershipRole {
   @@map("membership_role")
 }
 
+enum BillingAccountRole {
+  OWNER @map("owner")
+  ADMIN @map("admin")
+
+  @@map("billing_account_role")
+}
+
 enum CaseTemplate {
   STEPS       @map("steps")
   TEXT        @map("text")
@@ -236,15 +243,48 @@ enum ResultIngestionStatus {
   @@map("result_ingestion_status")
 }
 
-model Organization {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name           String    @db.VarChar(120)
-  slug           String    @unique(map: "uq_organizations_slug") @db.VarChar(30)
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
-  purgeStartedAt DateTime? @map("purge_started_at") @db.Timestamptz(3)
+model BillingAccount {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.VarChar(120)
+  createdById String   @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  createdBy     User                       @relation("BillingAccountCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  memberships   BillingAccountMembership[]
+  organizations Organization[]
+
+  @@index([createdById, createdAt], map: "idx_billing_accounts_created_by_id_created_at")
+  @@map("billing_accounts")
+}
+
+model BillingAccountMembership {
+  billingAccountId String             @map("billing_account_id") @db.Uuid
+  userId           String             @map("user_id") @db.Uuid
+  role             BillingAccountRole
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?          @map("deleted_at") @db.Timestamptz(3)
+
+  billingAccount BillingAccount @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([billingAccountId, userId], map: "pk_billing_account_memberships")
+  @@index([userId, deletedAt, billingAccountId], map: "idx_billing_account_memberships_user_active")
+  @@map("billing_account_memberships")
+}
+
+model Organization {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  billingAccountId String?   @map("billing_account_id") @db.Uuid
+  name             String    @db.VarChar(120)
+  slug             String    @unique(map: "uq_organizations_slug") @db.VarChar(30)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
+  purgeStartedAt   DateTime? @map("purge_started_at") @db.Timestamptz(3)
+
+  billingAccount              BillingAccount?                    @relation(fields: [billingAccountId], references: [id], onDelete: Restrict)
   memberships                 Membership[]
   projects                    Project[]
   suites                      Suite[]
@@ -297,6 +337,7 @@ model Organization {
   readinessWaivers            ReadinessWaiver[]
   readinessWaiverRevocations  ReadinessWaiverRevocation[]
 
+  @@index([billingAccountId, deletedAt, id], map: "idx_organizations_billing_account_active")
   @@index([deletedAt, purgeStartedAt, id], map: "idx_organizations_workspace_purge")
   @@map("organizations")
 }
@@ -328,6 +369,22 @@ model IdempotencyRecord {
   @@map("idempotency_records")
 }
 
+model SessionIdempotencyRecord {
+  userId      String   @map("user_id") @db.Uuid
+  scope       String   @db.VarChar(200)
+  key         String   @db.VarChar(200)
+  requestHash String   @map("request_hash") @db.Char(64)
+  response    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt   DateTime @default(dbgenerated("CURRENT_TIMESTAMP + INTERVAL '7 days'")) @map("expires_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, scope, key], map: "pk_session_idempotency_records")
+  @@index([userId, expiresAt], map: "idx_session_idempotency_records_user_id_expires_at")
+  @@map("session_idempotency_records")
+}
+
 model User {
   id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email           String    @unique(map: "uq_users_email") @db.Citext
@@ -337,32 +394,35 @@ model User {
   deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
   emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(3)
 
-  memberships              Membership[]
-  authoredVersions         TestCaseVersion[]           @relation("VersionAuthor")
-  assignedRunItems         TestRunItem[]               @relation("RunItemAssignee")
-  executedResults          TestResult[]                @relation("ResultExecutor")
-  passwordCredential       PasswordCredential?
-  authSessions             AuthSession[]
-  accountTokens            AccountToken[]
-  createdUploads           UploadSession[]             @relation("UploadCreator")
-  apiTokens                ApiToken[]                  @relation("ApiTokenCreator")
-  integrationConnections   IntegrationConnection[]     @relation("IntegrationConnectionCreator")
-  createdIssueLinks        IssueLink[]                 @relation("IssueLinkCreator")
-  issueCreationRequests    IssueCreationRequest[]      @relation("IssueCreationRequestCreator")
-  sentInvitations          WorkspaceInvitation[]       @relation("InvitationSender")
-  resultIngestions         TestResultIngestion[]       @relation("ResultIngestionInitiator")
-  createdEnvironments      Environment[]               @relation("EnvironmentCreator")
-  createdReleases          Release[]                   @relation("ReleaseCreator")
-  createdCandidates        ReleaseCandidate[]          @relation("ReleaseCandidateCreator")
-  linkedCandidateRuns      CandidateTestRun[]          @relation("CandidateTestRunCreator")
-  releaseLifecycleEvents   ReleaseLifecycleEvent[]     @relation("ReleaseLifecycleActor")
-  createdReadinessPolicies ReleasePolicy[]             @relation("ReleasePolicyCreator")
-  createdPolicyVersions    ReleasePolicyVersion[]      @relation("ReleasePolicyVersionCreator")
-  publishedPolicyVersions  ReleasePolicyVersion[]      @relation("ReleasePolicyVersionPublisher")
-  policyAssignments        CandidatePolicyAssignment[] @relation("CandidatePolicyAssigner")
-  readinessDecisions       ReadinessDecision[]         @relation("ReadinessDecisionEvaluator")
-  createdReadinessWaivers  ReadinessWaiver[]           @relation("ReadinessWaiverCreator")
-  revokedReadinessWaivers  ReadinessWaiverRevocation[] @relation("ReadinessWaiverRevoker")
+  billingAccountsCreated    BillingAccount[]            @relation("BillingAccountCreator")
+  billingAccountMemberships BillingAccountMembership[]
+  sessionIdempotencyRecords SessionIdempotencyRecord[]
+  memberships               Membership[]
+  authoredVersions          TestCaseVersion[]           @relation("VersionAuthor")
+  assignedRunItems          TestRunItem[]               @relation("RunItemAssignee")
+  executedResults           TestResult[]                @relation("ResultExecutor")
+  passwordCredential        PasswordCredential?
+  authSessions              AuthSession[]
+  accountTokens             AccountToken[]
+  createdUploads            UploadSession[]             @relation("UploadCreator")
+  apiTokens                 ApiToken[]                  @relation("ApiTokenCreator")
+  integrationConnections    IntegrationConnection[]     @relation("IntegrationConnectionCreator")
+  createdIssueLinks         IssueLink[]                 @relation("IssueLinkCreator")
+  issueCreationRequests     IssueCreationRequest[]      @relation("IssueCreationRequestCreator")
+  sentInvitations           WorkspaceInvitation[]       @relation("InvitationSender")
+  resultIngestions          TestResultIngestion[]       @relation("ResultIngestionInitiator")
+  createdEnvironments       Environment[]               @relation("EnvironmentCreator")
+  createdReleases           Release[]                   @relation("ReleaseCreator")
+  createdCandidates         ReleaseCandidate[]          @relation("ReleaseCandidateCreator")
+  linkedCandidateRuns       CandidateTestRun[]          @relation("CandidateTestRunCreator")
+  releaseLifecycleEvents    ReleaseLifecycleEvent[]     @relation("ReleaseLifecycleActor")
+  createdReadinessPolicies  ReleasePolicy[]             @relation("ReleasePolicyCreator")
+  createdPolicyVersions     ReleasePolicyVersion[]      @relation("ReleasePolicyVersionCreator")
+  publishedPolicyVersions   ReleasePolicyVersion[]      @relation("ReleasePolicyVersionPublisher")
+  policyAssignments         CandidatePolicyAssignment[] @relation("CandidatePolicyAssigner")
+  readinessDecisions        ReadinessDecision[]         @relation("ReadinessDecisionEvaluator")
+  createdReadinessWaivers   ReadinessWaiver[]           @relation("ReadinessWaiverCreator")
+  revokedReadinessWaivers   ReadinessWaiverRevocation[] @relation("ReadinessWaiverRevoker")
 
   @@map("users")
 }

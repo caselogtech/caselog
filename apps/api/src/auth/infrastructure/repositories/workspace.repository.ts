@@ -4,6 +4,11 @@ import type { WorkspaceListQuery, WorkspaceSummary } from '@caselog/schemas';
 import { Prisma } from '../../../generated/prisma/client';
 import type { MembershipRole } from '../../../generated/prisma/enums';
 import { PrismaService } from '../../../core/database/infrastructure/prisma/prisma.service';
+import {
+  claimSessionIdempotency,
+  findSessionIdempotency,
+  storeSessionIdempotencyResponse,
+} from '../../../core/database/infrastructure/persistence/session-idempotency';
 import { DEFAULT_PROJECT_STATUSES } from '../../../projects/public-api';
 
 const MAX_WORKSPACES_PER_USER = 5;
@@ -33,9 +38,10 @@ export type ProvisionedWorkspace = {
 };
 
 export type ProvisionWorkspaceResult =
-  | { kind: 'created'; value: ProvisionedWorkspace }
+  | { kind: 'created' | 'replayed'; value: ProvisionedWorkspace }
   | { kind: 'limit_reached' }
-  | { kind: 'slug_conflict' };
+  | { kind: 'slug_conflict' }
+  | { kind: 'idempotency_conflict' };
 
 @Injectable()
 export class WorkspaceRepository {
@@ -88,7 +94,14 @@ export class WorkspaceRepository {
     return result?.available ?? false;
   }
 
-  async provision(userId: string, name: string, slug: string): Promise<ProvisionWorkspaceResult> {
+  async provision(
+    userId: string,
+    name: string,
+    slug: string,
+    billingAccountId: string | null,
+    enforceUserLimit: boolean,
+    idempotency?: { key: string; requestHash: string; scope: string },
+  ): Promise<ProvisionWorkspaceResult> {
     try {
       return await this.prisma.$transaction(async (transaction) => {
         await transaction.$executeRaw`SELECT set_config('caselog.user_id', ${userId}, true)`;
@@ -97,10 +110,22 @@ export class WorkspaceRepository {
           SELECT pg_advisory_xact_lock(hashtextextended(${`workspace-slug:${slug}`}, 0))
         `;
 
+        if (idempotency) {
+          const previous = await findSessionIdempotency<ProvisionedWorkspace>(
+            transaction,
+            userId,
+            idempotency.scope,
+            idempotency.key,
+            idempotency.requestHash,
+          );
+          if (previous?.kind === 'conflict') return { kind: 'idempotency_conflict' };
+          if (previous?.kind === 'replay') return { kind: 'replayed', value: previous.value };
+        }
+
         const existing = await transaction.$queryRaw<Array<{ count: bigint }>>`
           SELECT public.count_current_user_workspaces() AS count
         `;
-        if ((existing[0]?.count ?? 0n) >= BigInt(MAX_WORKSPACES_PER_USER)) {
+        if (enforceUserLimit && (existing[0]?.count ?? 0n) >= BigInt(MAX_WORKSPACES_PER_USER)) {
           return { kind: 'limit_reached' };
         }
         const [availability] = await transaction.$queryRaw<Array<{ available: boolean }>>`
@@ -108,8 +133,20 @@ export class WorkspaceRepository {
         `;
         if (!availability?.available) return { kind: 'slug_conflict' };
 
+        if (idempotency) {
+          const claim = await claimSessionIdempotency<ProvisionedWorkspace>(
+            transaction,
+            userId,
+            idempotency.scope,
+            idempotency.key,
+            idempotency.requestHash,
+          );
+          if (claim.kind === 'conflict') return { kind: 'idempotency_conflict' };
+          if (claim.kind === 'replay') return { kind: 'replayed', value: claim.value };
+        }
+
         const organization = await transaction.organization.create({
-          data: { name, slug },
+          data: { billingAccountId, name, slug },
           select: { id: true, name: true, slug: true },
         });
         await transaction.$executeRaw`
@@ -166,19 +203,26 @@ export class WorkspaceRepository {
           },
         });
 
-        return {
-          kind: 'created',
-          value: {
-            workspace: {
-              ...organization,
-              membershipId: membership.id,
-              role: ROLE_MAP[membership.role],
-              deletedAt: null,
-              recoverableUntil: null,
-            },
-            demoProject: project,
+        const value: ProvisionedWorkspace = {
+          workspace: {
+            ...organization,
+            membershipId: membership.id,
+            role: ROLE_MAP[membership.role],
+            deletedAt: null,
+            recoverableUntil: null,
           },
+          demoProject: project,
         };
+        if (idempotency) {
+          await storeSessionIdempotencyResponse(
+            transaction,
+            userId,
+            idempotency.scope,
+            idempotency.key,
+            value,
+          );
+        }
+        return { kind: 'created', value };
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
