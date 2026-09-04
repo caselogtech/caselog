@@ -136,6 +136,7 @@ an accepted target row reserves its boundary but does not claim that code alread
 |---|---|
 | `instance` | public deployment identity and server-enforced capability configuration |
 | `billing` | managed-service billing accounts, account membership, and commercial workspace grouping; never workspace data access |
+| `staff` | managed-only operator identity, expiring global metadata access, staff audit, and redacted operational projections; never customer-domain ownership or implicit tenant access |
 | `auth` | identities, sessions, workspace lifecycle, org-scoped token exchange |
 | `members` | membership and invitation workflows |
 | `projects` | project lifecycle and project defaults |

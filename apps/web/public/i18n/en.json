@@ -68,6 +68,7 @@
     "invalid_csv_rows": "Resolve every row validation error before importing test cases.",
     "invalid_or_expired_token": "This link is invalid or has expired.",
     "invalid_session": "Your session is invalid or has expired. Sign in again.",
+    "invalid_staff_access_expiry": "Choose an access expiry in the future and no more than 90 days away.",
     "managed_terms_required": "Accept the managed service terms to create an account.",
     "member_already_active": "This account is already an active member of the workspace.",
     "not_found": "The requested resource was not found.",
@@ -113,6 +114,8 @@
     "workspace_creation_disabled": "Workspace creation is disabled on this instance.",
     "workspace_confirmation_mismatch": "Enter the workspace name exactly as shown.",
     "workspace_recovery_window_expired": "This workspace can no longer be restored because its recovery window has expired.",
-    "workspace_slug_taken": "This workspace URL is unavailable."
+    "workspace_slug_taken": "This workspace URL is unavailable.",
+    "staff_last_owner_required": "At least one active staff owner must remain.",
+    "staff_operator_self_revoke": "Use another owner to revoke your staff access."
   }
 }

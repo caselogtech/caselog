@@ -1,0 +1,107 @@
+<main class="staff-page" [attr.aria-labelledby]="'staff-directory-title'">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">{{ 'staff.directory.eyebrow' | transloco }}</span>
+      <h1 id="staff-directory-title">{{ titleKey | transloco }}</h1>
+      <p>{{ descriptionKey | transloco }}</p>
+    </div>
+    <form class="search" (ngSubmit)="applySearch()">
+      <label for="staff-search">{{ 'staff.directory.searchLabel' | transloco }}</label>
+      <div>
+        <input
+          id="staff-search"
+          name="staff-search"
+          type="search"
+          [placeholder]="'staff.directory.searchPlaceholder' | transloco"
+          [ngModel]="searchDraft()"
+          (ngModelChange)="searchDraft.set($event)"
+        />
+        <button type="submit" appButton="secondary">{{ 'staff.actions.search' | transloco }}</button>
+        @if (search()) {
+          <button type="button" appButton="quiet" (click)="clearSearch()">{{ 'staff.actions.clear' | transloco }}</button>
+        }
+      </div>
+    </form>
+  </header>
+
+  @if (directory.isPending()) {
+    <app-page-state [title]="'staff.states.loadingTitle' | transloco" [message]="'staff.states.loadingDirectory' | transloco" />
+  } @else if (directory.isError()) {
+    <app-page-state [title]="'staff.states.errorTitle' | transloco" [message]="errorKey() | transloco">
+      <button actions type="button" appButton="secondary" (click)="directory.refetch()">{{ 'staff.actions.retry' | transloco }}</button>
+    </app-page-state>
+  } @else {
+    <div class="table-frame">
+      <table>
+        @if (resource === 'users') {
+          <thead><tr>
+            <th>{{ 'staff.columns.user' | transloco }}</th>
+            <th>{{ 'staff.columns.verification' | transloco }}</th>
+            <th>{{ 'staff.columns.workspaces' | transloco }}</th>
+            <th>{{ 'staff.columns.accounts' | transloco }}</th>
+            <th>{{ 'staff.columns.created' | transloco }}</th>
+            <th>{{ 'staff.columns.state' | transloco }}</th>
+          </tr></thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td><strong>{{ user.displayName }}</strong><span>{{ user.email }}</span><code>{{ user.id }}</code></td>
+                <td><app-status-badge [tone]="user.emailVerified ? 'success' : 'warning'" [label]="(user.emailVerified ? 'staff.values.verified' : 'staff.values.unverified') | transloco" /></td>
+                <td class="numeric">{{ user.activeWorkspaceCount }}</td>
+                <td class="numeric">{{ user.billingAccountCount }}</td>
+                <td>{{ formatDate(user.createdAt) }}</td>
+                <td><app-status-badge [tone]="user.deletedAt ? 'neutral' : 'success'" [label]="(user.deletedAt ? 'staff.values.deleted' : 'staff.values.active') | transloco" /></td>
+              </tr>
+            } @empty { <tr><td class="empty" colspan="6">{{ emptyKey | transloco }}</td></tr> }
+          </tbody>
+        } @else if (resource === 'workspaces') {
+          <thead><tr>
+            <th>{{ 'staff.columns.workspace' | transloco }}</th>
+            <th>{{ 'staff.columns.billingAccount' | transloco }}</th>
+            <th>{{ 'staff.columns.members' | transloco }}</th>
+            <th>{{ 'staff.columns.projects' | transloco }}</th>
+            <th>{{ 'staff.columns.storage' | transloco }}</th>
+            <th>{{ 'staff.columns.state' | transloco }}</th>
+          </tr></thead>
+          <tbody>
+            @for (workspace of workspaces(); track workspace.id) {
+              <tr>
+                <td><strong>{{ workspace.name }}</strong><span>/{{ workspace.slug }}</span><code>{{ workspace.id }}</code></td>
+                <td>{{ workspace.billingAccount?.name ?? ('staff.values.selfHosted' | transloco) }}</td>
+                <td class="numeric">{{ workspace.memberCount }}</td>
+                <td class="numeric">{{ workspace.projectCount }}</td>
+                <td>{{ formatBytes(workspace.storageBytes) }}</td>
+                <td><app-status-badge [tone]="workspace.deletedAt ? 'neutral' : 'success'" [label]="(workspace.deletedAt ? 'staff.values.deleted' : 'staff.values.active') | transloco" /></td>
+              </tr>
+            } @empty { <tr><td class="empty" colspan="6">{{ emptyKey | transloco }}</td></tr> }
+          </tbody>
+        } @else {
+          <thead><tr>
+            <th>{{ 'staff.columns.billingAccount' | transloco }}</th>
+            <th>{{ 'staff.columns.owner' | transloco }}</th>
+            <th>{{ 'staff.columns.members' | transloco }}</th>
+            <th>{{ 'staff.columns.workspaces' | transloco }}</th>
+            <th>{{ 'staff.columns.storage' | transloco }}</th>
+            <th>{{ 'staff.columns.created' | transloco }}</th>
+          </tr></thead>
+          <tbody>
+            @for (account of billingAccounts(); track account.id) {
+              <tr>
+                <td><strong>{{ account.name }}</strong><code>{{ account.id }}</code></td>
+                <td>{{ account.ownerEmail }}</td>
+                <td class="numeric">{{ account.memberCount }}</td>
+                <td class="numeric">{{ account.workspaceCount }}</td>
+                <td>{{ formatBytes(account.storageBytes) }}</td>
+                <td>{{ formatDate(account.createdAt) }}</td>
+              </tr>
+            } @empty { <tr><td class="empty" colspan="6">{{ emptyKey | transloco }}</td></tr> }
+          </tbody>
+        }
+      </table>
+    </div>
+    <nav class="pagination" [attr.aria-label]="'staff.directory.pagination' | transloco">
+      <button type="button" appButton="secondary" [disabled]="cursorHistory().length === 0" (click)="previousPage()">{{ 'staff.actions.previous' | transloco }}</button>
+      <button type="button" appButton="secondary" [disabled]="!directory.data()?.nextCursor" (click)="nextPage()">{{ 'staff.actions.next' | transloco }}</button>
+    </nav>
+  }
+</main>

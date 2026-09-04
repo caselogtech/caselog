@@ -12,3 +12,4 @@ export { RequireOrganizationAccess } from './presentation/decorators/organizatio
 export { OrganizationAuthGuard } from './presentation/guards/organization-auth.guard';
 export { OrganizationRoleGuard } from './presentation/guards/organization-role.guard';
 export { SessionAuthGuard } from './presentation/guards/session-auth.guard';
+export { AuthModule } from './auth.module';

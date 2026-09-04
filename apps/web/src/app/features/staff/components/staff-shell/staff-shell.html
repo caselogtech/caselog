@@ -1,0 +1,61 @@
+<header class="staff-header">
+  <a class="brand" href="/staff" routerLink="/staff" [attr.aria-label]="'staff.shell.home' | transloco">
+    <app-brand-mark />
+    <span>{{ 'staff.shell.brand' | transloco }}</span>
+  </a>
+  <span class="boundary-label">{{ 'staff.shell.boundary' | transloco }}</span>
+  <div class="operator-context">
+    <div>
+      <strong>{{ staffSession.operator()?.displayName }}</strong>
+      @if (staffSession.operator(); as operator) {
+        <span>{{ roleKey(operator.role) | transloco }}</span>
+      }
+    </div>
+    <button type="button" appButton="quiet" [disabled]="signingOut()" (click)="signOut()">
+      {{ (signingOut() ? 'staff.shell.signingOut' : 'staff.shell.signOut') | transloco }}
+    </button>
+  </div>
+</header>
+
+<div class="staff-layout">
+  <aside class="staff-navigation">
+    <div class="access-card">
+      <span>{{ 'staff.shell.accessExpires' | transloco }}</span>
+      <strong>{{ formatDate(staffSession.operator()?.accessExpiresAt ?? null) }}</strong>
+    </div>
+    <nav [attr.aria-label]="'staff.shell.navigation' | transloco">
+      <a href="/staff" routerLink="/staff" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        {{ 'staff.nav.overview' | transloco }}
+      </a>
+      @if (canViewDirectories()) {
+        <a href="/staff/users" routerLink="/staff/users" routerLinkActive="active">
+          {{ 'staff.nav.users' | transloco }}
+        </a>
+        <a href="/staff/workspaces" routerLink="/staff/workspaces" routerLinkActive="active">
+          {{ 'staff.nav.workspaces' | transloco }}
+        </a>
+        <a href="/staff/billing-accounts" routerLink="/staff/billing-accounts" routerLinkActive="active">
+          {{ 'staff.nav.billingAccounts' | transloco }}
+        </a>
+      }
+      @if (isOwner()) {
+        <a href="/staff/operators" routerLink="/staff/operators" routerLinkActive="active">
+          {{ 'staff.nav.operators' | transloco }}
+        </a>
+        <a href="/staff/audit" routerLink="/staff/audit" routerLinkActive="active">
+          {{ 'staff.nav.audit' | transloco }}
+        </a>
+      }
+    </nav>
+    <a class="return-link" href="/auth/workspaces" routerLink="/auth/workspaces">
+      {{ 'staff.shell.returnToProduct' | transloco }}
+    </a>
+  </aside>
+
+  <div class="staff-view">
+    @if (signOutErrorKey()) {
+      <p class="shell-error" role="alert">{{ signOutErrorKey()! | transloco }}</p>
+    }
+    <router-outlet />
+  </div>
+</div>

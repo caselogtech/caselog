@@ -27,6 +27,14 @@ enum BillingAccountRole {
   @@map("billing_account_role")
 }
 
+enum StaffOperatorRole {
+  OWNER   @map("owner")
+  ADMIN   @map("admin")
+  SUPPORT @map("support")
+
+  @@map("staff_operator_role")
+}
+
 enum CaseTemplate {
   STEPS       @map("steps")
   TEXT        @map("text")
@@ -423,8 +431,44 @@ model User {
   readinessDecisions        ReadinessDecision[]         @relation("ReadinessDecisionEvaluator")
   createdReadinessWaivers   ReadinessWaiver[]           @relation("ReadinessWaiverCreator")
   revokedReadinessWaivers   ReadinessWaiverRevocation[] @relation("ReadinessWaiverRevoker")
+  staffOperator             StaffOperator?              @relation("StaffOperatorUser")
+  staffOperatorsCreated     StaffOperator[]             @relation("StaffOperatorCreator")
+  staffAuditLogs            StaffAuditLog[]             @relation("StaffAuditActor")
 
   @@map("users")
+}
+
+model StaffOperator {
+  userId          String            @id @map("user_id") @db.Uuid
+  role            StaffOperatorRole
+  accessExpiresAt DateTime          @map("access_expires_at") @db.Timestamptz(3)
+  disabledAt      DateTime?         @map("disabled_at") @db.Timestamptz(3)
+  createdById     String?           @map("created_by_id") @db.Uuid
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user      User  @relation("StaffOperatorUser", fields: [userId], references: [id], onDelete: Restrict)
+  createdBy User? @relation("StaffOperatorCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([disabledAt, accessExpiresAt], map: "idx_staff_operators_active")
+  @@map("staff_operators")
+}
+
+model StaffAuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId String   @map("actor_user_id") @db.Uuid
+  action      String   @db.VarChar(100)
+  targetType  String   @map("target_type") @db.VarChar(80)
+  targetId    String?  @map("target_id") @db.VarChar(200)
+  reason      String?  @db.VarChar(500)
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User @relation("StaffAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([createdAt, id], map: "idx_staff_audit_logs_created_at_id")
+  @@index([actorUserId, createdAt], map: "idx_staff_audit_logs_actor_created_at")
+  @@map("staff_audit_logs")
 }
 
 model ApiToken {

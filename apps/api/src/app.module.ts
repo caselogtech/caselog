@@ -24,6 +24,7 @@ import { ReleaseReadinessModule } from './release-readiness/public-api';
 import { TestCaseModule } from './test-cases/test-case.module';
 import { TestRunModule } from './test-runs/test-run.module';
 import { QualityEvidenceModule } from './quality-evidence/public-api';
+import { StaffModule } from './staff/public-api';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { QualityEvidenceModule } from './quality-evidence/public-api';
     TestCaseModule,
     TestRunModule,
     ReleaseReadinessModule,
+    StaffModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },

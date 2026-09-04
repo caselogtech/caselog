@@ -1,0 +1,1 @@
+-- Roll-forward-only correction for the staff role guard implementation.

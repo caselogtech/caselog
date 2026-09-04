@@ -18,5 +18,9 @@ export const sessionAuthInterceptor: HttpInterceptorFn = (request, next) => {
 };
 
 export function usesBrowserSession(url: string): boolean {
-  return url.startsWith('/api/v1/auth/') || url.startsWith('/api/v1/invitations/');
+  return (
+    url.startsWith('/api/v1/auth/') ||
+    url.startsWith('/api/v1/invitations/') ||
+    url.startsWith('/api/v1/staff/')
+  );
 }

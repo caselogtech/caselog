@@ -1,0 +1,68 @@
+.staff-page {
+  margin: 0 auto;
+  max-width: calc(900px + 2 * var(--content-gutter));
+  padding: var(--space-6) var(--content-gutter) 64px;
+}
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+.page-header p {
+  color: var(--text-2);
+  margin: var(--space-2) 0 0;
+}
+.eyebrow {
+  color: var(--color-accent-700);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.audit-list {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: var(--space-6) 0 0;
+  padding: 0;
+}
+.audit-list li {
+  background: var(--surface-2);
+  border: 1px solid var(--color-neutral-400);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+}
+.event-line {
+  align-items: center;
+  display: flex;
+  gap: var(--space-4);
+  justify-content: space-between;
+}
+.event-line code {
+  color: var(--color-accent-700);
+  font-weight: 600;
+}
+.event-line time,
+.audit-list span,
+.audit-list small {
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+}
+.audit-list strong,
+.audit-list span {
+  display: block;
+  margin-top: var(--space-1);
+}
+.audit-list p {
+  margin: var(--space-3) 0;
+}
+.audit-list small {
+  font-family: var(--font-mono);
+}
+.audit-list .empty {
+  border-left-color: var(--color-neutral-400);
+  color: var(--text-2);
+  text-align: center;
+}

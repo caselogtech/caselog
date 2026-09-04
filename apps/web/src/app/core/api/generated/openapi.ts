@@ -1652,6 +1652,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_users"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/workspaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_workspaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/billing-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_billingAccounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/operators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_operators"];
+        put?: never;
+        post: operations["StaffController_grantOperator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/operators/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["StaffController_revokeOperator"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_auditLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4594,6 +4722,150 @@ export interface components {
                     evaluatedAt: string | null;
                     failureCode: string | null;
                 } | null;
+            }[];
+            nextCursor: string | null;
+        };
+        StaffSessionResponseDto: {
+            operator: {
+                /** Format: uuid */
+                userId: string;
+                email: string;
+                displayName: string;
+                /** @enum {string} */
+                role: "owner" | "admin" | "support";
+                /** Format: date-time */
+                accessExpiresAt: string;
+            };
+        };
+        StaffOverviewResponseDto: {
+            metrics: {
+                users: number;
+                activeWorkspaces: number;
+                deletedWorkspaces: number;
+                billingAccounts: number;
+                activeProjects: number;
+                storageBytes: string;
+            };
+            configuration: {
+                /** @enum {string} */
+                deployment: "self_hosted" | "managed";
+                instanceName: string;
+                /** @enum {string} */
+                registrationMode: "public" | "invitation_only";
+                workspaceCreationEnabled: boolean;
+                managedBillingEnabled: boolean;
+            };
+        };
+        StaffUserListResponseDto: {
+            users: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                displayName: string;
+                emailVerified: boolean;
+                activeWorkspaceCount: number;
+                billingAccountCount: number;
+                /** Format: date-time */
+                createdAt: string;
+                deletedAt: string | null;
+            }[];
+            nextCursor: string | null;
+        };
+        StaffWorkspaceListResponseDto: {
+            workspaces: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+                billingAccount: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                } | null;
+                memberCount: number;
+                projectCount: number;
+                storageBytes: string;
+                /** Format: date-time */
+                createdAt: string;
+                deletedAt: string | null;
+            }[];
+            nextCursor: string | null;
+        };
+        StaffBillingAccountListResponseDto: {
+            billingAccounts: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                ownerEmail: string;
+                memberCount: number;
+                workspaceCount: number;
+                storageBytes: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            nextCursor: string | null;
+        };
+        StaffOperatorListResponseDto: {
+            operators: {
+                /** Format: uuid */
+                userId: string;
+                email: string;
+                displayName: string;
+                /** @enum {string} */
+                role: "owner" | "admin" | "support";
+                /** Format: date-time */
+                accessExpiresAt: string;
+                disabledAt: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            nextCursor: string | null;
+        };
+        GrantStaffOperatorRequestDto: {
+            email: string;
+            /** @enum {string} */
+            role: "owner" | "admin" | "support";
+            /** Format: date-time */
+            accessExpiresAt: string;
+            reason: string;
+        };
+        StaffOperatorResponseDto: {
+            operator: {
+                /** Format: uuid */
+                userId: string;
+                email: string;
+                displayName: string;
+                /** @enum {string} */
+                role: "owner" | "admin" | "support";
+                /** Format: date-time */
+                accessExpiresAt: string;
+                disabledAt: string | null;
+                /** Format: date-time */
+                createdAt: string;
+            };
+        };
+        RevokeStaffOperatorRequestDto: {
+            reason: string;
+        };
+        StaffAuditLogListResponseDto: {
+            auditLogs: {
+                /** Format: uuid */
+                id: string;
+                actor: {
+                    /** Format: uuid */
+                    userId: string;
+                    email: string;
+                    displayName: string;
+                };
+                action: string;
+                targetType: string;
+                targetId: string | null;
+                reason: string | null;
+                metadata: {
+                    [key: string]: unknown;
+                };
+                /** Format: date-time */
+                createdAt: string;
             }[];
             nextCursor: string | null;
         };
@@ -8929,6 +9201,286 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReleaseReadinessListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffSessionResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOverviewResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_users: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffUserListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_workspaces: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffWorkspaceListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_billingAccounts: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffBillingAccountListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_operators: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOperatorListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_grantOperator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantStaffOperatorRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOperatorResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_revokeOperator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevokeStaffOperatorRequestDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_auditLogs: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffAuditLogListResponseDto"];
                 };
             };
             /** @description API error */

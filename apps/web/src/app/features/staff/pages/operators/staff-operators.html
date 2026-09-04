@@ -1,0 +1,70 @@
+<main class="staff-page" aria-labelledby="staff-operators-title">
+  <header class="page-header">
+    <span class="eyebrow">{{ 'staff.operators.eyebrow' | transloco }}</span>
+    <h1 id="staff-operators-title">{{ 'staff.operators.title' | transloco }}</h1>
+    <p>{{ 'staff.operators.description' | transloco }}</p>
+  </header>
+
+  <section class="grant-panel" aria-labelledby="staff-grant-title">
+    <div>
+      <h2 id="staff-grant-title">{{ 'staff.operators.grantTitle' | transloco }}</h2>
+      <p>{{ 'staff.operators.grantDescription' | transloco }}</p>
+    </div>
+    <form (ngSubmit)="submitGrant()">
+      <label for="operator-email">{{ 'staff.operators.email' | transloco }}</label>
+      <input id="operator-email" name="operator-email" type="email" autocomplete="off" [ngModel]="email()" (ngModelChange)="email.set($event)" required />
+      <label for="operator-role">{{ 'staff.operators.role' | transloco }}</label>
+      <select id="operator-role" name="operator-role" [ngModel]="role()" (ngModelChange)="role.set($event)">
+        <option value="support">{{ 'staff.roles.support' | transloco }}</option>
+        <option value="admin">{{ 'staff.roles.admin' | transloco }}</option>
+        <option value="owner">{{ 'staff.roles.owner' | transloco }}</option>
+      </select>
+      <label for="operator-expiry">{{ 'staff.operators.expiry' | transloco }}</label>
+      <input id="operator-expiry" name="operator-expiry" type="datetime-local" [ngModel]="accessExpiresAt()" (ngModelChange)="accessExpiresAt.set($event)" required />
+      <label for="grant-reason">{{ 'staff.operators.reason' | transloco }}</label>
+      <textarea id="grant-reason" name="grant-reason" rows="3" minlength="10" maxlength="500" [ngModel]="grantReason()" (ngModelChange)="grantReason.set($event)" required></textarea>
+      <button type="submit" appButton="primary" [disabled]="grant.isPending() || grantReason().trim().length < 10">
+        {{ (grant.isPending() ? 'staff.operators.granting' : 'staff.operators.grant') | transloco }}
+      </button>
+    </form>
+  </section>
+
+  @if (grant.isError() || revoke.isError()) {
+    <p class="mutation-error" role="alert">{{ mutationErrorKey() | transloco }}</p>
+  }
+
+  @if (operators.isPending()) {
+    <app-page-state [title]="'staff.states.loadingTitle' | transloco" [message]="'staff.states.loadingOperators' | transloco" />
+  } @else if (operators.isError()) {
+    <app-page-state [title]="'staff.states.errorTitle' | transloco" [message]="listErrorKey() | transloco">
+      <button actions type="button" appButton="secondary" (click)="operators.refetch()">{{ 'staff.actions.retry' | transloco }}</button>
+    </app-page-state>
+  } @else {
+    <section class="operator-list" aria-labelledby="staff-operator-list-title">
+      <div class="list-heading">
+        <div>
+          <h2 id="staff-operator-list-title">{{ 'staff.operators.listTitle' | transloco }}</h2>
+          <p>{{ 'staff.operators.listDescription' | transloco }}</p>
+        </div>
+        <label for="revoke-reason">{{ 'staff.operators.revokeReason' | transloco }}</label>
+        <input id="revoke-reason" type="text" minlength="10" maxlength="500" [ngModel]="revokeReason()" (ngModelChange)="revokeReason.set($event)" />
+      </div>
+      <div class="table-frame">
+        <table>
+          <thead><tr><th>{{ 'staff.columns.operator' | transloco }}</th><th>{{ 'staff.columns.role' | transloco }}</th><th>{{ 'staff.columns.expires' | transloco }}</th><th>{{ 'staff.columns.state' | transloco }}</th><th>{{ 'staff.columns.actions' | transloco }}</th></tr></thead>
+          <tbody>
+            @for (operator of operators.data()?.operators; track operator.userId) {
+              <tr>
+                <td><strong>{{ operator.displayName }}</strong><span>{{ operator.email }}</span></td>
+                <td>{{ roleKey(operator.role) | transloco }}</td>
+                <td>{{ formatDate(operator.accessExpiresAt) }}</td>
+                <td><app-status-badge [tone]="tone(state(operator))" [label]="stateKey(state(operator)) | transloco" /></td>
+                <td><button type="button" appButton="danger" [disabled]="state(operator) === 'disabled' || revoke.isPending() || revokeReason().trim().length < 10" (click)="revokeOperator(operator.userId)">{{ 'staff.operators.revoke' | transloco }}</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</main>

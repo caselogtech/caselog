@@ -5,6 +5,7 @@ import projectSettingsTranslations from '../../public/i18n/projectSettings/en.js
 import readinessTranslations from '../../public/i18n/readiness/en.json';
 import releasesTranslations from '../../public/i18n/releases/en.json';
 import systemTranslations from '../../public/i18n/system/en.json';
+import staffTranslations from '../../public/i18n/staff/en.json';
 import workspaceTranslations from '../../public/i18n/workspace/en.json';
 import workspaceSettingsTranslations from '../../public/i18n/workspaceSettings/en.json';
 
@@ -18,6 +19,7 @@ export function i18nTestingModule(): ReturnType<typeof TranslocoTestingModule.fo
         projectSettings: projectSettingsTranslations,
         readiness: readinessTranslations,
         system: systemTranslations,
+        staff: staffTranslations,
         workspace: workspaceTranslations,
         workspaceSettings: workspaceSettingsTranslations,
       },

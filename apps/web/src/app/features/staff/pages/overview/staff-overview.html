@@ -1,0 +1,72 @@
+<main class="staff-page" aria-labelledby="staff-overview-title">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">{{ 'staff.overview.eyebrow' | transloco }}</span>
+      <h1 id="staff-overview-title">{{ 'staff.overview.title' | transloco }}</h1>
+      <p>{{ 'staff.overview.description' | transloco }}</p>
+    </div>
+  </header>
+
+  @if (overview.isPending()) {
+    <app-page-state
+      [title]="'staff.states.loadingTitle' | transloco"
+      [message]="'staff.states.loadingOverview' | transloco"
+    />
+  } @else if (overview.isError()) {
+    <app-page-state
+      [title]="'staff.states.errorTitle' | transloco"
+      [message]="errorKey() | transloco"
+    >
+      <button actions type="button" appButton="secondary" (click)="overview.refetch()">
+        {{ 'staff.actions.retry' | transloco }}
+      </button>
+    </app-page-state>
+  } @else if (overview.data(); as data) {
+    <section class="metric-grid" [attr.aria-label]="'staff.overview.metrics' | transloco">
+      <article>
+        <span>{{ 'staff.overview.users' | transloco }}</span>
+        <strong>{{ data.metrics.users }}</strong>
+      </article>
+      <article>
+        <span>{{ 'staff.overview.activeWorkspaces' | transloco }}</span>
+        <strong>{{ data.metrics.activeWorkspaces }}</strong>
+      </article>
+      <article>
+        <span>{{ 'staff.overview.billingAccounts' | transloco }}</span>
+        <strong>{{ data.metrics.billingAccounts }}</strong>
+      </article>
+      <article>
+        <span>{{ 'staff.overview.activeProjects' | transloco }}</span>
+        <strong>{{ data.metrics.activeProjects }}</strong>
+      </article>
+      <article>
+        <span>{{ 'staff.overview.storage' | transloco }}</span>
+        <strong>{{ formatBytes(data.metrics.storageBytes) }}</strong>
+      </article>
+      <article>
+        <span>{{ 'staff.overview.deletedWorkspaces' | transloco }}</span>
+        <strong>{{ data.metrics.deletedWorkspaces }}</strong>
+      </article>
+    </section>
+
+    <section class="configuration" aria-labelledby="staff-configuration-title">
+      <div>
+        <span class="eyebrow">{{ 'staff.overview.configurationEyebrow' | transloco }}</span>
+        <h2 id="staff-configuration-title">{{ 'staff.overview.configurationTitle' | transloco }}</h2>
+        <p>{{ 'staff.overview.configurationDescription' | transloco }}</p>
+      </div>
+      <dl>
+        <div><dt>{{ 'staff.overview.instance' | transloco }}</dt><dd>{{ data.configuration.instanceName }}</dd></div>
+        <div><dt>{{ 'staff.overview.deployment' | transloco }}</dt><dd class="mono">{{ data.configuration.deployment }}</dd></div>
+        <div><dt>{{ 'staff.overview.registration' | transloco }}</dt><dd class="mono">{{ data.configuration.registrationMode }}</dd></div>
+        <div><dt>{{ 'staff.overview.workspaceCreation' | transloco }}</dt><dd>{{ (data.configuration.workspaceCreationEnabled ? 'staff.values.enabled' : 'staff.values.disabled') | transloco }}</dd></div>
+        <div><dt>{{ 'staff.overview.managedBilling' | transloco }}</dt><dd>{{ (data.configuration.managedBillingEnabled ? 'staff.values.enabled' : 'staff.values.disabled') | transloco }}</dd></div>
+      </dl>
+    </section>
+
+    <aside class="security-note">
+      <strong>{{ 'staff.overview.securityTitle' | transloco }}</strong>
+      <p>{{ 'staff.overview.securityDescription' | transloco }}</p>
+    </aside>
+  }
+</main>

@@ -1,0 +1,134 @@
+{
+  "shell": {
+    "home": "Cloud administration home",
+    "brand": "Caselog",
+    "boundary": "Cloud administration",
+    "navigation": "Cloud administration navigation",
+    "accessExpires": "Access expires",
+    "returnToProduct": "Return to product",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…"
+  },
+  "nav": {
+    "overview": "Overview",
+    "users": "Users",
+    "workspaces": "Workspaces",
+    "billingAccounts": "Billing accounts",
+    "operators": "Operators",
+    "audit": "Staff audit"
+  },
+  "roles": {
+    "owner": "Staff owner",
+    "admin": "Staff admin",
+    "support": "Support operator"
+  },
+  "overview": {
+    "eyebrow": "Managed operations",
+    "title": "Cloud administration",
+    "description": "Global operational metadata for this managed Caselog deployment.",
+    "metrics": "Instance metrics",
+    "users": "Active users",
+    "activeWorkspaces": "Active workspaces",
+    "deletedWorkspaces": "Deleted workspaces",
+    "billingAccounts": "Billing accounts",
+    "activeProjects": "Active projects",
+    "storage": "Accounted storage",
+    "configurationEyebrow": "Deployment contract",
+    "configurationTitle": "Effective configuration",
+    "configurationDescription": "These values are deployment-managed and read-only here. Change them through the production configuration and rollout workflow.",
+    "instance": "Instance",
+    "deployment": "Deployment mode",
+    "registration": "Registration mode",
+    "workspaceCreation": "Workspace creation",
+    "managedBilling": "Managed billing",
+    "securityTitle": "Customer content remains isolated",
+    "securityDescription": "This console exposes account and usage metadata only. Staff roles do not grant workspace membership, customer test data access, or hidden impersonation."
+  },
+  "directory": {
+    "eyebrow": "Customer directory",
+    "searchLabel": "Search this directory",
+    "searchPlaceholder": "Name, email, or slug",
+    "pagination": "Directory pages",
+    "users": {
+      "title": "Users",
+      "description": "Identity status and aggregate account relationships. Passwords and session secrets are never exposed.",
+      "empty": "No users match this search."
+    },
+    "workspaces": {
+      "title": "Workspaces",
+      "description": "Tenant lifecycle and aggregate usage without customer test-management content.",
+      "empty": "No workspaces match this search."
+    },
+    "billingAccounts": {
+      "title": "Billing accounts",
+      "description": "Commercial groupings above workspaces. Billing membership never grants workspace access.",
+      "empty": "No billing accounts match this search."
+    }
+  },
+  "operators": {
+    "eyebrow": "Least privilege",
+    "title": "Staff operators",
+    "description": "Grant short-lived operational access to an existing verified Caselog identity.",
+    "grantTitle": "Grant or renew access",
+    "grantDescription": "Access expires automatically after at most 90 days. Every change requires a reason and is audited.",
+    "email": "Verified user email",
+    "role": "Staff role",
+    "expiry": "Access expiry",
+    "reason": "Reason for access",
+    "grant": "Grant access",
+    "granting": "Granting…",
+    "listTitle": "Operator directory",
+    "listDescription": "Revocation takes effect on the next request.",
+    "revokeReason": "Reason for the next revocation",
+    "revoke": "Revoke"
+  },
+  "audit": {
+    "eyebrow": "Accountability",
+    "title": "Staff audit",
+    "description": "Append-only history of privileged operator lifecycle changes.",
+    "empty": "No staff audit events have been recorded."
+  },
+  "columns": {
+    "user": "User",
+    "verification": "Verification",
+    "workspaces": "Workspaces",
+    "accounts": "Accounts",
+    "created": "Created",
+    "state": "State",
+    "workspace": "Workspace",
+    "billingAccount": "Billing account",
+    "members": "Members",
+    "projects": "Projects",
+    "storage": "Storage",
+    "owner": "Owner",
+    "operator": "Operator",
+    "role": "Role",
+    "expires": "Expires",
+    "actions": "Actions"
+  },
+  "states": {
+    "loadingTitle": "Loading cloud administration",
+    "loadingOverview": "Reading current instance metrics and configuration…",
+    "loadingDirectory": "Reading the customer directory…",
+    "loadingOperators": "Reading the operator directory…",
+    "loadingAudit": "Reading staff audit events…",
+    "errorTitle": "Cloud administration is unavailable"
+  },
+  "actions": {
+    "retry": "Try again",
+    "search": "Search",
+    "clear": "Clear",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "values": {
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "active": "Active",
+    "expired": "Expired",
+    "deleted": "Deleted",
+    "selfHosted": "Unassigned / self-hosted"
+  }
+}

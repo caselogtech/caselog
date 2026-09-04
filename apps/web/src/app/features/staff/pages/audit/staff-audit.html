@@ -1,0 +1,32 @@
+<main class="staff-page" aria-labelledby="staff-audit-title">
+  <header class="page-header">
+    <span class="eyebrow">{{ 'staff.audit.eyebrow' | transloco }}</span>
+    <h1 id="staff-audit-title">{{ 'staff.audit.title' | transloco }}</h1>
+    <p>{{ 'staff.audit.description' | transloco }}</p>
+  </header>
+
+  @if (audit.isPending()) {
+    <app-page-state [title]="'staff.states.loadingTitle' | transloco" [message]="'staff.states.loadingAudit' | transloco" />
+  } @else if (audit.isError()) {
+    <app-page-state [title]="'staff.states.errorTitle' | transloco" [message]="errorKey() | transloco">
+      <button actions type="button" appButton="secondary" (click)="audit.refetch()">{{ 'staff.actions.retry' | transloco }}</button>
+    </app-page-state>
+  } @else {
+    <ol class="audit-list">
+      @for (entry of audit.data()?.auditLogs; track entry.id) {
+        <li>
+          <div class="event-line">
+            <code>{{ entry.action }}</code>
+            <time [attr.datetime]="entry.createdAt">{{ formatDate(entry.createdAt) }}</time>
+          </div>
+          <strong>{{ entry.actor.displayName }}</strong>
+          <span>{{ entry.actor.email }}</span>
+          @if (entry.reason) { <p>{{ entry.reason }}</p> }
+          <small>{{ entry.targetType }} · {{ entry.targetId ?? '—' }}</small>
+        </li>
+      } @empty {
+        <li class="empty">{{ 'staff.audit.empty' | transloco }}</li>
+      }
+    </ol>
+  }
+</main>

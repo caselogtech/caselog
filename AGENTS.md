@@ -231,6 +231,15 @@ configuration; never hard-code them into readiness, test-management, or tenant-d
 behavior. Logical workspace count is unlimited by default. Any deployment safety limit
 must be explicit, validated configuration rather than a product or licensing restriction.
 
+Managed cloud administration uses a third, independent authorization boundary. The
+`staff` module owns expiring operator grants and global operational metadata. Staff roles
+never imply billing-account or workspace membership, and the staff console must not read
+customer test cases, results, evidence, attachments, or secrets through an implicit bypass.
+Privileged mutations require an explicit reason and append-only staff audit. Self-hosted
+mode keeps the managed staff API and UI unavailable. Support access to customer content or
+impersonation requires a separate, customer-visible, time-bounded design; never add a hidden
+“log in as user” shortcut.
+
 Never place secrets, tokens, credentials, raw sensitive evidence, or unnecessary PII in
 source, fixtures, logs, errors, or commits. Validate and bound all external input, parsing,
 uploads, bulk operations, and pagination. Audit sensitive and destructive actions.

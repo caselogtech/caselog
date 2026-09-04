@@ -26,6 +26,7 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.invalid_csv_rows',
   'errors.invalid_or_expired_token',
   'errors.invalid_session',
+  'errors.invalid_staff_access_expiry',
   'errors.managed_terms_required',
   'errors.member_already_active',
   'errors.not_found',
@@ -72,6 +73,8 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.workspace_confirmation_mismatch',
   'errors.workspace_recovery_window_expired',
   'errors.workspace_slug_taken',
+  'errors.staff_last_owner_required',
+  'errors.staff_operator_self_revoke',
 ]);
 
 export function apiErrorTranslationKey(error: unknown): string {

@@ -1,0 +1,2 @@
+-- Roll back by restoring the function definitions from 20260903220000_staff_console.
+-- This corrective migration changes implementation only and has no schema rollback.
