@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth/public-api';
 import { ProjectStructureController } from './presentation/controllers/project-structure.controller';
 import { ProjectStructureRepository } from './infrastructure/repositories/project-structure.repository';
 import { ProjectStructureService } from './application/services/project-structure.service';

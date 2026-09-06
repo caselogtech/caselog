@@ -23,9 +23,9 @@
     "lint": "biome lint apps packages scripts && pnpm lint:architecture",
     "lint:architecture": "node scripts/check-backend-boundaries.mjs && node scripts/check-frontend-boundaries.mjs",
     "openapi:generate": "pnpm --filter @caselog/api openapi:generate && openapi-typescript apps/api/openapi.json -o apps/web/src/app/core/api/generated/openapi.ts",
-    "openapi:check": "openapi-typescript apps/api/openapi.json -o apps/web/src/app/core/api/generated/openapi.ts --check",
+    "openapi:check": "pnpm --filter @caselog/api openapi:check && openapi-typescript apps/api/openapi.json -o apps/web/src/app/core/api/generated/openapi.ts --check",
     "pretest": "pnpm db:migrate:deploy",
-    "test": "pnpm -r --if-present test",
+    "test": "node --test scripts/tests/*.test.mjs && pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {

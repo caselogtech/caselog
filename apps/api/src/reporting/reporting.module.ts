@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth/public-api';
 import { ReportingService } from './application/services/reporting.service';
 import { RunProgressProjectionService } from './application/services/run-progress-projection.service';
 import { RunProgressRefreshQueue } from './application/services/run-progress-refresh.queue';

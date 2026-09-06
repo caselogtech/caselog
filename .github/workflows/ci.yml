@@ -39,6 +39,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Prepare disposable test services
+        run: |
+          cp .env.example .env
+          docker compose up -d --wait minio mailpit
       - run: pnpm check
       - run: pnpm test
       - run: pnpm build

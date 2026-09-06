@@ -1,11 +1,14 @@
+import { importedModules } from './typescript-imports.mjs';
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, relative, resolve, sep } from 'node:path';
 
 const featuresSource = resolve('apps/web/src/app/features');
-const importPattern = /(?:from\s+|import\s*\()\s*['"]([^'"]+)['"]/g;
+const appSource = resolve('apps/web/src/app');
+
 const violations = [];
 
-for (const file of await typescriptFiles(featuresSource)) {
+for (const file of await typescriptFiles(appSource)) {
+  const appPath = normalize(relative(appSource, file));
   const projectPath = normalize(relative(featuresSource, file));
   const sourceFeature = projectPath.split('/')[0];
   if (!sourceFeature) continue;
@@ -18,6 +21,11 @@ for (const file of await typescriptFiles(featuresSource)) {
     if (targetPath.startsWith('../')) continue;
 
     const [targetFeature, ...targetSegments] = targetPath.split('/');
+    if (appPath.startsWith('core/') || appPath.startsWith('shared/')) {
+      violations.push(`${appPath}: core/shared cannot import feature '${specifier}'`);
+      continue;
+    }
+    if (!appPath.startsWith('features/')) continue;
     if (!targetFeature || targetFeature === sourceFeature) continue;
 
     const targetModule = targetSegments.join('/').replace(/\.ts$/, '');
@@ -46,10 +54,6 @@ async function typescriptFiles(directory) {
     }),
   );
   return nested.flat().sort();
-}
-
-function importedModules(source) {
-  return [...source.matchAll(importPattern)].map((match) => match[1] ?? '');
 }
 
 function normalize(path) {

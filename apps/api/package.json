@@ -8,6 +8,7 @@
     "prebuild": "pnpm --filter @caselog/schemas build && pnpm prisma:generate",
     "build": "nest build",
     "openapi:generate": "pnpm build && node dist/openapi/generate-openapi.js",
+    "openapi:check": "pnpm build && node dist/openapi/generate-openapi.js --check",
     "predev": "pnpm --filter @caselog/schemas build && pnpm prisma:generate",
     "dev": "nest start --watch",
     "start": "node dist/main.js",

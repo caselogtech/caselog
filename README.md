@@ -53,6 +53,17 @@ pnpm test
 pnpm build
 ```
 
+API integration tests require PostgreSQL, object storage, and SMTP from the local
+Compose stack and configuration based on `.env.example`. Use a dedicated empty
+test database: global bootstrap tests intentionally assume no existing operators.
+API tests explicitly drain a controlled queue transport to run registered workers;
+they do not run scheduled jobs against other test suites or development tenants.
+
+`pnpm check` verifies both the backend-to-OpenAPI contract and the generated frontend
+types. Document generation uses disposable configuration without connecting to
+external services. Architecture checks enforce public module imports, domain-layer
+direction, core/shared isolation, and acyclic Nest module composition.
+
 Regenerate the committed OpenAPI document and frontend TypeScript contract after a
 public API change:
 

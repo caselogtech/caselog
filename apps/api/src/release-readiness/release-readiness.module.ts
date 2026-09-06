@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth/public-api';
 import { ReleaseModule } from '../releases/public-api';
 import { QualityEvidenceModule } from '../quality-evidence/public-api';
 import { CandidatePolicyAssignmentService } from './application/services/candidate-policy-assignment.service';

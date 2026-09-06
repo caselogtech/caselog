@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth/public-api';
 import { TestRunModule } from '../test-runs/public-api';
 import { EnvironmentService } from './application/services/environment.service';
 import { ReleaseCandidateService } from './application/services/release-candidate.service';

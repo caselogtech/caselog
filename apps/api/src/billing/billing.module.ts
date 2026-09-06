@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth/public-api';
 import { InstanceModule } from '../instance/public-api';
 import { BillingAccountService } from './application/services/billing-account.service';
 import { BillingAccountRepository } from './infrastructure/repositories/billing-account.repository';

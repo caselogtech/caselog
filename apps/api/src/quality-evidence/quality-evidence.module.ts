@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth/public-api';
 import { ReleaseModule } from '../releases/public-api';
 import { TestRunModule } from '../test-runs/public-api';
 import { NativeEvidenceEventConsumerService } from './application/services/native-evidence-event-consumer.service';

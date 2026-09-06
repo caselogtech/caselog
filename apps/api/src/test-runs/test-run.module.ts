@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
-import { AttachmentModule } from '../attachments/attachment.module';
-import { ReportingModule } from '../reporting/reporting.module';
+import { AuthModule } from '../auth/public-api';
+import { AttachmentModule } from '../attachments/public-api';
+import { ReportingModule } from '../reporting/public-api';
 import { JUnitIngestRepository } from './infrastructure/repositories/junit-ingest.repository';
 import { TestResultQueryRepository } from './infrastructure/repositories/test-result-query.repository';
 import { TestResultRepository } from './infrastructure/repositories/test-result.repository';

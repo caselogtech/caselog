@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth/public-api';
 import { CsvImportService } from './application/services/csv-import.service';
 import { CsvImportRepository } from './infrastructure/repositories/csv-import.repository';
 import { CsvImportController } from './presentation/controllers/csv-import.controller';

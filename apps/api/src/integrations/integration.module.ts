@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../auth/public-api';
 import { CryptoModule } from '../core/crypto/crypto.module';
 import {
   ISSUE_TRACKER_PROVIDERS,

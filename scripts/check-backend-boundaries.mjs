@@ -1,8 +1,9 @@
+import { importedModules } from './typescript-imports.mjs';
 import { readdir, readFile } from 'node:fs/promises';
-import { relative, resolve, sep } from 'node:path';
+import { dirname, relative, resolve, sep } from 'node:path';
 
 const apiSource = resolve('apps/api/src');
-const importPattern = /(?:from\s+|import\s*\()\s*['"]([^'"]+)['"]/g;
+
 const prismaImports = [
   /generated\/prisma(?:\/|$)/,
   /@prisma\/client(?:\/|$)/,
@@ -14,12 +15,76 @@ const unsafeRawQueries = ['$queryRawUnsafe', '$executeRawUnsafe'];
 const files = await typescriptFiles(apiSource);
 const violations = [];
 const prismaSchema = await readFile(resolve('apps/api/prisma/schema.prisma'), 'utf8');
+const featureNames = new Set(
+  (await readdir(apiSource, { withFileTypes: true }))
+    .filter(
+      (entry) =>
+        entry.isDirectory() && !['core', 'common', 'generated', 'openapi'].includes(entry.name),
+    )
+    .map((entry) => entry.name),
+);
+const moduleDependencies = new Map();
 
 verifyWorkspaceCascadeRelations(prismaSchema, violations);
 
 for (const file of files) {
   const source = await readFile(file, 'utf8');
   const projectPath = normalize(relative(apiSource, file));
+  const isTest = projectPath.includes('/tests/') || projectPath.endsWith('.spec.ts');
+  const sourceFeature = projectPath.split('/')[0];
+  const sourceLayer = projectPath.split('/')[1];
+  if (
+    !isTest &&
+    featureNames.has(sourceFeature) &&
+    !['application', 'domain', 'infrastructure', 'presentation', 'public-api.ts'].includes(
+      sourceLayer,
+    ) &&
+    !projectPath.endsWith('.module.ts')
+  ) {
+    violations.push(`${projectPath}: production feature files must use the prescribed layers`);
+  }
+  if (!isTest && /\bforwardRef\s*\(/.test(source)) {
+    violations.push(`${projectPath}: forwardRef is forbidden; correct the module boundary`);
+  }
+  for (const specifier of importedModules(source)) {
+    if (isTest) continue;
+    const targetPath = specifier.startsWith('.')
+      ? normalize(relative(apiSource, resolve(dirname(file), specifier)))
+      : specifier;
+    const targetFeature = targetPath.split('/')[0];
+    if (
+      ['application', 'infrastructure'].includes(sourceLayer) &&
+      targetPath.includes('/presentation/')
+    ) {
+      violations.push(`${projectPath}: ${sourceLayer} cannot import presentation ${specifier}`);
+    }
+    if (['core', 'common'].includes(sourceFeature) && featureNames.has(targetFeature)) {
+      violations.push(`${projectPath}: ${sourceFeature} cannot import feature ${targetFeature}`);
+    }
+    if (
+      projectPath.includes('/domain/') &&
+      (specifier.startsWith('@nestjs/') ||
+        /\/(application|presentation|infrastructure)\//.test(targetPath))
+    ) {
+      violations.push(`${projectPath}: domain cannot import ${specifier}`);
+    }
+    if (
+      featureNames.has(sourceFeature) &&
+      featureNames.has(targetFeature) &&
+      sourceFeature !== targetFeature
+    ) {
+      if (targetPath.replace(/\.(ts|js)$/, '') !== `${targetFeature}/public-api`) {
+        violations.push(
+          `${projectPath}: cross-feature import '${specifier}' must use ${targetFeature}/public-api`,
+        );
+      }
+      if (projectPath.endsWith('.module.ts')) {
+        const dependencies = moduleDependencies.get(sourceFeature) ?? new Set();
+        dependencies.add(targetFeature);
+        moduleDependencies.set(sourceFeature, dependencies);
+      }
+    }
+  }
 
   if (
     projectPath.includes('/presentation/controllers/') &&
@@ -53,6 +118,20 @@ for (const file of files) {
   }
 }
 
+for (const feature of moduleDependencies.keys()) {
+  verifyAcyclic(feature, []);
+}
+
+function verifyAcyclic(feature, ancestors) {
+  if (ancestors.includes(feature)) {
+    violations.push(`Nest module dependency cycle: ${[...ancestors, feature].join(' -> ')}`);
+    return;
+  }
+  for (const dependency of moduleDependencies.get(feature) ?? []) {
+    verifyAcyclic(dependency, [...ancestors, feature]);
+  }
+}
+
 if (violations.length > 0) {
   process.stderr.write(`Backend architecture boundary violations:\n${violations.join('\n')}\n`);
   process.exitCode = 1;
@@ -70,10 +149,6 @@ async function typescriptFiles(directory) {
     }),
   );
   return nested.flat().sort();
-}
-
-function importedModules(source) {
-  return [...source.matchAll(importPattern)].map((match) => match[1] ?? '');
 }
 
 function canAccessPersistence(projectPath) {
