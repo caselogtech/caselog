@@ -9,6 +9,7 @@ import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../../../app.module';
 import { configureApplication } from '../../../configure-application';
+import { runQueuedJobs } from '../../../core/jobs/tests/support/manual-pg-boss';
 import { createPrismaClient } from '../../../core/database/infrastructure/prisma/prisma-client';
 import type { PrismaClient } from '../../../generated/prisma/client';
 
@@ -314,6 +315,7 @@ describe('reporting', () => {
     });
     expect(resultResponse.statusCode, resultResponse.body).toBe(201);
 
+    await runQueuedJobs();
     await vi.waitFor(
       async () => {
         const snapshot = await admin.runProgressSnapshot.findUnique({

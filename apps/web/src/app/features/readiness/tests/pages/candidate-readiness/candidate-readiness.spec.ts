@@ -103,6 +103,22 @@ describe('CandidateReadiness', () => {
     expect(readinessApi.evaluate).toHaveBeenCalledWith('acme', 'checkout', candidateId);
   });
 
+  it('refreshes a current decision while the page remains open', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const fixture = TestBed.createComponent(CandidateReadiness);
+    try {
+      fixture.detectChanges();
+      await vi.waitFor(() => expect(fixture.componentInstance.current.isSuccess()).toBe(true));
+      readinessApi.current.mockResolvedValue({ ...readiness, state: 'stale' });
+      await vi.advanceTimersByTimeAsync(30_000);
+      await vi.waitFor(() => expect(fixture.componentInstance.current.data()?.state).toBe('stale'));
+      expect(readinessApi.current.mock.calls.length).toBeGreaterThan(1);
+    } finally {
+      fixture.destroy();
+      vi.useRealTimers();
+    }
+  });
+
   it('offers published policy assignment when the candidate has no policy', async () => {
     readinessApi.current.mockRejectedValueOnce(noPolicyError());
     const fixture = TestBed.createComponent(CandidateReadiness);

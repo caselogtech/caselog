@@ -87,7 +87,8 @@ export class CandidateReadiness {
     retry: false,
     refetchInterval: (query) => {
       const state = query.state.data?.state;
-      return state === 'pending' || state === 'stale' ? 5_000 : false;
+      if (state === 'pending' || state === 'stale') return 5_000;
+      return state === 'current' ? 30_000 : false;
     },
   }));
   readonly noPolicy = computed(

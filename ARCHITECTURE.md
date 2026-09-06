@@ -287,6 +287,12 @@ abstraction at a real external or replaceable boundary.
 - Readiness evaluation follows the same rule. Evidence ingestion, policy-version changes,
   candidate/run links, and relevant source revisions schedule evaluation for affected active
   candidates. Historical decisions are not recomputed in place.
+- Evidence revisions include freshness transitions. Snapshot and summary reads lock the
+  candidate revision with ingestion, advance it once when current evidence expires after
+  its last revision timestamp, and append a durable revision event. Reconciliation uses
+  the same read contract, so expiry is discovered even without browser traffic. Expiry
+  never modifies source observations or historical decisions; a new revision permits a
+  successor evaluation while concurrent reads and retries share the same revision.
 
 ## 4. Multi-tenancy
 

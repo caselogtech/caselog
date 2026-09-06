@@ -69,6 +69,7 @@ export class ReleaseList {
       ),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    refetchInterval: 30_000,
   }));
 
   readonly items = computed(() => this.releases.data()?.pages.flatMap(({ items }) => items) ?? []);

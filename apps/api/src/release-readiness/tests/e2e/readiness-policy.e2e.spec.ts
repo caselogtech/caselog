@@ -10,12 +10,14 @@ import {
 } from '@caselog/schemas/readiness';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../../../app.module';
 import { configureApplication } from '../../../configure-application';
 import { runInTenant } from '../../../core/database/application/services/tenant-database.service';
 import { createPrismaClient } from '../../../core/database/infrastructure/prisma/prisma-client';
 import type { PrismaClient } from '../../../generated/prisma/client';
+import { runQueuedJobs } from '../../../core/jobs/tests/support/manual-pg-boss';
+import { ReadinessEventConsumerService } from '../../application/services/readiness-event-consumer.service';
 
 const PASSWORD = 'correct horse battery staple';
 
@@ -32,6 +34,7 @@ describe('release readiness policy API', () => {
   let releaseId = '';
   let firstVersionId = '';
   let candidateId = '';
+  let evidenceExpiresAt: Date;
   const emails: string[] = [];
 
   beforeAll(async () => {
@@ -536,6 +539,78 @@ describe('release readiness policy API', () => {
     ).rejects.toThrow(/immutable/);
   });
 
+  it('advances expiry once across concurrent reads and preserves the previous decision', async () => {
+    const previous = await evaluateCandidate();
+    const originalObservations = await admin.evidenceObservation.findMany({
+      where: { organizationId, candidateId },
+      orderBy: { id: 'asc' },
+    });
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(evidenceExpiresAt);
+    try {
+      const responses = await Promise.all([
+        app.inject({
+          method: 'GET',
+          url: readinessUrl(),
+          headers: { authorization: `Bearer ${readOnlyToken}` },
+        }),
+        app.inject({
+          method: 'GET',
+          url: `/api/v1/projects/${projectSlug}/release-readiness`,
+          headers: { authorization: `Bearer ${readOnlyToken}` },
+        }),
+      ]);
+      expect(responses.map(({ statusCode }) => statusCode)).toEqual([200, 200]);
+      const current = candidateReadinessResponseSchema.parse(responses[0]?.json());
+      const overview = releaseReadinessListResponseSchema.parse(responses[1]?.json());
+      expect(current).toMatchObject({ state: 'stale', currentEvidenceRevision: 2 });
+      expect(current.decision?.id).toBe(previous.decision?.id);
+      expect(overview.items[0]?.readiness).toMatchObject({
+        state: 'stale',
+        currentEvidenceRevision: 2,
+      });
+      expect(
+        await app.get(ReadinessEventConsumerService).processBatch(organizationId, 100),
+      ).toMatchObject({ requested: 1 });
+      await runQueuedJobs();
+      const [evaluated, replay] = await Promise.all([evaluateCandidate(), evaluateCandidate()]);
+      expect(evaluated).toMatchObject({ state: 'current', currentEvidenceRevision: 2 });
+      expect(evaluated.decision).toMatchObject({
+        status: 'at_risk',
+        evidenceRevision: 2,
+        trigger: 'evidence_changed',
+      });
+      expect(evaluated.decision?.gates.every(({ diagnostic }) => diagnostic === 'stale')).toBe(
+        true,
+      );
+      expect(evaluated.decision?.id).not.toBe(previous.decision?.id);
+      expect(replay.decision?.id).toBe(evaluated.decision?.id);
+      expect(
+        await admin.readinessDecision.findFirstOrThrow({
+          where: { organizationId, id: previous.decision?.id },
+        }),
+      ).toMatchObject({ status: 'READY', evidenceRevision: 1 });
+      expect(
+        await admin.evidenceObservation.findMany({
+          where: { organizationId, candidateId },
+          orderBy: { id: 'asc' },
+        }),
+      ).toEqual(originalObservations);
+      expect(
+        await admin.integrationEvent.count({
+          where: {
+            organizationId,
+            eventName: 'quality_evidence.candidate_revision_advanced',
+            sourceId: candidateId,
+            sourceRevision: '2',
+          },
+        }),
+      ).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('records policy lifecycle audit history', async () => {
     const actions = await admin.auditLog.findMany({
       where: {
@@ -593,7 +668,8 @@ describe('release readiness policy API', () => {
       },
     });
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1_000);
+    const expiresAt = new Date(now.getTime() + 60_000);
+    evidenceExpiresAt = expiresAt;
     const dimensions = { testRunRole: 'required' };
     const dimensionsHash = 'b'.repeat(64);
     const completion = await admin.evidenceObservation.create({

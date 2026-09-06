@@ -102,6 +102,7 @@ export class ReadinessEvaluationRequestRepository {
           projectId: currentAssignment.projectId,
           candidateId: input.candidateId,
           assignmentId: currentAssignment.assignmentId,
+          decisionId: sameAssignment ? projection?.decisionId : null,
           targetEvidenceRevision,
           targetEvaluatorVersion: READINESS_EVALUATOR_VERSION,
           state,
