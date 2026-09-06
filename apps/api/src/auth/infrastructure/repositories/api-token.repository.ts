@@ -13,12 +13,18 @@ const SCOPE_TO_DATABASE: Record<ApiTokenScopeValue, ApiTokenScope> = {
   'results:write': 'RESULTS_WRITE',
   'runs:read': 'RUNS_READ',
   'evidence:write': 'EVIDENCE_WRITE',
+  'candidates:write': 'CANDIDATES_WRITE',
+  'readiness:read': 'READINESS_READ',
+  'readiness:write': 'READINESS_WRITE',
 };
 
 const SCOPE_FROM_DATABASE: Record<ApiTokenScope, ApiTokenScopeValue> = {
   RESULTS_WRITE: 'results:write',
   RUNS_READ: 'runs:read',
   EVIDENCE_WRITE: 'evidence:write',
+  CANDIDATES_WRITE: 'candidates:write',
+  READINESS_READ: 'readiness:read',
+  READINESS_WRITE: 'readiness:write',
 };
 
 type ApiTokenRecord = {

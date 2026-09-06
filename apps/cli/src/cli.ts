@@ -2,11 +2,20 @@
 
 import { CliInputError, parseCommand } from './arguments.js';
 import { UploadError, uploadJUnit, type UploadSummary } from './upload.js';
+import { runPipeline } from './pipeline.js';
+import { humanPipelineResult } from './pipeline-response.js';
+import { PipelineError, requestJson } from './pipeline-client.js';
 
 const HELP = `Caselog CLI
 
 Usage:
   caselog upload --project <slug> --run <uuid> [options] <file-or-directory>
+  caselog candidate create --project <slug> --release <uuid> --commit <sha> [--build <id>]
+  caselog candidate link --project <slug> --candidate <uuid> --run <uuid>
+  caselog readiness assign --project <slug> --candidate <uuid> --policy <uuid>
+  caselog readiness evaluate --project <slug> --candidate <uuid>
+  caselog readiness check --project <slug> --candidate <uuid> [--wait --timeout 120]
+  caselog evidence upload --project <slug> --candidate <uuid> --file <json>
 
 Options:
   -p, --project <slug>       Project slug
@@ -16,10 +25,14 @@ Options:
       --idempotency-key <k>  Custom retry key
       --json                 Print a machine-readable summary
       --fail-on-unmatched    Exit with code 2 when results cannot be matched
+      --candidate <uuid>     Link the upload's test run to this candidate
+      --wait                 Wait for a current, known readiness decision
+      --timeout <seconds>    Pipeline deadline (1–3600, default 120)
+      --poll-interval <sec>  Poll interval (0.1–60, default 2)
   -h, --help                 Show this help
 
 Environment:
-  CASELOG_TOKEN              Org-scoped API token with results:write
+  CASELOG_TOKEN              Org-scoped API token with the command's required scopes
   CASELOG_API_URL            API base URL, for example https://app.example/api/v1
 `;
 
@@ -36,16 +49,54 @@ export async function runCli(
       io.stdout(HELP);
       return 0;
     }
+    if (command.kind === 'pipeline') {
+      const result = await runPipeline(command);
+      io.stdout(command.json ? JSON.stringify(result) : humanPipelineResult(result));
+      return result.exitCode;
+    }
+    if (command.candidateId) {
+      await requestJson({
+        apiUrl: command.apiUrl,
+        path: `projects/${command.projectSlug}/candidates/${command.candidateId}/test-runs/${command.runId}`,
+        method: 'PUT',
+        token: command.token,
+        body: { role: 'required' },
+        signal: AbortSignal.timeout(30_000),
+      });
+    }
 
     const summary = await uploadJUnit(command);
     io.stdout(command.json ? JSON.stringify(summary) : humanSummary(summary));
     return command.failOnUnmatched && summary.unmatched > 0 ? 2 : 0;
   } catch (error) {
+    if (['candidate', 'readiness', 'evidence'].includes(argv[0] ?? '')) {
+      const code =
+        error instanceof PipelineError
+          ? error.code
+          : error instanceof CliInputError
+            ? 'invalid_arguments'
+            : 'operation_failed';
+      const message =
+        error instanceof PipelineError || error instanceof CliInputError
+          ? error.message
+          : 'Could not complete the operation';
+      if (argv.includes('--json'))
+        io.stdout(
+          JSON.stringify({
+            version: 1,
+            command: `${argv[0]} ${argv[1] ?? ''}`,
+            exitCode: 2,
+            error: { code, message },
+          }),
+        );
+      else io.stderr(`Error: ${message}`);
+      return 2;
+    }
     if (error instanceof CliInputError) {
       io.stderr(`Error: ${error.message}\n\n${HELP}`);
       return 1;
     }
-    if (error instanceof UploadError) {
+    if (error instanceof UploadError || error instanceof PipelineError) {
       io.stderr(`Error: ${error.message}`);
       return 1;
     }

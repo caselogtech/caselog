@@ -7,12 +7,18 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
   'runs:read',
   'results:write',
   'evidence:write',
+  'candidates:write',
+  'readiness:read',
+  'readiness:write',
 ];
 
 const SCOPE_LABEL_KEYS: Record<ApiTokenScope, string> = {
   'runs:read': 'workspaceSettings.tokens.scopes.runsRead',
   'results:write': 'workspaceSettings.tokens.scopes.resultsWrite',
   'evidence:write': 'workspaceSettings.tokens.scopes.evidenceWrite',
+  'candidates:write': 'workspaceSettings.tokens.scopes.candidatesWrite',
+  'readiness:read': 'workspaceSettings.tokens.scopes.readinessRead',
+  'readiness:write': 'workspaceSettings.tokens.scopes.readinessWrite',
 };
 
 export function apiTokenScopeLabelKey(scope: ApiTokenScope): string {

@@ -73,9 +73,9 @@ pnpm openapi:generate
 
 ## CLI
 
-The `@caselog/cli` workspace provides streaming, idempotent JUnit uploads for CI
-pipelines. It will also become the machine-facing candidate/readiness workflow as that
-domain is implemented. See [apps/cli/README.md](apps/cli/README.md) for current usage.
+The `@caselog/cli` workspace provides candidate creation, test-run linking, evidence
+and JUnit ingestion, policy assignment, and readiness evaluation for CI pipelines.
+It supports bounded waiting and versioned JSON with stable exit codes. See [apps/cli/README.md](apps/cli/README.md) for current usage.
 
 ## CSV imports
 

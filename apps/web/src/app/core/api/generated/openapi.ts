@@ -1813,7 +1813,7 @@ export interface components {
                 id: string;
                 name: string;
                 tokenPrefix: string;
-                scopes: ("results:write" | "runs:read" | "evidence:write")[];
+                scopes: ("results:write" | "runs:read" | "evidence:write" | "candidates:write" | "readiness:read" | "readiness:write")[];
                 /** Format: date-time */
                 expiresAt: string;
                 lastUsedAt: string | null;
@@ -1828,7 +1828,7 @@ export interface components {
         };
         CreateApiTokenRequestDto: {
             name: string;
-            scopes: ("results:write" | "runs:read" | "evidence:write")[];
+            scopes: ("results:write" | "runs:read" | "evidence:write" | "candidates:write" | "readiness:read" | "readiness:write")[];
             /** Format: date-time */
             expiresAt: string;
         };
@@ -1839,7 +1839,7 @@ export interface components {
                 id: string;
                 name: string;
                 tokenPrefix: string;
-                scopes: ("results:write" | "runs:read" | "evidence:write")[];
+                scopes: ("results:write" | "runs:read" | "evidence:write" | "candidates:write" | "readiness:read" | "readiness:write")[];
                 /** Format: date-time */
                 expiresAt: string;
                 lastUsedAt: string | null;

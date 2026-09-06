@@ -231,9 +231,12 @@ enum AccountTokenPurpose {
 }
 
 enum ApiTokenScope {
-  RESULTS_WRITE  @map("results:write")
-  RUNS_READ      @map("runs:read")
-  EVIDENCE_WRITE @map("evidence:write")
+  RESULTS_WRITE    @map("results:write")
+  RUNS_READ        @map("runs:read")
+  EVIDENCE_WRITE   @map("evidence:write")
+  CANDIDATES_WRITE @map("candidates:write")
+  READINESS_READ   @map("readiness:read")
+  READINESS_WRITE  @map("readiness:write")
 
   @@map("api_token_scope")
 }

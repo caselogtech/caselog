@@ -82,8 +82,10 @@ export async function destroyReadinessWaiverE2eFixture(
   const { admin, application, app, organizationId, emails } = fixture;
   await admin.readinessWaiverRevocation.deleteMany({ where: { organizationId } });
   await admin.readinessWaiver.deleteMany({ where: { organizationId } });
+  await admin.currentReadinessDecision.deleteMany({ where: { organizationId } });
   await admin.gateEvaluation.deleteMany({ where: { organizationId } });
   await admin.readinessDecision.deleteMany({ where: { organizationId } });
+  await admin.currentCandidatePolicyAssignment.deleteMany({ where: { organizationId } });
   await admin.candidatePolicyAssignment.deleteMany({ where: { organizationId } });
   await admin.readinessGate.deleteMany({ where: { organizationId } });
   await admin.releasePolicyVersion.deleteMany({ where: { organizationId } });

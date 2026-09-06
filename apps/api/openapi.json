@@ -8814,7 +8814,10 @@
                     "enum": [
                       "results:write",
                       "runs:read",
-                      "evidence:write"
+                      "evidence:write",
+                      "candidates:write",
+                      "readiness:read",
+                      "readiness:write"
                     ]
                   }
                 },
@@ -8893,7 +8896,10 @@
               "enum": [
                 "results:write",
                 "runs:read",
-                "evidence:write"
+                "evidence:write",
+                "candidates:write",
+                "readiness:read",
+                "readiness:write"
               ]
             }
           },
@@ -8940,7 +8946,10 @@
                   "enum": [
                     "results:write",
                     "runs:read",
-                    "evidence:write"
+                    "evidence:write",
+                    "candidates:write",
+                    "readiness:read",
+                    "readiness:write"
                   ]
                 }
               },

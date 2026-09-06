@@ -338,6 +338,18 @@ PostgreSQL RLS boundary.
 
 ADR 0014 defines the hierarchy and commercial implications.
 
+### CI API tokens
+
+Organization tokens have explicit endpoint scopes. `candidates:write` allows
+candidate creation, lookup, and test-run linking; `readiness:read` allows policy
+assignment and decision reads; `readiness:write` allows policy assignment and
+evaluation. Existing ingestion scopes remain separate. Scope checks supplement
+live membership role checks and tenant RLS. Policy authoring, waivers, unlinking,
+and token administration remain session-only. The CLI's version 1 pipeline JSON
+and exit contract is documented in `apps/cli/README.md`; the existing JUnit upload
+contract remains compatible. Database enum additions are additive, with recovery
+instructions beside migration `20260906170000_ci_readiness_scopes`.
+
 ### Identity and role scopes
 
 `User` is a global identity and has no global product role. Authority is attached to an

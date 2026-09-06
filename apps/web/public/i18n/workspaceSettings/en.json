@@ -179,7 +179,10 @@
     "scopes": {
       "runsRead": "Read test runs",
       "resultsWrite": "Write test results",
-      "evidenceWrite": "Write quality evidence"
+      "evidenceWrite": "Write quality evidence",
+      "candidatesWrite": "Create candidates and link test runs",
+      "readinessRead": "Read readiness decisions",
+      "readinessWrite": "Assign policies and evaluate readiness"
     },
     "form": {
       "title": "New API token",

@@ -1,10 +1,14 @@
 import { parseArgs } from 'node:util';
+import { CliInputError, isUuid, parseApiUrl } from './cli-input.js';
+import { parsePipelineCommand, type PipelineCommand } from './pipeline-arguments.js';
+export { CliInputError } from './cli-input.js';
 
 export type UploadCommand = {
   kind: 'upload';
   inputPath: string;
   projectSlug: string;
   runId: string;
+  candidateId?: string;
   apiUrl: URL;
   token: string;
   idempotencyKey?: string;
@@ -12,13 +16,11 @@ export type UploadCommand = {
   failOnUnmatched: boolean;
 };
 
-export type ParsedCommand = UploadCommand | { kind: 'help' };
-
-export class CliInputError extends Error {
-  override readonly name = 'CliInputError';
-}
+export type ParsedCommand = UploadCommand | PipelineCommand | { kind: 'help' };
 
 export function parseCommand(argv: string[], environment: NodeJS.ProcessEnv): ParsedCommand {
+  if (['candidate', 'readiness', 'evidence'].includes(argv[0] ?? ''))
+    return parsePipelineCommand(argv, environment);
   let parsed: ReturnType<typeof parseArgs>;
   try {
     parsed = parseArgs({
@@ -28,6 +30,7 @@ export function parseCommand(argv: string[], environment: NodeJS.ProcessEnv): Pa
       options: {
         project: { type: 'string', short: 'p' },
         run: { type: 'string', short: 'r' },
+        candidate: { type: 'string' },
         format: { type: 'string', short: 'f', default: 'junit' },
         'api-url': { type: 'string' },
         'idempotency-key': { type: 'string' },
@@ -64,6 +67,9 @@ export function parseCommand(argv: string[], environment: NodeJS.ProcessEnv): Pa
     );
   }
 
+  const candidateId = parsed.values.candidate;
+  if (candidateId !== undefined && (typeof candidateId !== 'string' || !isUuid(candidateId)))
+    throw new CliInputError('--candidate must be a UUID');
   const token = environment.CASELOG_TOKEN?.trim();
   if (!token) throw new CliInputError('CASELOG_TOKEN is required');
   const apiUrlOption = parsed.values['api-url'];
@@ -88,32 +94,11 @@ export function parseCommand(argv: string[], environment: NodeJS.ProcessEnv): Pa
     inputPath,
     projectSlug,
     runId,
+    candidateId,
     apiUrl,
     token,
     idempotencyKey,
     json: parsed.values.json === true,
     failOnUnmatched: parsed.values['fail-on-unmatched'] === true,
   };
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
-function parseApiUrl(value: string | undefined): URL {
-  let url: URL;
-  try {
-    url = new URL(value?.trim() || 'http://localhost:3000/api/v1');
-  } catch {
-    throw new CliInputError('CASELOG_API_URL or --api-url must be a valid URL');
-  }
-  if (!['http:', 'https:'].includes(url.protocol)) {
-    throw new CliInputError('Caselog API URL must use http or https');
-  }
-  if (url.username || url.password || url.search || url.hash) {
-    throw new CliInputError('Caselog API URL must not contain credentials, query, or fragment');
-  }
-  if (url.pathname === '/') url.pathname = '/api/v1/';
-  if (!url.pathname.endsWith('/')) url.pathname += '/';
-  return url;
 }

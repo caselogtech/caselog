@@ -21,6 +21,7 @@ import {
   OrganizationAuthGuard,
   OrganizationRoleGuard,
   RequireOrganizationAccess,
+  RequireApiTokenScopes,
 } from '../../../auth/public-api';
 import { ReleaseCandidateService } from '../../application/services/release-candidate.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
@@ -43,6 +44,7 @@ export class CandidateTestRunController {
   ) {}
 
   @Get()
+  @RequireApiTokenScopes('candidates:write')
   @ApiOkResponse({ type: CandidateTestRunListResponseDto })
   list(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -56,6 +58,7 @@ export class CandidateTestRunController {
   }
 
   @Put(':runId')
+  @RequireApiTokenScopes('candidates:write')
   @RequireOrganizationAccess('lead')
   @ApiOkResponse({ type: CandidateTestRunResponseDto })
   link(

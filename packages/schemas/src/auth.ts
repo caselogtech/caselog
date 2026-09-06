@@ -79,7 +79,14 @@ export const organizationSessionPrincipalSchema = sessionPrincipalSchema.extend(
   role: z.enum(['owner', 'admin', 'lead', 'tester', 'contributor', 'read_only']),
 });
 
-export const apiTokenScopeSchema = z.enum(['results:write', 'runs:read', 'evidence:write']);
+export const apiTokenScopeSchema = z.enum([
+  'results:write',
+  'runs:read',
+  'evidence:write',
+  'candidates:write',
+  'readiness:read',
+  'readiness:write',
+]);
 
 export const apiTokenPrincipalSchema = z.object({
   sub: z.uuid(),

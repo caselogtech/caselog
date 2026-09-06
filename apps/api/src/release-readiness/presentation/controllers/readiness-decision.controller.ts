@@ -11,6 +11,7 @@ import {
   OrganizationAuthGuard,
   OrganizationRoleGuard,
   RequireOrganizationAccess,
+  RequireApiTokenScopes,
 } from '../../../auth/public-api';
 import { ReadinessDecisionService } from '../../application/services/readiness-decision.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
@@ -35,6 +36,7 @@ export class ReadinessDecisionController {
   ) {}
 
   @Get()
+  @RequireApiTokenScopes('readiness:read')
   @ApiOkResponse({ type: CandidateReadinessResponseDto })
   current(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -44,6 +46,7 @@ export class ReadinessDecisionController {
   }
 
   @Post('evaluations')
+  @RequireApiTokenScopes('readiness:write')
   @RequireOrganizationAccess('lead')
   @ApiCreatedResponse({ type: CandidateReadinessResponseDto })
   evaluate(
@@ -54,6 +57,7 @@ export class ReadinessDecisionController {
   }
 
   @Get('decisions')
+  @RequireApiTokenScopes('readiness:read')
   @ApiOkResponse({ type: ReadinessDecisionListResponseDto })
   history(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -74,6 +78,7 @@ export class ReadinessDecisionDetailController {
   ) {}
 
   @Get(':decisionId')
+  @RequireApiTokenScopes('readiness:read')
   @ApiOkResponse({ type: ReadinessDecisionResponseDto })
   detail(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,

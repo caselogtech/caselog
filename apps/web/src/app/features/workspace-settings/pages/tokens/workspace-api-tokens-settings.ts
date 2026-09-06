@@ -37,12 +37,21 @@ import {
   minimumApiTokenExpiry,
 } from '../../domain/api-token-presentation';
 
-type ScopeControlName = 'runsRead' | 'resultsWrite' | 'evidenceWrite';
+type ScopeControlName =
+  | 'runsRead'
+  | 'resultsWrite'
+  | 'evidenceWrite'
+  | 'candidatesWrite'
+  | 'readinessRead'
+  | 'readinessWrite';
 
 const SCOPE_CONTROL_NAMES: Record<ApiTokenScope, ScopeControlName> = {
   'runs:read': 'runsRead',
   'results:write': 'resultsWrite',
   'evidence:write': 'evidenceWrite',
+  'candidates:write': 'candidatesWrite',
+  'readiness:read': 'readinessRead',
+  'readiness:write': 'readinessWrite',
 };
 
 const validExpiry: ValidatorFn = (control) =>
@@ -100,6 +109,9 @@ export class WorkspaceApiTokensSettings {
         runsRead: false,
         resultsWrite: false,
         evidenceWrite: false,
+        candidatesWrite: false,
+        readinessRead: false,
+        readinessWrite: false,
       },
       { validators: [scopeRequired] },
     ),
@@ -188,7 +200,14 @@ export class WorkspaceApiTokensSettings {
     this.form.reset({
       name: '',
       expiresAt: defaultApiTokenExpiry(),
-      scopes: { runsRead: false, resultsWrite: false, evidenceWrite: false },
+      scopes: {
+        runsRead: false,
+        resultsWrite: false,
+        evidenceWrite: false,
+        candidatesWrite: false,
+        readinessRead: false,
+        readinessWrite: false,
+      },
     });
   }
 

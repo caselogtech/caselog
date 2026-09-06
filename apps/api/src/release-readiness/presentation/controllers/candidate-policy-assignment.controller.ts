@@ -9,6 +9,7 @@ import {
   OrganizationAuthGuard,
   OrganizationRoleGuard,
   RequireOrganizationAccess,
+  RequireApiTokenScopes,
 } from '../../../auth/public-api';
 import { CandidatePolicyAssignmentService } from '../../application/services/candidate-policy-assignment.service';
 import { CandidatePolicyAssignmentResponseDto } from '../dto/candidate-policy-assignment-response.dto';
@@ -29,6 +30,7 @@ export class CandidatePolicyAssignmentController {
   ) {}
 
   @Put()
+  @RequireApiTokenScopes('readiness:write')
   @RequireOrganizationAccess('lead')
   @ApiOkResponse({ type: CandidatePolicyAssignmentResponseDto })
   assign(
@@ -47,6 +49,7 @@ export class CandidatePolicyAssignmentController {
   }
 
   @Get()
+  @RequireApiTokenScopes('readiness:read')
   @ApiOkResponse({ type: CandidatePolicyAssignmentResponseDto })
   current(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
