@@ -171,6 +171,7 @@ export class TestRunController {
   }
 
   @Post(':runId/close')
+  @RequireApiTokenScopes('candidates:write', 'results:write')
   @ApiCreatedResponse({ type: TestRunLifecycleResponseDto })
   close(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,

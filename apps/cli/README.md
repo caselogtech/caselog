@@ -32,7 +32,8 @@ arguments can be exposed in shell history and process listings.
 
 Create a workspace API token from Settings → API tokens. Candidate creation and run
 linking require `candidates:write`; policy assignment and evaluation require
-`readiness:write`; reading decisions requires `readiness:read`. Keep `results:write`
+`readiness:write`; reading decisions requires `readiness:read`. Closing a completed CI test run requires
+both `candidates:write` and `results:write`. Keep `results:write`
 for JUnit uploads and `evidence:write` for external observations. Tokens retain the
 creator's current workspace role: writes require lead or higher. These scopes do
 not permit policy authoring, waivers, destructive unlinking, or token administration.
@@ -51,6 +52,7 @@ node apps/cli/dist/cli.js readiness assign --project "$PROJECT_SLUG" \
   --candidate "$CANDIDATE_ID" --policy "$POLICY_ID"
 node apps/cli/dist/cli.js upload --project "$PROJECT_SLUG" --run "$RUN_ID" \
   --candidate "$CANDIDATE_ID" --fail-on-unmatched ./test-results
+node apps/cli/dist/cli.js run close --project "$PROJECT_SLUG" --run "$RUN_ID"
 node apps/cli/dist/cli.js readiness evaluate --project "$PROJECT_SLUG" \
   --candidate "$CANDIDATE_ID" --wait --timeout 120 --json
 ```
@@ -64,14 +66,15 @@ bounded to 1 MiB and remain subject to server validation and trust rules.
 
 `readiness check --project <slug> --candidate <uuid>` reads the server decision.
 Add `--wait` to poll pending, stale, or unknown results, and decisions whose
-unsatisfied gates only report missing/stale evidence, with `--timeout` (default
+unsatisfied gates only report missing, incomplete, or stale evidence, with `--timeout` (default
 120 seconds, maximum 3600) and `--poll-interval` (default 2 seconds). Failed
-background evaluation returns immediately. SIGINT and SIGTERM cancel waiting.
+background evaluation returns immediately. `evaluate --wait` re-evaluates the
+current inputs while waiting; `check --wait` reads the background projection. SIGINT and SIGTERM cancel waiting.
 The CLI never recalculates gate outcomes or accepts a stale ready decision.
 
 ### Version 1 pipeline output contract
 
-The `candidate`, `readiness`, and `evidence` commands emit one JSON object with
+The `candidate`, `run`, `readiness`, and `evidence` commands emit one JSON object with
 `--json`: `{ "version": 1, "command": "readiness check", "exitCode": 0, "data": ... }`.
 `data` is the public API resource; readiness includes gate diagnostics and the
 immutable decision ID. Errors use `error: { code, message }` instead of `data`.
@@ -91,6 +94,7 @@ same-input evaluations are idempotent on the server. Redirects are rejected and
 HTTP error bodies are not echoed, to avoid exposing credentials or sensitive data.
 
 Readiness is evidence-based: after JUnit ingestion, native evidence is materialized
-asynchronously. `--wait` waits for the server's current projection; it does not
+asynchronously. Close the run after all results are uploaded: an active run is
+incomplete evidence even when every recorded test passed. `--wait` waits for the server's current projection; it does not
 certify that unrelated producers have finished. Use a distinct immutable candidate
 per build and require all expected evidence in its policy before promotion.

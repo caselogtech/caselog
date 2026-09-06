@@ -18,14 +18,10 @@ export async function runPipeline(
     const body = command.file
       ? await evidenceBody(command.file, command.candidateId)
       : command.body;
-    let path = command.path;
-    let method = command.method;
     for (;;) {
       const value = await requestJson({
         ...command,
-        path,
-        method,
-        body: method === 'GET' ? undefined : body,
+        body: command.method === 'GET' ? undefined : body,
         signal: combined,
       });
       const result = pipelineResponse(command, value);
@@ -37,8 +33,6 @@ export async function runPipeline(
       )
         return result;
       await delay(command.pollMs, undefined, { signal: combined });
-      path = command.path.replace(/\/evaluations$/, '');
-      method = 'GET';
     }
   } catch (error) {
     if (combined.aborted)
@@ -91,7 +85,7 @@ function awaitingEvidence(result: PipelineResult): boolean {
     unresolved.length > 0 &&
     unresolved.every(
       (gate) =>
-        isRecord(gate) && ['missing_evidence', 'stale_evidence'].includes(String(gate.diagnostic)),
+        isRecord(gate) && ['missing', 'incomplete', 'stale'].includes(String(gate.diagnostic)),
     )
   );
 }

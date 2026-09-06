@@ -97,7 +97,7 @@ describe('pipeline CLI', () => {
 
   it('waits for required evidence to arrive without accepting missing or stale inputs', async () => {
     respond = (index) => {
-      const value = readiness(index < 2 ? 'blocked' : 'ready');
+      const value = readiness(index < 3 ? 'blocked' : 'ready');
       return {
         status: 200,
         body: {
@@ -105,11 +105,11 @@ describe('pipeline CLI', () => {
           decision: {
             ...value.decision,
             gates:
-              index < 2
+              index < 3
                 ? [
                     {
                       result: 'failed',
-                      diagnostic: index === 0 ? 'missing_evidence' : 'stale_evidence',
+                      diagnostic: ['missing', 'incomplete', 'stale'][index],
                     },
                   ]
                 : [],
@@ -118,7 +118,25 @@ describe('pipeline CLI', () => {
       };
     };
     expect((await command([...checkArgs(), '--wait', '--poll-interval', '0.1'])).code).toBe(0);
-    expect(requests).toHaveLength(3);
+    expect(requests).toHaveLength(4);
+  });
+
+  it('re-evaluates fresh inputs while waiting for native materialization', async () => {
+    respond = (index) => ({
+      status: 201,
+      body: {
+        ...readiness(index === 0 ? 'blocked' : 'ready'),
+        decision: {
+          ...readiness(index === 0 ? 'blocked' : 'ready').decision,
+          gates: index === 0 ? [{ result: 'failed', diagnostic: 'missing' }] : [],
+        },
+      },
+    });
+    const args = [...checkArgs()];
+    args[1] = 'evaluate';
+    expect((await command([...args, '--wait', '--poll-interval', '0.1'])).code).toBe(0);
+    expect(requests.map(({ method }) => method)).toEqual(['POST', 'POST']);
+    expect(requests[0]?.path).toContain('/readiness/evaluations');
   });
 
   it('returns error exit 2 for a terminal failure or mismatched candidate', async () => {

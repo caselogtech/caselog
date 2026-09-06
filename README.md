@@ -64,6 +64,23 @@ types. Document generation uses disposable configuration without connecting to
 external services. Architecture checks enforce public module imports, domain-layer
 direction, core/shared isolation, and acyclic Nest module composition.
 
+The Chromium smoke journey runs the built frontend, real API, PostgreSQL outbox,
+and pg-boss workers. It covers browser login, candidate/CLI/JUnit ingestion,
+readiness changes, mobile overflow, audited waivers, and historical decisions:
+
+```bash
+pnpm build
+pnpm exec playwright install chromium
+pnpm test:browser
+```
+
+The runner creates and removes its own random database through
+`MIGRATION_DATABASE_URL` (the local database role needs `CREATEDB`). It seeds only
+that database and refuses to reuse servers on ports 3137/4317. PostgreSQL, S3 and
+SMTP must be available. Failed runs retain local traces under ignored
+`test-results/` and `playwright-report/`; the test uses disposable credentials.
+No browser retries are configured.
+
 Regenerate the committed OpenAPI document and frontend TypeScript contract after a
 public API change:
 

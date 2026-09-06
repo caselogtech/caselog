@@ -19,7 +19,7 @@ export type UploadCommand = {
 export type ParsedCommand = UploadCommand | PipelineCommand | { kind: 'help' };
 
 export function parseCommand(argv: string[], environment: NodeJS.ProcessEnv): ParsedCommand {
-  if (['candidate', 'readiness', 'evidence'].includes(argv[0] ?? ''))
+  if (['candidate', 'readiness', 'evidence', 'run'].includes(argv[0] ?? ''))
     return parsePipelineCommand(argv, environment);
   let parsed: ReturnType<typeof parseArgs>;
   try {

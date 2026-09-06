@@ -11,6 +11,7 @@ const HELP = `Caselog CLI
 Usage:
   caselog upload --project <slug> --run <uuid> [options] <file-or-directory>
   caselog candidate create --project <slug> --release <uuid> --commit <sha> [--build <id>]
+  caselog run close --project <slug> --run <uuid>
   caselog candidate link --project <slug> --candidate <uuid> --run <uuid>
   caselog readiness assign --project <slug> --candidate <uuid> --policy <uuid>
   caselog readiness evaluate --project <slug> --candidate <uuid>
@@ -69,7 +70,7 @@ export async function runCli(
     io.stdout(command.json ? JSON.stringify(summary) : humanSummary(summary));
     return command.failOnUnmatched && summary.unmatched > 0 ? 2 : 0;
   } catch (error) {
-    if (['candidate', 'readiness', 'evidence'].includes(argv[0] ?? '')) {
+    if (['candidate', 'readiness', 'evidence', 'run'].includes(argv[0] ?? '')) {
       const code =
         error instanceof PipelineError
           ? error.code

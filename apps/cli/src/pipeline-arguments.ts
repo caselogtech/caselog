@@ -8,7 +8,7 @@ export type PipelineCommand = {
   token: string;
   path: string;
   method: 'GET' | 'POST' | 'PUT';
-  resource: 'candidate' | 'link' | 'assignment' | 'readiness' | 'observation';
+  resource: 'candidate' | 'link' | 'assignment' | 'readiness' | 'observation' | 'run';
   body?: Record<string, unknown>;
   file?: string;
   candidateId?: string;
@@ -61,6 +61,7 @@ export function parsePipelineCommand(
   if (
     extra.length ||
     ![
+      'run close',
       'candidate create',
       'candidate link',
       'readiness assign',
@@ -99,6 +100,13 @@ export function parsePipelineCommand(
     idempotencyKey,
   };
   const projectPath = `projects/${project}`;
+  if (action === 'run close')
+    return {
+      ...common,
+      path: `${projectPath}/runs/${uuid('run')}/close`,
+      method: 'POST',
+      resource: 'run',
+    };
   if (action === 'candidate create') {
     const body: Record<string, unknown> = {};
     for (const [flag, field] of Object.entries({

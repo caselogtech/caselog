@@ -26,10 +26,12 @@
     "openapi:check": "pnpm --filter @caselog/api openapi:check && openapi-typescript apps/api/openapi.json -o apps/web/src/app/core/api/generated/openapi.ts --check",
     "pretest": "pnpm db:migrate:deploy",
     "test": "node --test scripts/tests/*.test.mjs && pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck && tsc -p scripts/browser/tsconfig.json",
+    "test:browser": "node scripts/browser/run.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
+    "@playwright/test": "1.63.0",
     "openapi-typescript": "7.13.0",
     "typescript": "~5.9.3"
   }

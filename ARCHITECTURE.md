@@ -344,7 +344,8 @@ Organization tokens have explicit endpoint scopes. `candidates:write` allows
 candidate creation, lookup, and test-run linking; `readiness:read` allows policy
 assignment and decision reads; `readiness:write` allows policy assignment and
 evaluation. Existing ingestion scopes remain separate. Scope checks supplement
-live membership role checks and tenant RLS. Policy authoring, waivers, unlinking,
+live membership role checks and tenant RLS. Closing a CI run requires both
+`candidates:write` and `results:write`; results-only tokens cannot close runs. Policy authoring, waivers, unlinking,
 and token administration remain session-only. The CLI's version 1 pipeline JSON
 and exit contract is documented in `apps/cli/README.md`; the existing JUnit upload
 contract remains compatible. Database enum additions are additive, with recovery

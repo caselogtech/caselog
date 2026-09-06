@@ -21,7 +21,12 @@ describe('CI readiness API and CLI', () => {
     foreign = await createReadinessWaiverE2eFixture();
     await fixture.app.listen(0, '127.0.0.1');
     apiUrl = `${await fixture.app.getUrl()}/api/v1`;
-    const issued = await issue(['candidates:write', 'readiness:read', 'readiness:write']);
+    const issued = await issue([
+      'candidates:write',
+      'results:write',
+      'readiness:read',
+      'readiness:write',
+    ]);
     token = issued.token;
     tokenId = issued.apiToken.id;
     const run = await fixture.admin.testRun.create({
@@ -141,6 +146,22 @@ describe('CI readiness API and CLI', () => {
       expect(response.statusCode, response.body).toBe(404);
     }
   });
+  it('closes a run idempotently only when both CI write scopes are present', async () => {
+    for (const scope of ['candidates:write', 'results:write'] as const) {
+      const limited = await issue([scope]);
+      const denied = await fixture.app.inject({
+        method: 'POST',
+        url: `/api/v1/projects/${fixture.projectSlug}/runs/${runId}/close`,
+        headers: { authorization: `Bearer ${limited.token}` },
+      });
+      expect(denied.statusCode).toBe(403);
+    }
+    const closed = await command(['run', 'close', '--run', runId]);
+    expect(closed.code, JSON.stringify(closed.body)).toBe(0);
+    expect(closed.body.data.status).toBe('completed');
+    expect((await command(['run', 'close', '--run', runId])).code).toBe(0);
+  });
+
   it('honors creator role changes and token revocation immediately', async () => {
     await fixture.admin.membership.updateMany({
       where: { organizationId: fixture.organizationId, userId: fixture.ownerId },

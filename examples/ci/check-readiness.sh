@@ -19,5 +19,6 @@ node "$CASELOG_CLI" readiness assign --project "$PROJECT_SLUG" \
   --candidate "$candidate" --policy "$POLICY_ID"
 node "$CASELOG_CLI" upload --project "$PROJECT_SLUG" --run "$RUN_ID" \
   --candidate "$candidate" --fail-on-unmatched "$JUNIT_PATH"
+node "$CASELOG_CLI" run close --project "$PROJECT_SLUG" --run "$RUN_ID"
 node "$CASELOG_CLI" readiness evaluate --project "$PROJECT_SLUG" \
   --candidate "$candidate" --wait --timeout 180 --json
