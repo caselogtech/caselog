@@ -27,11 +27,16 @@ direction, backend layers, tenant isolation, and frontend structure are defined 
 
 ## Local development
 
+For a deployment with HTTPS, separate database roles and versioned application images,
+follow the [self-hosting guide](deploy/README.md). The root Compose stack below is for
+local development.
+
 Requirements: Node.js from `.nvmrc`, pnpm 10, Docker with Compose.
 
 ```bash
 corepack enable
 pnpm install
+cp .env.example .env
 docker compose up -d
 pnpm db:migrate:deploy
 pnpm db:seed

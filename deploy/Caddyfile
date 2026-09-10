@@ -1,0 +1,10 @@
+# Replace both example domains and configure DNS before use.
+# During first-owner bootstrap, restrict access to your operator IP at this proxy
+# or the host firewall before temporarily enabling public registration.
+caselog.example.com {
+    reverse_proxy 127.0.0.1:8080
+}
+
+objects.example.com {
+    reverse_proxy 127.0.0.1:9090
+}

@@ -30,6 +30,18 @@ export const AUTH_CONFIG = Symbol('AUTH_CONFIG');
 
 export function createAuthConfig(): AuthConfig {
   const environment = authEnvironmentSchema.parse(process.env);
+  if (environment.NODE_ENV === 'production') {
+    if (new URL(environment.WEB_BASE_URL).protocol !== 'https:') {
+      throw new Error('WEB_BASE_URL must use HTTPS in production');
+    }
+    const secrets = [
+      environment.AUTH_SESSION_TOKEN_SECRET,
+      environment.AUTH_ORGANIZATION_TOKEN_SECRET,
+    ];
+    if (secrets[0] === secrets[1] || secrets.some((secret) => secret.startsWith('replace-with-'))) {
+      throw new Error('Production authentication requires distinct, randomly generated secrets');
+    }
+  }
 
   return {
     production: environment.NODE_ENV === 'production',

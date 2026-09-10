@@ -475,3 +475,18 @@ Before merging, the author and reviewer verify:
 Rules that can be checked automatically should gradually become lint rules,
 architecture tests, and CI checks. A documented boundary remains mandatory before an
 automated check exists.
+
+## 9. Self-hosted deployment boundary
+
+The root `Dockerfile` builds versioned API, web and operator migration artifacts from
+one source revision. Self-hosted and future managed deployments must use the same
+application artifacts and schema. `deploy/compose.yaml` defines the single-host example;
+`deploy/README.md` is the tracked installation and operations contract.
+
+The runtime API receives a non-owner database login that assumes `caselog_app` for RLS.
+Migration ownership and pg-boss schema administration use separate credentials. Queue
+schema creation privileges do not grant access to customer tables. The web proxy exposes
+the public API and static UI, while database connections, the API port and metrics remain
+private. TLS terminates at the host proxy; a bounded forwarded-header trust chain matches
+that topology. Browser S3 signatures use a public HTTPS origin independently of the API's
+private storage endpoint. Configuration and persistent data never enter application images.

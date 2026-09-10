@@ -1,0 +1,16 @@
+.git
+.vscode
+.codex
+.agents
+docs
+**/node_modules
+**/dist
+**/.angular
+**/coverage
+**/.env
+**/.env.*
+**/*.log
+apps/api/src/generated/prisma
+test-results
+playwright-report
+backups

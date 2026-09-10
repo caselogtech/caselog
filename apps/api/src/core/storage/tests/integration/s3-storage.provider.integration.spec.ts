@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { createServer, request } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createStorageConfig } from '../../infrastructure/config/storage.config';
 import { S3StorageProvider } from '../../infrastructure/adapters/s3-storage.provider';
@@ -62,5 +63,60 @@ describe('S3StorageProvider integration', () => {
       ]),
     );
     await storage.delete(copiedStorageKey);
+  });
+
+  it('signs the public host while keeping metadata and reads on the private endpoint', async () => {
+    const config = createStorageConfig();
+    const publicRequests: string[] = [];
+    const proxy = createServer((incoming, outgoing) => {
+      publicRequests.push(incoming.method ?? '');
+      const upstream = request(
+        new URL(incoming.url ?? '/', config.endpoint),
+        {
+          method: incoming.method,
+          headers: incoming.headers,
+        },
+        (response) => {
+          outgoing.writeHead(response.statusCode ?? 502, response.headers);
+          response.pipe(outgoing);
+        },
+      );
+      upstream.on('error', () => {
+        outgoing.writeHead(502);
+        outgoing.end();
+      });
+      incoming.pipe(upstream);
+    });
+    await new Promise<void>((resolve) => proxy.listen(0, '127.0.0.1', resolve));
+    const address = proxy.address();
+    if (!address || typeof address === 'string') throw new Error('Expected a TCP proxy');
+    const publicEndpoint = `http://127.0.0.1:${address.port}`;
+    const splitStorage = new S3StorageProvider({ ...config, publicEndpoint });
+    try {
+      await splitStorage.onModuleInit();
+      const upload = await splitStorage.createUploadUrl({
+        storageKey,
+        contentType: 'text/plain',
+        checksumSha256,
+        sizeBytes: body.byteLength,
+      });
+      expect(new URL(upload.url).origin).toBe(publicEndpoint);
+      const uploaded = await fetch(upload.url, { method: 'PUT', headers: upload.headers, body });
+      expect(uploaded.status, await uploaded.text()).toBe(200);
+      expect(await splitStorage.stat(storageKey)).toMatchObject({ checksumSha256 });
+      expect(await splitStorage.read(storageKey, body.byteLength)).toEqual(Uint8Array.from(body));
+      const download = await splitStorage.createDownloadUrl(
+        storageKey,
+        'evidence.txt',
+        'text/plain',
+      );
+      expect(await (await fetch(download.url)).text()).toBe(body.toString());
+      expect(publicRequests).toEqual(['PUT', 'GET']);
+    } finally {
+      proxy.closeAllConnections();
+      await new Promise<void>((resolve, reject) =>
+        proxy.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
   });
 });

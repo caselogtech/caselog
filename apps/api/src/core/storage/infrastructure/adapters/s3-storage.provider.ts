@@ -24,6 +24,7 @@ import type {
 @Injectable()
 export class S3StorageProvider implements StorageProvider, OnModuleInit {
   private readonly client: S3Client;
+  private readonly signingClient: S3Client;
 
   constructor(@Inject(STORAGE_CONFIG) private readonly config: StorageConfig) {
     this.client = new S3Client({
@@ -32,6 +33,14 @@ export class S3StorageProvider implements StorageProvider, OnModuleInit {
       forcePathStyle: config.forcePathStyle,
       credentials: { accessKeyId: config.accessKey, secretAccessKey: config.secretKey },
     });
+    this.signingClient = config.publicEndpoint
+      ? new S3Client({
+          endpoint: config.publicEndpoint,
+          region: config.region,
+          forcePathStyle: config.forcePathStyle,
+          credentials: { accessKeyId: config.accessKey, secretAccessKey: config.secretKey },
+        })
+      : this.client;
   }
 
   async onModuleInit(): Promise<void> {
@@ -54,7 +63,7 @@ export class S3StorageProvider implements StorageProvider, OnModuleInit {
       Metadata: { checksumSha256: input.checksumSha256 },
     });
     return {
-      url: await getSignedUrl(this.client, command, {
+      url: await getSignedUrl(this.signingClient, command, {
         expiresIn: this.config.uploadUrlTtlSeconds,
         signableHeaders: new Set(['content-type']),
         unhoistableHeaders: new Set(['x-amz-checksum-sha256', 'x-amz-meta-checksumsha256']),
@@ -82,7 +91,7 @@ export class S3StorageProvider implements StorageProvider, OnModuleInit {
       ResponseContentType: contentType,
     });
     return {
-      url: await getSignedUrl(this.client, command, {
+      url: await getSignedUrl(this.signingClient, command, {
         expiresIn: this.config.downloadUrlTtlSeconds,
       }),
       expiresAt,

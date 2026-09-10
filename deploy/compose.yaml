@@ -1,0 +1,129 @@
+name: caselog-production
+
+x-node-build: &node-build
+  context: ..
+  dockerfile: Dockerfile
+  args:
+    CASELOG_VERSION: ${CASELOG_VERSION:?Set an immutable release version or commit}
+    CASELOG_REVISION: ${CASELOG_REVISION:?Set the source commit}
+
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: caselog
+      POSTGRES_USER: caselog_owner
+      POSTGRES_PASSWORD: ${DATABASE_OWNER_PASSWORD:?Generate secrets first}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U caselog_owner -d caselog']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    image: caselog-migrate:${CASELOG_VERSION}
+    build:
+      <<: *node-build
+      target: migrate
+    restart: 'no'
+    environment:
+      MIGRATION_DATABASE_URL: postgresql://caselog_owner:${DATABASE_OWNER_PASSWORD}@postgres:5432/caselog?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  database-access:
+    image: postgres:16-alpine@sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229
+    restart: 'no'
+    entrypoint: [psql, -X, -q, -v, ON_ERROR_STOP=1, -f, /config/database-access.sql]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: caselog
+      PGUSER: caselog_owner
+      PGPASSWORD: ${DATABASE_OWNER_PASSWORD}
+      DATABASE_RUNTIME_PASSWORD: ${DATABASE_RUNTIME_PASSWORD:?Generate secrets first}
+      DATABASE_JOB_PASSWORD: ${DATABASE_JOB_PASSWORD:?Generate secrets first}
+    volumes: [./database-access.sql:/config/database-access.sql:ro]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  minio:
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    command: server /data --console-address ':9001'
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?Generate secrets first}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?Generate secrets first}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${WEB_BASE_URL:?Set the HTTPS web origin}
+    # Only an operator-controlled TLS reverse proxy should expose this port.
+    ports: ['127.0.0.1:${S3_BIND_PORT:-9090}:9000']
+    volumes: [object-data:/data]
+    healthcheck:
+      test: [CMD, mc, ready, local]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    image: caselog-api:${CASELOG_VERSION}
+    build:
+      <<: *node-build
+      target: api
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    stop_grace_period: 30s
+    environment:
+      NODE_ENV: production
+      API_TRUST_PROXY_HOPS: ${API_TRUST_PROXY_HOPS:-2}
+      DATABASE_URL: postgresql://caselog_runtime:${DATABASE_RUNTIME_PASSWORD}@postgres:5432/caselog?schema=public&options=-c%20role%3Dcaselog_app
+      JOB_DATABASE_URL: postgresql://caselog_jobs:${DATABASE_JOB_PASSWORD}@postgres:5432/caselog
+      WEB_BASE_URL: ${WEB_BASE_URL}
+      CASELOG_DEPLOYMENT_MODE: self_hosted
+      CASELOG_REGISTRATION_MODE: ${CASELOG_REGISTRATION_MODE:-invitation_only}
+      CASELOG_WORKSPACE_CREATION_ENABLED: 'true'
+      CASELOG_MANAGED_BILLING_ENABLED: 'false'
+      AUTH_SESSION_TOKEN_SECRET: ${AUTH_SESSION_TOKEN_SECRET:?Generate secrets first}
+      AUTH_ORGANIZATION_TOKEN_SECRET: ${AUTH_ORGANIZATION_TOKEN_SECRET:?Generate secrets first}
+      INTEGRATION_CREDENTIAL_MASTER_KEY: ${INTEGRATION_CREDENTIAL_MASTER_KEY:?Generate secrets first}
+      INTEGRATION_ALLOW_PRIVATE_NETWORKS: 'false'
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:?Set the HTTPS storage origin}
+      S3_REGION: us-east-1
+      S3_BUCKET: caselog
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_FORCE_PATH_STYLE: 'true'
+      S3_AUTO_CREATE_BUCKET: 'true'
+      MAIL_HOST: ${MAIL_HOST:?Set your SMTP host}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_SECURE: ${MAIL_SECURE:-true}
+      MAIL_FROM: ${MAIL_FROM:?Set the sender address}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      database-access: { condition: service_completed_successfully }
+      minio: { condition: service_healthy }
+
+  web:
+    image: caselog-web:${CASELOG_VERSION}
+    build:
+      <<: *node-build
+      target: web
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    ports: ['127.0.0.1:${WEB_BIND_PORT:-8080}:8080']
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  postgres-data:
+  object-data:

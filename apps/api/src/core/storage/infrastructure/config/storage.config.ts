@@ -3,6 +3,7 @@ import { z } from 'zod';
 const storageEnvironmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   S3_ENDPOINT: z.url(),
+  S3_PUBLIC_ENDPOINT: z.url().optional(),
   S3_REGION: z.string().min(1),
   S3_BUCKET: z.string().min(3).max(63),
   S3_ACCESS_KEY: z.string().min(1),
@@ -19,6 +20,7 @@ const storageEnvironmentSchema = z.object({
 
 export type StorageConfig = {
   endpoint: string;
+  publicEndpoint?: string;
   region: string;
   bucket: string;
   accessKey: string;
@@ -37,8 +39,15 @@ export const STORAGE_CONFIG = Symbol('STORAGE_CONFIG');
 
 export function createStorageConfig(): StorageConfig {
   const environment = storageEnvironmentSchema.parse(process.env);
+  if (
+    environment.NODE_ENV === 'production' &&
+    new URL(environment.S3_PUBLIC_ENDPOINT ?? environment.S3_ENDPOINT).protocol !== 'https:'
+  ) {
+    throw new Error('The browser-facing S3 endpoint must use HTTPS in production');
+  }
   return {
     endpoint: environment.S3_ENDPOINT,
+    publicEndpoint: environment.S3_PUBLIC_ENDPOINT,
     region: environment.S3_REGION,
     bucket: environment.S3_BUCKET,
     accessKey: environment.S3_ACCESS_KEY,
