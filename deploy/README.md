@@ -117,7 +117,9 @@ SMTP failures, database connections, memory and disk growth. Bound log retention
 your Docker daemon's log rotation settings. A running process alone does not establish
 release readiness: stale, missing and failed evidence remain visible product states.
 The host is a single failure domain. Database and S3 persistence require coordinated
-backup and a tested recovery plan before storing irreplaceable evidence.
+backup and a tested recovery plan before storing irreplaceable evidence. Follow the
+[backup, restore and upgrade runbook](RECOVERY.md) for the supplied offline snapshot
+scripts, image retention, migration recovery and a safe restore into a new project.
 
 `dc stop` stops services and retains volumes. `dc down` removes containers and networking
 but retains named volumes. `dc down --volumes` permanently destroys local database and
@@ -135,7 +137,9 @@ pnpm test:deployment
 The check requires Docker, OpenSSL and a local Chromium installation. It builds all three
 images, creates a random Compose project and isolated volumes, supplies ephemeral test
 TLS certificates and SMTP, then checks registration, email verification, first workspace
-ownership, secure cookies, real browser login and database role isolation. Cleanup removes
+ownership, secure cookies, real browser login, browser S3 transfers and database role isolation.
+It then backs up realistic test data and restores it into another isolated project, verifying
+history and object preservation and refusal of corrupt backups or nonempty targets. Cleanup removes
 only that random project's volumes. It never seeds or modifies an existing installation.
 Use `pnpm test:deployment --skip-build` only when the `hardening` images were just built
 from the code under test. This automated check does not replace an unfamiliar operator's

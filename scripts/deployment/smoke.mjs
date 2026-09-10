@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { chromium, request } from '@playwright/test';
+import { verifyRecovery } from './verify-recovery.mjs';
 
 const execute = promisify(execFile);
 const directory = await mkdtemp(join(tmpdir(), 'caselog-deployment-'));
@@ -250,6 +251,18 @@ try {
   console.log(
     'Verified browser login, HTTPS/CORS S3 transfers, non-root API and tenant/job database isolation',
   );
+  await verifyRecovery({
+    compose,
+    composeArgs,
+    execute,
+    directory,
+    project,
+    envFile,
+    client,
+    transfers,
+    email,
+    password,
+  });
 } catch (error) {
   if (started) {
     const logs = await compose('logs', '--tail', '40', 'api', 'migrate', 'database-access');
