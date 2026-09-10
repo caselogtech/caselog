@@ -8,7 +8,7 @@
     "dev": "ng serve",
     "start": "ng serve",
     "prebuild": "pnpm --filter @caselog/schemas build",
-    "build": "ng build",
+    "build": "ng build --stats-json && node ../../scripts/check-web-startup.mjs dist/caselog-web/stats.json",
     "i18n:check": "node scripts/check-translations.mjs",
     "watch": "ng build --watch --configuration development",
     "pretest": "pnpm --filter @caselog/schemas build",

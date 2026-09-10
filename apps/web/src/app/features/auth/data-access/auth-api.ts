@@ -1,8 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import {
-  type AcceptWorkspaceInvitationResponse,
-  acceptWorkspaceInvitationResponseSchema,
   type CreateWorkspaceRequest,
   type CreateWorkspaceResponse,
   createWorkspaceResponseSchema,
@@ -15,20 +13,24 @@ import {
   messageResponseSchema,
   type OrganizationTokenResponse,
   organizationTokenResponseSchema,
-  type RegisterInvitationAccountRequest,
   type RegisterRequest,
   type ResetPasswordRequest,
   type SessionResponse,
   sessionResponseSchema,
-  type WorkspaceInvitationPreview,
   type WorkspaceListResponse,
   type WorkspaceSettingsResponse,
   type WorkspaceSlugAvailabilityResponse,
-  workspaceInvitationPreviewSchema,
   workspaceListResponseSchema,
   workspaceSettingsResponseSchema,
   workspaceSlugAvailabilityResponseSchema,
-} from '@caselog/schemas';
+} from '@caselog/schemas/auth';
+import {
+  type AcceptWorkspaceInvitationResponse,
+  acceptWorkspaceInvitationResponseSchema,
+  type RegisterInvitationAccountRequest,
+  type WorkspaceInvitationPreview,
+  workspaceInvitationPreviewSchema,
+} from '@caselog/schemas/invitation';
 import { lastValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })

@@ -108,8 +108,9 @@ Use container labels to record the exact build, for example
 `docker image inspect caselog-api:VERSION --format '{{json .Config.Labels}}'`.
 The public health endpoint is `/api/v1/health`; the web proxy's `/healthz` checks only
 static serving. Metrics are deliberately unavailable through the public proxy. Scrape
-metrics from the private API network with an operator-controlled collector. Logs and
-metrics expose background failures and storage reconciliation; do not publish raw logs,
+metrics from the private API network with an operator-controlled collector. JavaScript,
+CSS, translation JSON and other text assets support gzip and `Vary: Accept-Encoding`.
+Logs and metrics expose background failures and storage reconciliation; do not publish raw logs,
 customer identifiers, job payloads, URLs with signatures or database dumps.
 
 Monitor health, job failures and retries, evidence freshness, storage maintenance errors,

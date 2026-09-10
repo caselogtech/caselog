@@ -189,6 +189,12 @@ try {
   const browserErrors = [];
   page.on('pageerror', (error) => browserErrors.push(error.message));
   await page.goto(`${webUrl}/auth/login`);
+  const index = await (await client.get('/')).text();
+  const mainAsset = index.match(/src="(main-[^"]+\.js)"/u)?.[1];
+  assert.ok(mainAsset, 'Expected the production entry asset');
+  const compressed = await client.get(`/${mainAsset}`, { headers: { 'accept-encoding': 'gzip' } });
+  assert.equal(compressed.headers()['content-encoding'], 'gzip');
+  assert.match(compressed.headers().vary, /accept-encoding/iu);
   assert.equal(await page.getByRole('link', { name: 'Source code', exact: true }).count(), 1);
   const license = await client.get('/LICENSE.txt');
   assert.equal(license.status(), 200);

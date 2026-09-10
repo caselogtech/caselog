@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { apiErrorSchema } from '@caselog/schemas';
+import { apiErrorSchema } from '@caselog/schemas/api-error';
 
 const TRANSLATED_ERROR_KEYS = new Set([
   'errors.active_readiness_waiver_exists',

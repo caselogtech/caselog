@@ -69,6 +69,11 @@ types. Document generation uses disposable configuration without connecting to
 external services. Architecture checks enforce public module imports, domain-layer
 direction, core/shared isolation, and acyclic Nest module composition.
 
+Production web builds also check the full static JavaScript import graph, including
+shared chunks that Angular's summary may label as lazy. The startup budget is 875,000
+bytes; non-authentication feature schemas must remain outside that graph. The web proxy
+compresses text assets with gzip. Component CSS warnings remain visible for review.
+
 The Chromium smoke journey runs the built frontend, real API, PostgreSQL outbox,
 and pg-boss workers. It covers browser login, candidate/CLI/JUnit ingestion,
 readiness changes, mobile overflow, audited waivers, and historical decisions:

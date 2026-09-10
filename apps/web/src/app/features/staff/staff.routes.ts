@@ -8,7 +8,7 @@ const directoryPage = () =>
 
 export const staffRoutes: Routes = [
   {
-    path: 'staff',
+    path: '',
     providers: staffTranslations,
     canActivate: [staffAccessGuard],
     loadComponent: () =>

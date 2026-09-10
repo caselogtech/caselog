@@ -12,6 +12,26 @@
       "browser": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./api-error": {
+      "types": "./dist/api-error.d.ts",
+      "browser": "./src/api-error.ts",
+      "default": "./dist/api-error.js"
+    },
+    "./auth": {
+      "types": "./dist/auth.d.ts",
+      "browser": "./src/auth.ts",
+      "default": "./dist/auth.js"
+    },
+    "./instance": {
+      "types": "./dist/instance.d.ts",
+      "browser": "./src/instance.ts",
+      "default": "./dist/instance.js"
+    },
+    "./invitation": {
+      "types": "./dist/invitation.d.ts",
+      "browser": "./src/invitation.ts",
+      "default": "./dist/invitation.js"
+    },
     "./evidence": {
       "types": "./dist/evidence.d.ts",
       "browser": "./src/evidence.ts",

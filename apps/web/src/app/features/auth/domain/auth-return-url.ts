@@ -1,4 +1,4 @@
-import { invitationTokenSchema } from '@caselog/schemas';
+import { invitationTokenSchema } from '@caselog/schemas/invitation';
 
 const INVITATION_PATH_PREFIX = '/auth/invite/';
 

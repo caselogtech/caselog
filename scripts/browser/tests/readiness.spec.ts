@@ -186,6 +186,8 @@ test('CI evidence reaches the browser; a waiver preserves the failed decision an
     expect((await historical.json()).decision.status).toBe('ready');
     await page.reload();
     await expect(page.getByText('Approved with waiver', { exact: true }).first()).toBeVisible();
+    await page.goto('/staff');
+    await expect(page).toHaveURL(/\/status\/forbidden(?:\?|$)/);
     expect(errors).toEqual([]);
   } finally {
     await rm(directory, { recursive: true, force: true });

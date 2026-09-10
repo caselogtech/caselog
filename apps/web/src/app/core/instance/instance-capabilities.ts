@@ -3,7 +3,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import {
   instanceCapabilitiesSchema,
   type InstanceCapabilities as InstanceCapabilitiesResponse,
-} from '@caselog/schemas';
+} from '@caselog/schemas/instance';
 import { lastValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
