@@ -1,6 +1,6 @@
 {
   "name": "@caselog/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Caselog command-line client for CI result uploads",
   "license": "MIT",
   "bin": {

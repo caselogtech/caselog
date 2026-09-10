@@ -8657,7 +8657,7 @@
   "info": {
     "title": "Caselog API",
     "description": "Public API for Caselog release-readiness and test-management workflows.",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "contact": {}
   },
   "tags": [],

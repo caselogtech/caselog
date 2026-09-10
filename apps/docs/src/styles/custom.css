@@ -1,0 +1,12 @@
+/* Accent colors follow the application's Framed Log palette. */
+:root {
+  --sl-color-accent-low: #1d5361;
+  --sl-color-accent: #5aa9b7;
+  --sl-color-accent-high: #e7f2f4;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #e7f2f4;
+  --sl-color-accent: #256676;
+  --sl-color-accent-high: #1d5361;
+}

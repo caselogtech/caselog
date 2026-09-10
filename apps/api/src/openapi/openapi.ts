@@ -9,7 +9,7 @@ export function createOpenApiDocument(app: NestFastifyApplication): OpenAPIObjec
   const config = new DocumentBuilder()
     .setTitle('Caselog API')
     .setDescription('Public API for Caselog release-readiness and test-management workflows.')
-    .setVersion('1.0.0')
+    .setVersion('0.1.0')
     .setOpenAPIVersion('3.1.0')
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Access token' },

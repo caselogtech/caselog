@@ -2,7 +2,10 @@
 **/.vscode
 **/.codex
 **/.agents
-docs
+/docs
+**/.astro
+/apps/docs/src/content/docs/reference
+/apps/docs/public/downloads
 **/node_modules
 **/dist
 **/.angular

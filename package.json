@@ -1,6 +1,6 @@
 {
   "name": "caselog",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Open-source release readiness with built-in test management",
   "license": "AGPL-3.0-only",
@@ -11,7 +11,12 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
-    "check": "pnpm format:check && pnpm lint && pnpm i18n:check && pnpm typecheck && pnpm openapi:check",
+    "check": "pnpm format:check && pnpm lint && pnpm i18n:check && pnpm typecheck && pnpm openapi:check && pnpm release:check",
+    "release:check": "node scripts/check-release-version.mjs",
+    "docs:dev": "pnpm --filter @caselog/docs dev",
+    "docs:build": "pnpm --filter @caselog/docs build",
+    "docs:preview": "pnpm --filter @caselog/docs preview",
+    "test:docs": "playwright test --config scripts/docs/playwright.config.ts",
     "dev": "pnpm --parallel --stream --filter @caselog/api --filter @caselog/web run dev",
     "db:migrate": "pnpm --filter @caselog/api db:migrate",
     "db:migrate:deploy": "pnpm --filter @caselog/api db:migrate:deploy",

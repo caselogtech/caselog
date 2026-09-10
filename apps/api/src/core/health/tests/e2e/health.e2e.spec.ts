@@ -64,7 +64,7 @@ describe('health endpoint', () => {
     const document = response.json();
     expect(document).toMatchObject({
       openapi: '3.1.0',
-      info: { title: 'Caselog API', version: '1.0.0' },
+      info: { title: 'Caselog API', version: '0.1.0' },
     });
     expect(document.paths['/api/v1/auth/login'].post.responses['200'].content).toBeDefined();
     expect(

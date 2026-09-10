@@ -1,0 +1,83 @@
+name: Documentation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/docs/**'
+      - 'scripts/docs/**'
+      - '.github/workflows/docs.yml'
+      - 'deploy/**'
+      - 'apps/cli/README.md'
+      - 'apps/api/openapi.json'
+      - 'examples/ci/**'
+      - '*.md'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/docs/**'
+      - 'scripts/docs/**'
+      - '.github/workflows/docs.yml'
+      - 'deploy/**'
+      - 'apps/cli/README.md'
+      - 'apps/api/openapi.json'
+      - 'examples/ci/**'
+      - '*.md'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DOCS_SITE: ${{ vars.DOCS_SITE || 'https://caselogtech.github.io' }}
+      DOCS_BASE_PATH: ${{ vars.DOCS_BASE_PATH || '/caselog' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm docs:build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:docs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/docs/dist
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: documentation-failure
+          path: test-results/docs/
+          retention-days: 7
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - uses: actions/deploy-pages@v4
+        id: deployment

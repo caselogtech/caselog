@@ -495,3 +495,16 @@ the public API and static UI, while database connections, the API port and metri
 private. TLS terminates at the host proxy; a bounded forwarded-header trust chain matches
 that topology. Browser S3 signatures use a public HTTPS origin independently of the API's
 private storage endpoint. Configuration and persistent data never enter application images.
+
+## 10. Public documentation
+
+`apps/docs` is a separately built static documentation site using Astro Starlight. It
+contains public guides and generates reference pages from an explicit list of tracked
+operator, CLI, security, and release documents. It never reads the ignored root `docs/`
+planning directory or application secrets. It is not an Angular business feature and
+does not import backend/frontend feature internals or run tenant queries.
+
+The documentation deploys independently of the application, with no runtime API or
+database dependency. Product versions are synchronized across workspace manifests;
+REST and CLI contract version identifiers remain separate. `SUPPORT.md` defines the
+release policy and `apps/docs/README.md` defines documentation publishing.

@@ -9,7 +9,10 @@ apps/api/src/generated/prisma/
 !.env.example
 *.log
 .DS_Store
-docs/
+/docs/
+.astro/
+/apps/docs/src/content/docs/reference/
+/apps/docs/public/downloads/
 test-results/
 playwright-report/
 backups/

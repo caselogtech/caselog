@@ -4,10 +4,12 @@
     "includes": [
       "**",
       "!!**/.angular/**",
+      "!!**/.astro/**",
       "!!**/dist/**",
       "!!**/node_modules/**",
       "!!apps/api/src/generated/**",
       "!!apps/api/openapi.json",
+      "!!apps/docs/public/downloads/**",
       "!!apps/web/src/app/core/api/generated/**"
     ]
   },

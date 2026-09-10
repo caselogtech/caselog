@@ -30,6 +30,11 @@ artifacts with their own notices and source-distribution terms; retain those whe
 redistributing a complete deployment. A pinned dependency version is not a blanket
 license approval for a future replacement or update.
 
+The static documentation site in `apps/docs` emits `third-party-licenses.txt` for its
+Vite bundles and includes `pagefind-LICENSE.txt` for the generated search runtime.
+The latter preserves the [Pagefind 1.5.2 upstream license](https://github.com/Pagefind/pagefind/blob/v1.5.2/LICENSE).
+Keep these files, the project license, and source links with the complete site output.
+
 Lockfile review on 2026-09-10 used `pnpm licenses list --prod --json` and the installed
 package notices. The sole `Unknown` metadata entry, `pause@0.0.1`, includes its MIT grant
 and TJ Holowaychuk copyright in `Readme.md`; preserve that file. `elkjs@0.11.1` is EPL-2.0

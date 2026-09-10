@@ -2,6 +2,13 @@
 
 Open-source release readiness with built-in manual and automated test management.
 
+Current MVP version: **0.1.0**. See [release notes](CHANGELOG.md) and the
+[versioning policy](SUPPORT.md).
+
+The [documentation site](apps/docs/README.md) covers installation, upgrades, test cases,
+runs, and release readiness. Run `pnpm docs:dev` locally or build and deploy it
+independently with the included GitHub Pages workflow.
+
 Caselog is being built to answer one question for an immutable release candidate:
 **can it be promoted safely, why, and what is blocking it?** Native test runs and
 external evidence feed deterministic, explainable policies that can be inspected by a
