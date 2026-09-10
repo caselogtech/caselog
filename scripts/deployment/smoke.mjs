@@ -189,6 +189,27 @@ try {
   const browserErrors = [];
   page.on('pageerror', (error) => browserErrors.push(error.message));
   await page.goto(`${webUrl}/auth/login`);
+  assert.equal(await page.getByRole('link', { name: 'Source code', exact: true }).count(), 1);
+  const license = await client.get('/LICENSE.txt');
+  assert.equal(license.status(), 200);
+  assert.match(await license.text(), /GNU AFFERO GENERAL PUBLIC LICENSE/u);
+  const notices = await client.get('/3rdpartylicenses.txt');
+  assert.equal(notices.status(), 200);
+  assert.match(await notices.text(), /Copyright 2017 IBM Corp/u);
+  const source = await client.get('/caselog-source.tar.gz');
+  assert.equal(source.status(), 200);
+  assert.equal((await source.body()).subarray(0, 2).toString('hex'), '1f8b');
+  const archive = await compose('exec', '-T', 'api', 'tar', '-tzf', '/app/caselog-source.tar.gz');
+  const sourcePaths = archive.stdout.split('\n');
+  assert.ok(sourcePaths.includes('./LICENSE'));
+  assert.ok(sourcePaths.includes('./.env.example'));
+  assert.ok(sourcePaths.includes('./apps/api/prisma/schema.prisma'));
+  assert.equal(
+    sourcePaths.some((path) =>
+      /(?:^|\/)(?:\.env|\.env\.local|\.vscode|\.git|node_modules)(?:\/|$)/u.test(path),
+    ),
+    false,
+  );
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();

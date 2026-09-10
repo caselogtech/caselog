@@ -110,6 +110,11 @@ array of steps or one `action => expected result` pair per line.
 
 ## License
 
-The intended server and web license is AGPL-3.0-only, with the Caselog name and marks
-reserved. The root license and trademark files have not been published yet, so the
-public licensing package is not complete.
+Server, web, shared schemas and repository tooling are licensed under
+[AGPL-3.0-only](LICENSE); the standalone [CLI is MIT-licensed](apps/cli/LICENSE).
+See [notices and source availability](NOTICE.md) and the [trademark policy](TRADEMARKS.md).
+
+Contributors can start with [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[code of conduct](CODE_OF_CONDUCT.md). [SECURITY.md](SECURITY.md) defines private
+vulnerability reporting; [SUPPORT.md](SUPPORT.md) describes the current compatibility
+and release policy.

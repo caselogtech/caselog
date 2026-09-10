@@ -2,6 +2,13 @@
   "app": {
     "brand": "Caselog",
     "homeAriaLabel": "Caselog home",
+    "legal": {
+      "copyright": "© 2026 Caselog contributors",
+      "license": "AGPL-3.0-only license",
+      "source": "Source code",
+      "thirdParty": "Third-party notices",
+      "noWarranty": "Provided without warranty"
+    },
     "navigation": {
       "account": "Account for {{name}}",
       "allProjects": "View all projects",

@@ -1,7 +1,7 @@
-.git
-.vscode
-.codex
-.agents
+**/.git
+**/.vscode
+**/.codex
+**/.agents
 docs
 **/node_modules
 **/dist
@@ -9,6 +9,7 @@ docs
 **/coverage
 **/.env
 **/.env.*
+!.env.example
 **/*.log
 apps/api/src/generated/prisma
 test-results

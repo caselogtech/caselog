@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, isDevMode } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { NavigationProgress } from './core/routing/navigation-progress';
@@ -12,4 +12,5 @@ import { NavigationProgress } from './core/routing/navigation-progress';
 })
 export class App {
   readonly navigationProgress = inject(NavigationProgress);
+  readonly showDistributionNotices = !isDevMode();
 }

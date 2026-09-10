@@ -8,3 +8,12 @@
   </div>
 }
 <router-outlet />
+@if (showDistributionNotices) {
+  <footer class="distribution-notices">
+    <span>{{ 'app.legal.copyright' | transloco }}</span>
+    <a href="/LICENSE.txt">{{ 'app.legal.license' | transloco }}</a>
+    <a href="/caselog-source.tar.gz" download>{{ 'app.legal.source' | transloco }}</a>
+    <a href="/3rdpartylicenses.txt">{{ 'app.legal.thirdParty' | transloco }}</a>
+    <span>{{ 'app.legal.noWarranty' | transloco }}</span>
+  </footer>
+}

@@ -15,6 +15,11 @@ COPY apps/cli/package.json apps/cli/package.json
 COPY packages/schemas/package.json packages/schemas/package.json
 RUN pnpm install --frozen-lockfile
 
+FROM node-runtime AS source
+WORKDIR /source
+COPY . .
+RUN tar -czf /caselog-source.tar.gz .
+
 FROM dependencies AS api-build
 COPY . .
 # Generation reads the datasource configuration but never connects during a build.
@@ -35,6 +40,8 @@ LABEL org.opencontainers.image.title="Caselog API" \
 ENV NODE_ENV=production API_PORT=3000
 WORKDIR /app
 COPY --from=api-build --chown=node:node /runtime ./
+COPY --from=source /source/LICENSE /source/NOTICE.md ./
+COPY --from=source /caselog-source.tar.gz ./
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=45s --retries=4 \
@@ -49,6 +56,7 @@ LABEL org.opencontainers.image.title="Caselog Migrations" \
       org.opencontainers.image.revision=${CASELOG_REVISION} \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 WORKDIR /workspace/apps/api
+COPY --from=source /caselog-source.tar.gz /workspace/caselog-source.tar.gz
 USER node
 ENTRYPOINT ["pnpm", "exec", "prisma"]
 CMD ["migrate", "deploy"]
@@ -62,6 +70,9 @@ LABEL org.opencontainers.image.title="Caselog Web" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=web-build /workspace/apps/web/dist/caselog-web/browser /usr/share/nginx/html
+COPY --from=web-build /workspace/apps/web/dist/caselog-web/3rdpartylicenses.txt /usr/share/nginx/html/3rdpartylicenses.txt
+COPY --from=source /source/LICENSE /usr/share/nginx/html/LICENSE.txt
+COPY --from=source /caselog-source.tar.gz /usr/share/nginx/html/caselog-source.tar.gz
 USER 101
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=5s --retries=4 \
