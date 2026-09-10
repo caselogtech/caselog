@@ -12,12 +12,39 @@ candidates, normalized evidence, versioned readiness policies, deterministic dec
 waivers, and their primary UI workflows are usable in development. The committed feature
 set is now closed while those capabilities are hardened for real self-hosted use.
 
-Caselog is intended to run as a complete self-hosted OSS product. An optional managed
-service will operate the same application artifacts and features for teams that do not
-want to run it themselves. Its planned shared-service launch offer is USD 199 per billing
-account/month with unlimited users, workspaces, projects, and product features, plus
-published allowances for cost-driving infrastructure usage. A billing account is only a
-commercial grouping: every workspace remains an independently authorized RLS tenant.
+Caselog is a free, self-hostable OSS product. The initial hosted offering is
+also planned to be free so companies can try real workflows and help validate the
+concept and demand. Teams can create workspaces, invite colleagues, and use the core
+features without a subscription, payment card, or billing account. Each workspace
+remains an independently authorized tenant.
+
+Hosted and self-hosted installations use the same application artifacts and features.
+There is no scheduled trial expiry or automatic switch to paid access. Any future
+commercial offering will be a separate decision after real usage and demand are
+established. Operators provide hosting, storage, and email infrastructure; operational
+safety limits may apply independently of payment.
+
+## Free evaluation and workspace creation
+
+The existing application supports onboarding without billing. For an instance where
+companies can register and create their own workspaces, use these API settings:
+
+```dotenv
+CASELOG_REGISTRATION_MODE=public
+CASELOG_WORKSPACE_CREATION_ENABLED=true
+CASELOG_MANAGED_BILLING_ENABLED=false
+CASELOG_MAX_WORKSPACES_PER_USER=
+```
+
+An empty workspace limit means unlimited workspaces per user. Users register, verify
+their email, create a workspace, and invite their team. The creator becomes its owner;
+access to each workspace requires explicit membership. No payment setup is part of
+this flow, including when the deployment mode is `managed` with billing disabled.
+
+The local development example already uses these settings. The production Compose
+example enables workspace creation and disables billing, but defaults to registration
+by invitation. Follow [public evaluation setup](deploy/README.md#public-evaluation)
+to allow companies to join independently.
 
 ## Architecture
 

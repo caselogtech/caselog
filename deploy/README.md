@@ -94,6 +94,30 @@ owner credential is confined to initialization and operator jobs; it is absent f
 API container. Production startup rejects a database connection that does not use the
 `caselog_app` role, HTTP web/storage origins, reused JWT keys and sample JWT secrets.
 
+## Public evaluation
+
+To let companies join independently during free evaluation, keep this setting in
+`deploy/.env` after the first-owner setup:
+
+```dotenv
+CASELOG_REGISTRATION_MODE='public'
+```
+
+Apply it with `dc up -d --wait`, then remove the temporary operator-only proxy
+restriction. The supplied Compose file already enables workspace creation, disables
+managed billing, and leaves the per-user workspace limit unset. No application code
+change, payment integration, or billing-account setup is required for this flow.
+
+Each user registers, verifies their email through your SMTP service, creates a workspace,
+and invites colleagues. Separate companies receive separate workspace memberships and
+tenant isolation on the same installation. Workspace creation grants its creator the
+owner role; it never grants access to another company's workspace.
+
+The operator supplies infrastructure for this free access. The application does not
+schedule a trial expiry or enable billing later. To return to invitation-only signup,
+set `CASELOG_REGISTRATION_MODE='invitation_only'` and apply it with `dc up -d --wait`;
+existing workspaces and memberships remain available.
+
 ## Operation and diagnostics
 
 ```bash

@@ -22,9 +22,11 @@ Keep these invariants visible in every design:
   or proprietary control plane;
 - a future managed service must run the same application artifacts, schema, migrations,
   and core features as the self-hosted product;
-- the managed shared-service launch offer is USD 199 per billing account/month, with
-  unlimited users, workspaces, projects, and product features plus explicit allowances for
-  cost-driving usage;
+- the initial hosted offering is free to validate the concept and demand; onboarding
+  requires no subscription, payment card, or billing account, and managed billing stays
+  disabled during this phase;
+- future monetization is a separate product decision, with no scheduled trial expiry or
+  automatic paid transition; operational safety limits remain independent of payment;
 - a billing account is a commercial grouping above workspaces, never a tenant or an
   implicit source of workspace access;
 - API and CLI behavior are first-class product surfaces, not secondary wrappers around UI;
@@ -225,10 +227,11 @@ Billing account / company -> workspace / organization -> project
 
 Billing-account membership authorizes commercial administration only. It never replaces
 workspace membership, organization tokens, repository tenant context, or RLS. A workspace
-created under an account still receives an explicit owner. Self-hosted workspaces may have
-no billing account. Prices and allowances belong to product documentation and managed
-configuration; never hard-code them into readiness, test-management, or tenant-domain
-behavior. Logical workspace count is unlimited by default. Any deployment safety limit
+created under an account still receives an explicit owner. Workspaces may have no billing
+account whenever managed billing is disabled. Prices and allowances belong to product
+documentation and managed configuration; never hard-code them into readiness,
+test-management, or tenant-domain behavior. Logical workspace count is unlimited by
+default. Any deployment safety limit
 must be explicit, validated configuration rather than a product or licensing restriction.
 
 Managed cloud administration uses a third, independent authorization boundary. The

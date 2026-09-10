@@ -327,8 +327,9 @@ PostgreSQL RLS boundary.
   provisioning service exported by `auth`. `auth` receives the authorized account ID and
   persists it on the organization; it never reads billing tables or decides commercial
   policy.
-- Self-hosted organizations may keep a null billing-account reference. Core feature modules
-  never branch on a price, subscription plan, or paid entitlement.
+- Organizations may keep a null billing-account reference in self-hosted and managed
+  deployments when managed billing is disabled. Core feature modules never branch on a
+  price, subscription plan, or paid entitlement.
 - Workspace quantity is unlimited by default. An operator may configure a positive
   per-user provisioning safety limit, but it is deployment protection rather than a plan
   entitlement and managed billing-account provisioning does not use it.
@@ -336,7 +337,11 @@ PostgreSQL RLS boundary.
   account, but source records remain tenant-scoped and cannot be queried across workspaces
   through a product-domain repository.
 
-ADR 0014 defines the hierarchy and commercial implications.
+ADR 0014 defines the account hierarchy. The product decision of 2026-09-10 supersedes
+its paid launch offer: initial hosted evaluation is free, managed billing stays disabled,
+and users provision workspaces directly without a billing account. Future monetization
+requires a separate decision; there is no timed conversion to paid access. The existing
+optional account boundary remains available without changing workspace tenancy.
 
 ### CI API tokens
 
