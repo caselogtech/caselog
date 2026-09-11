@@ -1,0 +1,8 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { en } from '../content/en';
+const copy = en.missing;
+---
+<SiteLayout title={copy.title} description={copy.text} noindex>
+  <main class="not-found section" id="main"><p class="eyebrow">404</p><h1>{copy.heading}</h1><p class="intro">{copy.text}</p><a class="button primary" href={import.meta.env.BASE_URL}>{copy.action}<span aria-hidden="true">→</span></a></main>
+</SiteLayout>

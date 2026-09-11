@@ -1,0 +1,27 @@
+---
+import { en } from '../content/en';
+const copy = en.home;
+---
+<figure class="decision-preview">
+  <figcaption class="eyebrow">{copy.sampleLabel}</figcaption>
+  <div class="decision-window">
+    <div class="window-bar"><span class="window-mark" aria-hidden="true">▤</span>{copy.sampleProject}<span class="window-dots" aria-hidden="true">···</span></div>
+    <div class="decision-body">
+      <div class="candidate-line"><strong>{copy.sampleCandidate}</strong><span class="commit">{copy.sampleCommit}</span></div>
+      <div class="decision-status">
+        <span class="status-symbol" aria-hidden="true">!</span>
+        <div><strong>{copy.sampleStatus}</strong><p>{copy.sampleSummary}</p></div>
+      </div>
+      <div class="gate-list">
+        {copy.sampleGates.map((gate) => (
+          <div class="gate">
+            <span class:list={['gate-icon', gate.tone]} aria-hidden="true">{gate.tone === 'success' ? '✓' : '!'}</span>
+            <div class="gate-description"><strong>{gate.label}</strong><span>{gate.detail}</span></div>
+            <span class:list={['gate-status', gate.tone]}>{gate.status}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div class="decision-caption"><span aria-hidden="true">↳</span>{copy.sampleFooter}</div>
+  </div>
+</figure>

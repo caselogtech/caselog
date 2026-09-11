@@ -13,6 +13,7 @@ apps/api/src/generated/prisma/
 .astro/
 /apps/docs/src/content/docs/reference/
 /apps/docs/public/downloads/
+/apps/site/public/assets/
 test-results/
 playwright-report/
 backups/

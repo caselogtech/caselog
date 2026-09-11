@@ -4,6 +4,9 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Add a standalone public homepage and contact page, with static hosting and Docker
+  deployment instructions, public email contact, and accessible mobile layouts.
+
 ## 0.1.0 — Initial MVP
 
 This is the first numbered MVP baseline. It is intended for evaluation and feedback;

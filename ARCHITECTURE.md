@@ -508,3 +508,15 @@ The documentation deploys independently of the application, with no runtime API 
 database dependency. Product versions are synchronized across workspace manifests;
 REST and CLI contract version identifiers remain separate. `SUPPORT.md` defines the
 release policy and `apps/docs/README.md` defines documentation publishing.
+
+## 11. Public website
+
+`apps/site` owns the static product homepage and contact page. It uses the same pinned
+Astro version as documentation and the existing Framed Log brand assets. English public
+copy uses a semantic build-time catalogue; Angular product UI continues to use Transloco.
+The site imports no application feature internals, reads no tenant data, and has no
+runtime backend dependency. Contact uses explicit email and public support links.
+
+Website, documentation, and product are separate deployment artifacts. The website
+build accepts public origin/contact/documentation settings and publishes no secrets.
+`apps/site/README.md` defines its static-host and Docker deployment procedures.

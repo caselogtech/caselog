@@ -1,0 +1,74 @@
+---
+import { en } from '../content/en';
+import { links } from '../config/links';
+import '../styles/site.css';
+
+interface Props {
+  title: string;
+  description: string;
+  page?: 'home' | 'contact';
+  noindex?: boolean;
+}
+const { title, description, page, noindex = false } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#fdfdfd" />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={`${base}assets/favicon.svg`} />
+    <link rel="preload" href={`${base}assets/figtree-latin.woff2`} as="font" type="font/woff2" crossorigin />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={en.brand} />
+    <meta name="twitter:card" content="summary" />
+    <title>{title}</title>
+    <style is:global set:html={`@font-face { font-family: Figtree; src: url('${base}assets/figtree-latin.woff2') format('woff2'); font-style: normal; font-weight: 400 700; font-display: swap; }`} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{en.nav.skip}</a>
+    <div class="site-frame">
+      <header class="site-header">
+        <a class="wordmark" href={base} aria-label={en.brand}>
+          <img src={`${base}assets/mark.svg`} width="34" height="34" alt="" />
+          <span>{en.brand}</span>
+        </a>
+        <nav aria-label={en.nav.label}>
+          <a href={`${base}#product`} aria-current={page === 'home' ? 'page' : undefined}>{en.nav.product}</a>
+          <a href={links.docs}>{en.nav.docs}</a>
+          <a href={`${base}contact/`} aria-current={page === 'contact' ? 'page' : undefined}>{en.nav.contact}</a>
+        </nav>
+        <a class="header-source" href={links.repository}>{en.nav.github}<span aria-hidden="true"> ↗</span></a>
+      </header>
+      <slot />
+      <footer class="site-footer">
+        <div class="footer-top">
+          <div>
+            <a class="wordmark" href={base}><img src={`${base}assets/mark.svg`} width="30" height="30" alt="" />{en.brand}</a>
+            <p>{en.footer.tagline}</p>
+          </div>
+          <nav aria-label={en.footer.label}>
+            <a href={links.docs}>{en.nav.docs}</a>
+            <a href={links.releases}>{en.footer.releases}</a>
+            <a href={links.security}>{en.footer.security}</a>
+            <a href={`${base}contact/`}>{en.nav.contact}</a>
+          </nav>
+        </div>
+        <div class="footer-bottom">
+          <span>© {new Date().getUTCFullYear()} {en.footer.copyright}</span>
+          <a href={`${base}assets/LICENSE.txt`}>{en.footer.license}</a>
+          <a href={links.repository}>{en.footer.source}</a>
+          <a href={`${base}assets/font-LICENSE.txt`}>{en.footer.fontLicense}</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

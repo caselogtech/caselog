@@ -1,0 +1,57 @@
+name: Website
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/site/**'
+      - 'apps/web/public/**'
+      - 'scripts/site/**'
+      - '.github/workflows/site.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'LICENSE'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/site/**'
+      - 'apps/web/public/**'
+      - 'scripts/site/**'
+      - '.github/workflows/site.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'LICENSE'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm site:build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:site
+      - uses: actions/upload-artifact@v4
+        with:
+          name: caselog-website
+          path: apps/site/dist/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: website-test-failure
+          path: test-results/site/
+          retention-days: 7

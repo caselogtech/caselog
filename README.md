@@ -9,6 +9,9 @@ The [documentation site](apps/docs/README.md) covers installation, upgrades, tes
 runs, and release readiness. Run `pnpm docs:dev` locally or build and deploy it
 independently with the included GitHub Pages workflow.
 
+The [public website](apps/site/README.md) contains the homepage and contact page.
+Use `pnpm site:dev` locally or deploy `apps/site/dist/` separately on the main domain.
+
 Caselog is being built to answer one question for an immutable release candidate:
 **can it be promoted safely, why, and what is blocking it?** Native test runs and
 external evidence feed deterministic, explainable policies that can be inspected by a
