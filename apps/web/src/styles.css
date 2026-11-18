@@ -11,10 +11,10 @@
 
 :root {
   color-scheme: light;
-  --color-bg: #f4f4f3;
-  --color-surface: #e9ebeb;
-  --color-surface-raised: #f9f9f8;
-  --color-text: #1f2223;
+  --color-bg: #f8fafc;
+  --color-surface: #eef2f5;
+  --color-surface-raised: #fff;
+  --color-text: #111820;
   --color-accent: #2c7686;
   --color-accent-100: #e7f2f4;
   --color-accent-200: #c6e2e7;
@@ -22,15 +22,15 @@
   --color-accent-600: #256676;
   --color-accent-700: #1d5361;
   --color-divider: color-mix(in srgb, var(--color-text) 30%, transparent);
-  --color-neutral-100: #f6f7f7;
-  --color-neutral-200: #e9ebeb;
+  --color-neutral-100: #f6f8fa;
+  --color-neutral-200: #eef2f5;
   --color-neutral-300: #d5d9d9;
   --color-neutral-400: #b7bdbd;
   --color-neutral-500: #979e9e;
-  --color-neutral-600: #798080;
-  --color-neutral-700: #5d6363;
-  --color-neutral-800: #424747;
-  --color-neutral-900: #2b2f2f;
+  --color-neutral-600: #626f7a;
+  --color-neutral-700: #394955;
+  --color-neutral-800: #2d3944;
+  --color-neutral-900: #202a34;
   --color-danger: #b8503c;
   --color-on-danger: #fff;
   --color-danger-surface: #fbeae5;
@@ -41,9 +41,9 @@
   --color-warning: #b26a00;
   --color-warning-surface: #fcf0dd;
   --color-warning-text: #7e4b00;
-  --color-unknown: #798080;
-  --color-unknown-surface: #f6f7f7;
-  --color-unknown-text: #424747;
+  --color-unknown: var(--color-neutral-600);
+  --color-unknown-surface: var(--color-neutral-100);
+  --color-unknown-text: var(--color-neutral-800);
   --color-pending: var(--color-accent);
   --color-pending-surface: var(--color-accent-100);
   --color-pending-text: var(--color-accent-700);
@@ -111,6 +111,12 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-3);
+  opacity: 1;
 }
 
 button,
