@@ -343,6 +343,14 @@ and users provision workspaces directly without a billing account. Future moneti
 requires a separate decision; there is no timed conversion to paid access. The existing
 optional account boundary remains available without changing workspace tenancy.
 
+The product direction reaffirmed on 2026-11-18 is a complete OSS/self-hosted product,
+a bounded free cloud pilot, and the option of paid managed hosting and services after
+validating demand and operating costs. Managed billing stays disabled throughout the
+pilot; a payment integration follows a separate commercial decision. Prices, allowances,
+and a permanent free cloud tier remain undecided. [ROADMAP.md](ROADMAP.md) defines the
+acceptance checkpoints; operational safety limits remain independent of payment and
+cannot alter readiness outcomes or silently remove accepted historical evidence.
+
 ### CI API tokens
 
 Organization tokens have explicit endpoint scopes. `candidates:write` allows

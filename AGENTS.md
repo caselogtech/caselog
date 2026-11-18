@@ -27,6 +27,9 @@ Keep these invariants visible in every design:
   disabled during this phase;
 - future monetization is a separate product decision, with no scheduled trial expiry or
   automatic paid transition; operational safety limits remain independent of payment;
+- the commercial direction is paid managed hosting and services after validating demand
+  and operating costs; prices, paid tiers, and payment integration remain undecided,
+  and the pilot does not promise unlimited or permanently free cloud hosting;
 - a billing account is a commercial grouping above workspaces, never a tenant or an
   implicit source of workspace access;
 - API and CLI behavior are first-class product surfaces, not secondary wrappers around UI;
@@ -48,8 +51,9 @@ in the same change:
 4. `README.md`, workspace manifests, configuration, and executable scripts for commands;
 5. an accepted issue or task description for the change's scope.
 
-The local `docs/` directory contains detailed product, roadmap, design, development, and
-Definition of Done material. Read the relevant documents when they are available, but
+`ROADMAP.md` records the shared product direction and acceptance checkpoints. The optional
+local `docs/` directory contains detailed product, design, development, and Definition of
+Done material. Read the relevant documents when they are available, but
 `docs/` is intentionally ignored and must not be staged or committed unless the user
 explicitly changes that policy. Keep this file and `ARCHITECTURE.md` self-contained enough
 for work from a fresh clone.
