@@ -12,6 +12,8 @@ import {
   createTestCaseResponseSchema,
   projectListResponseSchema,
   projectStructureResponseSchema,
+  suiteResponseSchema,
+  sectionResponseSchema,
   testCaseDetailResponseSchema,
   testCaseListResponseSchema,
   updateTestCaseResponseSchema,
@@ -63,6 +65,7 @@ test('stdio agents author cases and policies through the API and the browser see
       name: 'MCP browser journey',
       scopes: [
         'projects:read',
+        'structure:write',
         'cases:read',
         'cases:write',
         'policies:read',
@@ -96,14 +99,42 @@ test('stdio agents author cases and policies through the API and the browser see
   }
   try {
     await client.connect(transport);
-    expect((await client.listTools()).tools).toHaveLength(12);
+    expect((await client.listTools()).tools).toHaveLength(14);
     const projects = projectListResponseSchema.parse(await call('list_projects', {}));
     expect(projects.items.some((project) => project.slug === projectSlug)).toBe(true);
     const structure = projectStructureResponseSchema.parse(
       await call('get_project_structure', { projectSlug }),
     );
-    const sectionId = structure.suites[0]?.sections[0]?.id;
-    if (!sectionId) throw new Error('Expected seeded project structure');
+    const suiteName = `MCP checkout ${suffix}`;
+    expect(structure.suites.some((suite) => suite.name === suiteName)).toBe(false);
+    const suiteArgs = { projectSlug, idempotencyKey: randomUUID(), request: { name: suiteName } };
+    const suite = suiteResponseSchema.parse(await call('create_suite', suiteArgs));
+    expect(await call('create_suite', suiteArgs)).toEqual(suite);
+    const sectionArgs = {
+      projectSlug,
+      suiteId: suite.id,
+      idempotencyKey: randomUUID(),
+      request: { name: 'Payments' },
+    };
+    const root = sectionResponseSchema.parse(await call('create_section', sectionArgs));
+    expect(await call('create_section', sectionArgs)).toEqual(root);
+    const nested = sectionResponseSchema.parse(
+      await call('create_section', {
+        projectSlug,
+        suiteId: suite.id,
+        idempotencyKey: randomUUID(),
+        request: { name: 'Declined cards', parentId: root.id },
+      }),
+    );
+    expect(nested.depth).toBe(1);
+    const sectionId = nested.id;
+    const authored = projectStructureResponseSchema.parse(
+      await call('get_project_structure', { projectSlug }),
+    );
+    expect(authored.suites.find((item) => item.id === suite.id)?.sections).toEqual([
+      { id: root.id, parentId: null, name: root.name, depth: 0, position: 0 },
+      { id: nested.id, parentId: root.id, name: nested.name, depth: 1, position: 0 },
+    ]);
     const title = `MCP payment regression ${randomUUID().slice(0, 8)}`;
     const body = {
       sectionId,
@@ -139,6 +170,12 @@ test('stdio agents author cases and policies through the API and the browser see
     expect(await call('update_test_case', updateArgs)).toEqual(updated);
     await page.goto('/acme');
     await expect(page).toHaveURL(/\/acme\/projects$/);
+    await page.goto(`/acme/${projectSlug}/cases`);
+    const suiteToggle = page.getByRole('button', { name: `Expand ${suiteName}`, exact: true });
+    await expect(suiteToggle).toBeVisible();
+    await suiteToggle.click();
+    await expect(page.getByRole('button', { name: 'Payments', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Declined cards', exact: true })).toBeVisible();
     await page.goto(`/acme/${projectSlug}/cases/${created.testCase.id}`);
     await expect(page.getByRole('heading', { name: revisedTitle, exact: true })).toBeVisible();
 

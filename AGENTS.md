@@ -41,7 +41,9 @@ Keep these invariants visible in every design:
 
 The user-approved MCP adapter is a scoped exception, defined in
 `architecture/decisions/20261119-mcp-api-adapter.md`. Keep it limited to the documented
-public API operations; it does not authorize additional feature categories.
+public API operations and the accepted suite/section creation extension in
+`architecture/decisions/20261119-mcp-structure-authoring.md`; it does not authorize
+additional feature categories.
 
 ## 2. Sources of truth
 

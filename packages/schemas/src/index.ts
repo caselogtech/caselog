@@ -536,6 +536,7 @@ export {
 } from './project.js';
 export {
   projectStructureResponseSchema,
+  projectStructureWriteHeadersSchema,
   createSuiteRequestSchema,
   updateSuiteRequestSchema,
   moveSuiteRequestSchema,

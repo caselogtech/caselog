@@ -1,6 +1,7 @@
 import {
   createTestCaseRequestSchema,
   testCaseWriteHeadersSchema,
+  projectStructureWriteHeadersSchema,
   createSuiteRequestSchema,
   updateSuiteRequestSchema,
   moveSuiteRequestSchema,
@@ -35,6 +36,10 @@ export class TestCaseVersionParamsDto extends createZodDto(testCaseVersionParams
 
 export class RestoreTestCaseVersionRequestDto extends createZodDto(
   restoreTestCaseVersionRequestSchema,
+) {}
+
+export class ProjectStructureWriteHeadersDto extends createZodDto(
+  projectStructureWriteHeadersSchema,
 ) {}
 
 export class CreateSuiteRequestDto extends createZodDto(createSuiteRequestSchema) {}

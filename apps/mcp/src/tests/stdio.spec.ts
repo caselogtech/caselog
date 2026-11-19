@@ -48,7 +48,7 @@ describe('MCP stdio entrypoint', () => {
     try {
       await client.connect(transport);
       expect(client.getServerVersion()?.name).toBe('caselog');
-      expect((await client.listTools()).tools).toHaveLength(12);
+      expect((await client.listTools()).tools).toHaveLength(14);
       expect(stderr).toBe('');
     } finally {
       await client.close();

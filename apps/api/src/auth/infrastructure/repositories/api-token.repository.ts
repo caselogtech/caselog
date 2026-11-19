@@ -11,6 +11,7 @@ import { appendAuditLog } from '../../../audit/public-api';
 
 const SCOPE_TO_DATABASE: Record<ApiTokenScopeValue, ApiTokenScope> = {
   'projects:read': 'PROJECTS_READ',
+  'structure:write': 'STRUCTURE_WRITE',
   'cases:read': 'CASES_READ',
   'cases:write': 'CASES_WRITE',
   'policies:read': 'POLICIES_READ',
@@ -26,6 +27,7 @@ const SCOPE_TO_DATABASE: Record<ApiTokenScopeValue, ApiTokenScope> = {
 
 const SCOPE_FROM_DATABASE: Record<ApiTokenScope, ApiTokenScopeValue> = {
   PROJECTS_READ: 'projects:read',
+  STRUCTURE_WRITE: 'structure:write',
   CASES_READ: 'cases:read',
   CASES_WRITE: 'cases:write',
   POLICIES_READ: 'policies:read',

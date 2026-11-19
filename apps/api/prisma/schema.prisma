@@ -232,6 +232,7 @@ enum AccountTokenPurpose {
 
 enum ApiTokenScope {
   PROJECTS_READ    @map("projects:read")
+  STRUCTURE_WRITE  @map("structure:write")
   CASES_READ       @map("cases:read")
   CASES_WRITE      @map("cases:write")
   POLICIES_READ    @map("policies:read")

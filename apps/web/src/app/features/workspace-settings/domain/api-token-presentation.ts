@@ -5,6 +5,7 @@ const DEFAULT_API_TOKEN_LIFETIME_MS = 90 * 24 * 60 * 60 * 1_000;
 
 export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
   'projects:read',
+  'structure:write',
   'cases:read',
   'cases:write',
   'policies:read',
@@ -20,6 +21,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
 
 const SCOPE_LABEL_KEYS: Record<ApiTokenScope, string> = {
   'projects:read': 'workspaceSettings.tokens.scopes.projectsRead',
+  'structure:write': 'workspaceSettings.tokens.scopes.structureWrite',
   'cases:read': 'workspaceSettings.tokens.scopes.casesRead',
   'cases:write': 'workspaceSettings.tokens.scopes.casesWrite',
   'policies:read': 'workspaceSettings.tokens.scopes.policiesRead',

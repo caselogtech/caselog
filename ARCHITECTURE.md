@@ -351,15 +351,19 @@ and a permanent free cloud tier remain undecided. [ROADMAP.md](ROADMAP.md) defin
 acceptance checkpoints; operational safety limits remain independent of payment and
 cannot alter readiness outcomes or silently remove accepted historical evidence.
 
-### CI API tokens
+### Workspace API tokens
 
 Organization tokens have explicit endpoint scopes. `candidates:write` allows
 candidate creation, lookup, and test-run linking; `readiness:read` allows policy
 assignment and decision reads; `readiness:write` allows policy assignment and
 evaluation. Existing ingestion scopes remain separate. Scope checks supplement
 live membership role checks and tenant RLS. Closing a CI run requires both
-`candidates:write` and `results:write`; results-only tokens cannot close runs. Policy authoring, waivers, unlinking,
-and token administration remain session-only. The CLI's version 1 pipeline JSON
+`candidates:write` and `results:write`; results-only tokens cannot close runs.
+Agent authoring uses independent `projects:read`, `structure:write`, `cases:read`,
+`cases:write`, `policies:read`, `policies:write` and `policies:publish` scopes.
+`structure:write` permits suite/section creation only; policy publication remains
+separate from drafting. Waivers, structure rename/move/delete, unlinking and token
+administration remain session-only. The CLI's version 1 pipeline JSON
 and exit contract is documented in `apps/cli/README.md`; the existing JUnit upload
 contract remains compatible. Database enum additions are additive, with recovery
 instructions beside migration `20260906170000_ci_readiness_scopes`.
@@ -537,3 +541,6 @@ Workspace tokens, scopes, current membership roles, RLS and application services
 the authorization and domain boundaries. Self-hosted and managed installations expose
 the same operations. See [the MCP decision](architecture/decisions/20261119-mcp-api-adapter.md)
 and [the scenario and acceptance guide](apps/docs/src/content/docs/automation/mcp.md).
+The [structure authoring extension](architecture/decisions/20261119-mcp-structure-authoring.md)
+adds replay-safe suite/section creates using an independent `structure:write` scope;
+it grants no structure rename, move or delete operations.

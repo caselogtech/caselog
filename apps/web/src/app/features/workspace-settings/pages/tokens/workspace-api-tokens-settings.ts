@@ -39,6 +39,7 @@ import {
 
 type ScopeControlName =
   | 'projectsRead'
+  | 'structureWrite'
   | 'casesRead'
   | 'casesWrite'
   | 'policiesRead'
@@ -53,6 +54,7 @@ type ScopeControlName =
 
 const SCOPE_CONTROL_NAMES: Record<ApiTokenScope, ScopeControlName> = {
   'projects:read': 'projectsRead',
+  'structure:write': 'structureWrite',
   'cases:read': 'casesRead',
   'cases:write': 'casesWrite',
   'policies:read': 'policiesRead',
@@ -119,6 +121,7 @@ export class WorkspaceApiTokensSettings {
     scopes: this.formBuilder.group(
       {
         projectsRead: false,
+        structureWrite: false,
         casesRead: false,
         casesWrite: false,
         policiesRead: false,
@@ -220,6 +223,7 @@ export class WorkspaceApiTokensSettings {
       expiresAt: defaultApiTokenExpiry(),
       scopes: {
         projectsRead: false,
+        structureWrite: false,
         casesRead: false,
         casesWrite: false,
         policiesRead: false,

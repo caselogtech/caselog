@@ -22,6 +22,8 @@ export type AuthoringFixture = {
   ownerToken: string;
   projectSlug: string;
   projectId: string;
+  suiteId: string;
+  foreignSuiteId: string;
   sectionId: string;
   foreignSectionId: string;
   foreignCaseId: string;
@@ -113,6 +115,8 @@ export async function createAuthoringFixture(): Promise<AuthoringFixture> {
     ownerToken,
     projectSlug,
     projectId: local.project.id,
+    suiteId: local.suite.id,
+    foreignSuiteId: other.suite.id,
     sectionId: local.section.id,
     foreignSectionId: other.section.id,
     foreignCaseId: foreignCase.id,

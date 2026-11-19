@@ -1,3 +1,4 @@
+import { ProjectStructureCreateRepository } from './infrastructure/repositories/project-structure-create.repository';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/public-api';
 import { ProjectStructureController } from './presentation/controllers/project-structure.controller';
@@ -13,6 +14,7 @@ import { TestCaseWriteRepository } from './infrastructure/repositories/test-case
   controllers: [TestCaseController, ProjectStructureController],
   providers: [
     ProjectStructureRepository,
+    ProjectStructureCreateRepository,
     ProjectStructureService,
     TestCaseRepository,
     TestCaseWriteRepository,

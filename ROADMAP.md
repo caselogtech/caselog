@@ -74,6 +74,21 @@ pass, including all twelve MCP operations. The additive migration passed on the 
 development database and empty browser-test databases. The main MVP/pilot checkpoints
 above and below remain separate acceptance work.
 
+Suite/section extension approved on 2026-11-19:
+
+- [x] Add independent `structure:write` access and replay-safe suite/section creates,
+  preserving browser compatibility and enforcing tenant/project/parent ownership.
+- [x] Expose `create_suite` and `create_section`, including nested sections, and verify
+  a real stdio → API → UI structure-and-case workflow with all fourteen tools.
+
+**Structure acceptance:** simultaneous retries create one record and audit event;
+changed intents, duplicate names, invalid parents and unauthorized calls fail safely.
+Repository checks, tests, builds and existing/empty-database migration checks pass.
+
+Verified on 2026-11-19: `pnpm check`, all 673 tests, workspace builds and both browser
+journeys pass, including all fourteen MCP tools and ordinary pointer interaction with
+the created structure. The new migration passed on existing and empty databases.
+
 ### Pilot operations
 
 - [ ] Set a pilot infrastructure budget, initial cohort size, and support expectations

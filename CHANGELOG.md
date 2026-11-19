@@ -4,6 +4,10 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Extend MCP with suite and nested-section creation, independent `structure:write`
+  access, atomic audit and replay-safe writes. Existing browser clients remain
+  compatible. Apply migration `20261119190000_mcp_structure_scope` before new binaries.
+
 - Add an optional stdio MCP adapter for project discovery, test-case authoring,
   release-policy drafts/publication and authoritative candidate readiness. Add separate
   API scopes and replay-safe case writes, preserving existing browser clients. Apply

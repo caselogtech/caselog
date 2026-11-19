@@ -119,7 +119,8 @@ h2 {
 }
 
 .suite-heading {
-  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .suite-toggle {
@@ -217,9 +218,8 @@ h2 {
 
 .suite-actions {
   background: var(--surface-2);
+  justify-self: end;
   padding-left: 2px;
-  position: absolute;
-  right: 2px;
 }
 
 .suite-heading:hover .structure-actions,

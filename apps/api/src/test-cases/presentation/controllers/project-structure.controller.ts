@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Inject,
@@ -23,6 +24,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
+import { validate } from 'nestjs-zod';
 import {
   CurrentOrganization,
   OrganizationAuthGuard,
@@ -34,6 +36,7 @@ import {
   CreateSectionParamsDto,
   CreateSectionRequestDto,
   CreateSuiteRequestDto,
+  ProjectStructureWriteHeadersDto,
   MoveSectionRequestDto,
   MoveSuiteRequestDto,
   SectionParamsDto,
@@ -68,13 +71,22 @@ export class ProjectStructureController {
   }
 
   @Post('suites')
+  @RequireApiTokenScopes('structure:write')
   @ApiCreatedResponse({ type: SuiteResponseDto })
   createSuite(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseListParamsDto,
     @Body() request: CreateSuiteRequestDto,
+    @Headers() headers: ProjectStructureWriteHeadersDto,
   ): Promise<SuiteResponse> {
-    return this.structure.createSuite(principal, params.projectSlug, request);
+    // Nest does not run validation pipes on @Headers parameters.
+    const parsedHeaders = validate(headers, ProjectStructureWriteHeadersDto);
+    return this.structure.createSuite(
+      principal,
+      params.projectSlug,
+      request,
+      parsedHeaders['idempotency-key'],
+    );
   }
 
   @Put('suites/:suiteId')
@@ -108,13 +120,22 @@ export class ProjectStructureController {
   }
 
   @Post('suites/:suiteId/sections')
+  @RequireApiTokenScopes('structure:write')
   @ApiCreatedResponse({ type: SectionResponseDto })
   createSection(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: CreateSectionParamsDto,
     @Body() request: CreateSectionRequestDto,
+    @Headers() headers: ProjectStructureWriteHeadersDto,
   ): Promise<SectionResponse> {
-    return this.structure.createSection(principal, params.projectSlug, params.suiteId, request);
+    const parsedHeaders = validate(headers, ProjectStructureWriteHeadersDto);
+    return this.structure.createSection(
+      principal,
+      params.projectSlug,
+      params.suiteId,
+      request,
+      parsedHeaders['idempotency-key'],
+    );
   }
 
   @Put('sections/:sectionId')

@@ -158,6 +158,8 @@ export const testCaseWriteHeadersSchema = z.object({
     .optional(),
 });
 
+export const projectStructureWriteHeadersSchema = testCaseWriteHeadersSchema;
+
 export const createTestCaseResponseSchema = z.object({
   testCase: testCaseSummarySchema,
   version: z.object({ id: z.uuid(), version: z.literal(1) }),

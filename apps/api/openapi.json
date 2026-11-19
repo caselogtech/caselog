@@ -6629,6 +6629,17 @@
               "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
               "type": "string"
             }
+          },
+          {
+            "name": "idempotency-key",
+            "required": false,
+            "in": "header",
+            "schema": {
+              "minLength": 8,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -6880,6 +6891,17 @@
             "schema": {
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": false,
+            "in": "header",
+            "schema": {
+              "minLength": 8,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$",
               "type": "string"
             }
           }
@@ -8835,6 +8857,7 @@
                     "type": "string",
                     "enum": [
                       "projects:read",
+                      "structure:write",
                       "cases:read",
                       "cases:write",
                       "policies:read",
@@ -8923,6 +8946,7 @@
               "type": "string",
               "enum": [
                 "projects:read",
+                "structure:write",
                 "cases:read",
                 "cases:write",
                 "policies:read",
@@ -8979,6 +9003,7 @@
                   "type": "string",
                   "enum": [
                     "projects:read",
+                    "structure:write",
                     "cases:read",
                     "cases:write",
                     "policies:read",

@@ -39,11 +39,13 @@ describe('MCP protocol tools', () => {
     vi.unstubAllGlobals();
   });
 
-  it('discovers exactly twelve tools and distinguishes reading, authoring and publication', async () => {
+  it('discovers exactly fourteen tools and distinguishes reading, authoring and publication', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name)).toEqual([
       'list_projects',
       'get_project_structure',
+      'create_suite',
+      'create_section',
       'list_test_cases',
       'get_test_case',
       'create_test_case',
@@ -75,6 +77,64 @@ describe('MCP protocol tools', () => {
     expect(String(fetcher.mock.calls[0]?.[0])).toContain('/projects?limit=1&state=active');
   });
 
+  it.each([
+    {
+      name: 'create_suite',
+      request: { name: 'Payments' },
+      response: { id: policyId, name: 'Payments', position: 0 },
+      path: '/structure/suites',
+      params: {},
+    },
+    {
+      name: 'create_section',
+      request: { name: 'Payments' },
+      response: {
+        id: sectionId,
+        suiteId: policyId,
+        name: 'Payments',
+        parentId: null,
+        depth: 0,
+        position: 0,
+      },
+      path: `/structure/suites/${policyId}/sections`,
+      params: { suiteId: policyId },
+    },
+    {
+      name: 'create_section',
+      request: { name: 'Recovery', parentId: caseId },
+      response: {
+        id: sectionId,
+        suiteId: policyId,
+        name: 'Recovery',
+        parentId: caseId,
+        depth: 1,
+        position: 0,
+      },
+      path: `/structure/suites/${policyId}/sections`,
+      params: { suiteId: policyId },
+    },
+  ])(
+    'creates structure through $name with validated output and a write key',
+    async ({ name, request, response, path, params }) => {
+      await client.listTools();
+      fetcher.mockResolvedValue(Response.json(response));
+      const result = await client.callTool({
+        name,
+        arguments: { projectSlug: 'checkout', ...params, idempotencyKey: 'structure-123', request },
+      });
+      expect(result.isError).not.toBe(true);
+      expect(result.structuredContent).toEqual(response);
+      expect(String(fetcher.mock.calls[0]?.[0])).toBe(
+        `https://caselog.example/api/v1/projects/checkout${path}`,
+      );
+      expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+        method: 'POST',
+        body: JSON.stringify(request),
+        headers: { 'idempotency-key': 'structure-123' },
+      });
+    },
+  );
+
   it('validates case template and forwards a write key with a typed creation result', async () => {
     const body = {
       title: 'Declined payment',
@@ -102,6 +162,54 @@ describe('MCP protocol tools', () => {
   });
 
   it.each([
+    { name: 'create_suite', arguments: { projectSlug: 'checkout', request: { name: 'Payments' } } },
+    {
+      name: 'create_suite',
+      arguments: { projectSlug: 'checkout', idempotencyKey: 'intent-123', request: { name: ' ' } },
+    },
+    {
+      name: 'create_suite',
+      arguments: {
+        projectSlug: 'checkout',
+        idempotencyKey: 'intent-123',
+        request: { name: 'x'.repeat(121) },
+      },
+    },
+    {
+      name: 'create_suite',
+      arguments: {
+        projectSlug: 'checkout',
+        idempotencyKey: 'intent-123',
+        request: { name: 'Payments', organizationId: caseId },
+      },
+    },
+    {
+      name: 'create_section',
+      arguments: {
+        projectSlug: 'checkout',
+        suiteId: '../other',
+        idempotencyKey: 'intent-123',
+        request: { name: 'Payments' },
+      },
+    },
+    {
+      name: 'create_section',
+      arguments: {
+        projectSlug: 'checkout',
+        suiteId: policyId,
+        idempotencyKey: 'intent-123',
+        request: { name: 'Payments', parentId: 'invalid' },
+      },
+    },
+    {
+      name: 'create_section',
+      arguments: {
+        projectSlug: 'checkout',
+        suiteId: policyId,
+        idempotencyKey: 'short',
+        request: { name: 'Payments' },
+      },
+    },
     { name: 'list_projects', arguments: { organizationId: caseId } },
     { name: 'get_test_case', arguments: { projectSlug: '../other', caseId } },
     { name: 'list_test_cases', arguments: { projectSlug: 'checkout', limit: 101 } },

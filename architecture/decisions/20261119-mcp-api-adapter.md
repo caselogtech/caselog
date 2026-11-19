@@ -50,6 +50,10 @@ Remote HTTP transport/OAuth, suite/section mutations, bulk operations, destructi
 operations, waivers, approvals and release promotion are outside this first version.
 Adding them requires separately accepted scope and corresponding API safeguards.
 
+The subsequently accepted [structure authoring extension](20261119-mcp-structure-authoring.md)
+adds suite and section creation with an independent scope and replay contract. Other
+operations listed above remain outside the approved scope.
+
 ## Verification
 
 Prove SDK discovery and tool calls over stdio, real API persistence, policy lifecycle,

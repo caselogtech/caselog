@@ -121,6 +121,7 @@ describe('WorkspaceApiTokensSettings', () => {
     const form = fixture.componentInstance.form;
     form.controls.name.setValue('MCP author');
     form.controls.scopes.controls.projectsRead.setValue(true);
+    form.controls.scopes.controls.structureWrite.setValue(true);
     form.controls.scopes.controls.casesRead.setValue(true);
     form.controls.scopes.controls.casesWrite.setValue(true);
     form.controls.scopes.controls.policiesWrite.setValue(true);
@@ -129,11 +130,18 @@ describe('WorkspaceApiTokensSettings', () => {
       expect(tokensApi.create).toHaveBeenCalledWith(
         'acme',
         expect.objectContaining({
-          scopes: ['projects:read', 'cases:read', 'cases:write', 'policies:write'],
+          scopes: [
+            'projects:read',
+            'structure:write',
+            'cases:read',
+            'cases:write',
+            'policies:write',
+          ],
         }),
       ),
     );
     await vi.waitFor(() => expect(form.controls.scopes.getRawValue().policiesWrite).toBe(false));
+    expect(form.controls.scopes.getRawValue().structureWrite).toBe(false);
     expect(form.controls.scopes.getRawValue().policiesPublish).toBe(false);
   });
 

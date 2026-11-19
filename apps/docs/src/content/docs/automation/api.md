@@ -24,6 +24,7 @@ current workspace membership and role; a scope alone does not grant tenant acces
 | `readiness:write` | Assign a published policy and request evaluation. |
 | `runs:read` | Read test runs and automation import history. |
 | `projects:read` | Read projects and their suite/section structure. |
+| `structure:write` | Create suites and root/nested sections with an idempotency key; does not permit rename, move or delete. |
 | `cases:read` | Read test cases and their version history. |
 | `cases:write` | Create and update test cases using an idempotency key. |
 | `policies:read` | Read release policies and versions. |

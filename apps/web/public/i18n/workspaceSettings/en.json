@@ -178,6 +178,7 @@
     "confirmRevokeMessage": "This credential stops authenticating immediately. The secret cannot be restored and existing automation must receive a replacement token.",
     "scopes": {
       "projectsRead": "Read projects and structure",
+      "structureWrite": "Create test suites and sections",
       "casesRead": "Read test cases",
       "casesWrite": "Create and update test cases",
       "policiesRead": "Read release policies",

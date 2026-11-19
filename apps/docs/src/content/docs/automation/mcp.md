@@ -10,13 +10,15 @@ adapter. Workspace content returned by tools is data, never instructions to the 
 
 ## Supported scenarios
 
-This table defines the first version's complete scope and acceptance behavior. All
-writes use existing application rules; creating a policy does not publish or assign it.
+This table defines the approved scope and acceptance behavior. All writes use existing
+application rules; creating a policy does not publish or assign it.
 
 | Tool | Scenario | Acceptance behavior |
 | --- | --- | --- |
 | `list_projects` | Find a project in the token's workspace. | Return a bounded page, project metrics and `nextCursor`; support active/archived filters and an empty list. |
-| `get_project_structure` | Choose an existing suite and section before authoring a case. | Return the project's suites/sections and their IDs; reject missing or foreign projects. |
+| `get_project_structure` | Inspect suites and sections before creating structure or authoring a case. | Return the project's suites/sections and their IDs; reject missing or foreign projects. |
+| `create_suite` | Prepare a test suite in an existing project. | Require `structure:write`, write role and an idempotency key; return the suite ID/order, reject duplicate names, and replay keyed requests without duplication. |
+| `create_section` | Prepare a root or nested section before adding cases. | Require the same scope/role/key; optional `parentId` must belong to the target suite and project; preserve server ordering, depth and path, and reject missing or foreign parents. |
 | `list_test_cases` | Search existing cases before adding coverage. | Support title search, section, active/archived state and cursor pagination; do not fetch all pages implicitly. |
 | `get_test_case` | Read the current case and its version history. | Return content, section, current version and historical version summaries from the API. |
 | `create_test_case` | Create a steps, text, exploratory or BDD case in an existing section. | Validate template/content, return ID and version 1, persist the case for API/UI clients, and replay the same keyed request without duplication. |
@@ -37,6 +39,7 @@ and role. Reading and writing scopes are independent; a writer usually needs bot
 | Scope | MCP operations | Minimum workspace role |
 | --- | --- | --- |
 | `projects:read` | `list_projects`, `get_project_structure` | Read only |
+| `structure:write` | `create_suite`, `create_section` | Tester/contributor |
 | `cases:read` | `list_test_cases`, `get_test_case` | Read only |
 | `cases:write` | `create_test_case`, `update_test_case` | Tester/contributor |
 | `policies:read` | `list_release_policies`, `get_release_policy` | Read only |
@@ -55,24 +58,27 @@ or policy authoring permissions. Tokens cannot administer other tokens or member
 | --- | --- |
 | Missing/malformed configuration | Exit with a concise stderr message and nonzero status; never print token values. |
 | Insecure remote API URL or URL credentials | Reject configuration. HTTPS is required except HTTP on loopback hosts. |
-| MCP initialization and discovery | Complete the SDK handshake; list only the twelve documented tools with parameter schemas and behavior annotations. |
+| MCP initialization and discovery | Complete the SDK handshake; list only the fourteen documented tools with parameter schemas and behavior annotations. |
 | Malformed/unknown tool arguments | Reject before HTTP; bound strings, arrays, page sizes and payload size. |
 | Missing, invalid, expired or revoked token | Report authentication failure; revocation takes effect on subsequent calls. |
 | Missing scope or insufficient current role | API denies the call even if an MCP client ignores tool annotations. |
 | Foreign project, case, section, policy or candidate | Return not found; never disclose another workspace's data. |
 | Empty collection or final page | Return a valid empty list or `nextCursor: null`; do not substitute an error. |
-| Same write key and validated payload | Replay the original response for seven days, including concurrent duplicate delivery; create one case/version/audit event. |
+| Same write key and validated payload | Replay the original response for seven days, including concurrent duplicate delivery; create one suite/section/case/version and audit event. |
 | Same write key, changed payload | Return a stable idempotency conflict; do not change data. |
 | Failed validation or missing section | Do not consume the key; a corrected valid request can use it. |
 | New update key with stale `baseVersion` | Return the API version conflict; do not overwrite another user's changes. |
-| Missing case-write key | Reject API-token writes; existing browser writes without the header remain compatible. |
+| Missing case/structure-write key | Reject API-token writes; existing browser writes without the header remain compatible. |
+| Duplicate structure name | Return `suite_name_taken` or `section_name_taken`; never silently select an existing record. Section names are checked among siblings. |
+| Parent in another suite/project/workspace | Return not found, even when a section ID exists elsewhere. |
+| Replayed structure create after rename/move/delete | Return the original response snapshot without recreating or reverting records; read structure for current state. |
 | Policy draft/key/publication conflict | Return the API conflict without modifying published history or silently selecting another policy. |
 | Policy publication without publish scope | Deny even when the token can author drafts. |
 | Network failure, deadline or cancellation | Return a safe error; do not automatically retry a write whose outcome is uncertain. |
 | API redirect | Refuse it; do not forward credentials to another destination. |
 | Oversized, malformed or contract-invalid API response | Stop processing and return a safe upstream-response error. |
 | Unexpected API failure | Preserve safe status/code/request ID; do not expose raw bodies, stack traces or credentials. |
-| Audit | Record creator identity and API-token attribution for case/policy mutations; never include the token secret. |
+| Audit | Record creator identity and API-token attribution for structure/case/policy mutations; never include the token secret. |
 | stdio lifecycle | stdout contains only protocol messages; cleanly handle client disconnect and termination. |
 | Self-hosted operation | Run without billing, a Caselog account on another installation, or a proprietary control plane. |
 
@@ -84,6 +90,13 @@ an uncertain response. MCP request IDs are not idempotency keys. Case keys are s
 by workspace, project, creator and operation, including case ID for updates. Policy
 keys retain the API's project/policy operation scope. Keep retries within seven days.
 After expiry, inspect current state before deciding whether to submit a new write.
+
+Structure keys are scoped by workspace, project, creator and operation; section keys
+also include the suite ID. Omitted and null `parentId` both mean a root section and
+share the same payload identity. Invalid requests, missing resources and duplicate-name
+conflicts do not consume the key. Structure creates require keys for API tokens while
+existing browser writes without a key remain compatible. `structure:write` does not
+grant reads, case writes, project creation, rename, move or delete.
 
 Case update also requires the latest `baseVersion`. On a new-intent version conflict,
 read the case again and reconcile the user's changes before sending a new update.
@@ -129,6 +142,9 @@ the advertised output schema describes successful results.
 
 Example requests to an agent:
 
+- “Read the checkout structure, create a missing Payments suite with a Recovery section,
+  then add declined-card cases there. Return the suite, section and case IDs.”
+
 - “Find existing checkout cases, then add the missing declined-payment scenario to
   the Payments section. Return the created case ID.”
 - “Read this case, preserve its current content and add a regression step as a new version.”
@@ -143,8 +159,8 @@ tenant isolation, retries and history, and a real stdio → API → browser jour
 See [the architecture decision](https://github.com/caselogtech/caselog/blob/main/architecture/decisions/20261119-mcp-api-adapter.md)
 for compatibility and migration recovery.
 
-The first version reads existing structure and writes individual cases/policies.
-Suite/section creation, bulk writes, case archive/delete/restore, attachments, external
-integrations, policy assignment, evaluation requests, waivers, approvals and promotion
-are not exposed as MCP tools. Remote MCP HTTP/OAuth is a separate future decision.
+The adapter creates suites/sections in existing projects and writes individual cases
+and policies. Structure rename/move/delete, project creation, bulk writes, case
+archive/delete/restore, attachments, external integrations, policy assignment, evaluation
+requests, waivers, approvals and promotion are not exposed as MCP tools. Remote MCP HTTP/OAuth is a separate future decision.
 MCP availability does not change cloud pricing or pilot terms.

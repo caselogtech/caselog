@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import type { McpConfiguration } from './domain/configuration.js';
 import { CaselogApiClient } from './infrastructure/caselog-api-client.js';
 import { registerProjectTools } from './presentation/tools/projects.js';
+import { registerStructureTools } from './presentation/tools/structure.js';
 import { registerCaseTools } from './presentation/tools/cases.js';
 import { registerPolicyTools } from './presentation/tools/policies.js';
 import { registerReadinessTools } from './presentation/tools/readiness.js';
@@ -21,6 +22,7 @@ export function createMcpServer(configuration: McpConfiguration): McpServer {
   );
   const api = new CaselogApiClient(configuration);
   registerProjectTools(server, api);
+  registerStructureTools(server, api);
   registerCaseTools(server, api);
   registerPolicyTools(server, api);
   registerReadinessTools(server, api);

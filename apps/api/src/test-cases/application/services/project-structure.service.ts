@@ -16,6 +16,7 @@ import {
 } from '@caselog/schemas';
 import {
   AuthorizationDeniedError,
+  InvalidPayloadError,
   ResourceConflictError,
   ResourceNotFoundError,
 } from '../../../common/errors/domain.error';
@@ -24,10 +25,17 @@ import {
   type StructureResult,
 } from '../../infrastructure/repositories/project-structure.repository';
 
+import {
+  ProjectStructureCreateRepository,
+  type StructureWriteIdentity,
+} from '../../infrastructure/repositories/project-structure-create.repository';
+
 @Injectable()
 export class ProjectStructureService {
   constructor(
     @Inject(ProjectStructureRepository) private readonly structure: ProjectStructureRepository,
+    @Inject(ProjectStructureCreateRepository)
+    private readonly creation: ProjectStructureCreateRepository,
   ) {}
 
   async get(organizationId: string, projectSlug: string): Promise<ProjectStructureResponse> {
@@ -40,9 +48,16 @@ export class ProjectStructureService {
     principal: OrganizationAccessPrincipal,
     projectSlug: string,
     request: CreateSuiteRequest,
+    idempotencyKey?: string,
   ): Promise<SuiteResponse> {
     this.assertWritable(principal);
-    const result = await this.structure.createSuite(principal.organizationId, projectSlug, request);
+    const result = await this.creation.createSuite(
+      principal.organizationId,
+      principal.sub,
+      projectSlug,
+      request,
+      structureWriteIdentity(principal, idempotencyKey),
+    );
     this.assertFound(result);
     return suiteResponseSchema.parse(result.value);
   }
@@ -69,13 +84,16 @@ export class ProjectStructureService {
     projectSlug: string,
     suiteId: string,
     request: CreateSectionRequest,
+    idempotencyKey?: string,
   ): Promise<SectionResponse> {
     this.assertWritable(principal);
-    const result = await this.structure.createSection(
+    const result = await this.creation.createSection(
       principal.organizationId,
+      principal.sub,
       projectSlug,
       suiteId,
       request,
+      structureWriteIdentity(principal, idempotencyKey),
     );
     this.assertFound(result);
     return sectionResponseSchema.parse(result.value);
@@ -163,6 +181,12 @@ export class ProjectStructureService {
   private assertFound<T>(
     result: StructureResult<T>,
   ): asserts result is { kind: 'found'; value: T } {
+    if (result.kind === 'idempotency_conflict') {
+      throw new ResourceConflictError(
+        'idempotency_key_reused',
+        'The idempotency key was already used for another request',
+      );
+    }
     if (result.kind === 'project_not_found') throw new ResourceNotFoundError('project');
     if (result.kind === 'suite_not_found') throw new ResourceNotFoundError('suite');
     if (result.kind === 'section_not_found') throw new ResourceNotFoundError('section');
@@ -186,4 +210,20 @@ export class ProjectStructureService {
       );
     }
   }
+}
+
+function structureWriteIdentity(
+  principal: OrganizationAccessPrincipal,
+  idempotencyKey: string | undefined,
+): StructureWriteIdentity {
+  if (principal.tokenType === 'api_token' && !idempotencyKey) {
+    throw new InvalidPayloadError(
+      'idempotency_key_required',
+      'Provide an Idempotency-Key for API token structure writes',
+    );
+  }
+  return {
+    idempotencyKey,
+    apiTokenId: principal.tokenType === 'api_token' ? principal.apiTokenId : undefined,
+  };
 }

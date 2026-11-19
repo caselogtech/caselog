@@ -81,6 +81,7 @@ export const organizationSessionPrincipalSchema = sessionPrincipalSchema.extend(
 
 export const apiTokenScopeSchema = z.enum([
   'projects:read',
+  'structure:write',
   'cases:read',
   'cases:write',
   'policies:read',
