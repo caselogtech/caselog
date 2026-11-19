@@ -1,8 +1,19 @@
 # Caselog roadmap
 
-Product direction agreed on 2026-11-18. This roadmap describes planned work, not
-capabilities already verified or a promise of launch dates. Complete each acceptance
-checkpoint before marking its work done.
+Product direction agreed on 2026-11-18; status reviewed on 2026-11-19. This roadmap
+tracks implemented work and remaining acceptance, without promising launch dates.
+Checked items have passed their stated checkpoint. Unchecked items may have working
+foundations but still require implementation, verification or an operator decision.
+
+## Current status
+
+| Area | Implemented and verified | Remaining |
+| --- | --- | --- |
+| Core MVP | Workspace/project management, manual and automated testing, immutable candidates, policies, evidence, readiness and waivers; local checks and tests pass. | Current-version clean-install/recovery drill and a complete first-user journey on the deployment artifacts. |
+| MCP | Fourteen tools, independent scopes, audit, replay-safe authoring and stdio → API → UI verification. | No further MCP expansion is scheduled; prioritize the baseline and pilot checkpoints below. |
+| Self-hosted operations | Docker artifacts, runtime roles, configuration tooling, backup/restore scripts and runbooks exist. | Rehearse the current revision, retain exact artifacts and record recovery evidence. |
+| Cloud pilot | Self-service workspaces, invitations, registration controls and billing-disabled operation exist. | Budget, measured resource limits, missing quota enforcement, deployment rehearsal and pilot terms. |
+| Demand and monetization | Commercial direction is agreed. | Record pilot usage, costs and willingness to pay before deciding on a paid offer. |
 
 ## Product and business direction
 
@@ -34,16 +45,42 @@ integration remain undecided.
 
 ## 1. Verify the existing MVP and self-hosted baseline
 
-- [ ] Run repository checks, tests, builds, the critical browser journey, and deployment
-  and recovery checks on the pinned toolchain; resolve launch-blocking defects.
+### Implemented and locally verified
+
+- [x] Implement registration, email verification, isolated workspaces, explicit ownership,
+  projects, membership roles and invitations; verify the API authorization boundaries.
+- [x] Implement suites, nested sections, versioned test cases, CSV import, manual runs
+  with case-version snapshots, results and JUnit ingestion.
+- [x] Implement immutable release candidates, normalized evidence, versioned policies,
+  readiness evaluation, freshness handling, decision history and audited waivers.
+- [x] Verify missing/failed/stale evidence, unauthorized and cross-tenant access,
+  idempotent retries and history preservation in the relevant API/integration suites.
+- [x] Run `pnpm check`, `pnpm test` and `pnpm build` on the pinned toolchain; verify the
+  CI → candidate → readiness → waiver/history and MCP authoring browser journeys.
+- [x] Provide self-hosted Docker artifacts, configuration tooling, separate runtime
+  roles, offline backup/restore scripts and installation/recovery runbooks.
+- [x] Provide the public documentation site, product website, REST/OpenAPI contracts,
+  CLI and CI examples. Local builds pass; publication is a separate operator action.
+
+Local verification at `cad0338`: 673 tests and both browser journeys passed on
+2026-11-19. The MCP scope migrations passed on existing and empty databases. Existing
+lint and component CSS-budget warnings remain; these checks do not establish deployed
+capacity or successful recovery of the current application images.
+
+### Operational acceptance still open
+
+- [ ] Run `pnpm test:deployment` for the current revision, including Docker image builds,
+  TLS/SMTP/S3 transfers, runtime role isolation and same-version recovery; resolve defects.
 - [ ] Rehearse clean installation and backup/restore with the documented runtime roles,
-  tenant isolation, object storage, and SMTP configuration.
+  tenant isolation, object storage and SMTP configuration. Restore into a separate
+  installation and record the backup timestamp, recovery duration and exact image IDs.
 - [ ] Verify the first useful workflow: register, verify email, create a workspace and
-  project, execute a run, ingest CI results, link an exact candidate, and inspect readiness.
-- [ ] Verify missing, failed, stale, unauthorized, cross-tenant, and retry behavior in
-  the pilot workflow, including evidence history and waivers.
+  project, execute a manual run, ingest CI results, link an exact candidate and inspect
+  readiness on the deployment artifacts. Existing browser journeys start with demo users;
+  API tests of individual steps do not complete this first-user deployment checkpoint.
 - [ ] Record verified artifacts, compatibility, recovery instructions, and known limits
-  before retaining real team data.
+  before retaining real team data. The runbooks and compatibility policy are written;
+  current deployment evidence and artifact retention remain to be completed.
 
 **Acceptance checkpoint:** the documented installation and critical workflow pass end
 to end; recovery succeeds into a separate installation, tenant boundaries are proven,
@@ -58,10 +95,12 @@ without managed billing or a Caselog control plane.
   policy reads, authoring and publishing; expose the scopes in workspace token settings.
 - [x] Make agent case writes replay-safe while preserving existing browser clients and
   optimistic version conflicts.
-- [x] Ship the twelve stdio MCP operations and connection instructions described in the
+- [x] Ship the fourteen stdio MCP operations and connection instructions described in the
   [MCP scenario guide](apps/docs/src/content/docs/automation/mcp.md).
-- [x] Verify the guide's failure matrix and a real stdio → API → browser case workflow,
-  policy lifecycle, tenant isolation, token revocation and database recovery compatibility.
+- [x] Add independent `structure:write` access and replay-safe suite/section creates,
+  preserving browser compatibility and enforcing tenant/project/parent ownership.
+- [x] Verify nested structure → case → UI authoring, policy lifecycle, tenant isolation,
+  token revocation, concurrent replay and additive migration compatibility.
 
 **Agent-access acceptance:** documented tools work against the public API with scoped
 tokens on the same self-hosted artifacts; concurrent retries create no duplicate records,
@@ -69,25 +108,20 @@ unauthorized/cross-tenant calls fail safely, published history remains immutable
 repository checks, tests and builds pass. Remote transport and other agent operations
 remain outside this extension.
 
-Verified on 2026-11-19: `pnpm check`, `pnpm test`, `pnpm build` and both browser journeys
-pass, including all twelve MCP operations. The additive migration passed on the existing
-development database and empty browser-test databases. The main MVP/pilot checkpoints
-above and below remain separate acceptance work.
+Completed in `26168f2` and `cad0338`, with the local verification recorded in section 1.
+These checks do not complete the deployment/recovery or cloud-pilot checkpoints.
 
-Suite/section extension approved on 2026-11-19:
+### Implemented pilot foundations
 
-- [x] Add independent `structure:write` access and replay-safe suite/section creates,
-  preserving browser compatibility and enforcing tenant/project/parent ownership.
-- [x] Expose `create_suite` and `create_section`, including nested sections, and verify
-  a real stdio → API → UI structure-and-case workflow with all fourteen tools.
-
-**Structure acceptance:** simultaneous retries create one record and audit event;
-changed intents, duplicate names, invalid parents and unauthorized calls fail safely.
-Repository checks, tests, builds and existing/empty-database migration checks pass.
-
-Verified on 2026-11-19: `pnpm check`, all 673 tests, workspace builds and both browser
-journeys pass, including all fourteen MCP tools and ordinary pointer interaction with
-the created structure. The new migration passed on existing and empty databases.
+- [x] Support public or invitation-only registration, email verification, workspace
+  self-service and explicit colleague invitations with membership/role enforcement.
+- [x] Keep managed billing disabled for the pilot; workspace creation requires no
+  billing account, payment card or subscription and has no scheduled paid transition.
+- [x] Implement storage usage accounting, pending-upload safety checks, bounded JUnit
+  parsing and optional workspace provisioning limits; workspace count is unlimited by
+  default. These controls do not provide a measured total storage or ingestion quota.
+- [x] Implement private metrics, structured logging, bounded background retries,
+  dead-letter support and reconciliation. Pilot alerting and incident drills remain open.
 
 ### Pilot operations
 
@@ -150,3 +184,14 @@ do not establish demand.
 the agreed lifecycle is verified end to end, core self-hosted functionality remains
 available, and no pilot participant is charged without opting in. Until then, keep
 managed billing disabled and make no paid launch commitment.
+
+## Next work, in dependency order
+
+1. Complete section 1's current-version deployment/recovery drill and first-user journey;
+   record the exact revision, image IDs, results and remaining limitations.
+2. Measure representative pilot workloads, agree the infrastructure budget and limits,
+   then implement and verify the missing resource enforcement in section 2.
+3. Rehearse invitation-only pilot operations and publish the agreed terms before
+   onboarding the first teams. Keep deployment/publication as explicit operator actions.
+4. Use real repeat usage and cost evidence from section 3 to decide whether section 4
+   should proceed. Additional MCP tools and billing integration are not prerequisites.
