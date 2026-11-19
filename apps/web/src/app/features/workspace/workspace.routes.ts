@@ -68,8 +68,7 @@ export const workspaceRoutes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        loadComponent: () =>
-          import('./pages/home/workspace-home').then(({ WorkspaceHome }) => WorkspaceHome),
+        redirectTo: 'projects',
       },
     ],
   },

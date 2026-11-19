@@ -36,6 +36,9 @@ Workspaces are unlimited by default; an operator may set a provisioning safety l
 
 ## Start a project and invite colleagues
 
+Opening a workspace takes you directly to its projects. Choose **Open test cases** on
+a project to begin working, or **Create project** to add one if your role allows it.
+
 Create a project from your workspace, supplying its name, key, and URL slug. Use one
 project for a coherent product or testing area. Open workspace settings and the members
 page to invite colleagues with an appropriate role. An invitation grants membership to

@@ -45,20 +45,6 @@
     "submit": "Create workspace",
     "back": "Back to workspaces"
   },
-  "home": {
-    "opening": "Opening workspace…",
-    "errorTitle": "Unable to open workspace",
-    "chooseAnother": "Choose another workspace",
-    "eyebrow": "Workspace",
-    "accessSuffix": "access",
-    "switch": "Switch workspace",
-    "gettingStarted": "Getting started",
-    "description": "Your workspace was provisioned with the defaults needed to begin organizing tests.",
-    "demoProject": "Demo project created",
-    "starterStructure": "Main suite and starter section created",
-    "statuses": "Default result statuses configured",
-    "viewProjects": "View projects"
-  },
   "projects": {
     "eyebrow": "Test management",
     "title": "Projects",
