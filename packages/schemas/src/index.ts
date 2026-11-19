@@ -548,6 +548,7 @@ export {
   createSectionParamsSchema,
   sectionResponseSchema,
   createTestCaseRequestSchema,
+  testCaseWriteHeadersSchema,
   createTestCaseResponseSchema,
   testCaseContentSchema,
   testCaseDetailParamsSchema,

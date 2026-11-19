@@ -27,6 +27,7 @@ import {
   CurrentOrganization,
   OrganizationAuthGuard,
   OrganizationRoleGuard,
+  RequireApiTokenScopes,
 } from '../../../auth/public-api';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
@@ -57,6 +58,7 @@ export class ProjectStructureController {
   ) {}
 
   @Get()
+  @RequireApiTokenScopes('projects:read')
   @ApiOkResponse({ type: ProjectStructureResponseDto })
   get(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,

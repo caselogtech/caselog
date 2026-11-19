@@ -41,6 +41,7 @@ Open the web app at `http://localhost:4200` and API docs at
 
 - [Self-hosting and public signup](deploy/README.md) · [Backup and recovery](deploy/RECOVERY.md)
 - [Product guides](apps/docs/README.md) · [CLI](apps/cli/README.md) · [CI examples](examples/ci/README.md)
+- [Agent access through MCP](apps/mcp/README.md)
 - [Development and verification](CONTRIBUTING.md) · [Architecture](ARCHITECTURE.md)
 - [Security reporting](SECURITY.md) · [Public website](apps/site/README.md)
 

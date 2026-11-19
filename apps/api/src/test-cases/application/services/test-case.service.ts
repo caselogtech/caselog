@@ -20,14 +20,22 @@ import {
 } from '@caselog/schemas';
 import {
   AuthorizationDeniedError,
+  InvalidPayloadError,
   ResourceConflictError,
   ResourceNotFoundError,
 } from '../../../common/errors/domain.error';
 import { TestCaseRepository } from '../../infrastructure/repositories/test-case.repository';
+import {
+  TestCaseWriteRepository,
+  type CaseWriteIdentity,
+} from '../../infrastructure/repositories/test-case-write.repository';
 
 @Injectable()
 export class TestCaseService {
-  constructor(@Inject(TestCaseRepository) private readonly testCases: TestCaseRepository) {}
+  constructor(
+    @Inject(TestCaseRepository) private readonly testCases: TestCaseRepository,
+    @Inject(TestCaseWriteRepository) private readonly writes: TestCaseWriteRepository,
+  ) {}
 
   async list(
     organizationId: string,
@@ -53,16 +61,23 @@ export class TestCaseService {
     principal: OrganizationAccessPrincipal,
     projectSlug: string,
     request: CreateTestCaseRequest,
+    idempotencyKey?: string,
   ): Promise<CreateTestCaseResponse> {
     if (principal.role === 'read_only') {
       throw new AuthorizationDeniedError();
     }
-    const result = await this.testCases.create(
+    const result = await this.writes.create(
       principal.organizationId,
       principal.sub,
       projectSlug,
       request,
+      caseWriteIdentity(principal, idempotencyKey),
     );
+    if (result.kind === 'idempotency_conflict')
+      throw new ResourceConflictError(
+        'idempotency_key_reused',
+        'The idempotency key was already used for another request',
+      );
     if (result.kind === 'project_not_found') {
       throw new ResourceNotFoundError('project');
     }
@@ -92,17 +107,24 @@ export class TestCaseService {
     projectSlug: string,
     caseId: string,
     request: UpdateTestCaseRequest,
+    idempotencyKey?: string,
   ): Promise<UpdateTestCaseResponse> {
     if (principal.role === 'read_only') {
       throw new AuthorizationDeniedError();
     }
-    const result = await this.testCases.update(
+    const result = await this.writes.update(
       principal.organizationId,
       principal.sub,
       projectSlug,
       caseId,
       request,
+      caseWriteIdentity(principal, idempotencyKey),
     );
+    if (result.kind === 'idempotency_conflict')
+      throw new ResourceConflictError(
+        'idempotency_key_reused',
+        'The idempotency key was already used for another request',
+      );
     if (result.kind === 'project_not_found') {
       throw new ResourceNotFoundError('project');
     }
@@ -216,4 +238,20 @@ export class TestCaseService {
     if (result.kind === 'section_not_found') throw new ResourceNotFoundError('section');
     return createTestCaseResponseSchema.parse(result.value);
   }
+}
+
+function caseWriteIdentity(
+  principal: OrganizationAccessPrincipal,
+  idempotencyKey: string | undefined,
+): CaseWriteIdentity {
+  if (principal.tokenType === 'api_token' && !idempotencyKey) {
+    throw new InvalidPayloadError(
+      'idempotency_key_required',
+      'Provide an Idempotency-Key for API token case writes',
+    );
+  }
+  return {
+    idempotencyKey,
+    apiTokenId: principal.tokenType === 'api_token' ? principal.apiTokenId : undefined,
+  };
 }

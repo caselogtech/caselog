@@ -4,6 +4,10 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Add an optional stdio MCP adapter for project discovery, test-case authoring,
+  release-policy drafts/publication and authoritative candidate readiness. Add separate
+  API scopes and replay-safe case writes, preserving existing browser clients. Apply
+  migration `20261119170000_mcp_authoring_scopes` before deploying these artifacts.
 - Add a standalone public homepage and contact page, with static hosting and Docker
   deployment instructions, public email contact, and accessible mobile layouts.
 

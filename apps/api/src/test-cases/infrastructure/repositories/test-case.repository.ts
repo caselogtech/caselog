@@ -1,70 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  CreateTestCaseRequest,
-  CreateTestCaseResponse,
-  RestoreTestCaseVersionRequest,
-  TestCaseDetailResponse,
-  TestCaseListResponse,
-  TestCaseLifecycleResponse,
-  TestCaseTemplate,
-  TestCaseVersion,
-  UpdateTestCaseRequest,
-  UpdateTestCaseResponse,
-} from '@caselog/schemas';
+import type { RestoreTestCaseVersionRequest } from '@caselog/schemas';
 import { testCaseContentSchema } from '@caselog/schemas';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
-import { CaseTemplate } from '../../../generated/prisma/enums';
 
-const TEMPLATE_MAP: Record<CaseTemplate, TestCaseTemplate> = {
-  STEPS: 'steps',
-  TEXT: 'text',
-  EXPLORATORY: 'exploratory',
-  BDD: 'bdd',
-};
-
-const CREATE_TEMPLATE_MAP: Record<TestCaseTemplate, CaseTemplate> = {
-  steps: CaseTemplate.STEPS,
-  text: CaseTemplate.TEXT,
-  exploratory: CaseTemplate.EXPLORATORY,
-  bdd: CaseTemplate.BDD,
-};
-
-type TestCasePage = Omit<TestCaseListResponse, 'project'>;
-
-export type TestCaseListResult =
-  | { kind: 'found'; project: TestCaseListResponse['project']; page: TestCasePage }
-  | { kind: 'project_not_found' };
-
-export type CreateTestCaseResult =
-  | { kind: 'created'; value: CreateTestCaseResponse }
-  | { kind: 'project_not_found' }
-  | { kind: 'section_not_found' };
-
-export type DuplicateTestCaseResult = CreateTestCaseResult | { kind: 'case_not_found' };
-
-export type TestCaseDetailResult =
-  | { kind: 'found'; value: TestCaseDetailResponse }
-  | { kind: 'project_not_found' }
-  | { kind: 'case_not_found' };
-
-export type UpdateTestCaseResult =
-  | { kind: 'updated'; value: UpdateTestCaseResponse }
-  | { kind: 'project_not_found' }
-  | { kind: 'case_not_found' }
-  | { kind: 'section_not_found' }
-  | { kind: 'version_not_found' }
-  | { kind: 'version_conflict'; currentVersion: number };
-
-export type TestCaseVersionResult =
-  | { kind: 'found'; value: TestCaseVersion }
-  | { kind: 'project_not_found' }
-  | { kind: 'case_not_found' }
-  | { kind: 'version_not_found' };
-
-export type TestCaseLifecycleResult =
-  | { kind: 'found'; value: TestCaseLifecycleResponse }
-  | { kind: 'project_not_found' }
-  | { kind: 'case_not_found' };
+import {
+  TEMPLATE_MAP,
+  type DuplicateTestCaseResult,
+  type TestCaseDetailResult,
+  type TestCaseListResult,
+  type TestCaseVersionResult,
+  type TestCaseLifecycleResult,
+  type UpdateTestCaseResult,
+} from '../persistence/test-case.persistence';
 
 @Injectable()
 export class TestCaseRepository {
@@ -132,87 +79,6 @@ export class TestCaseRepository {
               : [],
           ),
           nextCursor: hasNextPage ? (page.at(-1)?.id ?? null) : null,
-        },
-      };
-    });
-  }
-
-  async create(
-    organizationId: string,
-    userId: string,
-    projectSlug: string,
-    request: CreateTestCaseRequest,
-  ): Promise<CreateTestCaseResult> {
-    return this.tenantDatabase.run(organizationId, async (transaction) => {
-      const project = await transaction.project.findUnique({
-        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
-        select: { id: true },
-      });
-      if (!project) {
-        return { kind: 'project_not_found' };
-      }
-
-      const section = await transaction.section.findUnique({
-        where: {
-          organizationId_id: { organizationId, id: request.sectionId },
-          projectId: project.id,
-          deletedAt: null,
-        },
-        select: { id: true, suiteId: true, name: true },
-      });
-      if (!section) {
-        return { kind: 'section_not_found' };
-      }
-
-      const numberedProject = await transaction.project.update({
-        where: { organizationId_id: { organizationId, id: project.id } },
-        data: { nextCaseNumber: { increment: 1 } },
-        select: { nextCaseNumber: true },
-      });
-      const testCase = await transaction.testCase.create({
-        data: {
-          organizationId,
-          projectId: project.id,
-          suiteId: section.suiteId,
-          sectionId: section.id,
-          caseNumber: numberedProject.nextCaseNumber - 1n,
-          automationId: request.automationId,
-        },
-        select: { id: true, caseNumber: true },
-      });
-      const version = await transaction.testCaseVersion.create({
-        data: {
-          organizationId,
-          testCaseId: testCase.id,
-          version: 1,
-          title: request.title,
-          template: CREATE_TEMPLATE_MAP[request.template],
-          preconditions: request.preconditions,
-          expectedResult: request.expectedResult,
-          content: request.content,
-          createdById: userId,
-        },
-        select: { id: true, version: true },
-      });
-      const current = await transaction.testCase.update({
-        where: { organizationId_id: { organizationId, id: testCase.id } },
-        data: { currentVersionId: version.id },
-        select: { updatedAt: true },
-      });
-
-      return {
-        kind: 'created',
-        value: {
-          testCase: {
-            id: testCase.id,
-            caseNumber: testCase.caseNumber.toString(),
-            title: request.title,
-            template: request.template,
-            automationId: request.automationId ?? null,
-            section: { id: section.id, name: section.name },
-            updatedAt: current.updatedAt.toISOString(),
-          },
-          version: { id: version.id, version: 1 },
         },
       };
     });
@@ -308,104 +174,6 @@ export class TestCaseRepository {
             createdAt: createdAt.toISOString(),
             updatedAt: updatedAt.toISOString(),
           },
-        },
-      };
-    });
-  }
-
-  async update(
-    organizationId: string,
-    userId: string,
-    projectSlug: string,
-    caseId: string,
-    request: UpdateTestCaseRequest,
-  ): Promise<UpdateTestCaseResult> {
-    return this.tenantDatabase.run(organizationId, async (transaction) => {
-      const project = await transaction.project.findUnique({
-        where: { organizationId_slug: { organizationId, slug: projectSlug }, deletedAt: null },
-        select: { id: true },
-      });
-      if (!project) {
-        return { kind: 'project_not_found' };
-      }
-
-      const locked = await transaction.$queryRaw<Array<{ id: string }>>`
-        SELECT id
-        FROM test_cases
-        WHERE organization_id = ${organizationId}::uuid
-          AND project_id = ${project.id}::uuid
-          AND id = ${caseId}::uuid
-          AND deleted_at IS NULL
-        FOR UPDATE
-      `;
-      if (locked.length === 0) {
-        return { kind: 'case_not_found' };
-      }
-
-      const testCase = await transaction.testCase.findUnique({
-        where: { organizationId_id: { organizationId, id: caseId } },
-        select: { id: true, caseNumber: true, currentVersion: { select: { version: true } } },
-      });
-      if (!testCase?.currentVersion) {
-        return { kind: 'case_not_found' };
-      }
-      if (testCase.currentVersion.version !== request.baseVersion) {
-        return {
-          kind: 'version_conflict',
-          currentVersion: testCase.currentVersion.version,
-        };
-      }
-
-      const section = await transaction.section.findUnique({
-        where: {
-          organizationId_id: { organizationId, id: request.sectionId },
-          projectId: project.id,
-          deletedAt: null,
-        },
-        select: { id: true, suiteId: true, name: true },
-      });
-      if (!section) {
-        return { kind: 'section_not_found' };
-      }
-
-      const version = await transaction.testCaseVersion.create({
-        data: {
-          organizationId,
-          testCaseId: testCase.id,
-          version: request.baseVersion + 1,
-          title: request.title,
-          template: CREATE_TEMPLATE_MAP[request.template],
-          preconditions: request.preconditions,
-          expectedResult: request.expectedResult,
-          content: request.content,
-          createdById: userId,
-        },
-        select: { id: true, version: true },
-      });
-      const current = await transaction.testCase.update({
-        where: { organizationId_id: { organizationId, id: testCase.id } },
-        data: {
-          suiteId: section.suiteId,
-          sectionId: section.id,
-          automationId: request.automationId ?? null,
-          currentVersionId: version.id,
-        },
-        select: { id: true, automationId: true, updatedAt: true },
-      });
-
-      return {
-        kind: 'updated',
-        value: {
-          testCase: {
-            id: current.id,
-            caseNumber: testCase.caseNumber.toString(),
-            title: request.title,
-            template: request.template,
-            automationId: current.automationId,
-            section: { id: section.id, name: section.name },
-            updatedAt: current.updatedAt.toISOString(),
-          },
-          version,
         },
       };
     });

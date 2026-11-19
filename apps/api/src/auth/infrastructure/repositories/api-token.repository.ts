@@ -10,6 +10,12 @@ import type { ApiTokenScope } from '../../../generated/prisma/enums';
 import { appendAuditLog } from '../../../audit/public-api';
 
 const SCOPE_TO_DATABASE: Record<ApiTokenScopeValue, ApiTokenScope> = {
+  'projects:read': 'PROJECTS_READ',
+  'cases:read': 'CASES_READ',
+  'cases:write': 'CASES_WRITE',
+  'policies:read': 'POLICIES_READ',
+  'policies:write': 'POLICIES_WRITE',
+  'policies:publish': 'POLICIES_PUBLISH',
   'results:write': 'RESULTS_WRITE',
   'runs:read': 'RUNS_READ',
   'evidence:write': 'EVIDENCE_WRITE',
@@ -19,6 +25,12 @@ const SCOPE_TO_DATABASE: Record<ApiTokenScopeValue, ApiTokenScope> = {
 };
 
 const SCOPE_FROM_DATABASE: Record<ApiTokenScope, ApiTokenScopeValue> = {
+  PROJECTS_READ: 'projects:read',
+  CASES_READ: 'cases:read',
+  CASES_WRITE: 'cases:write',
+  POLICIES_READ: 'policies:read',
+  POLICIES_WRITE: 'policies:write',
+  POLICIES_PUBLISH: 'policies:publish',
   RESULTS_WRITE: 'results:write',
   RUNS_READ: 'runs:read',
   EVIDENCE_WRITE: 'evidence:write',

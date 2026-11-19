@@ -112,6 +112,31 @@ describe('WorkspaceApiTokensSettings', () => {
     expect(fixture.nativeElement.textContent).not.toContain(created.token);
   });
 
+  it('grants authoring scopes without implicitly granting publication and resets the form', async () => {
+    tokensApi.create.mockResolvedValue(created);
+    const fixture = TestBed.createComponent(WorkspaceApiTokensSettings);
+    fixture.detectChanges();
+    fixture.componentInstance.openCreateForm();
+    fixture.detectChanges();
+    const form = fixture.componentInstance.form;
+    form.controls.name.setValue('MCP author');
+    form.controls.scopes.controls.projectsRead.setValue(true);
+    form.controls.scopes.controls.casesRead.setValue(true);
+    form.controls.scopes.controls.casesWrite.setValue(true);
+    form.controls.scopes.controls.policiesWrite.setValue(true);
+    fixture.componentInstance.submit();
+    await vi.waitFor(() =>
+      expect(tokensApi.create).toHaveBeenCalledWith(
+        'acme',
+        expect.objectContaining({
+          scopes: ['projects:read', 'cases:read', 'cases:write', 'policies:write'],
+        }),
+      ),
+    );
+    await vi.waitFor(() => expect(form.controls.scopes.getRawValue().policiesWrite).toBe(false));
+    expect(form.controls.scopes.getRawValue().policiesPublish).toBe(false);
+  });
+
   it('revokes a selected token only after confirmation', async () => {
     const fixture = TestBed.createComponent(WorkspaceApiTokensSettings);
     fixture.componentInstance.requestRevoke(token);

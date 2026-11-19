@@ -62,6 +62,7 @@ export class ReadinessPolicyService {
         idempotencyKey,
         hash(request),
         request,
+        principal.tokenType === 'api_token' ? principal.apiTokenId : undefined,
       ),
     );
   }
@@ -96,6 +97,7 @@ export class ReadinessPolicyService {
         idempotencyKey,
         hash(request),
         request,
+        principal.tokenType === 'api_token' ? principal.apiTokenId : undefined,
       ),
     );
   }
@@ -118,6 +120,7 @@ export class ReadinessPolicyService {
         principal.sub,
         idempotencyKey,
         hash({ policyId }),
+        principal.tokenType === 'api_token' ? principal.apiTokenId : undefined,
       ),
     );
   }

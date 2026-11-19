@@ -1,5 +1,6 @@
 import {
   createTestCaseRequestSchema,
+  testCaseWriteHeadersSchema,
   createSuiteRequestSchema,
   updateSuiteRequestSchema,
   moveSuiteRequestSchema,
@@ -23,6 +24,8 @@ export class TestCaseListParamsDto extends createZodDto(testCaseListParamsSchema
 export class TestCaseListQueryDto extends createZodDto(testCaseListQuerySchema) {}
 
 export class CreateTestCaseRequestDto extends createZodDto(createTestCaseRequestSchema) {}
+
+export class TestCaseWriteHeadersDto extends createZodDto(testCaseWriteHeadersSchema) {}
 
 export class TestCaseDetailParamsDto extends createZodDto(testCaseDetailParamsSchema) {}
 

@@ -52,6 +52,30 @@ without managed billing or a Caselog control plane.
 
 ## 2. Prepare a bounded free cloud pilot
 
+### Approved agent-access extension (2026-11-19)
+
+- [x] Add scoped API access for project discovery, test-case reads/writes, and separate
+  policy reads, authoring and publishing; expose the scopes in workspace token settings.
+- [x] Make agent case writes replay-safe while preserving existing browser clients and
+  optimistic version conflicts.
+- [x] Ship the twelve stdio MCP operations and connection instructions described in the
+  [MCP scenario guide](apps/docs/src/content/docs/automation/mcp.md).
+- [x] Verify the guide's failure matrix and a real stdio → API → browser case workflow,
+  policy lifecycle, tenant isolation, token revocation and database recovery compatibility.
+
+**Agent-access acceptance:** documented tools work against the public API with scoped
+tokens on the same self-hosted artifacts; concurrent retries create no duplicate records,
+unauthorized/cross-tenant calls fail safely, published history remains immutable, and
+repository checks, tests and builds pass. Remote transport and other agent operations
+remain outside this extension.
+
+Verified on 2026-11-19: `pnpm check`, `pnpm test`, `pnpm build` and both browser journeys
+pass, including all twelve MCP operations. The additive migration passed on the existing
+development database and empty browser-test databases. The main MVP/pilot checkpoints
+above and below remain separate acceptance work.
+
+### Pilot operations
+
 - [ ] Set a pilot infrastructure budget, initial cohort size, and support expectations
   that one maintainer can sustain. Aim initially for 3–5 teams.
 - [ ] Measure representative workloads and publish operational limits before onboarding:

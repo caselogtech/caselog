@@ -20,6 +20,7 @@ import {
   OrganizationAuthGuard,
   OrganizationRoleGuard,
   RequireOrganizationAccess,
+  RequireApiTokenScopes,
 } from '../../../auth/public-api';
 import { ReadinessPolicyService } from '../../application/services/readiness-policy.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
@@ -46,6 +47,7 @@ export class ReadinessPolicyController {
   ) {}
 
   @Get()
+  @RequireApiTokenScopes('policies:read')
   @ApiOkResponse({ type: ReadinessPolicyListResponseDto })
   list(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -56,6 +58,7 @@ export class ReadinessPolicyController {
   }
 
   @Post()
+  @RequireApiTokenScopes('policies:write')
   @RequireOrganizationAccess('lead')
   @ApiCreatedResponse({ type: ReadinessPolicyResponseDto })
   create(
@@ -68,6 +71,7 @@ export class ReadinessPolicyController {
   }
 
   @Get(':policyId')
+  @RequireApiTokenScopes('policies:read')
   @ApiOkResponse({ type: ReadinessPolicyResponseDto })
   detail(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -77,6 +81,7 @@ export class ReadinessPolicyController {
   }
 
   @Post(':policyId/versions')
+  @RequireApiTokenScopes('policies:write')
   @RequireOrganizationAccess('lead')
   @ApiCreatedResponse({ type: ReadinessPolicyResponseDto })
   createVersion(
@@ -95,6 +100,7 @@ export class ReadinessPolicyController {
   }
 
   @Post(':policyId/publish')
+  @RequireApiTokenScopes('policies:publish')
   @RequireOrganizationAccess('lead')
   @ApiCreatedResponse({ type: ReadinessPolicyResponseDto })
   publish(

@@ -528,3 +528,12 @@ runtime backend dependency. Contact uses explicit email and public support links
 Website, documentation, and product are separate deployment artifacts. The website
 build accepts public origin/contact/documentation settings and publishes no secrets.
 `apps/site/README.md` defines its static-host and Docker deployment procedures.
+
+## 12. Agent access
+
+`apps/mcp` is an optional stdio MCP client adapter for the public REST API. It has no
+database or backend feature imports and reuses `@caselog/schemas` for runtime contracts.
+Workspace tokens, scopes, current membership roles, RLS and application services remain
+the authorization and domain boundaries. Self-hosted and managed installations expose
+the same operations. See [the MCP decision](architecture/decisions/20261119-mcp-api-adapter.md)
+and [the scenario and acceptance guide](apps/docs/src/content/docs/automation/mcp.md).

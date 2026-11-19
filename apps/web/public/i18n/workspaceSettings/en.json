@@ -177,6 +177,12 @@
     "confirmRevokeTitle": "Revoke {{name}}?",
     "confirmRevokeMessage": "This credential stops authenticating immediately. The secret cannot be restored and existing automation must receive a replacement token.",
     "scopes": {
+      "projectsRead": "Read projects and structure",
+      "casesRead": "Read test cases",
+      "casesWrite": "Create and update test cases",
+      "policiesRead": "Read release policies",
+      "policiesWrite": "Create release policy drafts",
+      "policiesPublish": "Publish release policies",
       "runsRead": "Read test runs",
       "resultsWrite": "Write test results",
       "evidenceWrite": "Write quality evidence",

@@ -4,6 +4,12 @@ const MAX_API_TOKEN_LIFETIME_MS = 366 * 24 * 60 * 60 * 1_000;
 const DEFAULT_API_TOKEN_LIFETIME_MS = 90 * 24 * 60 * 60 * 1_000;
 
 export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
+  'projects:read',
+  'cases:read',
+  'cases:write',
+  'policies:read',
+  'policies:write',
+  'policies:publish',
   'runs:read',
   'results:write',
   'evidence:write',
@@ -13,6 +19,12 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
 ];
 
 const SCOPE_LABEL_KEYS: Record<ApiTokenScope, string> = {
+  'projects:read': 'workspaceSettings.tokens.scopes.projectsRead',
+  'cases:read': 'workspaceSettings.tokens.scopes.casesRead',
+  'cases:write': 'workspaceSettings.tokens.scopes.casesWrite',
+  'policies:read': 'workspaceSettings.tokens.scopes.policiesRead',
+  'policies:write': 'workspaceSettings.tokens.scopes.policiesWrite',
+  'policies:publish': 'workspaceSettings.tokens.scopes.policiesPublish',
   'runs:read': 'workspaceSettings.tokens.scopes.runsRead',
   'results:write': 'workspaceSettings.tokens.scopes.resultsWrite',
   'evidence:write': 'workspaceSettings.tokens.scopes.evidenceWrite',

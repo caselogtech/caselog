@@ -38,6 +38,12 @@ import {
 } from '../../domain/api-token-presentation';
 
 type ScopeControlName =
+  | 'projectsRead'
+  | 'casesRead'
+  | 'casesWrite'
+  | 'policiesRead'
+  | 'policiesWrite'
+  | 'policiesPublish'
   | 'runsRead'
   | 'resultsWrite'
   | 'evidenceWrite'
@@ -46,6 +52,12 @@ type ScopeControlName =
   | 'readinessWrite';
 
 const SCOPE_CONTROL_NAMES: Record<ApiTokenScope, ScopeControlName> = {
+  'projects:read': 'projectsRead',
+  'cases:read': 'casesRead',
+  'cases:write': 'casesWrite',
+  'policies:read': 'policiesRead',
+  'policies:write': 'policiesWrite',
+  'policies:publish': 'policiesPublish',
   'runs:read': 'runsRead',
   'results:write': 'resultsWrite',
   'evidence:write': 'evidenceWrite',
@@ -106,6 +118,12 @@ export class WorkspaceApiTokensSettings {
     expiresAt: [defaultApiTokenExpiry(), [Validators.required, validExpiry]],
     scopes: this.formBuilder.group(
       {
+        projectsRead: false,
+        casesRead: false,
+        casesWrite: false,
+        policiesRead: false,
+        policiesWrite: false,
+        policiesPublish: false,
         runsRead: false,
         resultsWrite: false,
         evidenceWrite: false,
@@ -201,6 +219,12 @@ export class WorkspaceApiTokensSettings {
       name: '',
       expiresAt: defaultApiTokenExpiry(),
       scopes: {
+        projectsRead: false,
+        casesRead: false,
+        casesWrite: false,
+        policiesRead: false,
+        policiesWrite: false,
+        policiesPublish: false,
         runsRead: false,
         resultsWrite: false,
         evidenceWrite: false,

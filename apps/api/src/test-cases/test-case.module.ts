@@ -6,6 +6,7 @@ import { ProjectStructureService } from './application/services/project-structur
 import { TestCaseController } from './presentation/controllers/test-case.controller';
 import { TestCaseRepository } from './infrastructure/repositories/test-case.repository';
 import { TestCaseService } from './application/services/test-case.service';
+import { TestCaseWriteRepository } from './infrastructure/repositories/test-case-write.repository';
 
 @Module({
   imports: [AuthModule],
@@ -14,6 +15,7 @@ import { TestCaseService } from './application/services/test-case.service';
     ProjectStructureRepository,
     ProjectStructureService,
     TestCaseRepository,
+    TestCaseWriteRepository,
     TestCaseService,
   ],
 })

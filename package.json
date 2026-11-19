@@ -41,8 +41,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@playwright/test": "1.63.0",
     "openapi-typescript": "7.13.0",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "zod": "4.4.3"
   }
 }

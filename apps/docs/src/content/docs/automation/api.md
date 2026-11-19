@@ -15,16 +15,25 @@ a token in workspace settings under API tokens. Give it only the scopes needed b
 pipeline, and store it in your CI secret manager. Tokens remain subject to the creator's
 current workspace membership and role; a scope alone does not grant tenant access.
 
-| Scope | Intended CI operation |
+| Scope | Intended operation |
 | --- | --- |
 | `results:write` | Upload automated test results. |
 | `evidence:write` | Submit external observations. |
 | `candidates:write` | Create candidates, look them up, and link runs. |
 | `readiness:read` | Read assigned policy and readiness decisions. |
 | `readiness:write` | Assign a published policy and request evaluation. |
+| `runs:read` | Read test runs and automation import history. |
+| `projects:read` | Read projects and their suite/section structure. |
+| `cases:read` | Read test cases and their version history. |
+| `cases:write` | Create and update test cases using an idempotency key. |
+| `policies:read` | Read release policies and versions. |
+| `policies:write` | Create policies and new draft versions (lead or higher). |
+| `policies:publish` | Publish the current policy draft (lead or higher). |
 
-Closing a CI run requires both `candidates:write` and `results:write`. Policy authoring,
-waivers, destructive unlinking, and token administration remain session-only workflows.
+Closing a CI run requires both `candidates:write` and `results:write`. Policy authoring
+and publication use separate scopes. Waivers, destructive unlinking, and token
+administration remain session-only workflows. See [Agents and MCP](../mcp/) for
+agent tools, connection instructions and replay-safe authoring.
 
 ## Start with the CLI
 

@@ -105,6 +105,7 @@ export class ReadinessPolicyRepository {
     idempotencyKey: string,
     requestHash: string,
     request: CreateReadinessPolicyRequest,
+    apiTokenId?: string,
   ): Promise<ReadinessPolicyWriteResult> {
     try {
       return await this.tenantDatabase.run(organizationId, async (transaction) => {
@@ -158,8 +159,8 @@ export class ReadinessPolicyRepository {
         });
         await appendAuditLog(transaction, {
           organizationId,
-          actorId,
-          actorType: 'user',
+          actorId: apiTokenId ?? actorId,
+          actorType: apiTokenId ? 'api_token' : 'user',
           action: 'release_policy.created',
           targetType: 'release_policy',
           targetId: policy.id,
@@ -211,6 +212,7 @@ export class ReadinessPolicyRepository {
     idempotencyKey: string,
     requestHash: string,
     request: CreateReadinessPolicyVersionRequest,
+    apiTokenId?: string,
   ): Promise<ReadinessPolicyWriteResult> {
     try {
       return await this.tenantDatabase.run(organizationId, async (transaction) => {
@@ -268,8 +270,8 @@ export class ReadinessPolicyRepository {
         });
         await appendAuditLog(transaction, {
           organizationId,
-          actorId,
-          actorType: 'user',
+          actorId: apiTokenId ?? actorId,
+          actorType: apiTokenId ? 'api_token' : 'user',
           action: 'release_policy.version_created',
           targetType: 'release_policy_version',
           targetId: version.id,
@@ -305,6 +307,7 @@ export class ReadinessPolicyRepository {
     actorId: string,
     idempotencyKey: string,
     requestHash: string,
+    apiTokenId?: string,
   ): Promise<ReadinessPolicyWriteResult> {
     return this.tenantDatabase.run(organizationId, async (transaction) => {
       const context = await lockPolicy(transaction, organizationId, projectSlug, policyId);
@@ -350,8 +353,8 @@ export class ReadinessPolicyRepository {
       });
       await appendAuditLog(transaction, {
         organizationId,
-        actorId,
-        actorType: 'user',
+        actorId: apiTokenId ?? actorId,
+        actorType: apiTokenId ? 'api_token' : 'user',
         action: 'release_policy.published',
         targetType: 'release_policy_version',
         targetId: draft.id,

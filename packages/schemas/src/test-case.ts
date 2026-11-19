@@ -149,6 +149,15 @@ export const createTestCaseRequestSchema = z
   })
   .superRefine(validateTemplateContent);
 
+export const testCaseWriteHeadersSchema = z.object({
+  'idempotency-key': z
+    .string()
+    .min(8)
+    .max(200)
+    .regex(/^[A-Za-z0-9._:-]+$/)
+    .optional(),
+});
+
 export const createTestCaseResponseSchema = z.object({
   testCase: testCaseSummarySchema,
   version: z.object({ id: z.uuid(), version: z.literal(1) }),

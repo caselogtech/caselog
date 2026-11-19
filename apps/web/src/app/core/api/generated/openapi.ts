@@ -1813,7 +1813,7 @@ export interface components {
                 id: string;
                 name: string;
                 tokenPrefix: string;
-                scopes: ("results:write" | "runs:read" | "evidence:write" | "candidates:write" | "readiness:read" | "readiness:write")[];
+                scopes: ("projects:read" | "cases:read" | "cases:write" | "policies:read" | "policies:write" | "policies:publish" | "results:write" | "runs:read" | "evidence:write" | "candidates:write" | "readiness:read" | "readiness:write")[];
                 /** Format: date-time */
                 expiresAt: string;
                 lastUsedAt: string | null;
@@ -1828,7 +1828,7 @@ export interface components {
         };
         CreateApiTokenRequestDto: {
             name: string;
-            scopes: ("results:write" | "runs:read" | "evidence:write" | "candidates:write" | "readiness:read" | "readiness:write")[];
+            scopes: ("projects:read" | "cases:read" | "cases:write" | "policies:read" | "policies:write" | "policies:publish" | "results:write" | "runs:read" | "evidence:write" | "candidates:write" | "readiness:read" | "readiness:write")[];
             /** Format: date-time */
             expiresAt: string;
         };
@@ -1839,7 +1839,7 @@ export interface components {
                 id: string;
                 name: string;
                 tokenPrefix: string;
-                scopes: ("results:write" | "runs:read" | "evidence:write" | "candidates:write" | "readiness:read" | "readiness:write")[];
+                scopes: ("projects:read" | "cases:read" | "cases:write" | "policies:read" | "policies:write" | "policies:publish" | "results:write" | "runs:read" | "evidence:write" | "candidates:write" | "readiness:read" | "readiness:write")[];
                 /** Format: date-time */
                 expiresAt: string;
                 lastUsedAt: string | null;
@@ -8153,7 +8153,9 @@ export interface operations {
     TestCaseController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "idempotency-key"?: string;
+            };
             path: {
                 projectSlug: string;
             };
@@ -8218,7 +8220,9 @@ export interface operations {
     TestCaseController_update: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "idempotency-key"?: string;
+            };
             path: {
                 projectSlug: string;
                 caseId: string;

@@ -7,7 +7,11 @@ assert.match(version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
 const api = await readJson('apps/api/package.json');
 const zodVersion = api.dependencies.zod;
 assert.match(zodVersion, /^\d+\.\d+\.\d+$/, 'Pin the schema runtime to an exact Zod version');
-for (const manifest of ['apps/web/package.json', 'packages/schemas/package.json']) {
+for (const manifest of [
+  'apps/web/package.json',
+  'packages/schemas/package.json',
+  'apps/mcp/package.json',
+]) {
   const workspace = await readJson(manifest);
   assert.equal(
     workspace.dependencies.zod,

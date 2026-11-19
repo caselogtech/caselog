@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Inject,
@@ -31,10 +32,12 @@ import {
   CurrentOrganization,
   OrganizationAuthGuard,
   OrganizationRoleGuard,
+  RequireApiTokenScopes,
 } from '../../../auth/public-api';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
   CreateTestCaseRequestDto,
+  TestCaseWriteHeadersDto,
   RestoreTestCaseVersionRequestDto,
   TestCaseDetailParamsDto,
   TestCaseListParamsDto,
@@ -59,6 +62,7 @@ export class TestCaseController {
   constructor(@Inject(TestCaseService) private readonly testCases: TestCaseService) {}
 
   @Get()
+  @RequireApiTokenScopes('cases:read')
   @ApiOkResponse({ type: TestCaseListResponseDto })
   list(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -69,16 +73,24 @@ export class TestCaseController {
   }
 
   @Post()
+  @RequireApiTokenScopes('cases:write')
   @ApiCreatedResponse({ type: CreateTestCaseResponseDto })
   create(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseListParamsDto,
     @Body() request: CreateTestCaseRequestDto,
+    @Headers() headers: TestCaseWriteHeadersDto,
   ): Promise<CreateTestCaseResponse> {
-    return this.testCases.create(principal, params.projectSlug, request);
+    return this.testCases.create(
+      principal,
+      params.projectSlug,
+      request,
+      headers['idempotency-key'],
+    );
   }
 
   @Get(':caseId')
+  @RequireApiTokenScopes('cases:read')
   @ApiOkResponse({ type: TestCaseDetailResponseDto })
   detail(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
@@ -88,16 +100,25 @@ export class TestCaseController {
   }
 
   @Put(':caseId')
+  @RequireApiTokenScopes('cases:write')
   @ApiOkResponse({ type: UpdateTestCaseResponseDto })
   update(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: TestCaseDetailParamsDto,
     @Body() request: UpdateTestCaseRequestDto,
+    @Headers() headers: TestCaseWriteHeadersDto,
   ): Promise<UpdateTestCaseResponse> {
-    return this.testCases.update(principal, params.projectSlug, params.caseId, request);
+    return this.testCases.update(
+      principal,
+      params.projectSlug,
+      params.caseId,
+      request,
+      headers['idempotency-key'],
+    );
   }
 
   @Get(':caseId/versions/:versionId')
+  @RequireApiTokenScopes('cases:read')
   @ApiOkResponse({ type: TestCaseVersionResponseDto })
   version(
     @CurrentOrganization() principal: OrganizationAccessPrincipal,

@@ -1,0 +1,33 @@
+{
+  "name": "@caselog/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Caselog MCP adapter for workspace test cases and release policies",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "bin": {
+    "caselog-mcp": "dist/main.js"
+  },
+  "scripts": {
+    "prebuild": "pnpm --filter @caselog/schemas build",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "pretest": "pnpm build",
+    "test": "vitest run",
+    "pretypecheck": "pnpm --filter @caselog/schemas build",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json"
+  },
+  "dependencies": {
+    "@caselog/schemas": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.8"
+  },
+  "engines": {
+    "node": ">=24.15.0 <25"
+  }
+}
