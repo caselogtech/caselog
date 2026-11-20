@@ -6,6 +6,7 @@ import {
   staffOverviewResponseSchema,
   staffSessionResponseSchema,
   staffUserListResponseSchema,
+  staffUserDetailResponseSchema,
   staffWorkspaceListResponseSchema,
   staffWorkspaceDetailResponseSchema,
 } from '@caselog/schemas';
@@ -25,3 +26,5 @@ export class StaffAuditLogListResponseDto extends createZodDto(staffAuditLogList
 export class StaffWorkspaceDetailResponseDto extends createZodDto(
   staffWorkspaceDetailResponseSchema,
 ) {}
+
+export class StaffUserDetailResponseDto extends createZodDto(staffUserDetailResponseSchema) {}

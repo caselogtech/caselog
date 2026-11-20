@@ -62,7 +62,7 @@
           <tbody>
             @for (user of users(); track user.id) {
               <tr>
-                <td><strong>{{ user.displayName }}</strong><span>{{ user.email }}</span><code>{{ user.id }}</code></td>
+                <td><a href="/staff/users/{{ user.id }}" [routerLink]="['/staff/users', user.id]"><strong>{{ user.displayName }}</strong></a><span>{{ user.email }}</span><code>{{ user.id }}</code></td>
                 <td><app-status-badge [tone]="user.emailVerified ? 'success' : 'warning'" [label]="(user.emailVerified ? 'staff.values.verified' : 'staff.values.unverified') | transloco" /></td>
                 <td class="numeric">{{ user.activeWorkspaceCount }}</td>
                 <td class="numeric">{{ user.billingAccountCount }}</td>

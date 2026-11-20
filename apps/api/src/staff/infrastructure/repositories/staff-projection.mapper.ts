@@ -3,6 +3,7 @@ import type {
   StaffBillingAccount,
   StaffOperator,
   StaffUser,
+  StaffUserWorkspace,
   StaffWorkspace,
   StaffWorkspaceDetailResponse,
 } from '@caselog/schemas';
@@ -195,4 +196,28 @@ export function mapStaffWorkspaceDetail(
     },
     observedAt: row.observedAt.toISOString(),
   };
+}
+
+export type StaffUserDetailRow = StaffUserRow & {
+  workspaceId: string | null;
+  workspaceName: string | null;
+  workspaceSlug: string | null;
+  workspaceRole: StaffUserWorkspace['role'] | null;
+  workspaceDeletedAt: Date | null;
+};
+
+export function mapStaffUserWorkspaces(rows: StaffUserDetailRow[]): StaffUserWorkspace[] {
+  return rows.flatMap((row) =>
+    row.workspaceId && row.workspaceName && row.workspaceSlug && row.workspaceRole
+      ? [
+          {
+            id: row.workspaceId,
+            name: row.workspaceName,
+            slug: row.workspaceSlug,
+            role: row.workspaceRole,
+            deletedAt: row.workspaceDeletedAt?.toISOString() ?? null,
+          },
+        ]
+      : [],
+  );
 }

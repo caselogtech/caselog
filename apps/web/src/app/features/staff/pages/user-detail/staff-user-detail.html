@@ -1,0 +1,64 @@
+<main class="staff-page" aria-labelledby="staff-user-title">
+  <a href="/staff/users" routerLink="/staff/users">{{ 'staff.user.back' | transloco }}</a>
+  <div aria-live="polite" [attr.aria-busy]="detail.isFetching()">
+    @if (detail.isPending()) {
+      <h1 id="staff-user-title">{{ 'staff.user.title' | transloco }}</h1>
+      <app-page-state [title]="'staff.states.loadingTitle' | transloco" [message]="'staff.user.loading' | transloco" />
+    } @else if (detail.isError()) {
+      <h1 id="staff-user-title">{{ 'staff.user.title' | transloco }}</h1>
+      <app-page-state [title]="'staff.states.errorTitle' | transloco" [message]="errorKey() | transloco">
+        <button actions type="button" appButton="secondary" (click)="detail.refetch()">{{ 'staff.actions.retry' | transloco }}</button>
+      </app-page-state>
+    } @else if (detail.data(); as data) {
+      <header class="page-header">
+        <div>
+          <h1 id="staff-user-title">{{ data.user.displayName }}</h1>
+          <a href="mailto:{{ data.user.email }}">{{ data.user.email }}</a>
+        </div>
+        <button type="button" appButton="secondary" [disabled]="detail.isFetching()" (click)="detail.refetch()">
+          {{ (detail.isFetching() ? 'staff.user.refreshing' : 'staff.user.refresh') | transloco }}
+        </button>
+      </header>
+      <section class="identity" [attr.aria-label]="'staff.user.identity' | transloco">
+        <dl>
+          <div><dt>{{ 'staff.user.id' | transloco }}</dt><dd><code>{{ data.user.id }}</code></dd></div>
+          <div><dt>{{ 'staff.columns.created' | transloco }}</dt><dd>{{ formatDate(data.user.createdAt) }}</dd></div>
+          <div><dt>{{ 'staff.columns.verification' | transloco }}</dt><dd><app-status-badge [tone]="data.user.emailVerified ? 'success' : 'warning'" [label]="(data.user.emailVerified ? 'staff.values.verified' : 'staff.values.unverified') | transloco" /></dd></div>
+          <div><dt>{{ 'staff.columns.state' | transloco }}</dt><dd><app-status-badge [tone]="data.user.deletedAt ? 'neutral' : 'success'" [label]="(data.user.deletedAt ? 'staff.values.deleted' : 'staff.values.current') | transloco" /></dd></div>
+          @if (data.user.deletedAt) {
+            <div><dt>{{ 'staff.user.deletedAt' | transloco }}</dt><dd>{{ formatDate(data.user.deletedAt) }}</dd></div>
+          }
+          <div><dt>{{ 'staff.user.memberships' | transloco }}</dt><dd>{{ data.user.activeWorkspaceCount }}</dd></div>
+          <div><dt>{{ 'staff.user.billingAccounts' | transloco }}</dt><dd>{{ data.user.billingAccountCount }}</dd></div>
+        </dl>
+      </section>
+      <section class="workspaces" aria-labelledby="staff-user-workspaces">
+        <h2 id="staff-user-workspaces">{{ 'staff.user.workspaces' | transloco }}</h2>
+        <p>{{ 'staff.user.description' | transloco }}</p>
+        @if (data.workspaces.length === 0) {
+          <p class="empty">{{ 'staff.user.empty' | transloco }}</p>
+        } @else {
+          <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Scrollable table region needs keyboard focus for horizontal navigation. -->
+          <section class="table-frame" tabindex="0" [attr.aria-label]="'staff.user.workspaces' | transloco">
+            <table>
+              <thead><tr><th scope="col">{{ 'staff.columns.workspace' | transloco }}</th><th scope="col">{{ 'staff.user.role' | transloco }}</th><th scope="col">{{ 'staff.columns.state' | transloco }}</th></tr></thead>
+              <tbody>
+                @for (workspace of data.workspaces; track workspace.id) {
+                  <tr>
+                    <td><a href="/staff/workspaces/{{ workspace.id }}" [routerLink]="['/staff/workspaces', workspace.id]">{{ workspace.name }}</a><span>/{{ workspace.slug }}</span></td>
+                    <td>{{ roleKey(workspace.role) | transloco }}</td>
+                    <td><app-status-badge [tone]="workspace.deletedAt ? 'neutral' : 'success'" [label]="(workspace.deletedAt ? 'staff.values.deleted' : 'staff.values.current') | transloco" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </section>
+        }
+        <nav class="pagination" [attr.aria-label]="'staff.directory.pagination' | transloco">
+          <button type="button" appButton="secondary" [disabled]="pagination().history.length === 0 || detail.isFetching()" (click)="previousPage()">{{ 'staff.actions.previous' | transloco }}</button>
+          <button type="button" appButton="secondary" [disabled]="!data.nextCursor || detail.isFetching()" (click)="nextPage()">{{ 'staff.actions.next' | transloco }}</button>
+        </nav>
+      </section>
+    }
+  </div>
+</main>

@@ -7,6 +7,9 @@ import {
   staffOverviewResponseSchema,
   staffSessionResponseSchema,
   staffUserListResponseSchema,
+  staffUserDetailResponseSchema,
+  type StaffUserDetailResponse,
+  type StaffUserDetailQuery,
   staffWorkspaceListResponseSchema,
   type GrantStaffOperatorRequest,
   type RevokeStaffOperatorRequest,
@@ -56,6 +59,16 @@ export class StaffConsoleService {
   async users(operator: StaffOperator, query: StaffListQuery): Promise<StaffUserListResponse> {
     const page = await this.staff.listUsers(operator.userId, query);
     return staffUserListResponseSchema.parse({ users: page.items, nextCursor: page.nextCursor });
+  }
+
+  async userDetail(
+    operator: StaffOperator,
+    userId: string,
+    query: StaffUserDetailQuery,
+  ): Promise<StaffUserDetailResponse> {
+    const result = await this.staff.userDetail(operator.userId, userId, query);
+    if (!result) throw new ResourceNotFoundError('staff_user');
+    return staffUserDetailResponseSchema.parse(result);
   }
 
   async workspaces(

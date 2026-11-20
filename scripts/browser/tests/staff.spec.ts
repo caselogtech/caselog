@@ -4,6 +4,7 @@ import {
   createWorkspaceResponseSchema,
   sessionResponseSchema,
   staffWorkspaceDetailResponseSchema,
+  staffUserDetailResponseSchema,
 } from '../../../packages/schemas/dist/index.js';
 
 test('managed operators discover workspace contacts and inspect resource snapshots', async ({
@@ -63,6 +64,37 @@ test('managed operators discover workspace contacts and inspect resource snapsho
     true,
   );
   await page.screenshot({ path: '.cache/staff-workspace-preview.png', fullPage: true });
+  const owner = snapshot.workspace.owner;
+  if (!owner) throw new Error('Expected the newly created workspace owner');
+  await page.getByRole('link', { name: owner.displayName, exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/staff/users/${owner.userId}$`));
+  await expect(page.getByRole('heading', { name: owner.displayName, exact: true })).toBeVisible();
+  const userResponse = await request.get(`/api/v1/staff/users/${owner.userId}`, { headers });
+  expect(userResponse.ok()).toBeTruthy();
+  const customer = staffUserDetailResponseSchema.parse(await userResponse.json());
+  expect(
+    customer.workspaces.some((item) => item.id === workspace.id && item.role === 'owner'),
+  ).toBe(true);
+  await expect(page.getByRole('link', { name: workspace.name, exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await page.screenshot({ path: '.cache/staff-user-preview.png', fullPage: true });
+  await page.getByRole('link', { name: workspace.name, exact: true }).click();
+  await expect(page.getByRole('heading', { name: workspace.name, exact: true })).toBeVisible();
+  await page.goto('/staff/users');
+  await page.getByLabel('Search this directory', { exact: true }).fill(owner.email);
+  await page.getByRole('button', { name: 'Search', exact: true }).click();
+  await page
+    .getByRole('row')
+    .filter({ hasText: owner.email })
+    .getByRole('link', { name: owner.displayName, exact: true })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`/staff/users/${owner.userId}$`));
+  await page.goto(`/staff/users/${randomUUID()}`);
+  await expect(page.locator('main')).toContainText('This user no longer exists');
+  await page.getByRole('link', { name: 'Back to users', exact: true }).click();
+  await expect(page).toHaveURL(/\/staff\/users$/);
   await page.goto(`/staff/workspaces/${randomUUID()}`);
   await expect(page.locator('main')).toContainText('This workspace no longer exists');
   await page.getByRole('link', { name: 'Back to workspaces', exact: true }).click();

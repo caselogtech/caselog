@@ -7,6 +7,8 @@ import type {
   StaffOperator,
   StaffOverviewResponse,
   StaffUser,
+  StaffUserDetailResponse,
+  StaffUserDetailQuery,
   StaffWorkspace,
   StaffWorkspaceDetailResponse,
   StaffWorkspaceListQuery,
@@ -19,6 +21,8 @@ import {
   mapStaffBillingAccount,
   mapStaffOperator,
   mapStaffUser,
+  mapStaffUserWorkspaces,
+  type StaffUserDetailRow,
   mapStaffWorkspace,
   type StaffAuditLogRow,
   type StaffBillingAccountRow,
@@ -126,6 +130,34 @@ export class StaffRepository {
       `,
     );
     return toStaffPage(rows.map(mapStaffUser), query.limit, (user) => user.id);
+  }
+
+  async userDetail(
+    actorId: string,
+    userId: string,
+    query: StaffUserDetailQuery,
+  ): Promise<StaffUserDetailResponse | undefined> {
+    const rows = await this.withUser(
+      actorId,
+      (transaction) => transaction.$queryRaw<StaffUserDetailRow[]>`
+      SELECT identity.id, identity.email, identity.display_name AS "displayName",
+        identity.email_verified AS "emailVerified", identity.active_workspace_count AS "activeWorkspaceCount",
+        identity.billing_account_count AS "billingAccountCount", identity.created_at AS "createdAt", identity.deleted_at AS "deletedAt",
+        workspace.id AS "workspaceId", workspace.name AS "workspaceName", workspace.slug AS "workspaceSlug",
+        workspace.role AS "workspaceRole", workspace.deleted_at AS "workspaceDeletedAt"
+      FROM public.staff_user_details(${userId}::UUID) AS identity
+      LEFT JOIN LATERAL public.staff_user_workspaces(identity.id, ${query.cursor ?? null}::UUID, ${query.limit + 1}::INTEGER) AS workspace ON TRUE
+      ORDER BY workspace.id
+    `,
+    );
+    const first = rows[0];
+    if (!first) return undefined;
+    const page = toStaffPage(
+      mapStaffUserWorkspaces(rows),
+      query.limit,
+      (workspace) => workspace.id,
+    );
+    return { user: mapStaffUser(first), workspaces: page.items, nextCursor: page.nextCursor };
   }
 
   async listWorkspaces(

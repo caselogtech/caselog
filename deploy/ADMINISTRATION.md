@@ -26,6 +26,25 @@ account and resource counts. Missing owner contacts are shown explicitly.
 A workspace count is not a company count. **Current workspaces** means not deleted;
 registered users and resource totals do not establish recent human activity.
 
+## Inspect a user
+
+Open **Users**, search by name or email, and select a name. The card shows registration,
+verification and deletion state plus a paginated list of current workspace memberships
+and roles. Workspace links open staff metadata cards; owner names in workspace cards
+link back to the user's card. Email links open the operator's mail client and do not
+send a message automatically.
+
+Removed memberships are excluded. Retained memberships in deleted workspaces remain
+visible with a deleted label and do not imply usable access. **Workspace memberships**
+counts non-deleted relationships, including those in deleted workspaces. Deleted users
+remain inspectable as retained metadata. A known user with no memberships has an empty
+list; an unknown user returns not found. The card cannot change roles or verification.
+
+Session API clients use `GET /api/v1/staff/users/{userId}` with `cursor` and `limit`
+(1–100). The response contains `user`, `workspaces` and `nextCursor`; workspace UUIDs
+provide deterministic ordering. Pagination reads live metadata, so changes between
+pages are possible. The same admin/owner restrictions apply as for workspace cards.
+
 ## Understand usage
 
 - Members and projects count non-deleted records.

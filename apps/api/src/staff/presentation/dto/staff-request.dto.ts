@@ -2,6 +2,8 @@ import {
   grantStaffOperatorRequestSchema,
   revokeStaffOperatorRequestSchema,
   staffListQuerySchema,
+  staffUserParamsSchema,
+  staffUserDetailQuerySchema,
   staffWorkspaceListQuerySchema,
   staffWorkspaceParamsSchema,
   staffOperatorParamsSchema,
@@ -15,3 +17,6 @@ export class StaffOperatorParamsDto extends createZodDto(staffOperatorParamsSche
 
 export class StaffWorkspaceListQueryDto extends createZodDto(staffWorkspaceListQuerySchema) {}
 export class StaffWorkspaceParamsDto extends createZodDto(staffWorkspaceParamsSchema) {}
+
+export class StaffUserParamsDto extends createZodDto(staffUserParamsSchema) {}
+export class StaffUserDetailQueryDto extends createZodDto(staffUserDetailQuerySchema) {}

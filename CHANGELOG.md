@@ -4,6 +4,10 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Add managed staff user cards with verification/deletion state, paginated workspace
+  roles and navigation between users and workspace metadata. Apply migration
+  `20261120180000_staff_user_directory` before new artifacts.
+
 - Add managed staff workspace cards with owner contacts, lifecycle filters and
   timestamped aggregate resource usage, protected by live staff admin/owner grants.
   Self-hosted mode remains unchanged. Apply migration

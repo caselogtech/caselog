@@ -359,6 +359,9 @@ current owner contacts and aggregate usage; they never grant tenant membership o
 customer-content access. Self-hosted installations expose neither staff API nor UI.
 The accepted [workspace directory decision](architecture/decisions/20261120-staff-workspace-directory.md)
 defines allowed metadata, counter semantics, compatibility and recovery.
+[User cards](architecture/decisions/20261120-staff-user-directory.md) add bounded,
+read-only workspace relationships under the same staff boundary; membership roles
+are metadata and never confer access on the operator.
 
 ### Workspace API tokens
 

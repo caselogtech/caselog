@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { emailSchema } from './auth.js';
+import { emailSchema, workspaceRoleSchema } from './auth.js';
 import { instanceCapabilitiesSchema } from './instance.js';
 
 export const staffOperatorRoleSchema = z.enum(['owner', 'admin', 'support']);
@@ -54,6 +54,21 @@ export const staffUserSchema = z.object({
 
 export const staffUserListResponseSchema = z.object({
   users: z.array(staffUserSchema),
+  nextCursor: z.uuid().nullable(),
+});
+
+export const staffUserParamsSchema = z.object({ userId: z.uuid() });
+export const staffUserDetailQuerySchema = staffListQuerySchema.pick({ cursor: true, limit: true });
+export const staffUserWorkspaceSchema = z.object({
+  id: z.uuid(),
+  name: z.string().min(1).max(120),
+  slug: z.string().min(1).max(30),
+  role: workspaceRoleSchema,
+  deletedAt: z.iso.datetime().nullable(),
+});
+export const staffUserDetailResponseSchema = z.object({
+  user: staffUserSchema,
+  workspaces: z.array(staffUserWorkspaceSchema),
   nextCursor: z.uuid().nullable(),
 });
 
@@ -165,3 +180,7 @@ export type StaffOperatorParams = z.infer<typeof staffOperatorParamsSchema>;
 export type StaffOperatorResponse = z.infer<typeof staffOperatorResponseSchema>;
 export type StaffAuditLog = z.infer<typeof staffAuditLogSchema>;
 export type StaffAuditLogListResponse = z.infer<typeof staffAuditLogListResponseSchema>;
+
+export type StaffUserDetailQuery = z.infer<typeof staffUserDetailQuerySchema>;
+export type StaffUserWorkspace = z.infer<typeof staffUserWorkspaceSchema>;
+export type StaffUserDetailResponse = z.infer<typeof staffUserDetailResponseSchema>;

@@ -1,3 +1,5 @@
+import type { StaffUserWorkspace } from '@caselog/schemas';
+
 export function formatStaffDate(value: string | null): string {
   if (!value) return '—';
   return new Intl.DateTimeFormat('en', {
@@ -31,4 +33,16 @@ export function staffOperatorStateTranslationKey(state: 'active' | 'disabled' | 
     expired: 'staff.values.expired',
   } as const;
   return keys[state];
+}
+
+export function staffWorkspaceRoleTranslationKey(role: StaffUserWorkspace['role']): string {
+  const keys = {
+    owner: 'staff.user.roles.owner',
+    admin: 'staff.user.roles.admin',
+    lead: 'staff.user.roles.lead',
+    tester: 'staff.user.roles.tester',
+    contributor: 'staff.user.roles.contributor',
+    read_only: 'staff.user.roles.read_only',
+  };
+  return keys[role];
 }

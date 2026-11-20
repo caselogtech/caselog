@@ -1700,6 +1700,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_userDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/workspaces": {
         parameters: {
             query?: never;
@@ -4783,6 +4799,30 @@ export interface components {
                 billingAccountCount: number;
                 /** Format: date-time */
                 createdAt: string;
+                deletedAt: string | null;
+            }[];
+            nextCursor: string | null;
+        };
+        StaffUserDetailResponseDto: {
+            user: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                displayName: string;
+                emailVerified: boolean;
+                activeWorkspaceCount: number;
+                billingAccountCount: number;
+                /** Format: date-time */
+                createdAt: string;
+                deletedAt: string | null;
+            };
+            workspaces: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+                /** @enum {string} */
+                role: "owner" | "admin" | "lead" | "tester" | "contributor" | "read_only";
                 deletedAt: string | null;
             }[];
             nextCursor: string | null;
@@ -9354,6 +9394,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StaffUserListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_userDetail: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffUserDetailResponseDto"];
                 };
             };
             /** @description API error */

@@ -132,7 +132,6 @@
     "active": "Active",
     "expired": "Expired",
     "deleted": "Deleted",
-    "selfHosted": "Unassigned / self-hosted",
     "allWorkspaces": "All workspaces",
     "current": "Not deleted"
   },
@@ -158,5 +157,30 @@
     "pendingUploads": "Pending uploads",
     "pendingStorage": "Pending upload reservations",
     "usageDescription": "Cases and runs exclude deleted records and archived projects. Open runs have active status. Ingestion attempts include successful and failed imports across retained history. Pending uploads are unexpired, incomplete reservations. Accounted storage follows storage reconciliation; reserved bytes are shown separately. These values do not measure recent human activity or represent quotas."
+  },
+  "user": {
+    "title": "User details",
+    "back": "Back to users",
+    "loading": "Reading user identity and workspace memberships\u2026",
+    "notFound": "This user no longer exists. Return to the directory to find another user.",
+    "identity": "User identity",
+    "id": "User ID",
+    "deletedAt": "Deleted on",
+    "refresh": "Refresh details",
+    "refreshing": "Refreshing\u2026",
+    "memberships": "Workspace memberships",
+    "billingAccounts": "Billing account memberships",
+    "workspaces": "Workspaces and roles",
+    "description": "Current memberships, including retained relationships with deleted workspaces. Removed memberships are excluded. Staff access does not grant membership or customer content access.",
+    "empty": "This user has no current workspace memberships.",
+    "role": "Workspace role",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "lead": "Lead",
+      "tester": "Tester",
+      "contributor": "Contributor",
+      "read_only": "Read only"
+    }
   }
 }

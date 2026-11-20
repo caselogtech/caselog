@@ -21,6 +21,7 @@ import type {
   StaffOverviewResponse,
   StaffSessionResponse,
   StaffUserListResponse,
+  StaffUserDetailResponse,
   StaffWorkspaceListResponse,
   StaffWorkspaceDetailResponse,
 } from '@caselog/schemas';
@@ -34,6 +35,8 @@ import {
   GrantStaffOperatorRequestDto,
   RevokeStaffOperatorRequestDto,
   StaffListQueryDto,
+  StaffUserParamsDto,
+  StaffUserDetailQueryDto,
   StaffWorkspaceListQueryDto,
   StaffWorkspaceParamsDto,
   StaffOperatorParamsDto,
@@ -46,6 +49,7 @@ import {
   StaffOverviewResponseDto,
   StaffSessionResponseDto,
   StaffUserListResponseDto,
+  StaffUserDetailResponseDto,
   StaffWorkspaceListResponseDto,
   StaffWorkspaceDetailResponseDto,
 } from '../dto/staff-response.dto';
@@ -77,6 +81,17 @@ export class StaffController {
     @Query() query: StaffListQueryDto,
   ): Promise<StaffUserListResponse> {
     return this.staff.users(operator, query);
+  }
+
+  @Get('users/:userId')
+  @RequireStaffRole('admin')
+  @ApiOkResponse({ type: StaffUserDetailResponseDto })
+  userDetail(
+    @CurrentStaffOperator() operator: StaffOperator,
+    @Param() params: StaffUserParamsDto,
+    @Query() query: StaffUserDetailQueryDto,
+  ): Promise<StaffUserDetailResponse> {
+    return this.staff.userDetail(operator, params.userId, query);
   }
 
   @Get('workspaces')

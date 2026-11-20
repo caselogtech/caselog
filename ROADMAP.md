@@ -132,6 +132,38 @@ revocation checks, UI state tests, managed browser discovery/detail/refresh/mobi
 coverage and existing self-hosted MCP/readiness journeys. The additive migration ran
 on existing and disposable empty databases. Deployment and pilot operations remain open.
 
+### Administration improvements (2026-11-20)
+
+The first implementation slice extends the existing read-only metadata console.
+Follow-ups below are proposed priorities, not permission to introduce unapproved
+access rules, telemetry, quotas, customer-content access or paid behavior.
+
+- [x] Add user cards with verification/deletion states, paginated workspace roles,
+  user → workspace → owner navigation, scoped caches, API/SQL authorization and a
+  managed browser journey. See the [user-card decision](architecture/decisions/20261120-staff-user-directory.md).
+- [ ] Preserve directory search, filters and pagination on return from a card; support
+  shareable URLs and browser back/forward without confusing pending and empty states.
+- [ ] Filter staff audit by actor, action, target and time range, retaining owner-only
+  access and append-only records. Keep pagination bounded and deterministic.
+- [ ] Define and expose read-only operational summaries for failed ingestion, job
+  retries/dead letters and storage reconciliation without job payloads or customer data.
+- [ ] Show effective configured safety limits alongside measured usage after the
+  pilot's resource model and enforcement are defined; do not invent paid allowances.
+- [ ] Agree collection, retention and definitions for activation/repeat-use metrics
+  before adding usage history or engagement telemetry. Existing counts are resources.
+- [ ] Define workspace suspension/resumption, its effects on UI/API/CI/jobs, recovery,
+  customer notification, authorization, reason and audit before implementing it.
+- [ ] Define customer-visible, scoped and expiring support access before implementation.
+  Hidden impersonation remains forbidden. Billing remains deferred to section 4.
+
+User-card acceptance requires metadata-only contracts, unknown/empty/deleted cases,
+removed-membership exclusion, pagination, live role/expiry/revocation checks in HTTP
+and SQL, unchanged tenant RLS, self-hosted denial and successful repository/browser
+verification. This slice passed locally on 2026-11-20: `pnpm check`, 716 tests,
+`pnpm build` and the managed browser navigation/mobile/unknown-record journey. The
+additive migration passed on an existing database and an empty disposable database.
+Other administration follow-ups and deployment/pilot acceptance remain open.
+
 ### Pilot operations
 
 - [ ] Set a pilot infrastructure budget, initial cohort size, and support expectations

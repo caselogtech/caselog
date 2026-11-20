@@ -25,7 +25,7 @@
       <article>
         <h2>{{ 'staff.columns.owner' | transloco }}</h2>
         @if (data.workspace.owner; as owner) {
-          <strong>{{ owner.displayName }}</strong>
+          <a href="/staff/users/{{ owner.userId }}" [routerLink]="['/staff/users', owner.userId]"><strong>{{ owner.displayName }}</strong></a>
           <a href="mailto:{{ owner.email }}">{{ owner.email }}</a>
         } @else { <p>{{ 'staff.workspace.noOwner' | transloco }}</p> }
       </article>

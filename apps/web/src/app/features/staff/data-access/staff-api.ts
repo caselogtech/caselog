@@ -17,6 +17,9 @@ import {
   type StaffSessionResponse,
   staffSessionResponseSchema,
   type StaffUserListResponse,
+  type StaffUserDetailResponse,
+  type StaffUserDetailQuery,
+  staffUserDetailResponseSchema,
   staffUserListResponseSchema,
   type StaffWorkspaceListResponse,
   type StaffWorkspaceListQuery,
@@ -46,6 +49,19 @@ export class StaffApi {
     return staffUserListResponseSchema.parse(
       await lastValueFrom(
         this.http.get<unknown>('/api/v1/staff/users', { params: listParams(query) }),
+      ),
+    );
+  }
+
+  async userDetail(
+    userId: string,
+    query: Partial<StaffUserDetailQuery> = {},
+  ): Promise<StaffUserDetailResponse> {
+    return staffUserDetailResponseSchema.parse(
+      await lastValueFrom(
+        this.http.get<unknown>(`/api/v1/staff/users/${encodeURIComponent(userId)}`, {
+          params: listParams(query),
+        }),
       ),
     );
   }

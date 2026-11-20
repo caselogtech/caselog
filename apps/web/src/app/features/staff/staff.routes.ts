@@ -22,6 +22,13 @@ export const staffRoutes: Routes = [
       },
       { path: 'users', data: { resource: 'users' }, loadComponent: directoryPage },
       {
+        path: 'users/:userId',
+        loadComponent: () =>
+          import('./pages/user-detail/staff-user-detail').then(
+            ({ StaffUserDetail }) => StaffUserDetail,
+          ),
+      },
+      {
         path: 'workspaces',
         data: { resource: 'workspaces' },
         loadComponent: directoryPage,

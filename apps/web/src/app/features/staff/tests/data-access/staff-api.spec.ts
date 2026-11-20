@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { BrowserSession } from '../../../../core/auth/browser-session';
 import { sessionAuthInterceptor } from '../../../../core/auth/session-auth.interceptor';
+import { userDetail } from '../support/staff-user.fixture';
 import { workspaceDetail } from '../support/staff-workspace.fixture';
 import { StaffApi } from '../../data-access/staff-api';
 
@@ -68,6 +69,30 @@ describe('StaffApi', () => {
     TestBed.inject(HttpTestingController)
       .expectOne(`/api/v1/staff/workspaces/${workspaceDetail.workspace.id}`)
       .flush({ ...workspaceDetail, usage: { ...workspaceDetail.usage, testRuns: -1 } });
+    await check;
+  });
+
+  it('validates user cards and forwards bounded membership pagination with the session token', async () => {
+    const response = TestBed.inject(StaffApi).userDetail(userDetail.user.id, {
+      limit: 1,
+      cursor: userDetail.nextCursor ?? undefined,
+    });
+    const request = TestBed.inject(HttpTestingController).expectOne(
+      ({ url }) => url === `/api/v1/staff/users/${userDetail.user.id}`,
+    );
+    expect(request.request.headers.get('Authorization')).toBe('Bearer browser-access-token');
+    expect(request.request.params.get('limit')).toBe('1');
+    expect(request.request.params.get('cursor')).toBe(userDetail.nextCursor);
+    request.flush(userDetail);
+    await expect(response).resolves.toEqual(userDetail);
+  });
+
+  it('rejects unexpected workspace role values in user cards', async () => {
+    const response = TestBed.inject(StaffApi).userDetail(userDetail.user.id);
+    const check = expect(response).rejects.toThrow();
+    TestBed.inject(HttpTestingController)
+      .expectOne(({ url }) => url === `/api/v1/staff/users/${userDetail.user.id}`)
+      .flush({ ...userDetail, workspaces: [{ ...userDetail.workspaces[0], role: 'superuser' }] });
     await check;
   });
 
