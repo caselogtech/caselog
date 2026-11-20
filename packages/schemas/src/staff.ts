@@ -155,6 +155,34 @@ export const staffAuditLogSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 
+const auditFilterText = (min: number, max: number) =>
+  z
+    .string()
+    .trim()
+    .min(min)
+    .max(max)
+    .refine((value) => !value.includes('\0'), 'Null characters are not allowed');
+const auditFilterInstant = z.iso
+  .datetime()
+  .refine(
+    (value) =>
+      value.slice(0, 4) !== '0000' && !/\.\d{4}/.test(value) && Number.isFinite(Date.parse(value)),
+    'Use a UTC date in years 0001–9999 with at most millisecond precision',
+  );
+export const staffAuditLogListQuerySchema = staffListQuerySchema
+  .extend({
+    q: auditFilterText(2, 100).optional(),
+    action: auditFilterText(1, 100).optional(),
+    targetType: auditFilterText(1, 80).optional(),
+    targetId: auditFilterText(1, 200).optional(),
+    from: auditFilterInstant.optional(),
+    to: auditFilterInstant.optional(),
+  })
+  .refine((query) => !query.from || !query.to || Date.parse(query.from) < Date.parse(query.to), {
+    path: ['to'],
+    message: 'Until must be later than From',
+  });
+
 export const staffAuditLogListResponseSchema = z.object({
   auditLogs: z.array(staffAuditLogSchema),
   nextCursor: z.uuid().nullable(),
@@ -184,3 +212,5 @@ export type StaffAuditLogListResponse = z.infer<typeof staffAuditLogListResponse
 export type StaffUserDetailQuery = z.infer<typeof staffUserDetailQuerySchema>;
 export type StaffUserWorkspace = z.infer<typeof staffUserWorkspaceSchema>;
 export type StaffUserDetailResponse = z.infer<typeof staffUserDetailResponseSchema>;
+
+export type StaffAuditLogListQuery = z.infer<typeof staffAuditLogListQuerySchema>;

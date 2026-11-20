@@ -5,7 +5,24 @@
     <p>{{ 'staff.audit.description' | transloco }}</p>
   </header>
 
-  @if (audit.isPending()) {
+  <form class="filters" (ngSubmit)="applyFilters()" [attr.aria-label]="'staff.audit.filters' | transloco">
+    <div><label for="audit-operator">{{ 'staff.audit.operator' | transloco }}</label><input id="audit-operator" name="operator" type="search" maxlength="100" [ngModel]="draft().q" (ngModelChange)="updateFilter('q', $event)" /></div>
+    <div><label for="audit-action">{{ 'staff.audit.action' | transloco }}</label><input id="audit-action" name="action" maxlength="100" [ngModel]="draft().action" (ngModelChange)="updateFilter('action', $event)" /></div>
+    <div><label for="audit-target-type">{{ 'staff.audit.targetType' | transloco }}</label><input id="audit-target-type" name="targetType" maxlength="80" [ngModel]="draft().targetType" (ngModelChange)="updateFilter('targetType', $event)" /></div>
+    <div><label for="audit-target-id">{{ 'staff.audit.targetId' | transloco }}</label><input id="audit-target-id" name="targetId" maxlength="200" [ngModel]="draft().targetId" (ngModelChange)="updateFilter('targetId', $event)" /></div>
+    <div><label for="audit-from">{{ 'staff.audit.from' | transloco }}</label><input id="audit-from" name="from" type="datetime-local" step="0.001" [ngModel]="draft().from" (ngModelChange)="updateFilter('from', $event)" /></div>
+    <div><label for="audit-to">{{ 'staff.audit.to' | transloco }}</label><input id="audit-to" name="to" type="datetime-local" step="0.001" [ngModel]="draft().to" (ngModelChange)="updateFilter('to', $event)" /></div>
+    <p class="range-note">{{ 'staff.audit.rangeHint' | transloco }}</p>
+    <div class="filter-actions"><button type="submit" appButton="secondary">{{ 'staff.audit.apply' | transloco }}</button><button type="button" appButton="quiet" (click)="clearFilters()">{{ 'staff.actions.resetFilters' | transloco }}</button></div>
+    @if (validationError()) { <p class="validation-error" role="alert">{{ 'staff.audit.invalidFilters' | transloco }}</p> }
+  </form>
+
+  <div aria-live="polite" [attr.aria-busy]="audit.isFetching()">
+  @if (!query().success) {
+    <app-page-state [title]="'staff.audit.invalidTitle' | transloco" [message]="'staff.audit.invalidFilters' | transloco">
+      <button actions type="button" appButton="secondary" (click)="clearFilters()">{{ 'staff.actions.resetFilters' | transloco }}</button>
+    </app-page-state>
+  } @else if (audit.isPending()) {
     <app-page-state [title]="'staff.states.loadingTitle' | transloco" [message]="'staff.states.loadingAudit' | transloco" />
   } @else if (audit.isError()) {
     <app-page-state [title]="'staff.states.errorTitle' | transloco" [message]="errorKey() | transloco">
@@ -28,5 +45,11 @@
         <li class="empty">{{ 'staff.audit.empty' | transloco }}</li>
       }
     </ol>
+    <nav class="pagination" [attr.aria-label]="'staff.directory.pagination' | transloco">
+      @if (query().data?.cursor) { <button type="button" appButton="secondary" [disabled]="audit.isFetching()" (click)="firstPage()">{{ 'staff.actions.first' | transloco }}</button> }
+      <button type="button" appButton="secondary" [disabled]="!previousUrl() || audit.isFetching()" (click)="previousPage()">{{ 'staff.actions.previous' | transloco }}</button>
+      <button type="button" appButton="secondary" [disabled]="!audit.data()?.nextCursor || audit.isFetching()" (click)="nextPage()">{{ 'staff.actions.next' | transloco }}</button>
+    </nav>
   }
+  </div>
 </main>

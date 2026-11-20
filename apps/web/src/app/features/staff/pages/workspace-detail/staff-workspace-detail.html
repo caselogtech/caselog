@@ -1,5 +1,5 @@
 <main class="staff-page" aria-labelledby="staff-workspace-title">
-  <a href="/staff/workspaces" routerLink="/staff/workspaces">{{ 'staff.workspace.back' | transloco }}</a>
+  <a href="{{ directoryReturn.href() }}" [routerLink]="directoryReturn.link()">{{ (directoryReturn.origin() ? 'staff.directory.back' : 'staff.workspace.back') | transloco }}</a>
   <div aria-live="polite" [attr.aria-busy]="detail.isFetching()">
   @if (detail.isPending()) {
     <h1 id="staff-workspace-title">{{ 'staff.workspace.title' | transloco }}</h1>
@@ -25,7 +25,7 @@
       <article>
         <h2>{{ 'staff.columns.owner' | transloco }}</h2>
         @if (data.workspace.owner; as owner) {
-          <a href="/staff/users/{{ owner.userId }}" [routerLink]="['/staff/users', owner.userId]"><strong>{{ owner.displayName }}</strong></a>
+          <a href="/staff/users/{{ owner.userId }}" [routerLink]="['/staff/users', owner.userId]" [queryParams]="directoryReturn.queryParams()"><strong>{{ owner.displayName }}</strong></a>
           <a href="mailto:{{ owner.email }}">{{ owner.email }}</a>
         } @else { <p>{{ 'staff.workspace.noOwner' | transloco }}</p> }
       </article>

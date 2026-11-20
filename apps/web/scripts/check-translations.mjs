@@ -41,6 +41,7 @@ function sourceFiles(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) {
+      if (entry.name === 'tests') return [];
       return sourceFiles(path);
     }
     return ['.html', '.ts'].includes(extname(entry.name)) && !entry.name.endsWith('.spec.ts')

@@ -35,6 +35,7 @@ import {
   GrantStaffOperatorRequestDto,
   RevokeStaffOperatorRequestDto,
   StaffListQueryDto,
+  StaffAuditLogListQueryDto,
   StaffUserParamsDto,
   StaffUserDetailQueryDto,
   StaffWorkspaceListQueryDto,
@@ -162,7 +163,7 @@ export class StaffController {
   @ApiOkResponse({ type: StaffAuditLogListResponseDto })
   auditLogs(
     @CurrentStaffOperator() operator: StaffOperator,
-    @Query() query: StaffListQueryDto,
+    @Query() query: StaffAuditLogListQueryDto,
   ): Promise<StaffAuditLogListResponse> {
     return this.staff.auditLogs(operator, query);
   }

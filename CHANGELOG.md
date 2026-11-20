@@ -4,6 +4,11 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Preserve staff directory search, filters and pagination in shareable URLs and
+  through card navigation. Add owner-only staff audit filters for operator, action,
+  target and UTC time, with persistent filter URLs and pagination. Apply migration
+  `20261120190000_staff_audit_filters` before new artifacts.
+
 - Add managed staff user cards with verification/deletion state, paginated workspace
   roles and navigation between users and workspace metadata. Apply migration
   `20261120180000_staff_user_directory` before new artifacts.

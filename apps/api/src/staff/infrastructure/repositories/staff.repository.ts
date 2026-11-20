@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type {
   GrantStaffOperatorRequest,
   StaffAuditLog,
+  StaffAuditLogListQuery,
   StaffBillingAccount,
   StaffListQuery,
   StaffOperator,
@@ -290,7 +291,10 @@ export class StaffRepository {
     return { kind: rows[0]?.outcome ?? 'not_found' };
   }
 
-  async listAuditLogs(userId: string, query: StaffListQuery): Promise<StaffPage<StaffAuditLog>> {
+  async listAuditLogs(
+    userId: string,
+    query: StaffAuditLogListQuery,
+  ): Promise<StaffPage<StaffAuditLog>> {
     const rows = await this.withUser(
       userId,
       (transaction) =>
@@ -299,7 +303,12 @@ export class StaffRepository {
           id, actor_user_id AS "actorUserId", actor_email AS "actorEmail",
           actor_display_name AS "actorDisplayName", action, target_type AS "targetType",
           target_id AS "targetId", reason, metadata, created_at AS "createdAt"
-        FROM public.list_staff_audit_logs(${query.cursor ?? null}::UUID, ${query.limit + 1}::INTEGER)
+        FROM public.search_staff_audit_logs(
+          ${query.cursor ?? null}::UUID, ${query.limit + 1}::INTEGER,
+          ${query.q ?? null}::TEXT, ${query.action ?? null}::TEXT,
+          ${query.targetType ?? null}::TEXT, ${query.targetId ?? null}::TEXT,
+          ${query.from ?? null}::TIMESTAMPTZ, ${query.to ?? null}::TIMESTAMPTZ
+        )
       `,
     );
     return toStaffPage(rows.map(mapStaffAuditLog), query.limit, (auditLog) => auditLog.id);

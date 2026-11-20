@@ -263,6 +263,8 @@ export {
   grantStaffOperatorRequestSchema,
   revokeStaffOperatorRequestSchema,
   staffAuditLogListResponseSchema,
+  staffAuditLogListQuerySchema,
+  type StaffAuditLogListQuery,
   staffAuditLogSchema,
   staffBillingAccountListResponseSchema,
   staffBillingAccountSchema,

@@ -9637,6 +9637,11 @@ export interface operations {
                 cursor?: string;
                 limit?: number;
                 q?: string;
+                action?: string;
+                targetType?: string;
+                targetId?: string;
+                from?: string;
+                to?: string;
             };
             header?: never;
             path?: never;

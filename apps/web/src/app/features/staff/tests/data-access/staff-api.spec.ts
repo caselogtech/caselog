@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { BrowserSession } from '../../../../core/auth/browser-session';
 import { sessionAuthInterceptor } from '../../../../core/auth/session-auth.interceptor';
+import { auditResponse } from '../support/staff-audit.fixture';
 import { userDetail } from '../support/staff-user.fixture';
 import { workspaceDetail } from '../support/staff-workspace.fixture';
 import { StaffApi } from '../../data-access/staff-api';
@@ -94,6 +95,28 @@ describe('StaffApi', () => {
       .expectOne(({ url }) => url === `/api/v1/staff/users/${userDetail.user.id}`)
       .flush({ ...userDetail, workspaces: [{ ...userDetail.workspaces[0], role: 'superuser' }] });
     await check;
+  });
+
+  it('sends all audit filters and cursor using the browser session', async () => {
+    const query = {
+      q: 'owner',
+      action: 'staff.operator.granted',
+      targetType: 'staff_operator',
+      targetId: 'target',
+      from: '2026-11-20T00:00:00.000Z',
+      to: '2026-11-21T00:00:00.000Z',
+      limit: 1,
+      cursor: auditResponse.nextCursor ?? undefined,
+    };
+    const result = TestBed.inject(StaffApi).auditLogs(query);
+    const request = TestBed.inject(HttpTestingController).expectOne(
+      ({ url }) => url === '/api/v1/staff/audit-logs',
+    );
+    expect(request.request.headers.get('Authorization')).toBe('Bearer browser-access-token');
+    for (const [key, value] of Object.entries(query))
+      expect(request.request.params.get(key)).toBe(String(value));
+    request.flush(auditResponse);
+    await expect(result).resolves.toEqual(auditResponse);
   });
 
   it('sends the required reason when revoking an operator', async () => {

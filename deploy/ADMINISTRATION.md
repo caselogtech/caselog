@@ -26,6 +26,19 @@ account and resource counts. Missing owner contacts are shown explicitly.
 A workspace count is not a company count. **Current workspaces** means not deleted;
 registered users and resource totals do not establish recent human activity.
 
+## Preserve directory navigation
+
+Applied search, workspace state, page size and cursor are kept in the directory URL.
+Browser back/forward restores them, and card links provide **Back to directory** with
+the original filters and page, including after following owner/workspace links.
+Return destinations are limited to staff directories; external destinations are ignored.
+
+Shared and reloaded URLs preserve the current page. **Previous** uses pages visited
+in the current browser tab (up to 100 remembered transitions, isolated by staff identity
+and role). Use **First page** when opening a deep link without that navigation history.
+Invalid filter links display a reset action and do not issue an unfiltered request.
+Only applied filter values are stored in URLs; editing a form does not issue a request.
+
 ## Inspect a user
 
 Open **Users**, search by name or email, and select a name. The card shows registration,
@@ -44,6 +57,30 @@ Session API clients use `GET /api/v1/staff/users/{userId}` with `cursor` and `li
 (1–100). The response contains `user`, `workspaces` and `nextCursor`; workspace UUIDs
 provide deterministic ordering. Pagination reads live metadata, so changes between
 pages are possible. The same admin/owner restrictions apply as for workspace cards.
+
+## Filter staff audit
+
+Staff owners open `/staff/audit`. Admin and support roles cannot read staff audit.
+Search the operator by name or email; substring matching is case-insensitive and treats
+percent/underscore literally. Action, target type and target ID filters are exact,
+case-sensitive values. For example, use `staff.operator.granted` and `staff_operator`
+to find grants. All non-empty filters are combined with AND.
+
+Event times and filter inputs use UTC. **From** is inclusive and **Until** is exclusive;
+Until must be later than From when both are supplied. Invalid input stays in the form
+and does not change the applied filters. Reset clears filters and returns to the first
+page. Filtered URLs survive pagination, reload and browser back/forward.
+
+The session API is `GET /api/v1/staff/audit-logs` with `q` (operator name/email, 2–100
+characters), `action` (1–100), `targetType` (1–80), `targetId` (1–200), `from`, `to`,
+`cursor` and `limit` (1–100). Timestamps are UTC ISO 8601 in years 0001–9999 with at most
+millisecond precision. Existing ascending event-UUID cursor ordering is preserved;
+a date filter does not change ordering to newest-first. Previously ignored audit `q`
+now searches the actor. Requests without filters retain their existing behavior.
+
+Filtering does not rewrite audit history or change operator grants. Role, expiry and
+revocation are checked on each request and again by the database projection. The API
+response remains the existing `auditLogs` / `nextCursor` envelope.
 
 ## Understand usage
 

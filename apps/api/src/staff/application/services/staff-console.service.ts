@@ -14,6 +14,7 @@ import {
   type GrantStaffOperatorRequest,
   type RevokeStaffOperatorRequest,
   type StaffAuditLogListResponse,
+  type StaffAuditLogListQuery,
   type StaffBillingAccountListResponse,
   type StaffListQuery,
   type StaffOperator,
@@ -156,7 +157,7 @@ export class StaffConsoleService {
 
   async auditLogs(
     operator: StaffOperator,
-    query: StaffListQuery,
+    query: StaffAuditLogListQuery,
   ): Promise<StaffAuditLogListResponse> {
     const page = await this.staff.listAuditLogs(operator.userId, query);
     return staffAuditLogListResponseSchema.parse({

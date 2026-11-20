@@ -4,6 +4,7 @@ import {
   type GrantStaffOperatorRequest,
   type RevokeStaffOperatorRequest,
   type StaffAuditLogListResponse,
+  type StaffAuditLogListQuery,
   staffAuditLogListResponseSchema,
   type StaffBillingAccountListResponse,
   staffBillingAccountListResponseSchema,
@@ -116,10 +117,10 @@ export class StaffApi {
     );
   }
 
-  async auditLogs(query: Partial<StaffListQuery>): Promise<StaffAuditLogListResponse> {
+  async auditLogs(query: Partial<StaffAuditLogListQuery>): Promise<StaffAuditLogListResponse> {
     return staffAuditLogListResponseSchema.parse(
       await lastValueFrom(
-        this.http.get<unknown>('/api/v1/staff/audit-logs', { params: listParams(query) }),
+        this.http.get<unknown>('/api/v1/staff/audit-logs', { params: auditParams(query) }),
       ),
     );
   }
@@ -129,5 +130,14 @@ function listParams(query: Partial<StaffListQuery>): HttpParams {
   let params = new HttpParams().set('limit', String(query.limit ?? 25));
   if (query.cursor) params = params.set('cursor', query.cursor);
   if (query.q) params = params.set('q', query.q);
+  return params;
+}
+
+function auditParams(query: Partial<StaffAuditLogListQuery>): HttpParams {
+  let params = listParams(query);
+  for (const key of ['action', 'targetType', 'targetId', 'from', 'to'] as const) {
+    const value = query[key];
+    if (value) params = params.set(key, value);
+  }
   return params;
 }

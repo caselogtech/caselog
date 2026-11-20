@@ -6,6 +6,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorCode, apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { Button, PageState, StatusBadge } from '../../../../shared/ui/public-api';
+import { injectStaffDirectoryReturn } from '../../state/staff-directory-return';
 import { StaffApi } from '../../data-access/staff-api';
 import { formatStaffDate, staffWorkspaceRoleTranslationKey } from '../../domain/staff-format';
 import { StaffSession } from '../../state/staff-session';
@@ -18,6 +19,7 @@ import { StaffSession } from '../../state/staff-session';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffUserDetail {
+  readonly directoryReturn = injectStaffDirectoryReturn('/staff/users');
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(StaffApi);
   private readonly staffSession = inject(StaffSession);

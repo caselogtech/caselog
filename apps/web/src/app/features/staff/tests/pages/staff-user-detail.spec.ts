@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { i18nTestingModule } from '../../../../../testing/i18n-testing';
 import { StaffApi } from '../../data-access/staff-api';
 import { StaffUserDetail } from '../../pages/user-detail/staff-user-detail';
@@ -25,7 +25,11 @@ describe('StaffUserDetail', () => {
         { provide: StaffApi, useValue: api },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: params.value }, paramMap: params },
+          useValue: {
+            snapshot: { paramMap: params.value, queryParamMap: convertToParamMap({}) },
+            queryParamMap: of(convertToParamMap({})),
+            paramMap: params,
+          },
         },
       ],
     }).compileComponents();

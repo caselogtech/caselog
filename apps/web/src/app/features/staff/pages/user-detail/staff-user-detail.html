@@ -1,5 +1,5 @@
 <main class="staff-page" aria-labelledby="staff-user-title">
-  <a href="/staff/users" routerLink="/staff/users">{{ 'staff.user.back' | transloco }}</a>
+  <a href="{{ directoryReturn.href() }}" [routerLink]="directoryReturn.link()">{{ (directoryReturn.origin() ? 'staff.directory.back' : 'staff.user.back') | transloco }}</a>
   <div aria-live="polite" [attr.aria-busy]="detail.isFetching()">
     @if (detail.isPending()) {
       <h1 id="staff-user-title">{{ 'staff.user.title' | transloco }}</h1>
@@ -45,7 +45,7 @@
               <tbody>
                 @for (workspace of data.workspaces; track workspace.id) {
                   <tr>
-                    <td><a href="/staff/workspaces/{{ workspace.id }}" [routerLink]="['/staff/workspaces', workspace.id]">{{ workspace.name }}</a><span>/{{ workspace.slug }}</span></td>
+                    <td><a href="/staff/workspaces/{{ workspace.id }}" [routerLink]="['/staff/workspaces', workspace.id]" [queryParams]="directoryReturn.queryParams()">{{ workspace.name }}</a><span>/{{ workspace.slug }}</span></td>
                     <td>{{ roleKey(workspace.role) | transloco }}</td>
                     <td><app-status-badge [tone]="workspace.deletedAt ? 'neutral' : 'success'" [label]="(workspace.deletedAt ? 'staff.values.deleted' : 'staff.values.current') | transloco" /></td>
                   </tr>

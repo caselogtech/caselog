@@ -1,6 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { staffWorkspaceListQuerySchema } from '@caselog/schemas';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type {
   StaffBillingAccountListResponse,
   StaffUserListResponse,
@@ -12,10 +15,15 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { Button, PageState, StatusBadge } from '../../../../shared/ui/public-api';
 import { StaffApi } from '../../data-access/staff-api';
+import { StaffListHistory } from '../../state/staff-list-history';
+import {
+  staffDirectoryUrl,
+  type StaffDirectoryResource,
+} from '../../domain/staff-directory-navigation';
 import { StaffSession } from '../../state/staff-session';
 import { formatStaffBytes, formatStaffDate } from '../../domain/staff-format';
 
-type DirectoryResource = 'users' | 'workspaces' | 'billingAccounts';
+type DirectoryResource = StaffDirectoryResource;
 type DirectoryResponse =
   | StaffUserListResponse
   | StaffWorkspaceListResponse
@@ -30,26 +38,45 @@ type DirectoryResponse =
 })
 export class StaffDirectory {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly history = inject(StaffListHistory);
   private readonly staffSession = inject(StaffSession);
   private readonly staffApi = inject(StaffApi);
   // biome-ignore lint/complexity/useLiteralKeys: Angular route data is an index-signature contract.
   readonly resource = readResource(this.route.snapshot.data['resource']);
-  readonly cursor = signal<string | null>(null);
-  readonly cursorHistory = signal<string[]>([]);
-  readonly searchDraft = signal('');
-  readonly search = signal('');
-  readonly searchError = signal(false);
-  readonly workspaceState = signal<StaffWorkspaceListQuery['state']>('all');
+  private readonly params = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
+  readonly query = computed(() =>
+    staffWorkspaceListQuerySchema.safeParse({
+      q: this.params().get('q') ?? undefined,
+      cursor: this.params().get('cursor') ?? undefined,
+      limit: this.params().get('limit') ?? undefined,
+      state: this.resource === 'workspaces' ? (this.params().get('state') ?? undefined) : 'all',
+    }),
+  );
+  readonly searchDraft = linkedSignal(() => this.params().get('q') ?? '');
+  readonly search = computed(() => this.query().data?.q ?? '');
+  readonly cursor = computed(() => this.query().data?.cursor);
+  readonly workspaceState = computed(() => this.query().data?.state ?? 'all');
+  readonly searchError = linkedSignal({ source: this.params, computation: () => false });
+  readonly currentUrl = computed(() =>
+    staffDirectoryUrl(this.resource, this.query().data ?? { limit: 25, state: 'all' }),
+  );
+  readonly cardQueryParams = computed(() => ({ returnTo: this.currentUrl() }));
+  readonly previousUrl = computed(() =>
+    this.cursor() ? this.history.previous(this.currentUrl()) : undefined,
+  );
   readonly directory = injectQuery(() => ({
     queryKey: [
       'staff',
       this.staffSession.operator()?.userId,
       this.staffSession.operator()?.role,
       this.resource,
-      this.cursor(),
-      this.search(),
-      this.workspaceState(),
+      this.query().data,
     ],
+    enabled: this.query().success,
+    meta: { handleErrorsLocally: true },
     queryFn: () => this.load(),
   }));
   readonly users = computed(() => {
@@ -70,56 +97,63 @@ export class StaffDirectory {
   readonly formatDate = formatStaffDate;
   readonly formatBytes = formatStaffBytes;
 
-  applySearch(): void {
+  async applySearch(): Promise<void> {
     const search = this.searchDraft().trim();
     this.searchError.set(search.length > 0 && (search.length < 2 || search.length > 100));
     if (this.searchError()) return;
-    this.cursor.set(null);
-    this.cursorHistory.set([]);
-    this.search.set(search);
+    await this.navigate({ ...this.currentQuery(), q: search || undefined, cursor: undefined });
   }
 
-  clearSearch(): void {
+  async clearSearch(): Promise<void> {
     this.searchDraft.set('');
-    this.applySearch();
+    await this.applySearch();
   }
 
-  changeWorkspaceState(value: unknown): void {
+  async changeWorkspaceState(value: unknown): Promise<void> {
     if (value !== 'all' && value !== 'current' && value !== 'deleted') return;
-    this.cursor.set(null);
-    this.cursorHistory.set([]);
-    this.workspaceState.set(value);
+    await this.navigate({ ...this.currentQuery(), state: value, cursor: undefined });
   }
 
-  nextPage(): void {
-    const nextCursor = this.directory.data()?.nextCursor;
-    if (!nextCursor) return;
-    const current = this.cursor();
-    this.cursorHistory.update((history) => [...history, current ?? '']);
-    this.cursor.set(nextCursor);
+  async nextPage(): Promise<void> {
+    const cursor = this.directory.data()?.nextCursor;
+    if (!cursor) return;
+    const url = staffDirectoryUrl(this.resource, { ...this.currentQuery(), cursor });
+    this.history.rememberNext(this.currentUrl(), url);
+    await this.router.navigateByUrl(url);
   }
 
-  previousPage(): void {
-    const history = [...this.cursorHistory()];
-    const previous = history.pop();
-    this.cursorHistory.set(history);
-    this.cursor.set(previous || null);
+  async previousPage(): Promise<void> {
+    const url = this.previousUrl();
+    if (url) await this.router.navigateByUrl(url);
+  }
+
+  async firstPage(): Promise<void> {
+    await this.navigate({ ...this.currentQuery(), cursor: undefined });
+  }
+
+  async resetFilters(): Promise<void> {
+    this.searchError.set(false);
+    await this.navigate({ limit: 25, state: 'all' });
   }
 
   errorKey(): string {
-    return apiErrorTranslationKey(this.directory.error());
+    const error = this.directory.error();
+    if (error instanceof HttpErrorResponse && error.status === 0) return 'staff.workspace.offline';
+    return apiErrorTranslationKey(error);
   }
 
   private load(): Promise<DirectoryResponse> {
-    const query = {
-      cursor: this.cursor() ?? undefined,
-      limit: 25,
-      q: this.search() || undefined,
-    };
+    const query = this.currentQuery();
     if (this.resource === 'users') return this.staffApi.users(query);
-    if (this.resource === 'workspaces')
-      return this.staffApi.workspaces({ ...query, state: this.workspaceState() });
+    if (this.resource === 'workspaces') return this.staffApi.workspaces(query);
     return this.staffApi.billingAccounts(query);
+  }
+  private currentQuery(): StaffWorkspaceListQuery {
+    return this.query().data ?? { limit: 25, state: 'all' };
+  }
+
+  private navigate(query: StaffWorkspaceListQuery): Promise<boolean> {
+    return this.router.navigateByUrl(staffDirectoryUrl(this.resource, query));
   }
 }
 

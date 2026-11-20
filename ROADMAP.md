@@ -141,9 +141,9 @@ access rules, telemetry, quotas, customer-content access or paid behavior.
 - [x] Add user cards with verification/deletion states, paginated workspace roles,
   user → workspace → owner navigation, scoped caches, API/SQL authorization and a
   managed browser journey. See the [user-card decision](architecture/decisions/20261120-staff-user-directory.md).
-- [ ] Preserve directory search, filters and pagination on return from a card; support
+- [x] Preserve directory search, filters and pagination on return from a card; support
   shareable URLs and browser back/forward without confusing pending and empty states.
-- [ ] Filter staff audit by actor, action, target and time range, retaining owner-only
+- [x] Filter staff audit by actor, action, target and time range, retaining owner-only
   access and append-only records. Keep pagination bounded and deterministic.
 - [ ] Define and expose read-only operational summaries for failed ingestion, job
   retries/dead letters and storage reconciliation without job payloads or customer data.
@@ -163,6 +163,12 @@ verification. This slice passed locally on 2026-11-20: `pnpm check`, 716 tests,
 `pnpm build` and the managed browser navigation/mobile/unknown-record journey. The
 additive migration passed on an existing database and an empty disposable database.
 Other administration follow-ups and deployment/pilot acceptance remain open.
+
+Navigation/audit acceptance passed locally on 2026-11-20: repository checks, builds,
+752 tests across the workspace/tool suites, and all three managed staff browser
+journeys, including shared links, reload/back/forward, owner-only audit filtering and
+UTC boundary validation. The additive audit projection migration passed on existing
+and empty disposable databases. See the [navigation/audit decision](architecture/decisions/20261120-staff-navigation-audit-filters.md).
 
 ### Pilot operations
 

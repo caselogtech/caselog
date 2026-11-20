@@ -66,3 +66,65 @@ h1 {
   color: var(--text-2);
   text-align: center;
 }
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+.filters > div {
+  display: grid;
+  gap: var(--space-1);
+}
+.filters label {
+  color: var(--text-1);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+.filters input {
+  background: var(--surface-2);
+  border: 1px solid var(--color-neutral-500);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  min-width: 0;
+  min-height: var(--control-min-size);
+  padding: var(--space-2) var(--space-3);
+}
+.filters .filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.range-note,
+.validation-error {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.range-note {
+  color: var(--text-2);
+  font-size: var(--font-size-sm);
+}
+.validation-error {
+  color: var(--error-text);
+}
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.audit-list li {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+  .event-line {
+    align-items: start;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+}

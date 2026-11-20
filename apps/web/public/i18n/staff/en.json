@@ -7,7 +7,7 @@
     "accessExpires": "Access expires",
     "returnToProduct": "Return to product",
     "signOut": "Sign out",
-    "signingOut": "Signing out\u2026"
+    "signingOut": "Signing out…"
   },
   "nav": {
     "overview": "Overview",
@@ -66,7 +66,10 @@
       "empty": "No billing accounts match this search."
     },
     "workspaceState": "Workspace state",
-    "searchError": "Enter between 2 and 100 characters, or clear the search."
+    "searchError": "Enter between 2 and 100 characters, or clear the search.",
+    "back": "Back to directory",
+    "invalidTitle": "Invalid directory filters",
+    "invalidUrl": "The link contains invalid filters or pagination. Reset the filters to continue."
   },
   "operators": {
     "eyebrow": "Least privilege",
@@ -79,7 +82,7 @@
     "expiry": "Access expiry",
     "reason": "Reason for access",
     "grant": "Grant access",
-    "granting": "Granting\u2026",
+    "granting": "Granting…",
     "listTitle": "Operator directory",
     "listDescription": "Revocation takes effect on the next request.",
     "revokeReason": "Reason for the next revocation",
@@ -89,7 +92,18 @@
     "eyebrow": "Accountability",
     "title": "Staff audit",
     "description": "Append-only history of privileged operator lifecycle changes.",
-    "empty": "No staff audit events have been recorded."
+    "empty": "No staff audit events match these filters.",
+    "filters": "Audit filters",
+    "operator": "Operator name or email",
+    "action": "Action (exact)",
+    "targetType": "Target type (exact)",
+    "targetId": "Target ID (exact)",
+    "from": "From (UTC, inclusive)",
+    "to": "Until (UTC, exclusive)",
+    "rangeHint": "All event times and date filters use UTC. From is included; Until is excluded.",
+    "apply": "Apply filters",
+    "invalidTitle": "Invalid audit filters",
+    "invalidFilters": "Check the filter values and use a valid UTC range with Until later than From."
   },
   "columns": {
     "user": "User",
@@ -111,10 +125,10 @@
   },
   "states": {
     "loadingTitle": "Loading cloud administration",
-    "loadingOverview": "Reading current instance metrics and configuration\u2026",
-    "loadingDirectory": "Reading the customer directory\u2026",
-    "loadingOperators": "Reading the operator directory\u2026",
-    "loadingAudit": "Reading staff audit events\u2026",
+    "loadingOverview": "Reading current instance metrics and configuration…",
+    "loadingDirectory": "Reading the customer directory…",
+    "loadingOperators": "Reading the operator directory…",
+    "loadingAudit": "Reading staff audit events…",
     "errorTitle": "Cloud administration is unavailable"
   },
   "actions": {
@@ -122,7 +136,9 @@
     "search": "Search",
     "clear": "Clear",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "first": "First page",
+    "resetFilters": "Reset filters"
   },
   "values": {
     "enabled": "Enabled",
@@ -138,7 +154,7 @@
   "workspace": {
     "title": "Workspace details",
     "back": "Back to workspaces",
-    "loading": "Reading workspace contacts and aggregate usage\u2026",
+    "loading": "Reading workspace contacts and aggregate usage…",
     "notFound": "This workspace no longer exists. Return to the directory to find another workspace.",
     "offline": "Unable to connect. Check your connection and try again.",
     "identity": "Workspace identity and owner contact",
@@ -149,7 +165,7 @@
     "usage": "Usage and resources",
     "observedAt": "Snapshot from {{date}}. Refresh to read current values.",
     "refresh": "Refresh usage",
-    "refreshing": "Refreshing\u2026",
+    "refreshing": "Refreshing…",
     "testCases": "Current test cases",
     "testRuns": "Current test runs",
     "openTestRuns": "Open test runs",
@@ -161,13 +177,13 @@
   "user": {
     "title": "User details",
     "back": "Back to users",
-    "loading": "Reading user identity and workspace memberships\u2026",
+    "loading": "Reading user identity and workspace memberships…",
     "notFound": "This user no longer exists. Return to the directory to find another user.",
     "identity": "User identity",
     "id": "User ID",
     "deletedAt": "Deleted on",
     "refresh": "Refresh details",
-    "refreshing": "Refreshing\u2026",
+    "refreshing": "Refreshing…",
     "memberships": "Workspace memberships",
     "billingAccounts": "Billing account memberships",
     "workspaces": "Workspaces and roles",

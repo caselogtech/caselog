@@ -41,7 +41,11 @@
     </div>
   }
 
-  @if (directory.isPending()) {
+  @if (!query().success) {
+    <app-page-state [title]="'staff.directory.invalidTitle' | transloco" [message]="'staff.directory.invalidUrl' | transloco">
+      <button actions type="button" appButton="secondary" (click)="resetFilters()">{{ 'staff.actions.resetFilters' | transloco }}</button>
+    </app-page-state>
+  } @else if (directory.isPending()) {
     <app-page-state [title]="'staff.states.loadingTitle' | transloco" [message]="'staff.states.loadingDirectory' | transloco" />
   } @else if (directory.isError()) {
     <app-page-state [title]="'staff.states.errorTitle' | transloco" [message]="errorKey() | transloco">
@@ -62,7 +66,7 @@
           <tbody>
             @for (user of users(); track user.id) {
               <tr>
-                <td><a href="/staff/users/{{ user.id }}" [routerLink]="['/staff/users', user.id]"><strong>{{ user.displayName }}</strong></a><span>{{ user.email }}</span><code>{{ user.id }}</code></td>
+                <td><a href="/staff/users/{{ user.id }}" [routerLink]="['/staff/users', user.id]" [queryParams]="cardQueryParams()"><strong>{{ user.displayName }}</strong></a><span>{{ user.email }}</span><code>{{ user.id }}</code></td>
                 <td><app-status-badge [tone]="user.emailVerified ? 'success' : 'warning'" [label]="(user.emailVerified ? 'staff.values.verified' : 'staff.values.unverified') | transloco" /></td>
                 <td class="numeric">{{ user.activeWorkspaceCount }}</td>
                 <td class="numeric">{{ user.billingAccountCount }}</td>
@@ -84,7 +88,7 @@
           <tbody>
             @for (workspace of workspaces(); track workspace.id) {
               <tr>
-                <td><a href="/staff/workspaces/{{ workspace.id }}" [routerLink]="['/staff/workspaces', workspace.id]"><strong>{{ workspace.name }}</strong></a><span>/{{ workspace.slug }}</span><code>{{ workspace.id }}</code></td>
+                <td><a href="/staff/workspaces/{{ workspace.id }}" [routerLink]="['/staff/workspaces', workspace.id]" [queryParams]="cardQueryParams()"><strong>{{ workspace.name }}</strong></a><span>/{{ workspace.slug }}</span><code>{{ workspace.id }}</code></td>
                 <td>
                   @if (workspace.owner; as owner) {
                     <strong>{{ owner.displayName }}</strong>
@@ -124,7 +128,10 @@
       </table>
     </div>
     <nav class="pagination" [attr.aria-label]="'staff.directory.pagination' | transloco">
-      <button type="button" appButton="secondary" [disabled]="cursorHistory().length === 0" (click)="previousPage()">{{ 'staff.actions.previous' | transloco }}</button>
+      @if (cursor()) {
+      <button type="button" appButton="secondary" [disabled]="directory.isFetching()" (click)="firstPage()">{{ 'staff.actions.first' | transloco }}</button>
+    }
+    <button type="button" appButton="secondary" [disabled]="!previousUrl()" (click)="previousPage()">{{ 'staff.actions.previous' | transloco }}</button>
       <button type="button" appButton="secondary" [disabled]="!directory.data()?.nextCursor" (click)="nextPage()">{{ 'staff.actions.next' | transloco }}</button>
     </nav>
   }

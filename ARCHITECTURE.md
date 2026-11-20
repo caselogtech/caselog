@@ -362,6 +362,9 @@ defines allowed metadata, counter semantics, compatibility and recovery.
 [User cards](architecture/decisions/20261120-staff-user-directory.md) add bounded,
 read-only workspace relationships under the same staff boundary; membership roles
 are metadata and never confer access on the operator.
+[Navigation and audit filtering](architecture/decisions/20261120-staff-navigation-audit-filters.md)
+keep applied directory state in validated URLs and extend owner-only audit projections
+without changing their response, UUID cursor order or append-only protections.
 
 ### Workspace API tokens
 
