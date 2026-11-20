@@ -5,6 +5,9 @@
       <h1 id="staff-overview-title">{{ 'staff.overview.title' | transloco }}</h1>
       <p>{{ 'staff.overview.description' | transloco }}</p>
     </div>
+    @if (canViewWorkspaces()) {
+      <a appButton="secondary" href="/staff/workspaces" routerLink="/staff/workspaces">{{ 'staff.overview.browseWorkspaces' | transloco }}</a>
+    }
   </header>
 
   @if (overview.isPending()) {

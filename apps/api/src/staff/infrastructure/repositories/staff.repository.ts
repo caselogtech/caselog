@@ -8,6 +8,8 @@ import type {
   StaffOverviewResponse,
   StaffUser,
   StaffWorkspace,
+  StaffWorkspaceDetailResponse,
+  StaffWorkspaceListQuery,
 } from '@caselog/schemas';
 import type { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../core/database/infrastructure/prisma/prisma.service';
@@ -25,6 +27,8 @@ import {
   type StaffPage,
   type StaffUserRow,
   type StaffWorkspaceRow,
+  type StaffWorkspaceDetailRow,
+  mapStaffWorkspaceDetail,
   toStaffPage,
 } from './staff-projection.mapper';
 
@@ -124,7 +128,10 @@ export class StaffRepository {
     return toStaffPage(rows.map(mapStaffUser), query.limit, (user) => user.id);
   }
 
-  async listWorkspaces(userId: string, query: StaffListQuery): Promise<StaffPage<StaffWorkspace>> {
+  async listWorkspaces(
+    userId: string,
+    query: StaffWorkspaceListQuery,
+  ): Promise<StaffPage<StaffWorkspace>> {
     const rows = await this.withUser(
       userId,
       (transaction) =>
@@ -134,14 +141,38 @@ export class StaffRepository {
           billing_account_name AS "billingAccountName", member_count AS "memberCount",
           project_count AS "projectCount", storage_bytes AS "storageBytes",
           created_at AS "createdAt", deleted_at AS "deletedAt"
-        FROM public.list_staff_workspaces(
+          , owner_user_id AS "ownerUserId", owner_email AS "ownerEmail", owner_display_name AS "ownerDisplayName"
+        FROM public.list_staff_workspace_customers(
           ${query.cursor ?? null}::UUID,
           ${query.limit + 1}::INTEGER,
-          ${query.q ?? null}::TEXT
+          ${query.q ?? null}::TEXT,
+          ${query.state}::TEXT
         )
       `,
     );
     return toStaffPage(rows.map(mapStaffWorkspace), query.limit, (workspace) => workspace.id);
+  }
+
+  async workspaceDetail(
+    userId: string,
+    workspaceId: string,
+  ): Promise<StaffWorkspaceDetailResponse | undefined> {
+    const rows = await this.withUser(
+      userId,
+      (transaction) => transaction.$queryRaw<StaffWorkspaceDetailRow[]>`
+      SELECT workspace.id, workspace.name, workspace.slug,
+        workspace.billing_account_id AS "billingAccountId", workspace.billing_account_name AS "billingAccountName",
+        workspace.member_count AS "memberCount", workspace.project_count AS "projectCount",
+        workspace.storage_bytes AS "storageBytes", workspace.created_at AS "createdAt", workspace.deleted_at AS "deletedAt",
+        workspace.owner_user_id AS "ownerUserId", workspace.owner_email AS "ownerEmail", workspace.owner_display_name AS "ownerDisplayName",
+        usage.test_case_count AS "testCaseCount", usage.test_run_count AS "testRunCount", usage.open_test_run_count AS "openTestRunCount",
+        usage.ingestion_count AS "ingestionCount", usage.pending_upload_count AS "pendingUploadCount",
+        usage.pending_storage_bytes AS "pendingStorageBytes", usage.observed_at AS "observedAt"
+      FROM public.list_staff_workspace_customers(NULL, 1, NULL, 'all', ${workspaceId}::UUID) AS workspace
+      CROSS JOIN LATERAL public.staff_workspace_usage(workspace.id) AS usage
+    `,
+    );
+    return rows[0] ? mapStaffWorkspaceDetail(rows[0]) : undefined;
   }
 
   async listBillingAccounts(

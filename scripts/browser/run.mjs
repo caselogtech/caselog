@@ -16,6 +16,8 @@ databaseUrl.pathname = `/${databaseName}`;
 databaseUrl.search = '?schema=public';
 const applicationUrl = new URL(databaseUrl);
 applicationUrl.searchParams.set('options', '-c role=caselog_app');
+const managed = process.argv.includes('--managed');
+const browserArgs = process.argv.slice(2).filter((argument) => argument !== '--managed');
 const environment = {
   ...process.env,
   NODE_ENV: 'test',
@@ -24,7 +26,7 @@ const environment = {
   MIGRATION_DATABASE_URL: databaseUrl.toString(),
   DATABASE_URL: applicationUrl.toString(),
   JOB_DATABASE_URL: databaseUrl.toString(),
-  CASELOG_DEPLOYMENT_MODE: 'self_hosted',
+  CASELOG_DEPLOYMENT_MODE: managed ? 'managed' : 'self_hosted',
   CASELOG_REGISTRATION_MODE: 'public',
   CASELOG_WORKSPACE_CREATION_ENABLED: 'true',
   CASELOG_MANAGED_BILLING_ENABLED: 'false',
@@ -34,7 +36,12 @@ const environment = {
   INTEGRATION_CREDENTIAL_MASTER_KEY: randomBytes(32).toString('base64'),
   LOG_LEVEL: 'error',
 };
-delete environment.CASELOG_STAFF_BOOTSTRAP_EMAIL;
+if (managed) {
+  environment.CASELOG_STAFF_BOOTSTRAP_EMAIL = 'demo@caselog.local';
+  environment.CASELOG_STAFF_BOOTSTRAP_ACCESS_HOURS = '1';
+} else {
+  delete environment.CASELOG_STAFF_BOOTSTRAP_EMAIL;
+}
 const admin = new Client({ connectionString: process.env.MIGRATION_DATABASE_URL });
 await admin.connect();
 let created = false;
@@ -50,7 +57,7 @@ try {
       'test',
       '--config',
       'scripts/browser/playwright.config.ts',
-      ...process.argv.slice(2),
+      ...browserArgs,
     ],
   ]) {
     const exitCode = await run(args);

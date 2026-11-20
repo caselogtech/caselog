@@ -1,6 +1,6 @@
 # Caselog roadmap
 
-Product direction agreed on 2026-11-18; status reviewed on 2026-11-19. This roadmap
+Product direction agreed on 2026-11-18; status reviewed on 2026-11-20. This roadmap
 tracks implemented work and remaining acceptance, without promising launch dates.
 Checked items have passed their stated checkpoint. Unchecked items may have working
 foundations but still require implementation, verification or an operator decision.
@@ -12,7 +12,7 @@ foundations but still require implementation, verification or an operator decisi
 | Core MVP | Workspace/project management, manual and automated testing, immutable candidates, policies, evidence, readiness and waivers; local checks and tests pass. | Current-version clean-install/recovery drill and a complete first-user journey on the deployment artifacts. |
 | MCP | Fourteen tools, independent scopes, audit, replay-safe authoring and stdio → API → UI verification. | No further MCP expansion is scheduled; prioritize the baseline and pilot checkpoints below. |
 | Self-hosted operations | Docker artifacts, runtime roles, configuration tooling, backup/restore scripts and runbooks exist. | Rehearse the current revision, retain exact artifacts and record recovery evidence. |
-| Cloud pilot | Self-service workspaces, invitations, registration controls and billing-disabled operation exist. | Budget, measured resource limits, missing quota enforcement, deployment rehearsal and pilot terms. |
+| Cloud pilot | Self-service workspaces, invitations, registration controls, billing-disabled operation and a managed workspace directory with owner contacts/resource snapshots exist. | Budget, measured resource limits, missing quota enforcement, deployment rehearsal and pilot terms. |
 | Demand and monetization | Commercial direction is agreed. | Record pilot usage, costs and willingness to pay before deciding on a paid offer. |
 
 ## Product and business direction
@@ -122,6 +122,15 @@ These checks do not complete the deployment/recovery or cloud-pilot checkpoints.
   default. These controls do not provide a measured total storage or ingestion quota.
 - [x] Implement private metrics, structured logging, bounded background retries,
   dead-letter support and reconciliation. Pilot alerting and incident drills remain open.
+
+- [x] Verify the approved managed staff workspace directory: owner contacts, state
+  filters and timestamped resource snapshots, with live staff authorization, unchanged
+  tenant isolation and a managed API → browser journey. Counts do not measure engagement.
+
+Staff-directory acceptance passed locally on 2026-11-20: PostgreSQL/API isolation and
+revocation checks, UI state tests, managed browser discovery/detail/refresh/mobile
+coverage and existing self-hosted MCP/readiness journeys. The additive migration ran
+on existing and disposable empty databases. Deployment and pilot operations remain open.
 
 ### Pilot operations
 

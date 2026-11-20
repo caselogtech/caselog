@@ -7,6 +7,7 @@ import {
   staffSessionResponseSchema,
   staffUserListResponseSchema,
   staffWorkspaceListResponseSchema,
+  staffWorkspaceDetailResponseSchema,
 } from '@caselog/schemas';
 import { createZodDto } from 'nestjs-zod';
 
@@ -20,3 +21,7 @@ export class StaffBillingAccountListResponseDto extends createZodDto(
 export class StaffOperatorListResponseDto extends createZodDto(staffOperatorListResponseSchema) {}
 export class StaffOperatorResponseDto extends createZodDto(staffOperatorResponseSchema) {}
 export class StaffAuditLogListResponseDto extends createZodDto(staffAuditLogListResponseSchema) {}
+
+export class StaffWorkspaceDetailResponseDto extends createZodDto(
+  staffWorkspaceDetailResponseSchema,
+) {}

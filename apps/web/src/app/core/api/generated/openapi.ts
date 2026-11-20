@@ -1716,6 +1716,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/workspaces/{workspaceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StaffController_workspaceDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/billing-accounts": {
         parameters: {
             query?: never;
@@ -4788,8 +4804,49 @@ export interface components {
                 /** Format: date-time */
                 createdAt: string;
                 deletedAt: string | null;
+                owner: {
+                    /** Format: uuid */
+                    userId: string;
+                    email: string;
+                    displayName: string;
+                } | null;
             }[];
             nextCursor: string | null;
+        };
+        StaffWorkspaceDetailResponseDto: {
+            workspace: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+                billingAccount: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                } | null;
+                memberCount: number;
+                projectCount: number;
+                storageBytes: string;
+                /** Format: date-time */
+                createdAt: string;
+                deletedAt: string | null;
+                owner: {
+                    /** Format: uuid */
+                    userId: string;
+                    email: string;
+                    displayName: string;
+                } | null;
+            };
+            usage: {
+                testCases: number;
+                testRuns: number;
+                openTestRuns: number;
+                ingestions: number;
+                pendingUploads: number;
+                pendingStorageBytes: string;
+            };
+            /** Format: date-time */
+            observedAt: string;
         };
         StaffBillingAccountListResponseDto: {
             billingAccounts: {
@@ -9316,6 +9373,7 @@ export interface operations {
                 cursor?: string;
                 limit?: number;
                 q?: string;
+                state?: "all" | "current" | "deleted";
             };
             header?: never;
             path?: never;
@@ -9329,6 +9387,36 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StaffWorkspaceListResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    StaffController_workspaceDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffWorkspaceDetailResponseDto"];
                 };
             };
             /** @description API error */

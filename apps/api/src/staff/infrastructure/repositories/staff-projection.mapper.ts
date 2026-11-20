@@ -4,6 +4,7 @@ import type {
   StaffOperator,
   StaffUser,
   StaffWorkspace,
+  StaffWorkspaceDetailResponse,
 } from '@caselog/schemas';
 import type { Prisma } from '../../../generated/prisma/client';
 
@@ -38,6 +39,9 @@ export type StaffUserRow = Omit<
 };
 
 export type StaffWorkspaceRow = {
+  ownerUserId: string | null;
+  ownerEmail: string | null;
+  ownerDisplayName: string | null;
   id: string;
   name: string;
   slug: string;
@@ -121,6 +125,10 @@ export function mapStaffWorkspace(row: StaffWorkspaceRow): StaffWorkspace {
       row.billingAccountId && row.billingAccountName
         ? { id: row.billingAccountId, name: row.billingAccountName }
         : null,
+    owner:
+      row.ownerUserId && row.ownerEmail && row.ownerDisplayName
+        ? { userId: row.ownerUserId, email: row.ownerEmail, displayName: row.ownerDisplayName }
+        : null,
     memberCount: Number(row.memberCount),
     projectCount: Number(row.projectCount),
     storageBytes: row.storageBytes.toString(),
@@ -159,5 +167,32 @@ export function mapStaffAuditLog(row: StaffAuditLogRow): StaffAuditLog {
     reason: row.reason,
     metadata,
     createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export type StaffWorkspaceDetailRow = StaffWorkspaceRow & {
+  testCaseCount: bigint;
+  testRunCount: bigint;
+  openTestRunCount: bigint;
+  ingestionCount: bigint;
+  pendingUploadCount: bigint;
+  pendingStorageBytes: { toString(): string };
+  observedAt: Date;
+};
+
+export function mapStaffWorkspaceDetail(
+  row: StaffWorkspaceDetailRow,
+): StaffWorkspaceDetailResponse {
+  return {
+    workspace: mapStaffWorkspace(row),
+    usage: {
+      testCases: Number(row.testCaseCount),
+      testRuns: Number(row.testRunCount),
+      openTestRuns: Number(row.openTestRunCount),
+      ingestions: Number(row.ingestionCount),
+      pendingUploads: Number(row.pendingUploadCount),
+      pendingStorageBytes: row.pendingStorageBytes.toString(),
+    },
+    observedAt: row.observedAt.toISOString(),
   };
 }

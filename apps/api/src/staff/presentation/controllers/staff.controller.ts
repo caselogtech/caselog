@@ -22,6 +22,7 @@ import type {
   StaffSessionResponse,
   StaffUserListResponse,
   StaffWorkspaceListResponse,
+  StaffWorkspaceDetailResponse,
 } from '@caselog/schemas';
 import { SessionAuthGuard } from '../../../auth/public-api';
 import { StaffConsoleService } from '../../application/services/staff-console.service';
@@ -33,6 +34,8 @@ import {
   GrantStaffOperatorRequestDto,
   RevokeStaffOperatorRequestDto,
   StaffListQueryDto,
+  StaffWorkspaceListQueryDto,
+  StaffWorkspaceParamsDto,
   StaffOperatorParamsDto,
 } from '../dto/staff-request.dto';
 import {
@@ -44,6 +47,7 @@ import {
   StaffSessionResponseDto,
   StaffUserListResponseDto,
   StaffWorkspaceListResponseDto,
+  StaffWorkspaceDetailResponseDto,
 } from '../dto/staff-response.dto';
 
 @Controller('staff')
@@ -80,9 +84,19 @@ export class StaffController {
   @ApiOkResponse({ type: StaffWorkspaceListResponseDto })
   workspaces(
     @CurrentStaffOperator() operator: StaffOperator,
-    @Query() query: StaffListQueryDto,
+    @Query() query: StaffWorkspaceListQueryDto,
   ): Promise<StaffWorkspaceListResponse> {
     return this.staff.workspaces(operator, query);
+  }
+
+  @Get('workspaces/:workspaceId')
+  @RequireStaffRole('admin')
+  @ApiOkResponse({ type: StaffWorkspaceDetailResponseDto })
+  workspaceDetail(
+    @CurrentStaffOperator() operator: StaffOperator,
+    @Param() params: StaffWorkspaceParamsDto,
+  ): Promise<StaffWorkspaceDetailResponse> {
+    return this.staff.workspaceDetail(operator, params.workspaceId);
   }
 
   @Get('billing-accounts')

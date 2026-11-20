@@ -169,3 +169,7 @@ only that random project's volumes. It never seeds or modifies an existing insta
 Use `pnpm test:deployment --skip-build` only when the `hardening` images were just built
 from the code under test. This automated check does not replace an unfamiliar operator's
 installation exercise or a previous-release compatibility drill.
+
+For managed operator contacts and resource snapshots, see
+[Managed customer administration](ADMINISTRATION.md). This console is unavailable in
+self-hosted mode.

@@ -11,6 +11,7 @@ await mkdir(downloads, { recursive: true });
 // Tracked operator guides remain the source of truth for both GitHub and the website.
 const sources = [
   ['deploy/README.md', 'installation', 'Install Caselog'],
+  ['deploy/ADMINISTRATION.md', 'customer-administration', 'Managed customer administration'],
   ['deploy/RECOVERY.md', 'recovery', 'Backups, restores, and upgrades'],
   ['apps/cli/README.md', 'cli', 'CLI reference'],
   ['examples/ci/README.md', 'ci-examples', 'CI examples'],

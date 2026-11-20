@@ -1,16 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import type {
   StaffBillingAccountListResponse,
   StaffUserListResponse,
   StaffWorkspaceListResponse,
+  StaffWorkspaceListQuery,
 } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { apiErrorTranslationKey } from '../../../../shared/api/api-error';
 import { Button, PageState, StatusBadge } from '../../../../shared/ui/public-api';
 import { StaffApi } from '../../data-access/staff-api';
+import { StaffSession } from '../../state/staff-session';
 import { formatStaffBytes, formatStaffDate } from '../../domain/staff-format';
 
 type DirectoryResource = 'users' | 'workspaces' | 'billingAccounts';
@@ -21,13 +23,14 @@ type DirectoryResponse =
 
 @Component({
   selector: 'app-staff-directory',
-  imports: [Button, FormsModule, PageState, StatusBadge, TranslocoPipe],
+  imports: [Button, FormsModule, RouterLink, PageState, StatusBadge, TranslocoPipe],
   templateUrl: './staff-directory.html',
   styleUrl: './staff-directory.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffDirectory {
   private readonly route = inject(ActivatedRoute);
+  private readonly staffSession = inject(StaffSession);
   private readonly staffApi = inject(StaffApi);
   // biome-ignore lint/complexity/useLiteralKeys: Angular route data is an index-signature contract.
   readonly resource = readResource(this.route.snapshot.data['resource']);
@@ -35,8 +38,18 @@ export class StaffDirectory {
   readonly cursorHistory = signal<string[]>([]);
   readonly searchDraft = signal('');
   readonly search = signal('');
+  readonly searchError = signal(false);
+  readonly workspaceState = signal<StaffWorkspaceListQuery['state']>('all');
   readonly directory = injectQuery(() => ({
-    queryKey: ['staff', this.resource, this.cursor(), this.search()],
+    queryKey: [
+      'staff',
+      this.staffSession.operator()?.userId,
+      this.staffSession.operator()?.role,
+      this.resource,
+      this.cursor(),
+      this.search(),
+      this.workspaceState(),
+    ],
     queryFn: () => this.load(),
   }));
   readonly users = computed(() => {
@@ -58,14 +71,24 @@ export class StaffDirectory {
   readonly formatBytes = formatStaffBytes;
 
   applySearch(): void {
+    const search = this.searchDraft().trim();
+    this.searchError.set(search.length > 0 && (search.length < 2 || search.length > 100));
+    if (this.searchError()) return;
     this.cursor.set(null);
     this.cursorHistory.set([]);
-    this.search.set(this.searchDraft().trim());
+    this.search.set(search);
   }
 
   clearSearch(): void {
     this.searchDraft.set('');
     this.applySearch();
+  }
+
+  changeWorkspaceState(value: unknown): void {
+    if (value !== 'all' && value !== 'current' && value !== 'deleted') return;
+    this.cursor.set(null);
+    this.cursorHistory.set([]);
+    this.workspaceState.set(value);
   }
 
   nextPage(): void {
@@ -94,7 +117,8 @@ export class StaffDirectory {
       q: this.search() || undefined,
     };
     if (this.resource === 'users') return this.staffApi.users(query);
-    if (this.resource === 'workspaces') return this.staffApi.workspaces(query);
+    if (this.resource === 'workspaces')
+      return this.staffApi.workspaces({ ...query, state: this.workspaceState() });
     return this.staffApi.billingAccounts(query);
   }
 }

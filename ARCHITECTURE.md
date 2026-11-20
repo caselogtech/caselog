@@ -351,6 +351,15 @@ and a permanent free cloud tier remain undecided. [ROADMAP.md](ROADMAP.md) defin
 acceptance checkpoints; operational safety limits remain independent of payment and
 cannot alter readiness outcomes or silently remove accepted historical evidence.
 
+### Managed customer administration
+
+The `staff` module exposes a managed-only, read-only workspace directory and resource
+snapshots to expiring staff admins and owners. Narrow database projections return
+current owner contacts and aggregate usage; they never grant tenant membership or
+customer-content access. Self-hosted installations expose neither staff API nor UI.
+The accepted [workspace directory decision](architecture/decisions/20261120-staff-workspace-directory.md)
+defines allowed metadata, counter semantics, compatibility and recovery.
+
 ### Workspace API tokens
 
 Organization tokens have explicit endpoint scopes. `candidates:write` allows

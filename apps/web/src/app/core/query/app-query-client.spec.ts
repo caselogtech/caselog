@@ -2,6 +2,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { createAppQueryClient } from './app-query-client';
 
 describe('createAppQueryClient', () => {
+  it('lets pages handle query failures without a global redirect when requested', async () => {
+    const onRouteFailure = vi.fn();
+    const client = createAppQueryClient(onRouteFailure);
+    await expect(
+      client.fetchQuery({
+        queryKey: ['staff', 'workspace', 'missing'],
+        queryFn: () => Promise.reject(new Error('Workspace missing')),
+        retry: false,
+        meta: { handleErrorsLocally: true },
+      }),
+    ).rejects.toThrow('Workspace missing');
+    expect(onRouteFailure).not.toHaveBeenCalled();
+    client.clear();
+  });
+
   it('reports an initial route query failure', async () => {
     const onRouteFailure = vi.fn();
     const client = createAppQueryClient(onRouteFailure);

@@ -27,6 +27,13 @@ export const staffRoutes: Routes = [
         loadComponent: directoryPage,
       },
       {
+        path: 'workspaces/:workspaceId',
+        loadComponent: () =>
+          import('./pages/workspace-detail/staff-workspace-detail').then(
+            ({ StaffWorkspaceDetail }) => StaffWorkspaceDetail,
+          ),
+      },
+      {
         path: 'billing-accounts',
         data: { resource: 'billingAccounts' },
         loadComponent: directoryPage,

@@ -19,6 +19,9 @@ import {
   type StaffUserListResponse,
   staffUserListResponseSchema,
   type StaffWorkspaceListResponse,
+  type StaffWorkspaceListQuery,
+  type StaffWorkspaceDetailResponse,
+  staffWorkspaceDetailResponseSchema,
   staffWorkspaceListResponseSchema,
 } from '@caselog/schemas';
 import { lastValueFrom } from 'rxjs';
@@ -47,10 +50,20 @@ export class StaffApi {
     );
   }
 
-  async workspaces(query: Partial<StaffListQuery>): Promise<StaffWorkspaceListResponse> {
+  async workspaces(query: Partial<StaffWorkspaceListQuery>): Promise<StaffWorkspaceListResponse> {
     return staffWorkspaceListResponseSchema.parse(
       await lastValueFrom(
-        this.http.get<unknown>('/api/v1/staff/workspaces', { params: listParams(query) }),
+        this.http.get<unknown>('/api/v1/staff/workspaces', {
+          params: listParams(query).set('state', query.state ?? 'all'),
+        }),
+      ),
+    );
+  }
+
+  async workspaceDetail(workspaceId: string): Promise<StaffWorkspaceDetailResponse> {
+    return staffWorkspaceDetailResponseSchema.parse(
+      await lastValueFrom(
+        this.http.get<unknown>(`/api/v1/staff/workspaces/${encodeURIComponent(workspaceId)}`),
       ),
     );
   }

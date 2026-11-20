@@ -1,0 +1,127 @@
+.staff-page {
+  margin: 0 auto;
+  max-width: calc(var(--content-width) + 2 * var(--content-gutter));
+  padding: var(--space-6) var(--content-gutter);
+  overflow-wrap: anywhere;
+}
+
+a {
+  color: var(--color-accent-700);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+h2 {
+  font-size: var(--font-size-lg);
+}
+
+.page-header {
+  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+  margin-block: var(--space-5);
+}
+
+.page-header p,
+.usage > p,
+dt {
+  color: var(--text-2);
+}
+.page-header p {
+  margin-block: var(--space-2);
+}
+
+.identity,
+.metric-grid article {
+  background: var(--surface-2);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+
+.identity {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: 1fr 2fr;
+}
+.identity article {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+dl {
+  margin: 0;
+  min-width: 0;
+}
+dl > div {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: 1fr 2fr;
+  padding-block: var(--space-2);
+}
+dd {
+  margin: 0;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.usage {
+  margin-top: var(--space-6);
+}
+.usage > p {
+  margin-top: var(--space-2);
+}
+.metric-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: var(--space-4);
+}
+.metric-grid article {
+  display: grid;
+  gap: var(--space-3);
+}
+.metric-grid span {
+  color: var(--text-2);
+  font-size: var(--font-size-sm);
+}
+.metric-grid strong {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xl);
+}
+.explanation {
+  line-height: 1.6;
+}
+.security-note {
+  border-left: 4px solid var(--accent);
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  background: var(--color-accent-100);
+}
+
+@media (max-width: 800px) {
+  .identity {
+    grid-template-columns: 1fr;
+  }
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .metric-grid,
+  dl > div {
+    grid-template-columns: 1fr;
+  }
+}

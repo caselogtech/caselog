@@ -4,6 +4,11 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Add managed staff workspace cards with owner contacts, lifecycle filters and
+  timestamped aggregate resource usage, protected by live staff admin/owner grants.
+  Self-hosted mode remains unchanged. Apply migration
+  `20261120090000_staff_workspace_directory` before new artifacts.
+
 - Extend MCP with suite and nested-section creation, independent `structure:write`
   access, atomic audit and replay-safe writes. Existing browser clients remain
   compatible. Apply migration `20261119190000_mcp_structure_scope` before new binaries.

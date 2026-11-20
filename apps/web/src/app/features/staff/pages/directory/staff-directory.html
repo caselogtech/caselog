@@ -12,6 +12,9 @@
           id="staff-search"
           name="staff-search"
           type="search"
+          maxlength="100"
+          [attr.aria-invalid]="searchError()"
+          [attr.aria-describedby]="searchError() ? 'staff-search-error' : null"
           [placeholder]="'staff.directory.searchPlaceholder' | transloco"
           [ngModel]="searchDraft()"
           (ngModelChange)="searchDraft.set($event)"
@@ -21,8 +24,22 @@
           <button type="button" appButton="quiet" (click)="clearSearch()">{{ 'staff.actions.clear' | transloco }}</button>
         }
       </div>
+      @if (searchError()) {
+        <p id="staff-search-error" role="alert">{{ 'staff.directory.searchError' | transloco }}</p>
+      }
     </form>
   </header>
+
+  @if (resource === 'workspaces') {
+    <div class="workspace-filter">
+      <label for="workspace-state">{{ 'staff.directory.workspaceState' | transloco }}</label>
+      <select id="workspace-state" [ngModel]="workspaceState()" (ngModelChange)="changeWorkspaceState($event)">
+        <option value="all">{{ 'staff.values.allWorkspaces' | transloco }}</option>
+        <option value="current">{{ 'staff.values.current' | transloco }}</option>
+        <option value="deleted">{{ 'staff.values.deleted' | transloco }}</option>
+      </select>
+    </div>
+  }
 
   @if (directory.isPending()) {
     <app-page-state [title]="'staff.states.loadingTitle' | transloco" [message]="'staff.states.loadingDirectory' | transloco" />
@@ -57,6 +74,7 @@
         } @else if (resource === 'workspaces') {
           <thead><tr>
             <th>{{ 'staff.columns.workspace' | transloco }}</th>
+            <th>{{ 'staff.columns.owner' | transloco }}</th>
             <th>{{ 'staff.columns.billingAccount' | transloco }}</th>
             <th>{{ 'staff.columns.members' | transloco }}</th>
             <th>{{ 'staff.columns.projects' | transloco }}</th>
@@ -66,14 +84,20 @@
           <tbody>
             @for (workspace of workspaces(); track workspace.id) {
               <tr>
-                <td><strong>{{ workspace.name }}</strong><span>/{{ workspace.slug }}</span><code>{{ workspace.id }}</code></td>
-                <td>{{ workspace.billingAccount?.name ?? ('staff.values.selfHosted' | transloco) }}</td>
+                <td><a href="/staff/workspaces/{{ workspace.id }}" [routerLink]="['/staff/workspaces', workspace.id]"><strong>{{ workspace.name }}</strong></a><span>/{{ workspace.slug }}</span><code>{{ workspace.id }}</code></td>
+                <td>
+                  @if (workspace.owner; as owner) {
+                    <strong>{{ owner.displayName }}</strong>
+                    <a href="mailto:{{ owner.email }}">{{ owner.email }}</a>
+                  } @else { <span>{{ 'staff.workspace.noOwner' | transloco }}</span> }
+                </td>
+                <td>{{ workspace.billingAccount?.name ?? ('staff.workspace.noBillingAccount' | transloco) }}</td>
                 <td class="numeric">{{ workspace.memberCount }}</td>
                 <td class="numeric">{{ workspace.projectCount }}</td>
                 <td>{{ formatBytes(workspace.storageBytes) }}</td>
-                <td><app-status-badge [tone]="workspace.deletedAt ? 'neutral' : 'success'" [label]="(workspace.deletedAt ? 'staff.values.deleted' : 'staff.values.active') | transloco" /></td>
+                <td><app-status-badge [tone]="workspace.deletedAt ? 'neutral' : 'success'" [label]="(workspace.deletedAt ? 'staff.values.deleted' : 'staff.values.current') | transloco" /></td>
               </tr>
-            } @empty { <tr><td class="empty" colspan="6">{{ emptyKey | transloco }}</td></tr> }
+            } @empty { <tr><td class="empty" colspan="7">{{ emptyKey | transloco }}</td></tr> }
           </tbody>
         } @else {
           <thead><tr>

@@ -1,0 +1,58 @@
+<main class="staff-page" aria-labelledby="staff-workspace-title">
+  <a href="/staff/workspaces" routerLink="/staff/workspaces">{{ 'staff.workspace.back' | transloco }}</a>
+  <div aria-live="polite" [attr.aria-busy]="detail.isFetching()">
+  @if (detail.isPending()) {
+    <h1 id="staff-workspace-title">{{ 'staff.workspace.title' | transloco }}</h1>
+    <app-page-state [title]="'staff.states.loadingTitle' | transloco" [message]="'staff.workspace.loading' | transloco" />
+  } @else if (detail.isError()) {
+    <h1 id="staff-workspace-title">{{ 'staff.workspace.title' | transloco }}</h1>
+    <app-page-state [title]="'staff.states.errorTitle' | transloco" [message]="errorKey() | transloco">
+      <button actions type="button" appButton="secondary" (click)="detail.refetch()">{{ 'staff.actions.retry' | transloco }}</button>
+    </app-page-state>
+  } @else if (detail.data(); as data) {
+    <header class="page-header">
+      <div>
+        <h1 id="staff-workspace-title">{{ data.workspace.name }}</h1>
+        <p>/{{ data.workspace.slug }}</p>
+        <app-status-badge [tone]="data.workspace.deletedAt ? 'neutral' : 'success'" [label]="(data.workspace.deletedAt ? 'staff.values.deleted' : 'staff.values.current') | transloco" />
+      </div>
+      <button type="button" appButton="secondary" [disabled]="detail.isFetching()" (click)="detail.refetch()">
+        {{ (detail.isFetching() ? 'staff.workspace.refreshing' : 'staff.workspace.refresh') | transloco }}
+      </button>
+    </header>
+
+    <section class="identity" [attr.aria-label]="'staff.workspace.identity' | transloco">
+      <article>
+        <h2>{{ 'staff.columns.owner' | transloco }}</h2>
+        @if (data.workspace.owner; as owner) {
+          <strong>{{ owner.displayName }}</strong>
+          <a href="mailto:{{ owner.email }}">{{ owner.email }}</a>
+        } @else { <p>{{ 'staff.workspace.noOwner' | transloco }}</p> }
+      </article>
+      <dl>
+        <div><dt>{{ 'staff.workspace.id' | transloco }}</dt><dd><code>{{ data.workspace.id }}</code></dd></div>
+        <div><dt>{{ 'staff.columns.created' | transloco }}</dt><dd>{{ formatDate(data.workspace.createdAt) }}</dd></div>
+        @if (data.workspace.deletedAt) {
+          <div><dt>{{ 'staff.workspace.deletedAt' | transloco }}</dt><dd>{{ formatDate(data.workspace.deletedAt) }}</dd></div>
+        }
+        <div><dt>{{ 'staff.columns.billingAccount' | transloco }}</dt><dd>{{ data.workspace.billingAccount?.name ?? ('staff.workspace.noBillingAccount' | transloco) }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="usage" aria-labelledby="staff-workspace-usage">
+      <h2 id="staff-workspace-usage">{{ 'staff.workspace.usage' | transloco }}</h2>
+      <p>{{ 'staff.workspace.observedAt' | transloco: { date: formatDate(data.observedAt) } }}</p>
+      <div class="metric-grid">
+        @for (metric of metrics(); track metric.key) {
+          <article><span>{{ metric.key | transloco }}</span><strong>{{ metric.value }}</strong></article>
+        }
+        <article><span>{{ 'staff.overview.storage' | transloco }}</span><strong>{{ formatBytes(data.workspace.storageBytes) }}</strong></article>
+        <article><span>{{ 'staff.workspace.pendingUploads' | transloco }}</span><strong>{{ data.usage.pendingUploads }}</strong></article>
+        <article><span>{{ 'staff.workspace.pendingStorage' | transloco }}</span><strong>{{ formatBytes(data.usage.pendingStorageBytes) }}</strong></article>
+      </div>
+      <p class="explanation">{{ 'staff.workspace.usageDescription' | transloco }}</p>
+    </section>
+    <p class="security-note">{{ 'staff.overview.securityDescription' | transloco }}</p>
+  }
+  </div>
+</main>

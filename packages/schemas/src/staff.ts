@@ -36,6 +36,11 @@ export const staffListQuerySchema = z.object({
   q: z.string().trim().min(2).max(100).optional(),
 });
 
+export const staffWorkspaceListQuerySchema = staffListQuerySchema.extend({
+  state: z.enum(['all', 'current', 'deleted']).default('all'),
+});
+export const staffWorkspaceParamsSchema = z.object({ workspaceId: z.uuid() });
+
 export const staffUserSchema = z.object({
   id: z.uuid(),
   email: emailSchema,
@@ -62,11 +67,27 @@ export const staffWorkspaceSchema = z.object({
   storageBytes: z.string().regex(/^\d+$/),
   createdAt: z.iso.datetime(),
   deletedAt: z.iso.datetime().nullable(),
+  owner: z
+    .object({ userId: z.uuid(), email: emailSchema, displayName: z.string().min(1).max(120) })
+    .nullable(),
 });
 
 export const staffWorkspaceListResponseSchema = z.object({
   workspaces: z.array(staffWorkspaceSchema),
   nextCursor: z.uuid().nullable(),
+});
+
+export const staffWorkspaceDetailResponseSchema = z.object({
+  workspace: staffWorkspaceSchema,
+  usage: z.object({
+    testCases: z.number().int().nonnegative(),
+    testRuns: z.number().int().nonnegative(),
+    openTestRuns: z.number().int().nonnegative(),
+    ingestions: z.number().int().nonnegative(),
+    pendingUploads: z.number().int().nonnegative(),
+    pendingStorageBytes: z.string().regex(/^\d+$/),
+  }),
+  observedAt: z.iso.datetime(),
 });
 
 export const staffBillingAccountSchema = z.object({
@@ -133,6 +154,8 @@ export type StaffUser = z.infer<typeof staffUserSchema>;
 export type StaffUserListResponse = z.infer<typeof staffUserListResponseSchema>;
 export type StaffWorkspace = z.infer<typeof staffWorkspaceSchema>;
 export type StaffWorkspaceListResponse = z.infer<typeof staffWorkspaceListResponseSchema>;
+export type StaffWorkspaceListQuery = z.infer<typeof staffWorkspaceListQuerySchema>;
+export type StaffWorkspaceDetailResponse = z.infer<typeof staffWorkspaceDetailResponseSchema>;
 export type StaffBillingAccount = z.infer<typeof staffBillingAccountSchema>;
 export type StaffBillingAccountListResponse = z.infer<typeof staffBillingAccountListResponseSchema>;
 export type StaffOperatorListResponse = z.infer<typeof staffOperatorListResponseSchema>;

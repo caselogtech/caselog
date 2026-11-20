@@ -20,6 +20,9 @@ import {
   type StaffSessionResponse,
   type StaffUserListResponse,
   type StaffWorkspaceListResponse,
+  type StaffWorkspaceListQuery,
+  type StaffWorkspaceDetailResponse,
+  staffWorkspaceDetailResponseSchema,
 } from '@caselog/schemas';
 import {
   InvalidPayloadError,
@@ -57,13 +60,22 @@ export class StaffConsoleService {
 
   async workspaces(
     operator: StaffOperator,
-    query: StaffListQuery,
+    query: StaffWorkspaceListQuery,
   ): Promise<StaffWorkspaceListResponse> {
     const page = await this.staff.listWorkspaces(operator.userId, query);
     return staffWorkspaceListResponseSchema.parse({
       workspaces: page.items,
       nextCursor: page.nextCursor,
     });
+  }
+
+  async workspaceDetail(
+    operator: StaffOperator,
+    workspaceId: string,
+  ): Promise<StaffWorkspaceDetailResponse> {
+    const result = await this.staff.workspaceDetail(operator.userId, workspaceId);
+    if (!result) throw new ResourceNotFoundError('staff_workspace');
+    return staffWorkspaceDetailResponseSchema.parse(result);
   }
 
   async billingAccounts(

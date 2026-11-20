@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { BrowserSession } from '../../../../core/auth/browser-session';
 import { sessionAuthInterceptor } from '../../../../core/auth/session-auth.interceptor';
+import { workspaceDetail } from '../support/staff-workspace.fixture';
 import { StaffApi } from '../../data-access/staff-api';
 
 describe('StaffApi', () => {
@@ -34,6 +35,40 @@ describe('StaffApi', () => {
     request.flush({ users: [], nextCursor: null });
 
     await expect(response).resolves.toEqual({ users: [], nextCursor: null });
+  });
+
+  it('validates workspace snapshots and uses the session token', async () => {
+    const response = TestBed.inject(StaffApi).workspaceDetail(workspaceDetail.workspace.id);
+    const request = TestBed.inject(HttpTestingController).expectOne(
+      `/api/v1/staff/workspaces/${workspaceDetail.workspace.id}`,
+    );
+    expect(request.request.headers.get('Authorization')).toBe('Bearer browser-access-token');
+    request.flush(workspaceDetail);
+    await expect(response).resolves.toEqual(workspaceDetail);
+  });
+
+  it('forwards lifecycle filtering and validates owner contacts', async () => {
+    const response = TestBed.inject(StaffApi).workspaces({
+      state: 'current',
+      q: 'owner@example.com',
+    });
+    const request = TestBed.inject(HttpTestingController).expectOne(
+      ({ url }) => url === '/api/v1/staff/workspaces',
+    );
+    expect(request.request.params.get('state')).toBe('current');
+    request.flush({ workspaces: [workspaceDetail.workspace], nextCursor: null });
+    await expect(response).resolves.toMatchObject({
+      workspaces: [{ owner: workspaceDetail.workspace.owner }],
+    });
+  });
+
+  it('rejects malformed usage from the API', async () => {
+    const response = TestBed.inject(StaffApi).workspaceDetail(workspaceDetail.workspace.id);
+    const check = expect(response).rejects.toThrow();
+    TestBed.inject(HttpTestingController)
+      .expectOne(`/api/v1/staff/workspaces/${workspaceDetail.workspace.id}`)
+      .flush({ ...workspaceDetail, usage: { ...workspaceDetail.usage, testRuns: -1 } });
+    await check;
   });
 
   it('sends the required reason when revoking an operator', async () => {

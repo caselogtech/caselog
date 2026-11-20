@@ -6,6 +6,8 @@ export function createAppQueryClient(onRouteFailure: (error: unknown) => void): 
   return new QueryClient({
     queryCache: new QueryCache({
       onError: (error, query) => {
+        // biome-ignore lint/complexity/useLiteralKeys: Query metadata has an index-signature contract.
+        if (query.meta?.['handleErrorsLocally'] === true) return;
         if (query.state.data === undefined) onRouteFailure(error);
       },
     }),

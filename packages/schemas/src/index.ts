@@ -278,6 +278,9 @@ export {
   staffUserSchema,
   staffWorkspaceListResponseSchema,
   staffWorkspaceSchema,
+  staffWorkspaceListQuerySchema,
+  staffWorkspaceParamsSchema,
+  staffWorkspaceDetailResponseSchema,
   type GrantStaffOperatorRequest,
   type RevokeStaffOperatorRequest,
   type StaffAuditLog,
@@ -296,6 +299,8 @@ export {
   type StaffUserListResponse,
   type StaffWorkspace,
   type StaffWorkspaceListResponse,
+  type StaffWorkspaceListQuery,
+  type StaffWorkspaceDetailResponse,
 } from './staff.js';
 export { organizationIdSchema, type OrganizationId } from './organization.js';
 export type {
