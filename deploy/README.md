@@ -17,14 +17,15 @@ Provide two HTTPS origins and a real SMTP service. The host TLS proxy forwards:
 - `https://caselog.example.com` to `127.0.0.1:8080` (web and `/api/v1`).
 - `https://objects.example.com` to `127.0.0.1:9090` (S3 object transfers).
 
-Keep PostgreSQL, the API, MinIO console and metrics private. Bind ports to loopback as
+Keep PostgreSQL, the API, SeaweedFS control ports and metrics private. Bind ports to loopback as
 in the supplied Compose file. A host-level Caddy example is in [Caddyfile](Caddyfile).
 Use your existing TLS proxy if preferred; preserve `Host` on storage requests. S3
-signatures require a dedicated origin, not an `/s3` prefix or URL rewriting. See
-[MinIO's proxy guidance](https://min.io/docs/minio/linux/integrations/setup-nginx-proxy-with-minio.html).
+signatures require a dedicated origin, not an `/s3` prefix or URL rewriting. Only the S3
+port is published; master, volume, filer, gRPC and admin endpoints must never be exposed
+through the public proxy.
 The bundled storage instance is dedicated to Caselog and uses its generated credentials;
 do not share it with unrelated applications. Internal S3 traffic stays on the Docker
-network. Presigned URLs use `S3_PUBLIC_ENDPOINT` and never expose `http://minio:9000`.
+network. Presigned URLs use `S3_PUBLIC_ENDPOINT` and never expose `http://seaweedfs:9000`.
 
 The expected client address chain is client → host TLS proxy → web → API. The TLS
 proxy must replace untrusted forwarded headers. `API_TRUST_PROXY_HOPS=2` matches this
@@ -32,6 +33,13 @@ chain; update it if the topology changes. Never expose a shorter path to the API
 trusting two hops. The direct development server defaults to trusting no proxy headers.
 
 ## Clean install
+
+This stack uses SeaweedFS 4.54, pinned by digest, with authenticated S3 on port 9000.
+Its complete data and filer metadata live in the new `seaweedfs-data` volume.
+Existing MinIO installations must follow [Storage migration](STORAGE-MIGRATION.md)
+before upgrade; their old object volume is retained and never reused by SeaweedFS.
+Browser CORS permits only `WEB_BASE_URL`. WebDAV, Iceberg, Lance, the IAM API, the
+admin UI and anonymous telemetry are disabled. This is one storage node without HA.
 
 Check out an exact reviewed commit. Run from the repository root:
 
@@ -169,6 +177,13 @@ only that random project's volumes. It never seeds or modifies an existing insta
 Use `pnpm test:deployment --skip-build` only when the `hardening` images were just built
 from the code under test. This automated check does not replace an unfamiliar operator's
 installation exercise or a previous-release compatibility drill.
+
+If a local parallel Docker build fails with a missing parent snapshot during image
+export, run the check with serialized builds instead of deleting unrelated caches:
+
+```bash
+COMPOSE_BAKE=false COMPOSE_PARALLEL_LIMIT=1 pnpm test:deployment
+```
 
 For managed operator contacts and resource snapshots, see
 [Managed customer administration](ADMINISTRATION.md). This console is unavailable in

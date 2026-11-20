@@ -25,7 +25,7 @@ and marks are covered separately by [TRADEMARKS.md](TRADEMARKS.md).
 Production Angular builds generate `3rdpartylicenses.txt`, including the IBM Plex Mono
 notice. The web image serves this file, the root license and a source archive alongside
 the UI. The API image retains dependency license files and the corresponding project
-source archive. Container base images, PostgreSQL and MinIO are independent upstream
+source archive. Container base images, PostgreSQL and SeaweedFS are independent upstream
 artifacts with their own notices and source-distribution terms; retain those when
 redistributing a complete deployment. A pinned dependency version is not a blanket
 license approval for a future replacement or update.

@@ -4,6 +4,12 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Replace bundled MinIO with digest-pinned SeaweedFS 4.54 in development, CI and
+  self-hosted Compose. Keep the S3/API contracts and add a streaming, resumable
+  copy-and-verify tool. Existing installations require the
+  [storage migration](deploy/STORAGE-MIGRATION.md); physical backups now use format 2.
+  Old MinIO volumes are retained. Exclude local caches from Docker/source archives.
+
 - Preserve staff directory search, filters and pagination in shareable URLs and
   through card navigation. Add owner-only staff audit filters for operator, action,
   target and UTC time, with persistent filter URLs and pagination. Apply migration

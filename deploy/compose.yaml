@@ -48,19 +48,32 @@ services:
     depends_on:
       migrate: { condition: service_completed_successfully }
 
-  minio:
-    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
-    command: server /data --console-address ':9001'
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.54@sha256:4b42c212543a0acd4c0e675215ecdcaf62a186ef98def76c7e12701871222d15
+    command:
+      - mini
+      - -dir=/data
+      - -ip=127.0.0.1
+      - -s3.port=9000
+      - -s3.allowedOrigins=${WEB_BASE_URL:?Set the HTTPS web origin}
+      - -s3.iam=false
+      - -s3.port.iceberg=0
+      - -s3.port.lance=0
+      - -webdav=false
+      - -admin.ui=false
+      - -master.telemetry=false
     restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?Generate secrets first}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?Generate secrets first}
-      MINIO_API_CORS_ALLOW_ORIGIN: ${WEB_BASE_URL:?Set the HTTPS web origin}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?Generate secrets first}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?Generate secrets first}
+      S3_BUCKET: caselog
     # Only an operator-controlled TLS reverse proxy should expose this port.
     ports: ['127.0.0.1:${S3_BIND_PORT:-9090}:9000']
-    volumes: [object-data:/data]
+    volumes: [seaweedfs-data:/data]
     healthcheck:
-      test: [CMD, mc, ready, local]
+      test:
+        - CMD-SHELL
+        - 'curl -fsS --head --output /dev/null --aws-sigv4 aws:amz:us-east-1:s3 --user "$$AWS_ACCESS_KEY_ID:$$AWS_SECRET_ACCESS_KEY" "http://127.0.0.1:9000/$$S3_BUCKET"'
       interval: 5s
       timeout: 5s
       retries: 20
@@ -91,7 +104,7 @@ services:
       AUTH_ORGANIZATION_TOKEN_SECRET: ${AUTH_ORGANIZATION_TOKEN_SECRET:?Generate secrets first}
       INTEGRATION_CREDENTIAL_MASTER_KEY: ${INTEGRATION_CREDENTIAL_MASTER_KEY:?Generate secrets first}
       INTEGRATION_ALLOW_PRIVATE_NETWORKS: 'false'
-      S3_ENDPOINT: http://minio:9000
+      S3_ENDPOINT: http://seaweedfs:9000
       S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:?Set the HTTPS storage origin}
       S3_REGION: us-east-1
       S3_BUCKET: caselog
@@ -108,7 +121,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
     depends_on:
       database-access: { condition: service_completed_successfully }
-      minio: { condition: service_healthy }
+      seaweedfs: { condition: service_healthy }
 
   web:
     image: caselog-web:${CASELOG_VERSION}
@@ -126,4 +139,4 @@ services:
 
 volumes:
   postgres-data:
-  object-data:
+  seaweedfs-data:

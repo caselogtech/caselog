@@ -60,7 +60,7 @@ export async function verifyRecovery({
       /checksum mismatch/u,
     );
     await writeFile(join(backup, 'configuration.env'), configuration);
-    await compose('stop', 'web', 'api', 'minio', 'postgres', 'mailpit');
+    await compose('stop', 'web', 'api', 'seaweedfs', 'postgres', 'mailpit');
     await script('restore', ['--project', target, '--backup', backup]);
     assert.equal((await restored('ps', '-q')).stdout.trim(), '', 'Restore must not start services');
     await restored('up', '-d', '--wait', '--wait-timeout', '180');

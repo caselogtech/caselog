@@ -523,6 +523,14 @@ private. TLS terminates at the host proxy; a bounded forwarded-header trust chai
 that topology. Browser S3 signatures use a public HTTPS origin independently of the API's
 private storage endpoint. Configuration and persistent data never enter application images.
 
+Bundled development and production storage uses digest-pinned SeaweedFS with the same
+S3 adapter and `StorageProvider` contract. Objects and filer metadata share a dedicated
+SeaweedFS volume. MinIO physical volumes/backups are incompatible: migrate through S3,
+preserving keys, metadata and verified SHA-256 bytes before switching endpoints.
+See [the storage decision](architecture/decisions/20261120-seaweedfs-storage.md) and
+[migration/recovery procedure](deploy/STORAGE-MIGRATION.md). Core domain, tenancy,
+attachment history and database schema remain independent of the storage server.
+
 ## 10. Public documentation
 
 `apps/docs` is a separately built static documentation site using Astro Starlight. It

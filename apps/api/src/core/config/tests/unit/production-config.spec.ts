@@ -9,7 +9,7 @@ afterEach(() => vi.unstubAllEnvs());
 describe('production infrastructure configuration', () => {
   beforeEach(() => {
     vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('S3_ENDPOINT', 'http://minio:9000');
+    vi.stubEnv('S3_ENDPOINT', 'http://seaweedfs:9000');
     vi.stubEnv('S3_PUBLIC_ENDPOINT', 'https://objects.example.com');
     vi.stubEnv('S3_REGION', 'us-east-1');
     vi.stubEnv('S3_BUCKET', 'caselog');

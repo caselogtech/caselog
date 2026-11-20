@@ -19,6 +19,9 @@ pnpm db:seed
 pnpm dev
 ```
 
+Existing MinIO installations must follow [the storage migration guide](deploy/STORAGE-MIGRATION.md)
+before starting the updated stack. Never attach a MinIO volume to SeaweedFS.
+
 The seed is for disposable development data only. Do not overwrite an existing `.env`.
 Use a separate empty PostgreSQL database for integration tests and configure
 `MIGRATION_DATABASE_URL`, `DATABASE_URL` with the `caselog_app` role, and `JOB_DATABASE_URL`
@@ -28,7 +31,7 @@ for that database. Local services are available at these addresses:
 - API health: `http://localhost:3000/api/v1/health`
 - OpenAPI UI: `http://localhost:3000/api/v1/docs`
 - OpenAPI JSON: `http://localhost:3000/api/v1/openapi.json`
-- MinIO console: `http://localhost:9001`
+- SeaweedFS S3 endpoint: `http://localhost:9000` (authenticated; no public storage console)
 - Mailpit: `http://localhost:8025`
 
 Use `pnpm docs:dev` for the [documentation site](apps/docs/README.md) and

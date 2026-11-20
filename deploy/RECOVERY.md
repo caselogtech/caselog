@@ -1,10 +1,16 @@
 # Backup, restore and upgrades
 
 These scripts support the bundled single-host Compose deployment, its named volumes,
-and the pinned PostgreSQL/MinIO images. They are **offline physical snapshots**, not
+and the pinned PostgreSQL/SeaweedFS images. They are **offline physical snapshots**, not
 online backups, point-in-time recovery, cross-architecture migration or a PostgreSQL
 major-version upgrade mechanism. Do not apply them to external storage/databases or
 custom volume mappings without a separately tested backup procedure.
+
+SeaweedFS backups use manifest format `2` and `seaweedfs-data.tar.gz`, including
+both object bytes and filer metadata. Format `1` contains MinIO physical data and is
+deliberately refused by the new restore script. Restore it with its original checkout,
+images and configuration first, then follow [Storage migration](STORAGE-MIGRATION.md).
+Never extract a MinIO archive into a SeaweedFS volume.
 
 ## Backup
 
@@ -26,7 +32,7 @@ manifest last, then resumes only services that were previously running. A missin
 `manifest.json` means an incomplete backup. The manifest's `snapshotAt` records when
 all writers were stopped; `createdAt` records archive completion. If interrupted, services
 may remain stopped. If restart fails, inspect service health
-before reopening traffic. Never copy a live PostgreSQL or MinIO data directory directly.
+before reopening traffic. Never copy a live PostgreSQL or SeaweedFS data directory directly.
 
 The backup contains customer data, authentication material, storage credentials and the
 integration encryption key. Files are mode `0600` in a `0700` directory, but they are
@@ -35,7 +41,7 @@ and transfer a verified copy off-host. Protect transport and encryption keys sep
 Checksums detect damage; they do not authenticate an untrusted backup. Restore only
 archives from your trusted backup system.
 
-Retain the exact API, web, migration, PostgreSQL and MinIO images named in the manifest,
+Retain the exact API, web, migration, PostgreSQL and SeaweedFS images named in the manifest,
 plus this source checkout and operator configuration. Export local application images
 with `docker image save` or store them in your private registry. Do not overwrite version
 tags. A source revision alone does not preserve a previously built image ID. Keep TLS

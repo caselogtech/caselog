@@ -9,9 +9,9 @@ foundations but still require implementation, verification or an operator decisi
 
 | Area | Implemented and verified | Remaining |
 | --- | --- | --- |
-| Core MVP | Workspace/project management, manual and automated testing, immutable candidates, policies, evidence, readiness and waivers; local checks and tests pass. | Current-version clean-install/recovery drill and a complete first-user journey on the deployment artifacts. |
+| Core MVP | Workspace/project management, manual and automated testing, immutable candidates, policies, evidence, readiness and waivers; local checks, tests and automated deployment/recovery pass. | Independent operator rehearsal and a complete first-user journey on the deployment artifacts. |
 | MCP | Fourteen tools, independent scopes, audit, replay-safe authoring and stdio → API → UI verification. | No further MCP expansion is scheduled; prioritize the baseline and pilot checkpoints below. |
-| Self-hosted operations | Docker artifacts, runtime roles, configuration tooling, backup/restore scripts and runbooks exist. | Rehearse the current revision, retain exact artifacts and record recovery evidence. |
+| Self-hosted operations | Docker artifacts, runtime roles, digest-pinned SeaweedFS, S3 migration tooling and format-2 backup/restore pass the automated drill. | Independent operator rehearsal, durable artifact retention and operational recovery evidence. |
 | Cloud pilot | Self-service workspaces, invitations, registration controls, billing-disabled operation and a managed workspace directory with owner contacts/resource snapshots exist. | Budget, measured resource limits, missing quota enforcement, deployment rehearsal and pilot terms. |
 | Demand and monetization | Commercial direction is agreed. | Record pilot usage, costs and willingness to pay before deciding on a paid offer. |
 
@@ -59,17 +59,29 @@ integration remain undecided.
   CI → candidate → readiness → waiver/history and MCP authoring browser journeys.
 - [x] Provide self-hosted Docker artifacts, configuration tooling, separate runtime
   roles, offline backup/restore scripts and installation/recovery runbooks.
+- [x] Replace bundled MinIO with digest-pinned SeaweedFS in development, CI and
+  production Compose; verify S3 contracts, attachment workflows, copy-and-verify migration
+  and same-version physical recovery without reusing MinIO volumes.
 - [x] Provide the public documentation site, product website, REST/OpenAPI contracts,
   CLI and CI examples. Local builds pass; publication is a separate operator action.
 
 Local verification at `cad0338`: 673 tests and both browser journeys passed on
 2026-11-19. The MCP scope migrations passed on existing and empty databases. Existing
-lint and component CSS-budget warnings remain; these checks do not establish deployed
-capacity or successful recovery of the current application images.
+lint and component CSS-budget warnings remained; those checks did not establish deployed
+capacity or successful recovery of that revision's application images.
 
-### Operational acceptance still open
+Automated verification on 2026-11-20: 760 tests, all five browser journeys, `pnpm check`
+and `pnpm build` passed with SeaweedFS. The Docker drill passed clean install, TLS/SMTP/S3,
+runtime isolation, format-2 backup/restore, immutable history and object/queue preservation,
+including rejection of corrupt backups and nonempty restore targets. This host required
+`COMPOSE_BAKE=false COMPOSE_PARALLEL_LIMIT=1` for image builds after a parallel-export
+snapshot error. Real MinIO-to-SeaweedFS fixture migration passed, including replay,
+metadata/checksum verification and conflict/missing/extra-object rejection. Existing
+lint, CSS-budget and PostgreSQL-client deprecation warnings remain.
 
-- [ ] Run `pnpm test:deployment` for the current revision, including Docker image builds,
+### Operational acceptance
+
+- [x] Run `pnpm test:deployment` for the current revision, including Docker image builds,
   TLS/SMTP/S3 transfers, runtime role isolation and same-version recovery; resolve defects.
 - [ ] Rehearse clean installation and backup/restore with the documented runtime roles,
   tenant isolation, object storage and SMTP configuration. Restore into a separate
@@ -80,7 +92,7 @@ capacity or successful recovery of the current application images.
   API tests of individual steps do not complete this first-user deployment checkpoint.
 - [ ] Record verified artifacts, compatibility, recovery instructions, and known limits
   before retaining real team data. The runbooks and compatibility policy are written;
-  current deployment evidence and artifact retention remain to be completed.
+  independent operator evidence and durable artifact retention remain to be completed.
 
 **Acceptance checkpoint:** the documented installation and critical workflow pass end
 to end; recovery succeeds into a separate installation, tenant boundaries are proven,
@@ -234,7 +246,7 @@ managed billing disabled and make no paid launch commitment.
 
 ## Next work, in dependency order
 
-1. Complete section 1's current-version deployment/recovery drill and first-user journey;
+1. Complete section 1's independent operator rehearsal, artifact retention and first-user journey;
    record the exact revision, image IDs, results and remaining limitations.
 2. Measure representative pilot workloads, agree the infrastructure budget and limits,
    then implement and verify the missing resource enforcement in section 2.

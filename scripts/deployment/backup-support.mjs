@@ -7,8 +7,9 @@ import { pipeline } from 'node:stream/promises';
 import { parseArgs, promisify } from 'node:util';
 
 export const execute = promisify(execFile);
-export const volumeKeys = ['postgres-data', 'object-data'];
-export const imageServices = ['api', 'web', 'migrate', 'postgres', 'minio'];
+export const backupFormat = 2;
+export const volumeKeys = ['postgres-data', 'seaweedfs-data'];
+export const imageServices = ['api', 'web', 'migrate', 'postgres', 'seaweedfs'];
 
 export async function deployment(options) {
   const { values } = parseArgs({
@@ -102,9 +103,13 @@ export async function volumeArchive({ image, volume, path, restore = false }) {
 
 export async function verifiedManifest(directory) {
   const manifest = JSON.parse(await readFile(resolve(directory, 'manifest.json'), 'utf8'));
-  if (manifest.format !== 1 || !manifest.files || !manifest.images)
+  if (manifest.format === 1)
+    throw new Error(
+      'Restore MinIO backups with their original source checkout, then migrate through S3',
+    );
+  if (manifest.format !== backupFormat || !manifest.files || !manifest.images)
     throw new Error('Unsupported or incomplete backup');
-  for (const name of ['configuration.env', 'postgres-data.tar.gz', 'object-data.tar.gz']) {
+  for (const name of ['configuration.env', ...volumeKeys.map((key) => `${key}.tar.gz`)]) {
     if ((await checksum(resolve(directory, name))) !== manifest.files[name])
       throw new Error(`Backup checksum mismatch: ${name}`);
   }

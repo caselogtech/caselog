@@ -2,6 +2,7 @@ import { constants } from 'node:fs';
 import { chmod, copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
+  backupFormat,
   checksum,
   deployment,
   execute,
@@ -37,7 +38,7 @@ let stopped = false;
 try {
   console.log('Stopping API, web, object storage and PostgreSQL for a consistent offline snapshot');
   stopped = true;
-  await compose('stop', 'web', 'api', 'minio', 'postgres');
+  await compose('stop', 'web', 'api', 'seaweedfs', 'postgres');
   const snapshotAt = new Date().toISOString();
   await copyFile(
     resolve(values['env-file']),
@@ -60,7 +61,7 @@ try {
     resolve(output, 'manifest.json'),
     `${JSON.stringify(
       {
-        format: 1,
+        format: backupFormat,
         snapshotAt,
         createdAt: new Date().toISOString(),
         project: config.name,
@@ -77,7 +78,16 @@ try {
   );
 } finally {
   if (stopped && running.length) {
-    await compose('start', '--wait', '--wait-timeout', '180', ...running);
+    await compose(
+      'up',
+      '-d',
+      '--no-deps',
+      '--no-recreate',
+      '--wait',
+      '--wait-timeout',
+      '180',
+      ...running,
+    );
     console.log('Previously running services resumed');
   }
 }

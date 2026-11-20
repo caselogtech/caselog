@@ -23,7 +23,7 @@ not grant implicit access to customer workspaces.
 
 The browser must reach the public HTTPS storage origin. Operators should check DNS,
 TLS, CORS, and preservation of the signed `Host` header at the storage proxy. The API's
-internal MinIO URL is not a suitable browser URL. See [deployment topology](../../reference/installation/).
+internal S3 URL is not a suitable browser URL. See [deployment topology](../../reference/installation/).
 Do not share presigned URLs: they contain temporary access credentials.
 
 ## Readiness stays pending, stale, or unknown

@@ -36,6 +36,8 @@ pnpm dev
 
 Open the web app at `http://localhost:4200` and API docs at
 `http://localhost:3000/api/v1/docs`. Demo seed data is for local development only.
+Existing MinIO installations need the [storage migration](deploy/STORAGE-MIGRATION.md)
+before switching to the bundled SeaweedFS service.
 
 ## Documentation
 

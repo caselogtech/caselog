@@ -119,4 +119,91 @@ describe('S3StorageProvider integration', () => {
       );
     }
   });
+
+  it('rejects incorrect checksums and unsigned object access', async () => {
+    const key = `${storageKey}-invalid`;
+    const upload = await storage.createUploadUrl({
+      storageKey: key,
+      contentType: 'text/plain',
+      checksumSha256,
+      sizeBytes: body.byteLength,
+    });
+    const invalidBody = Buffer.alloc(body.byteLength, 'x');
+    const rejected = await fetch(upload.url, {
+      method: 'PUT',
+      headers: upload.headers,
+      body: invalidBody,
+    });
+    expect(rejected.ok).toBe(false);
+    await rejected.arrayBuffer();
+    await expect(storage.stat(key)).resolves.toBeNull();
+
+    const unsigned = new URL(upload.url);
+    unsigned.search = '';
+    for (const method of ['GET', 'PUT']) {
+      const response = await fetch(unsigned, {
+        method,
+        ...(method === 'PUT' ? { body } : {}),
+      });
+      expect(response.status).toBe(403);
+      await response.arrayBuffer();
+    }
+    await expect(storage.stat(key)).resolves.toBeNull();
+  });
+
+  it('lists a prefix with bounded, deterministic pagination and deletes idempotently', async () => {
+    const prefix = `${storageKey}/pagination/`;
+    const keys = ['a', 'b', 'c'].map((suffix) => `${prefix}${suffix}`);
+    try {
+      for (const key of keys) {
+        const upload = await storage.createUploadUrl({
+          storageKey: key,
+          contentType: 'text/plain',
+          checksumSha256,
+          sizeBytes: body.byteLength,
+        });
+        const response = await fetch(upload.url, { method: 'PUT', headers: upload.headers, body });
+        expect(response.status, await response.text()).toBe(200);
+      }
+      const first = await storage.list(prefix, null, 2);
+      expect(first.objects.map((object) => object.storageKey)).toEqual(keys.slice(0, 2));
+      expect(first.nextAfter).toBe(keys[1]);
+      const second = await storage.list(prefix, first.nextAfter, 2);
+      expect(second.objects.map((object) => object.storageKey)).toEqual(keys.slice(2));
+      expect(second.nextAfter).toBeNull();
+      await expect(storage.read(keys[0] ?? '', body.byteLength - 1)).rejects.toThrow('read size');
+    } finally {
+      for (const key of keys) {
+        await storage.delete(key);
+        await storage.delete(key);
+        await expect(storage.stat(key)).resolves.toBeNull();
+      }
+    }
+  });
+
+  it('allows browser upload headers only for configured application origins', async () => {
+    const config = createStorageConfig();
+    const url = `${config.publicEndpoint ?? config.endpoint}/${config.bucket}`;
+    for (const origin of ['http://localhost:4200', 'https://untrusted.example']) {
+      const response = await fetch(url, {
+        method: 'OPTIONS',
+        headers: {
+          origin,
+          'access-control-request-method': 'PUT',
+          'access-control-request-headers':
+            'content-type,x-amz-checksum-sha256,x-amz-meta-checksumsha256',
+        },
+      });
+      if (origin === 'http://localhost:4200') {
+        expect(response.ok).toBe(true);
+        expect(response.headers.get('access-control-allow-origin')).toBe(origin);
+        expect(response.headers.get('access-control-allow-headers')?.toLowerCase()).toContain(
+          'x-amz-checksum-sha256',
+        );
+      } else {
+        expect(response.headers.get('access-control-allow-origin')).toBeNull();
+      }
+      await response.arrayBuffer();
+    }
+  });
 });

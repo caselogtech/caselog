@@ -13,6 +13,7 @@ const sources = [
   ['deploy/README.md', 'installation', 'Install Caselog'],
   ['deploy/ADMINISTRATION.md', 'customer-administration', 'Managed customer administration'],
   ['deploy/RECOVERY.md', 'recovery', 'Backups, restores, and upgrades'],
+  ['deploy/STORAGE-MIGRATION.md', 'storage-migration', 'MinIO to SeaweedFS migration'],
   ['apps/cli/README.md', 'cli', 'CLI reference'],
   ['examples/ci/README.md', 'ci-examples', 'CI examples'],
   ['SUPPORT.md', 'compatibility', 'Versions and compatibility'],

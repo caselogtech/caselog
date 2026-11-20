@@ -11,7 +11,7 @@ reviewed commit and retain all application images, configuration and recovery ev
 | pnpm | 10.15.0 (`packageManager`); frozen lockfile installs |
 | API/web | NestJS 11, Fastify 5, Angular 22 and the checked-in lockfile |
 | Database | PostgreSQL 16; production Compose pins a concrete image digest |
-| Object storage | The MinIO image pinned in production Compose; other S3-compatible systems require endpoint, checksum, presigned URL and CORS validation |
+| Object storage | SeaweedFS 4.54 pinned by digest in both Compose files; other S3-compatible systems require endpoint, checksum, presigned URL and CORS validation |
 | Deployment | Single Linux Docker host (x86_64 verified), same architecture and exact images for physical recovery |
 | Browser | Chromium from pinned Playwright 1.63.0 in CI; Firefox, WebKit and other browser versions have no declared verification matrix yet |
 | CLI | JSON envelope version 1 and documented exit codes in `apps/cli/README.md` |
