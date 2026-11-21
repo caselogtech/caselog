@@ -84,6 +84,7 @@ describe('ReadinessPolicyDetail', () => {
       'authentication',
       policyId,
       expect.stringMatching(/^[0-9a-f-]{36}$/),
+      { expectedDraftId: version.id, expectedUpdatedAt: policy.policy.updatedAt },
     );
   });
 

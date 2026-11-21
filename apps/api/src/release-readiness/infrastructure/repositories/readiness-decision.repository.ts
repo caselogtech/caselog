@@ -206,7 +206,10 @@ export class ReadinessDecisionRepository {
               diagnostic: GateEvaluationDiagnostic[evaluation.diagnostic],
               metricKey: gate.metricKey,
               metricVersion: gate.metricVersion,
-              dimensions: gate.dimensions,
+              dimensions: {
+                ...gate.dimensions,
+                ...(gate.producerKey ? { producerKey: gate.producerKey } : {}),
+              },
               operator: gate.operator,
               expectedValueType:
                 evaluation.expected.type === 'percentage'

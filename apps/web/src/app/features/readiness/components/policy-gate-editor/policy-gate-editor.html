@@ -80,13 +80,45 @@
             [label]="'readiness.policies.editor.metric' | transloco"
             [required]="true"
           >
-            <select appControl [id]="'policy-gate-metric-' + index" formControlName="metricKey">
+            <select appControl [id]="'policy-gate-metric-' + index" formControlName="metricKey" (change)="metricChanged(gate)">
               @for (metric of metrics; track metric) {
                 <option [value]="metric">{{ metricLabel(metric) | transloco }}</option>
               }
             </select>
           </app-form-field>
 
+          @if (gate.controls.metricKey.value.startsWith('test.')) {
+          <app-form-field [controlId]="'policy-gate-priority-' + index" [label]="'readiness.policies.scope.priority' | transloco" [hint]="'readiness.policies.scope.priorityHint' | transloco">
+            <select appControl [id]="'policy-gate-priority-' + index" formControlName="minimumPriority">
+              <option value="">{{ 'readiness.policies.scope.linkedRuns' | transloco }}</option>
+              @for (priority of priorities; track priority) { <option [value]="priority">{{ priorityLabel(priority) | transloco }}</option> }
+            </select>
+          </app-form-field>
+          } @else {
+          <app-form-field [controlId]="'policy-gate-profile-' + index" [label]="'readiness.policies.scope.profile' | transloco" [hint]="'readiness.policies.scope.profileHint' | transloco" [required]="true" [error]="gate.touched && gate.hasError('invalidMetricScope') ? ('readiness.policies.scope.invalid' | transloco) : undefined">
+            <input appControl [id]="'policy-gate-profile-' + index" formControlName="profile" maxlength="80" />
+          </app-form-field>
+          <app-form-field [controlId]="'policy-gate-producer-' + index" [label]="'readiness.policies.scope.producer' | transloco" [hint]="'readiness.policies.scope.producerHint' | transloco" [required]="true">
+            <input appControl [id]="'policy-gate-producer-' + index" formControlName="producerKey" maxlength="120" />
+            @if (browserSession.user()) { <button appButton="quiet" type="button" (click)="useMyAccount(gate)">{{ 'readiness.policies.scope.useMyAccount' | transloco }}</button> }
+          </app-form-field>
+          <app-form-field [controlId]="'policy-gate-pages-' + index" [label]="'readiness.policies.scope.pages' | transloco" [hint]="'readiness.policies.scope.pagesHint' | transloco" [required]="true">
+            <textarea appControl [id]="'policy-gate-pages-' + index" formControlName="pageUrls" rows="3"></textarea>
+          </app-form-field>
+          <app-form-field [controlId]="'policy-gate-tool-' + index" [label]="'readiness.policies.scope.toolVersion' | transloco" [required]="true">
+            <input appControl [id]="'policy-gate-tool-' + index" formControlName="toolVersion" maxlength="80" />
+          </app-form-field>
+          @if (gate.controls.metricKey.value === 'performance.lighthouse_score') {
+          <app-form-field [controlId]="'policy-gate-device-' + index" [label]="'readiness.policies.scope.device' | transloco">
+            <select appControl [id]="'policy-gate-device-' + index" formControlName="device"><option value="mobile">{{ 'readiness.policies.scope.mobile' | transloco }}</option><option value="desktop">{{ 'readiness.policies.scope.desktop' | transloco }}</option></select>
+          </app-form-field>
+          <app-form-field [controlId]="'policy-gate-runs-' + index" [label]="'readiness.policies.scope.runs' | transloco" [required]="true" [error]="gate.controls.runsPerPage.touched && gate.controls.runsPerPage.invalid ? ('readiness.policies.scope.runsInvalid' | transloco) : undefined" [hint]="'readiness.policies.scope.aggregation' | transloco">
+            <input appControl [id]="'policy-gate-runs-' + index" type="number" formControlName="runsPerPage" [attr.aria-invalid]="gate.controls.runsPerPage.touched && gate.controls.runsPerPage.invalid" min="3" max="10" step="1" />
+          </app-form-field>
+          }
+          <p class="scope-hint">{{ 'readiness.policies.scope.externalNotice' | transloco }}</p>
+          }
+          @if (gate.controls.metricKey.value.startsWith('test.')) {
           <app-form-field
             [controlId]="'policy-gate-role-' + index"
             [label]="'readiness.policies.gates.role' | transloco"
@@ -99,6 +131,7 @@
             </select>
           </app-form-field>
 
+          }
           <app-form-field
             [controlId]="'policy-gate-operator-' + index"
             [label]="'readiness.policies.editor.operator' | transloco"
@@ -123,8 +156,8 @@
               [id]="'policy-gate-expected-' + index"
               type="number"
               min="0"
-              [max]="gate.controls.metricKey.value === 'test.failed_count' ? null : 100"
-              [step]="gate.controls.metricKey.value === 'test.failed_count' ? 1 : 0.1"
+              [max]="isInteger(gate.controls.metricKey.value) ? null : 100"
+              [step]="isInteger(gate.controls.metricKey.value) ? 1 : 0.1"
               formControlName="expectedValue"
               [attr.aria-invalid]="gate.controls.expectedValue.touched && (gate.controls.expectedValue.invalid || gate.hasError('incompatibleExpectedValue'))"
             />

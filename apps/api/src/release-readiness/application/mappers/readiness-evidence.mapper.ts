@@ -13,6 +13,7 @@ export function toReadinessEvidence(
   return {
     observationId: observation.id,
     producerId: observation.producerId,
+    producerKey: observation.producerKey,
     metricKey: observation.metricKey,
     metricVersion: observation.metricVersion,
     dimensions: observation.dimensions,

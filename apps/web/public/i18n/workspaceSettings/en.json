@@ -213,7 +213,8 @@
       "copyConfirmed": "The token was copied to the clipboard.",
       "copyFailed": "Clipboard access is unavailable. Select and copy the token manually.",
       "saved": "I have saved this token"
-    }
+    },
+    "evidenceSourceKey": "Evidence source key"
   },
   "danger": {
     "eyebrow": "Workspace lifecycle",

@@ -349,6 +349,13 @@
       "executionUnknownUser": "Unknown executor",
       "executionHistoryLoadMore": "Load more history",
       "executionHistoryLoadingMore": "Loading more history…"
+    },
+    "priority": "Priority",
+    "priorities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
     }
   },
   "runs": {

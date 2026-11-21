@@ -145,6 +145,7 @@ function toEditableGate(gate: PolicyGate): ReadinessGateInput {
     metricKey: gate.metricKey,
     metricVersion: gate.metricVersion,
     dimensions: gate.dimensions,
+    producerKey: gate.producerKey,
     operator: gate.operator,
     expected: gate.expected,
     impact: gate.impact,

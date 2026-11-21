@@ -45,6 +45,12 @@ public API operations and the accepted suite/section creation extension in
 `architecture/decisions/20261119-mcp-structure-authoring.md`; it does not authorize
 additional feature categories.
 
+The user-approved quality policy extension is defined in
+`architecture/decisions/20261121-quality-policy-scopes-and-editing.md`. It covers
+versioned case priorities, frozen candidate test coverage, external WCAG 2.2 AA and
+Lighthouse evidence, and safe policy draft/successor editing. Scanner execution and
+automatic environment-based policy assignment remain outside this extension.
+
 ## 2. Sources of truth
 
 The current user request defines the task and may explicitly change repository policy.

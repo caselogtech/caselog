@@ -8,7 +8,7 @@ import {
   validateReadinessGates,
 } from '../models/readiness-policy';
 
-export const READINESS_EVALUATOR_VERSION = '1.0.0';
+export const READINESS_EVALUATOR_VERSION = '1.1.0';
 
 export type GateEvaluationResult = 'PASSED' | 'WARNING' | 'FAILED' | 'UNKNOWN';
 export type GateDiagnostic = 'NONE' | 'MISSING' | 'INCOMPLETE' | 'STALE' | 'UNTRUSTED';
@@ -75,7 +75,16 @@ function evaluateGate(
     (observation) =>
       observation.metricKey === gate.metricKey &&
       observation.metricVersion === gate.metricVersion &&
-      observation.dimensions.testRunRole === gate.dimensions.testRunRole,
+      observation.dimensions.testRunRole === gate.dimensions.testRunRole &&
+      observation.dimensions.minimumPriority === gate.dimensions.minimumPriority &&
+      observation.dimensions.profile === gate.dimensions.profile &&
+      observation.dimensions.toolVersion === gate.dimensions.toolVersion &&
+      observation.dimensions.device === gate.dimensions.device &&
+      observation.dimensions.runsPerPage === gate.dimensions.runsPerPage &&
+      JSON.stringify([...(observation.dimensions.pageUrls ?? [])].sort()) ===
+        JSON.stringify([...(gate.dimensions.pageUrls ?? [])].sort()) &&
+      (!gate.producerKey || observation.producerKey === gate.producerKey) &&
+      (!gate.dimensions.minimumPriority || observation.producerKey === 'caselog.test-runs'),
   );
   if (matching.length === 0) return unavailable(gate, 'MISSING', null);
 

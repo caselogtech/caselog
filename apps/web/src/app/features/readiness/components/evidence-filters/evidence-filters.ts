@@ -56,6 +56,9 @@ export class EvidenceFilters {
     'test.pass_rate',
     'test.completion_rate',
     'test.failed_count',
+    'accessibility.wcag22_aa_violations',
+    'accessibility.wcag22_aa_manual_review',
+    'performance.lighthouse_score',
   ];
   readonly trustLevels: Trust[] = ['verified', 'authenticated', 'unverified'];
   readonly freshnessValues: Freshness[] = ['current', 'stale'];

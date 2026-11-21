@@ -4,6 +4,13 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Add versioned case priorities and frozen candidate test coverage, WCAG 2.2 AA
+  automated/manual evidence and Lighthouse gates with pinned sources and measurement
+  profiles. Add conflict-safe policy editing and successor drafts, preserving published
+  gate inputs and historical decisions. Apply migration
+  `20261121190000_quality_policy_scopes` before new artifacts; drain old evaluator
+  jobs before stopping old workers, then upgrade artifacts together. New evaluations use evaluator 1.1.0.
+
 - Add Edit release and a version-checked public update endpoint for draft/active release
   names, environments, target dates and external references. Preserve candidate and
   readiness history, audit actual edits, and explain concurrent-write conflicts without

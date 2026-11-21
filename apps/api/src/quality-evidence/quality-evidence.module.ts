@@ -1,3 +1,5 @@
+import { TestCaseModule } from '../test-cases/public-api';
+import { CandidateTestScopeRepository } from './infrastructure/repositories/candidate-test-scope.repository';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/public-api';
 import { ReleaseModule } from '../releases/public-api';
@@ -20,9 +22,10 @@ import { NativeEvidenceWorker } from './presentation/workers/native-evidence.wor
 import { EvidenceController } from './presentation/controllers/evidence.controller';
 
 @Module({
-  imports: [AuthModule, ReleaseModule, TestRunModule],
+  imports: [AuthModule, ReleaseModule, TestRunModule, TestCaseModule],
   controllers: [EvidenceController],
   providers: [
+    CandidateTestScopeRepository,
     EvidenceEventRepository,
     EvidenceObservationRepository,
     EvidenceProcessingIssueRepository,

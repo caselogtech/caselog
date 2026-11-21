@@ -56,6 +56,10 @@ integration remain undecided.
 - [x] Allow owners, admins and leads to edit Draft/Active release metadata, including
   adding a missing environment; verify tenant/project boundaries through API tests and
   version conflicts, terminal-state protection and immutable history through the browser.
+- [x] Configure priority-scoped test coverage, separate WCAG 2.2 AA automated/manual
+  evidence and Lighthouse profiles with pinned sources, pages, tool versions and device
+  settings. Verify frozen case/version scope, report matching and minimum page medians;
+  edit drafts or create successors without changing published gate inputs or decisions.
 - [x] Verify missing/failed/stale evidence, unauthorized and cross-tenant access,
   idempotent retries and history preservation in the relevant API/integration suites.
 - [x] Run `pnpm check`, `pnpm test` and `pnpm build` on the pinned toolchain; verify the
@@ -86,6 +90,13 @@ Release-editing verification on 2026-11-21: `pnpm check`, all 786 tests and `pnp
 passed. An isolated Chromium journey verified missing-environment correction, persistence,
 mobile layout, independent-client conflict recovery, terminal-state protection and
 unchanged candidate/lifecycle/decision history. No database migration is required.
+
+Quality-policy verification on 2026-11-21 covers 815 tests, `pnpm check`, `pnpm build`
+and seven Chromium journeys across self-hosted and managed modes. Empty-database and
+existing-database migration checks pass. Apply `20261121190000_quality_policy_scopes`
+before new artifacts; drain old evaluator jobs before stopping old workers and upgrading. The core
+now supports frozen priority coverage, WCAG reports, Lighthouse profiles and policy
+draft/successor editing; scanners and environment-based assignment remain outside scope.
 
 ### Operational acceptance
 

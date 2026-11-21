@@ -19,6 +19,7 @@ import {
 import { Prisma, ReleasePolicyVersionState } from '../../../generated/prisma/client';
 import {
   READINESS_POLICY_SELECTION,
+  advancePolicyTimestamp,
   READINESS_POLICY_SUMMARY_SELECTION,
   readinessGateData,
   toReadinessPolicyResponse,
@@ -282,6 +283,7 @@ export class ReadinessPolicyRepository {
             gateCount: request.gates.length,
           },
         });
+        await advancePolicyTimestamp(transaction, organizationId, context.projectId, policyId);
         const value = await policyResponse(
           transaction,
           organizationId,
@@ -304,6 +306,7 @@ export class ReadinessPolicyRepository {
     projectSlug: string,
     policyId: string,
     expectedDraftId: string | null,
+    expectedUpdatedAt: string,
     actorId: string,
     idempotencyKey: string,
     requestHash: string,
@@ -329,6 +332,11 @@ export class ReadinessPolicyRepository {
       });
       if (!draft) return { kind: 'draft_not_found' };
       if (draft.id !== expectedDraftId) return { kind: 'draft_changed' };
+      const policy = await transaction.releasePolicy.findFirstOrThrow({
+        where: { organizationId, projectId: context.projectId, id: policyId },
+        select: { updatedAt: true },
+      });
+      if (policy.updatedAt.toISOString() !== expectedUpdatedAt) return { kind: 'draft_changed' };
       const claim = await claimIdempotency<ReadinessPolicyResponse>(
         transaction,
         organizationId,
@@ -360,6 +368,7 @@ export class ReadinessPolicyRepository {
         targetId: draft.id,
         metadata: { projectId: context.projectId, policyId, version: draft.version },
       });
+      await advancePolicyTimestamp(transaction, organizationId, context.projectId, policyId);
       const value = await policyResponse(transaction, organizationId, context.projectId, policyId);
       await storeIdempotencyResponse(transaction, organizationId, scope, idempotencyKey, value);
       return { kind: 'found', value };

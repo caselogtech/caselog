@@ -21,6 +21,14 @@
     />
   </app-form-field>
 
+  <app-form-field [controlId]="idPrefix() + '-priority'" [label]="'workspace.cases.priority' | transloco">
+    <select appControl [id]="idPrefix() + '-priority'" formControlName="priority">
+      <option value="low">{{ 'workspace.cases.priorities.low' | transloco }}</option>
+      <option value="medium">{{ 'workspace.cases.priorities.medium' | transloco }}</option>
+      <option value="high">{{ 'workspace.cases.priorities.high' | transloco }}</option>
+      <option value="critical">{{ 'workspace.cases.priorities.critical' | transloco }}</option>
+    </select>
+  </app-form-field>
   <div class="metadata-fields full-width">
     <app-form-field
       [controlId]="idPrefix() + '-template'"

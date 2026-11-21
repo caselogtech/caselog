@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { CandidateTestRunRole } from '@caselog/schemas';
+import type { CandidateTestRunRole, QualityMetricDimensions } from '@caselog/schemas';
 import type { TestRunEvidenceSnapshot } from '../../../test-runs/public-api';
 
 export const NATIVE_TEST_METRIC = {
@@ -25,12 +25,18 @@ export type NativeTestMetricObservation = {
   state: 'available' | 'incomplete';
   percentageValue: string | null;
   integerValue: number | null;
-  dimensions: { testRunRole: CandidateTestRunRole };
+  dimensions: QualityMetricDimensions;
   dimensionsHash: string;
   payload: NativeTestMetricPayload;
 };
 
 export type NativeTestMetricPayload = {
+  scopeCapturedAt?: string;
+  scopeHash?: string;
+  requiredCaseCount?: number;
+  missingCaseCount?: number;
+  missingCaseIds?: string[];
+  missingCaseIdsTruncated?: boolean;
   runCount: number;
   totalItems: number;
   finalItems: number;
@@ -84,7 +90,9 @@ export function buildNativeTestMetrics(
       valueType: 'percentage',
       state: sourceIncomplete || executedFinalItems === 0 ? 'incomplete' : 'available',
       percentageValue:
-        executedFinalItems === 0 ? null : percentage(totals.passedItems, executedFinalItems),
+        executedFinalItems === 0
+          ? null
+          : nativeTestPercentage(totals.passedItems, executedFinalItems),
       integerValue: null,
       dimensions,
       dimensionsHash,
@@ -96,7 +104,7 @@ export function buildNativeTestMetrics(
       valueType: 'percentage',
       state: sourceIncomplete || totals.totalItems === 0 ? 'incomplete' : 'available',
       percentageValue:
-        totals.totalItems === 0 ? null : percentage(totals.finalItems, totals.totalItems),
+        totals.totalItems === 0 ? null : nativeTestPercentage(totals.finalItems, totals.totalItems),
       integerValue: null,
       dimensions,
       dimensionsHash,
@@ -130,7 +138,7 @@ export function nativeTestSourceRevision(
   });
 }
 
-function percentage(numerator: number, denominator: number): string {
+export function nativeTestPercentage(numerator: number, denominator: number): string {
   const scale = 1_000_000_000n;
   const scaled =
     (BigInt(numerator) * 100n * scale + BigInt(denominator) / 2n) / BigInt(denominator);

@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -25,6 +26,8 @@ import {
 import { ReadinessPolicyService } from '../../application/services/readiness-policy.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
+  PublishReadinessPolicyRequestDto,
+  UpdateReadinessPolicyRequestDto,
   CreateReadinessPolicyRequestDto,
   CreateReadinessPolicyVersionRequestDto,
   ReadinessPolicyListQueryDto,
@@ -80,6 +83,17 @@ export class ReadinessPolicyController {
     return this.policies.detail(principal, params.projectSlug, params.policyId);
   }
 
+  @Put(':policyId/draft')
+  @RequireOrganizationAccess('lead')
+  @ApiOkResponse({ type: ReadinessPolicyResponseDto })
+  update(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: ReadinessPolicyParamsDto,
+    @Body() request: UpdateReadinessPolicyRequestDto,
+  ): Promise<ReadinessPolicyResponse> {
+    return this.policies.update(principal, params.projectSlug, params.policyId, request);
+  }
+
   @Post(':policyId/versions')
   @RequireApiTokenScopes('policies:write')
   @RequireOrganizationAccess('lead')
@@ -104,6 +118,7 @@ export class ReadinessPolicyController {
   @RequireOrganizationAccess('lead')
   @ApiCreatedResponse({ type: ReadinessPolicyResponseDto })
   publish(
+    @Body() request: PublishReadinessPolicyRequestDto,
     @CurrentOrganization() principal: OrganizationAccessPrincipal,
     @Param() params: ReadinessPolicyParamsDto,
     @Headers() headers: ReadinessPolicyWriteHeadersDto,
@@ -113,6 +128,7 @@ export class ReadinessPolicyController {
       params.projectSlug,
       params.policyId,
       headers['idempotency-key'],
+      request,
     );
   }
 }

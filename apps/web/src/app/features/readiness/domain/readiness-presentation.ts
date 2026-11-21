@@ -11,6 +11,14 @@ import type {
 import type { EvidenceObservation } from '@caselog/schemas/evidence';
 import type { StatusBadgeTone } from '../../../shared/ui/public-api';
 
+const PRIORITY_LABEL = {
+  low: 'workspace.cases.priorities.low',
+  medium: 'workspace.cases.priorities.medium',
+  high: 'workspace.cases.priorities.high',
+  critical: 'workspace.cases.priorities.critical',
+} as const;
+export const priorityLabel = (priority: keyof typeof PRIORITY_LABEL) => PRIORITY_LABEL[priority];
+
 export type StatusPresentation = { labelKey: string; tone: StatusBadgeTone };
 export type ReadinessGateRow = {
   evaluation: GateEvaluation;
@@ -66,6 +74,9 @@ const METRIC: Record<GateEvaluation['metricKey'], string> = {
   'test.pass_rate': 'readiness.metrics.passRate',
   'test.completion_rate': 'readiness.metrics.completionRate',
   'test.failed_count': 'readiness.metrics.failedCount',
+  'accessibility.wcag22_aa_violations': 'readiness.metrics.accessibilityViolations',
+  'accessibility.wcag22_aa_manual_review': 'readiness.metrics.accessibilityManualReview',
+  'performance.lighthouse_score': 'readiness.metrics.lighthouseScore',
 };
 
 const EXPLANATION: Record<GateEvaluationExplanationCode, string> = {
@@ -139,8 +150,12 @@ export const readinessTriggerLabel = (trigger: ReadinessDecision['trigger']) => 
 export const readinessWaiverStatusPresentation = (status: ReadinessWaiver['status']) =>
   WAIVER_STATUS[status];
 
-export function formatReadinessValue(value: GateEvaluation['actual']): string {
+export function formatReadinessValue(
+  value: GateEvaluation['actual'],
+  metricKey?: GateEvaluation['metricKey'],
+): string {
   if (!value || value.value === null) return '—';
+  if (metricKey === 'performance.lighthouse_score') return `${value.value}/100`;
   return value.type === 'percentage' ? `${value.value}%` : String(value.value);
 }
 

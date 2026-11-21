@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { projectSlugSchema } from './project.js';
+import { testCasePrioritySchema } from './quality-metric.js';
 
 export const testCaseListParamsSchema = z.object({
   projectSlug: projectSlugSchema,
@@ -16,6 +17,7 @@ export const testCaseListQuerySchema = z.object({
 export const testCaseTemplateSchema = z.enum(['steps', 'text', 'exploratory', 'bdd']);
 
 export const testCaseSummarySchema = z.object({
+  priority: testCasePrioritySchema.optional(),
   id: z.uuid(),
   caseNumber: z.string().regex(/^[1-9]\d*$/),
   title: z.string().min(1).max(500),
@@ -93,6 +95,7 @@ export const sectionResponseSchema = z.object({
 });
 
 const createCaseBase = {
+  priority: testCasePrioritySchema.optional(),
   title: z.string().trim().min(1).max(500),
   sectionId: z.uuid(),
   automationId: z
@@ -170,6 +173,7 @@ export const testCaseDetailParamsSchema = testCaseListParamsSchema.extend({
 });
 
 export const testCaseVersionSchema = z.object({
+  priority: testCasePrioritySchema.optional(),
   id: z.uuid(),
   version: z.number().int().positive(),
   title: z.string().min(1).max(500),

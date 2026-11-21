@@ -87,7 +87,12 @@ export class ReadinessPolicyDetail {
         this.workspaceSlug,
         this.projectSlug,
         this.policyId,
-        this.publishIdentity.keyFor({ policyId: this.policyId, draftId }),
+        this.publishIdentity.keyFor({
+          policyId: this.policyId,
+          draftId,
+          updatedAt: this.policy()?.updatedAt,
+        }),
+        { expectedDraftId: draftId, expectedUpdatedAt: this.policy()?.updatedAt },
       ),
     onSuccess: async (response) => {
       this.publishIdentity.clear();

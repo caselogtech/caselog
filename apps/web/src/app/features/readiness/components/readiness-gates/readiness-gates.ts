@@ -1,3 +1,4 @@
+import { priorityLabel } from '../../domain/readiness-presentation';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { GateEvaluation } from '@caselog/schemas';
@@ -25,6 +26,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReadinessGates {
+  readonly priorityLabel = priorityLabel;
   readonly rows = input.required<readonly ReadinessGateRow[]>();
 
   result(row: ReadinessGateRow) {
@@ -51,8 +53,8 @@ export class ReadinessGates {
     return operatorSymbol(row.evaluation.operator);
   }
 
-  value(value: GateEvaluation['actual']): string {
-    return formatReadinessValue(value);
+  value(value: GateEvaluation['actual'], metricKey?: GateEvaluation['metricKey']): string {
+    return formatReadinessValue(value, metricKey);
   }
 
   trust(observation: EvidenceObservation) {

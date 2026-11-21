@@ -11,6 +11,13 @@ export type TestRunEvidenceSnapshot = {
   passedItems: number;
   failedItems: number;
   skippedItems: number;
+  items?: Array<{
+    versionId: string;
+    updatedAt: string;
+    statusKey: string;
+    isFinal: boolean;
+    countsAsFailure: boolean;
+  }>;
   statusCounts: Array<{
     key: string;
     isFinal: boolean;

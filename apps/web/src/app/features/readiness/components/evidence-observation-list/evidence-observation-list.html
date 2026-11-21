@@ -22,6 +22,9 @@
       <p class="diagnostic-description">{{ diagnosis.descriptionKey | transloco }}</p>
 
       <dl class="summary-grid">
+        @if (observation.dimensions.minimumPriority) { <div><dt>{{ 'readiness.policies.scope.priority' | transloco }}</dt><dd>{{ priorityLabel(observation.dimensions.minimumPriority) | transloco }}</dd></div> }
+        @if (observation.dimensions.profile) { <div><dt>{{ 'readiness.policies.scope.profile' | transloco }}</dt><dd>{{ observation.dimensions.profile }}</dd></div> }
+
         <div>
           <dt>{{ 'readiness.evidence.explorer.observationState' | transloco }}</dt>
           <dd>

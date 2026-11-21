@@ -1492,6 +1492,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/release-policies/{policyId}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ReadinessPolicyController_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectSlug}/release-policies/{policyId}/versions": {
         parameters: {
             query?: never;
@@ -2124,6 +2140,8 @@ export interface components {
                 rowNumber: number;
                 valid: boolean;
                 value?: {
+                    /** @enum {string} */
+                    priority?: "low" | "medium" | "high" | "critical";
                     title: string;
                     /** Format: uuid */
                     sectionId: string;
@@ -2770,7 +2788,7 @@ export interface components {
                 /** Format: uuid */
                 candidateId: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
                 metricVersion: string;
                 value: {
                     /** @constant */
@@ -2786,6 +2804,14 @@ export interface components {
                 dimensions: {
                     /** @enum {string} */
                     testRunRole: "required" | "informational";
+                    /** @enum {string} */
+                    minimumPriority?: "low" | "medium" | "high" | "critical";
+                    profile?: string;
+                    pageUrls?: string[];
+                    toolVersion?: string;
+                    /** @enum {string} */
+                    device?: "mobile" | "desktop";
+                    runsPerPage?: number;
                 };
                 /** Format: date-time */
                 observedAt: string;
@@ -2808,6 +2834,13 @@ export interface components {
                     url: string | null;
                 };
                 details: {
+                    /** Format: date-time */
+                    scopeCapturedAt?: string;
+                    scopeHash?: string;
+                    requiredCaseCount?: number;
+                    missingCaseCount?: number;
+                    missingCaseIds?: string[];
+                    missingCaseIdsTruncated?: boolean;
                     runCount: number;
                     totalItems: number;
                     finalItems: number;
@@ -2858,7 +2891,7 @@ export interface components {
             /** Format: uuid */
             candidateId: string;
             /** @enum {string} */
-            metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+            metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
             /** @constant */
             metricVersion: "1.0.0";
             value: {
@@ -2875,6 +2908,14 @@ export interface components {
             dimensions: {
                 /** @enum {string} */
                 testRunRole: "required" | "informational";
+                /** @enum {string} */
+                minimumPriority?: "low" | "medium" | "high" | "critical";
+                profile?: string;
+                pageUrls?: string[];
+                toolVersion?: string;
+                /** @enum {string} */
+                device?: "mobile" | "desktop";
+                runsPerPage?: number;
             };
             /** Format: date-time */
             observedAt: string;
@@ -2903,7 +2944,7 @@ export interface components {
                 /** Format: uuid */
                 candidateId: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
                 metricVersion: string;
                 value: {
                     /** @constant */
@@ -2919,6 +2960,14 @@ export interface components {
                 dimensions: {
                     /** @enum {string} */
                     testRunRole: "required" | "informational";
+                    /** @enum {string} */
+                    minimumPriority?: "low" | "medium" | "high" | "critical";
+                    profile?: string;
+                    pageUrls?: string[];
+                    toolVersion?: string;
+                    /** @enum {string} */
+                    device?: "mobile" | "desktop";
+                    runsPerPage?: number;
                 };
                 /** Format: date-time */
                 observedAt: string;
@@ -2941,6 +2990,13 @@ export interface components {
                     url: string | null;
                 };
                 details: {
+                    /** Format: date-time */
+                    scopeCapturedAt?: string;
+                    scopeHash?: string;
+                    requiredCaseCount?: number;
+                    missingCaseCount?: number;
+                    missingCaseIds?: string[];
+                    missingCaseIdsTruncated?: boolean;
                     runCount: number;
                     totalItems: number;
                     finalItems: number;
@@ -3790,6 +3846,8 @@ export interface components {
                 name: string;
             };
             items: {
+                /** @enum {string} */
+                priority?: "low" | "medium" | "high" | "critical";
                 /** Format: uuid */
                 id: string;
                 caseNumber: string;
@@ -3808,6 +3866,8 @@ export interface components {
             nextCursor: string | null;
         };
         CreateTestCaseRequestDto: {
+            /** @enum {string} */
+            priority?: "low" | "medium" | "high" | "critical";
             title: string;
             /** Format: uuid */
             sectionId: string;
@@ -3831,6 +3891,8 @@ export interface components {
         };
         CreateTestCaseResponseDto: {
             testCase: {
+                /** @enum {string} */
+                priority?: "low" | "medium" | "high" | "critical";
                 /** Format: uuid */
                 id: string;
                 caseNumber: string;
@@ -3875,6 +3937,8 @@ export interface components {
                     suiteName: string;
                 };
                 currentVersion: {
+                    /** @enum {string} */
+                    priority?: "low" | "medium" | "high" | "critical";
                     /** Format: uuid */
                     id: string;
                     version: number;
@@ -3904,6 +3968,8 @@ export interface components {
                     } | null;
                 };
                 versions: {
+                    /** @enum {string} */
+                    priority?: "low" | "medium" | "high" | "critical";
                     /** Format: uuid */
                     id: string;
                     version: number;
@@ -3927,6 +3993,8 @@ export interface components {
             };
         };
         UpdateTestCaseRequestDto: {
+            /** @enum {string} */
+            priority?: "low" | "medium" | "high" | "critical";
             title: string;
             /** Format: uuid */
             sectionId: string;
@@ -3951,6 +4019,8 @@ export interface components {
         };
         UpdateTestCaseResponseDto: {
             testCase: {
+                /** @enum {string} */
+                priority?: "low" | "medium" | "high" | "critical";
                 /** Format: uuid */
                 id: string;
                 caseNumber: string;
@@ -3973,6 +4043,8 @@ export interface components {
             };
         };
         TestCaseVersionResponseDto: {
+            /** @enum {string} */
+            priority?: "low" | "medium" | "high" | "critical";
             /** Format: uuid */
             id: string;
             version: number;
@@ -4117,13 +4189,22 @@ export interface components {
             gates: {
                 key: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
                 /** @constant */
                 metricVersion: "1.0.0";
                 dimensions: {
                     /** @enum {string} */
                     testRunRole: "required" | "informational";
+                    /** @enum {string} */
+                    minimumPriority?: "low" | "medium" | "high" | "critical";
+                    profile?: string;
+                    pageUrls?: string[];
+                    toolVersion?: string;
+                    /** @enum {string} */
+                    device?: "mobile" | "desktop";
+                    runsPerPage?: number;
                 };
+                producerKey?: string;
                 /** @enum {string} */
                 operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
                 expected: {
@@ -4180,13 +4261,22 @@ export interface components {
                     gates: {
                         key: string;
                         /** @enum {string} */
-                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
                         /** @constant */
                         metricVersion: "1.0.0";
                         dimensions: {
                             /** @enum {string} */
                             testRunRole: "required" | "informational";
+                            /** @enum {string} */
+                            minimumPriority?: "low" | "medium" | "high" | "critical";
+                            profile?: string;
+                            pageUrls?: string[];
+                            toolVersion?: string;
+                            /** @enum {string} */
+                            device?: "mobile" | "desktop";
+                            runsPerPage?: number;
                         };
+                        producerKey?: string;
                         /** @enum {string} */
                         operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
                         expected: {
@@ -4222,17 +4312,28 @@ export interface components {
                 }[];
             };
         };
-        CreateReadinessPolicyVersionRequestDto: {
+        UpdateReadinessPolicyRequestDto: {
+            name: string;
+            description: string | null;
             gates: {
                 key: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
                 /** @constant */
                 metricVersion: "1.0.0";
                 dimensions: {
                     /** @enum {string} */
                     testRunRole: "required" | "informational";
+                    /** @enum {string} */
+                    minimumPriority?: "low" | "medium" | "high" | "critical";
+                    profile?: string;
+                    pageUrls?: string[];
+                    toolVersion?: string;
+                    /** @enum {string} */
+                    device?: "mobile" | "desktop";
+                    runsPerPage?: number;
                 };
+                producerKey?: string;
                 /** @enum {string} */
                 operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
                 expected: {
@@ -4262,6 +4363,66 @@ export interface components {
                  */
                 minimumTrust: "verified" | "authenticated" | "unverified";
             }[];
+            expectedDraftId: string | null;
+            /** Format: date-time */
+            expectedUpdatedAt: string;
+        };
+        CreateReadinessPolicyVersionRequestDto: {
+            gates: {
+                key: string;
+                /** @enum {string} */
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                /** @constant */
+                metricVersion: "1.0.0";
+                dimensions: {
+                    /** @enum {string} */
+                    testRunRole: "required" | "informational";
+                    /** @enum {string} */
+                    minimumPriority?: "low" | "medium" | "high" | "critical";
+                    profile?: string;
+                    pageUrls?: string[];
+                    toolVersion?: string;
+                    /** @enum {string} */
+                    device?: "mobile" | "desktop";
+                    runsPerPage?: number;
+                };
+                producerKey?: string;
+                /** @enum {string} */
+                operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                expected: {
+                    /** @constant */
+                    type: "percentage";
+                    value: string;
+                } | {
+                    /** @constant */
+                    type: "integer";
+                    value: number;
+                };
+                /** @enum {string} */
+                impact: "warning" | "blocking";
+                /**
+                 * @default unknown
+                 * @enum {string}
+                 */
+                missingEvidenceBehavior: "unknown" | "warn" | "block";
+                /**
+                 * @default unknown
+                 * @enum {string}
+                 */
+                staleEvidenceBehavior: "unknown" | "warn" | "block";
+                /**
+                 * @default authenticated
+                 * @enum {string}
+                 */
+                minimumTrust: "verified" | "authenticated" | "unverified";
+            }[];
+        };
+        /** @default {} */
+        PublishReadinessPolicyRequestDto: {
+            /** Format: uuid */
+            expectedDraftId?: string;
+            /** Format: date-time */
+            expectedUpdatedAt?: string;
         };
         AssignCandidatePolicyRequestDto: {
             /** Format: uuid */
@@ -4358,11 +4519,20 @@ export interface components {
                     /** @enum {string} */
                     diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
                     /** @enum {string} */
-                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
                     metricVersion: string;
                     dimensions: {
                         /** @enum {string} */
                         testRunRole: "required" | "informational";
+                        /** @enum {string} */
+                        minimumPriority?: "low" | "medium" | "high" | "critical";
+                        profile?: string;
+                        pageUrls?: string[];
+                        toolVersion?: string;
+                        /** @enum {string} */
+                        device?: "mobile" | "desktop";
+                        runsPerPage?: number;
+                        producerKey?: string;
                     };
                     /** @enum {string} */
                     operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
@@ -4466,11 +4636,20 @@ export interface components {
                     /** @enum {string} */
                     diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
                     /** @enum {string} */
-                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
                     metricVersion: string;
                     dimensions: {
                         /** @enum {string} */
                         testRunRole: "required" | "informational";
+                        /** @enum {string} */
+                        minimumPriority?: "low" | "medium" | "high" | "critical";
+                        profile?: string;
+                        pageUrls?: string[];
+                        toolVersion?: string;
+                        /** @enum {string} */
+                        device?: "mobile" | "desktop";
+                        runsPerPage?: number;
+                        producerKey?: string;
                     };
                     /** @enum {string} */
                     operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
@@ -4575,11 +4754,20 @@ export interface components {
                     /** @enum {string} */
                     diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
                     /** @enum {string} */
-                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
                     metricVersion: string;
                     dimensions: {
                         /** @enum {string} */
                         testRunRole: "required" | "informational";
+                        /** @enum {string} */
+                        minimumPriority?: "low" | "medium" | "high" | "critical";
+                        profile?: string;
+                        pageUrls?: string[];
+                        toolVersion?: string;
+                        /** @enum {string} */
+                        device?: "mobile" | "desktop";
+                        runsPerPage?: number;
+                        producerKey?: string;
                     };
                     /** @enum {string} */
                     operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
@@ -7169,7 +7357,7 @@ export interface operations {
         parameters: {
             query: {
                 candidateId: string;
-                metricKey?: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                metricKey?: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
                 producerKey?: string;
                 sourceType?: string;
                 trust?: "verified" | "authenticated" | "unverified";
@@ -8982,6 +9170,41 @@ export interface operations {
             };
         };
     };
+    ReadinessPolicyController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                policyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReadinessPolicyRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessPolicyResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
     ReadinessPolicyController_createVersion: {
         parameters: {
             query?: never;
@@ -9031,7 +9254,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishReadinessPolicyRequestDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {

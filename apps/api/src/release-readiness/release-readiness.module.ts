@@ -1,3 +1,4 @@
+import { ReadinessPolicyEditRepository } from './infrastructure/repositories/readiness-policy-edit.repository';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/public-api';
 import { ReleaseModule } from '../releases/public-api';
@@ -42,6 +43,7 @@ import { ReadinessEvaluationWorker } from './presentation/workers/readiness-eval
     ReleaseReadinessSummaryController,
   ],
   providers: [
+    ReadinessPolicyEditRepository,
     ReadinessPolicyRepository,
     ReadinessPolicyService,
     ReleaseReadinessSummaryService,

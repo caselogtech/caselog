@@ -46,6 +46,7 @@ export class EvidenceSnapshotRepository {
         select: {
           id: true,
           producerId: true,
+          producer: { select: { producerKey: true } },
           metricKey: true,
           metricVersion: true,
           valueType: true,
@@ -64,6 +65,7 @@ export class EvidenceSnapshotRepository {
         observations: current.map((observation) => ({
           id: observation.id,
           producerId: observation.producerId,
+          producerKey: observation.producer.producerKey,
           metricKey:
             observation.metricKey as CandidateEvidenceSnapshot['observations'][number]['metricKey'],
           metricVersion: observation.metricVersion,

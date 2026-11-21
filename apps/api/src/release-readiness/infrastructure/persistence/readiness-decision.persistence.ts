@@ -17,6 +17,8 @@ export const READINESS_GATE_FOR_EVALUATION_SELECTION = {
   metricKey: true,
   metricVersion: true,
   testRunRole: true,
+  dimensions: true,
+  producerKey: true,
   operator: true,
   expectedValueType: true,
   expectedPercentage: true,
@@ -102,7 +104,9 @@ export function toDomainReadinessGates(records: ReadinessGateRecord[]): Readines
     position: gate.position,
     metricKey: gate.metricKey as ReadinessGate['metricKey'],
     metricVersion: gate.metricVersion,
+    ...(gate.producerKey ? { producerKey: gate.producerKey } : {}),
     dimensions: {
+      ...(gate.dimensions as ReadinessGate['dimensions']),
       testRunRole: gate.testRunRole.toLowerCase() as ReadinessGate['dimensions']['testRunRole'],
     },
     operator: gate.operator,

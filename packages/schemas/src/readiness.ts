@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import { projectSlugSchema } from './project.js';
 import { releaseListQuerySchema, releaseSummarySchema } from './release.js';
+import {
+  qualityMetricKeySchema,
+  qualityMetricDimensionsSchema,
+  QUALITY_METRIC_DEFINITIONS,
+  validateMetricDimensions,
+} from './quality-metric.js';
 
-export const readinessMetricKeySchema = z.enum([
-  'test.pass_rate',
-  'test.completion_rate',
-  'test.failed_count',
-]);
+export const readinessMetricKeySchema = qualityMetricKeySchema;
 export const readinessOperatorSchema = z.enum(['eq', 'ne', 'gt', 'gte', 'lt', 'lte']);
 export const readinessGateImpactSchema = z.enum(['warning', 'blocking']);
 export const readinessEvidenceBehaviorSchema = z.enum(['unknown', 'warn', 'block']);
@@ -71,7 +73,8 @@ export const readinessGateInputSchema = z
       .regex(/^[a-z][a-z0-9_.-]{1,49}$/),
     metricKey: readinessMetricKeySchema,
     metricVersion: z.literal('1.0.0'),
-    dimensions: z.object({ testRunRole: readinessTestRunRoleSchema }).strict(),
+    dimensions: qualityMetricDimensionsSchema,
+    producerKey: z.string().trim().min(1).max(120).optional(),
     operator: readinessOperatorSchema,
     expected: readinessExpectedValueSchema,
     impact: readinessGateImpactSchema,
@@ -81,8 +84,33 @@ export const readinessGateInputSchema = z
   })
   .strict()
   .superRefine((gate, context) => {
-    const expectedType =
-      gate.metricKey === 'test.failed_count' ? ('integer' as const) : ('percentage' as const);
+    validateMetricDimensions(gate.metricKey, gate.dimensions, context);
+    if (!gate.metricKey.startsWith('test.') && !gate.producerKey)
+      context.addIssue({
+        code: 'custom',
+        path: ['producerKey'],
+        message: 'External gates require an evidence producer key',
+      });
+    if (
+      gate.dimensions.minimumPriority &&
+      gate.producerKey &&
+      gate.producerKey !== 'caselog.test-runs'
+    )
+      context.addIssue({
+        code: 'custom',
+        path: ['producerKey'],
+        message: 'Priority scopes require native test evidence',
+      });
+    const expectedType = QUALITY_METRIC_DEFINITIONS[gate.metricKey].valueType;
+    if (
+      gate.metricKey === 'accessibility.wcag22_aa_manual_review' &&
+      (gate.operator !== 'eq' || gate.expected.type !== 'integer' || gate.expected.value !== 1)
+    )
+      context.addIssue({
+        code: 'custom',
+        path: ['expected'],
+        message: 'Manual review requires a passed result (= 1)',
+      });
     if (gate.expected.type !== expectedType) {
       context.addIssue({
         code: 'custom',
@@ -116,6 +144,25 @@ export const createReadinessPolicyRequestSchema = z
 export const createReadinessPolicyVersionRequestSchema = z
   .object({ gates: readinessPolicyGatesSchema })
   .strict();
+
+export const updateReadinessPolicyRequestSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+    description: z.string().trim().max(2_000).nullable(),
+    gates: readinessPolicyGatesSchema,
+    expectedDraftId: z.uuid().nullable(),
+    expectedUpdatedAt: z.iso.datetime(),
+  })
+  .strict();
+export const publishReadinessPolicyRequestSchema = z
+  .object({ expectedDraftId: z.uuid().optional(), expectedUpdatedAt: z.iso.datetime().optional() })
+  .strict()
+  .refine((value) => Boolean(value.expectedDraftId) === Boolean(value.expectedUpdatedAt), {
+    message: 'Supply both the draft ID and policy timestamp',
+  })
+  .default({});
+export type PublishReadinessPolicyRequest = z.infer<typeof publishReadinessPolicyRequestSchema>;
+export type UpdateReadinessPolicyRequest = z.infer<typeof updateReadinessPolicyRequestSchema>;
 
 export const readinessPolicyProjectParamsSchema = z.object({ projectSlug: projectSlugSchema });
 export const readinessPolicyParamsSchema = readinessPolicyProjectParamsSchema.extend({
@@ -285,7 +332,7 @@ export const gateEvaluationSchema = z.object({
   diagnostic: gateEvaluationDiagnosticSchema,
   metricKey: readinessMetricKeySchema,
   metricVersion: z.string(),
-  dimensions: z.object({ testRunRole: readinessTestRunRoleSchema }),
+  dimensions: qualityMetricDimensionsSchema.extend({ producerKey: z.string().max(120).optional() }),
   operator: readinessOperatorSchema,
   expected: readinessExpectedValueSchema,
   actual: readinessExpectedValueSchema.nullable(),

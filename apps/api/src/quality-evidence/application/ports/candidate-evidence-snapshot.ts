@@ -1,4 +1,4 @@
-import type { EvidenceMetricKey } from '@caselog/schemas';
+import type { EvidenceMetricKey, QualityMetricDimensions } from '@caselog/schemas';
 
 export type CandidateEvidenceSnapshotObservation = {
   id: string;
@@ -7,7 +7,8 @@ export type CandidateEvidenceSnapshotObservation = {
   metricVersion: string;
   value: { type: 'percentage'; value: string | null } | { type: 'integer'; value: number | null };
   state: 'available' | 'incomplete';
-  dimensions: { testRunRole: 'required' | 'informational' };
+  dimensions: QualityMetricDimensions;
+  producerKey?: string;
   observedAt: string;
   expiresAt: string | null;
   trust: 'verified' | 'authenticated' | 'unverified';

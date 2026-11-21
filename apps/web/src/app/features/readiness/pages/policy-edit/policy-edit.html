@@ -1,0 +1,39 @@
+<main class="policy-edit-page" aria-labelledby="policy-edit-title">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
+    <a href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies/{{ policyId }}" [routerLink]="detailLink">{{ initial()?.name ?? ('readiness.policies.title' | transloco) }}</a>
+    <span aria-hidden="true">/</span><span aria-current="page">{{ 'readiness.policies.edit.title' | transloco }}</span>
+  </nav>
+  <h1 id="policy-edit-title">{{ 'readiness.policies.edit.title' | transloco }}</h1>
+  <p>{{ 'readiness.policies.edit.description' | transloco }}</p>
+  @if (policyQuery.isPending()) {
+    <app-loading-skeleton preset="block" [label]="'readiness.policies.detailLoading' | transloco" />
+  } @else if (policyQuery.isError() && !initial()) {
+    <app-page-state [title]="'readiness.policies.detailErrorTitle' | transloco" [message]="errorTranslationKey() | transloco">
+      <button actions appButton="secondary" type="button" (click)="policyQuery.refetch()">{{ 'readiness.retry' | transloco }}</button>
+    </app-page-state>
+  } @else if (!canManage()) {
+    <app-callout tone="neutral" [title]="'readiness.policies.successor.readOnlyTitle' | transloco"><p>{{ 'readiness.policies.successor.readOnlyDescription' | transloco }}</p></app-callout>
+  } @else if (initial()) {
+    @if (save.isError() || policyQuery.isError()) {
+      <app-callout tone="danger" liveRole="alert" [title]="'readiness.policies.edit.errorTitle' | transloco">
+        <p>{{ errorTranslationKey() | transloco }}</p>
+        @if (conflict()) { <button appButton="secondary" type="button" [disabled]="policyQuery.isFetching()" (click)="reload()">{{ 'readiness.policies.edit.reload' | transloco }}</button> }
+      </app-callout>
+    }
+    <form [formGroup]="form" (ngSubmit)="submit()" [attr.aria-busy]="save.isPending()">
+      <fieldset [disabled]="save.isPending()">
+        <app-form-field controlId="policy-edit-name" [label]="'readiness.policies.create.name' | transloco" [required]="true" [error]="form.controls.name.touched && form.controls.name.invalid ? ('readiness.policies.create.nameInvalid' | transloco) : undefined">
+          <input appControl #nameInput id="policy-edit-name" formControlName="name" maxlength="120" aria-describedby="policy-edit-name-description" [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid" />
+        </app-form-field>
+        <app-form-field controlId="policy-edit-description" [label]="'readiness.policies.create.policyDescription' | transloco">
+          <textarea appControl id="policy-edit-description" formControlName="description" maxlength="2000" rows="3"></textarea>
+        </app-form-field>
+        <app-policy-gate-editor [form]="form" />
+      </fieldset>
+      <footer>
+        <a appButton="secondary" href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies/{{ policyId }}" [routerLink]="detailLink">{{ 'readiness.policies.successor.cancel' | transloco }}</a>
+        <button appButton="primary" type="submit" [disabled]="save.isPending() || conflict()">{{ (save.isPending() ? 'readiness.policies.edit.saving' : 'readiness.policies.edit.save') | transloco }}</button>
+      </footer>
+    </form>
+  }
+</main>

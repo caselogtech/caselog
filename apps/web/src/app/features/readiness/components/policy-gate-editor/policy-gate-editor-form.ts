@@ -1,3 +1,4 @@
+import { QUALITY_METRIC_DEFINITIONS, type TestCasePriority } from '@caselog/schemas';
 import {
   type AbstractControl,
   FormArray,
@@ -16,11 +17,18 @@ import {
 } from '@caselog/schemas/readiness';
 
 export type PolicyGateForm = FormGroup<{
+  minimumPriority: FormControl<TestCasePriority | ''>;
+  profile: FormControl<string>;
+  producerKey: FormControl<string>;
+  pageUrls: FormControl<string>;
+  toolVersion: FormControl<string>;
+  device: FormControl<'mobile' | 'desktop'>;
+  runsPerPage: FormControl<number>;
   key: FormControl<string>;
   metricKey: FormControl<ReadinessGateInput['metricKey']>;
   testRunRole: FormControl<ReadinessGateInput['dimensions']['testRunRole']>;
   operator: FormControl<ReadinessGateInput['operator']>;
-  expectedValue: FormControl<string>;
+  expectedValue: FormControl<string | number>;
   impact: FormControl<ReadinessGateInput['impact']>;
   missingEvidenceBehavior: FormControl<ReadinessGateInput['missingEvidenceBehavior']>;
   staleEvidenceBehavior: FormControl<ReadinessGateInput['staleEvidenceBehavior']>;
@@ -44,13 +52,18 @@ export type PolicyGateEditorForm = {
 
 const trimmedRequired: ValidatorFn = (control) =>
   typeof control.value === 'string' && control.value.trim() ? null : { required: true };
+const expectedRequired: ValidatorFn = (control) =>
+  (typeof control.value === 'number' && Number.isFinite(control.value)) ||
+  (typeof control.value === 'string' && control.value.trim())
+    ? null
+    : { required: true };
 
 const compatibleExpectedValue: ValidatorFn = (control: AbstractControl) => {
   const metricKey = control.get('metricKey')?.value as ReadinessGateInput['metricKey'] | undefined;
   const expectedValue = String(control.get('expectedValue')?.value ?? '').trim();
   if (!metricKey || !expectedValue) return null;
 
-  if (metricKey === 'test.failed_count') {
+  if (QUALITY_METRIC_DEFINITIONS[metricKey].valueType === 'integer') {
     const value = Number(expectedValue);
     return /^(?:0|[1-9]\d*)$/.test(expectedValue) && Number.isSafeInteger(value)
       ? null
@@ -63,6 +76,41 @@ const compatibleExpectedValue: ValidatorFn = (control: AbstractControl) => {
     : { incompatibleExpectedValue: true };
 };
 
+const validMetricScope: ValidatorFn = (control) => {
+  const metric = control.get('metricKey')?.value;
+  if (typeof metric !== 'string') return null;
+  if (metric.startsWith('test.')) return null;
+  return control.get('profile')?.value?.trim() &&
+    control.get('producerKey')?.value?.trim() &&
+    validReportPages(String(control.get('pageUrls')?.value ?? '')) &&
+    control.get('toolVersion')?.value?.trim() &&
+    control.get('testRunRole')?.value === 'required' &&
+    (metric !== 'accessibility.wcag22_aa_manual_review' ||
+      (control.get('operator')?.value === 'eq' &&
+        Number(control.get('expectedValue')?.value) === 1))
+    ? null
+    : { invalidMetricScope: true };
+};
+
+function validReportPages(value: string): boolean {
+  const pages = value
+    .split(/\r?\n/)
+    .map((page) => page.trim())
+    .filter(Boolean);
+  return (
+    pages.length > 0 &&
+    pages.length <= 50 &&
+    pages.every((page) => {
+      try {
+        const url = new URL(page);
+        return ['https:', 'http:'].includes(url.protocol) && page.length <= 2048;
+      } catch {
+        return false;
+      }
+    })
+  );
+}
+
 const uniqueGateKeys: ValidatorFn = (control: AbstractControl) => {
   const keys = Array.isArray(control.value)
     ? control.value.map(({ key }: { key?: string }) => key?.trim()).filter(Boolean)
@@ -73,6 +121,35 @@ const uniqueGateKeys: ValidatorFn = (control: AbstractControl) => {
 export function createPolicyGateForm(gate?: ReadinessGateInput): PolicyGateForm {
   return new FormGroup(
     {
+      pageUrls: new FormControl(gate?.dimensions.pageUrls?.join('\n') ?? '', { nonNullable: true }),
+      toolVersion: new FormControl(gate?.dimensions.toolVersion ?? '', {
+        nonNullable: true,
+        validators: [Validators.maxLength(80)],
+      }),
+      device: new FormControl<'mobile' | 'desktop'>(gate?.dimensions.device ?? 'mobile', {
+        nonNullable: true,
+      }),
+      runsPerPage: new FormControl(gate?.dimensions.runsPerPage ?? 3, {
+        nonNullable: true,
+        validators: [
+          Validators.required,
+          Validators.min(3),
+          Validators.max(10),
+          Validators.pattern(/^\d+$/),
+        ],
+      }),
+      minimumPriority: new FormControl<TestCasePriority | ''>(
+        gate?.dimensions.minimumPriority ?? '',
+        { nonNullable: true },
+      ),
+      profile: new FormControl(gate?.dimensions.profile ?? '', {
+        nonNullable: true,
+        validators: [Validators.maxLength(80), Validators.pattern(/^[a-z0-9][a-z0-9._-]{0,79}$/)],
+      }),
+      producerKey: new FormControl(gate?.producerKey ?? '', {
+        nonNullable: true,
+        validators: [Validators.maxLength(120)],
+      }),
       key: new FormControl(gate?.key ?? '', {
         nonNullable: true,
         validators: [
@@ -86,13 +163,13 @@ export function createPolicyGateForm(gate?: ReadinessGateInput): PolicyGateForm 
         nonNullable: true,
       }),
       operator: new FormControl(gate?.operator ?? 'gte', { nonNullable: true }),
-      expectedValue: new FormControl(
+      expectedValue: new FormControl<string | number>(
         gate
           ? gate.expected.type === 'percentage'
             ? gate.expected.value
             : String(gate.expected.value)
           : '98',
-        { nonNullable: true, validators: [trimmedRequired] },
+        { nonNullable: true, validators: [expectedRequired] },
       ),
       impact: new FormControl(gate?.impact ?? 'blocking', { nonNullable: true }),
       missingEvidenceBehavior: new FormControl(gate?.missingEvidenceBehavior ?? 'block', {
@@ -105,7 +182,7 @@ export function createPolicyGateForm(gate?: ReadinessGateInput): PolicyGateForm 
         nonNullable: true,
       }),
     },
-    { validators: [compatibleExpectedValue] },
+    { validators: [compatibleExpectedValue, validMetricScope] },
   );
 }
 
@@ -143,12 +220,33 @@ export function toReadinessGateInput(form: PolicyGateForm): ReadinessGateInput {
     key: value.key.trim(),
     metricKey: value.metricKey,
     metricVersion: '1.0.0',
-    dimensions: { testRunRole: value.testRunRole },
+    dimensions: {
+      testRunRole: value.testRunRole,
+      ...(value.minimumPriority ? { minimumPriority: value.minimumPriority } : {}),
+      ...(!value.metricKey.startsWith('test.')
+        ? {
+            profile: value.profile.trim(),
+            pageUrls: [
+              ...new Set(
+                value.pageUrls
+                  .split(/\r?\n/)
+                  .map((page) => page.trim())
+                  .filter(Boolean),
+              ),
+            ].sort(),
+            toolVersion: value.toolVersion.trim(),
+            ...(value.metricKey === 'performance.lighthouse_score'
+              ? { device: value.device, runsPerPage: value.runsPerPage }
+              : {}),
+          }
+        : {}),
+    },
+    ...(value.producerKey.trim() ? { producerKey: value.producerKey.trim() } : {}),
     operator: value.operator,
     expected:
-      value.metricKey === 'test.failed_count'
+      QUALITY_METRIC_DEFINITIONS[value.metricKey].valueType === 'integer'
         ? { type: 'integer', value: Number(value.expectedValue) }
-        : { type: 'percentage', value: value.expectedValue.trim() },
+        : { type: 'percentage', value: String(value.expectedValue).trim() },
     impact: value.impact,
     missingEvidenceBehavior: value.missingEvidenceBehavior,
     staleEvidenceBehavior: value.staleEvidenceBehavior,

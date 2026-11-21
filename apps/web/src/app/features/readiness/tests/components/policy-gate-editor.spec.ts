@@ -27,6 +27,37 @@ describe('policy gate editor form', () => {
     });
   });
 
+  it('maps numeric input values and complete external profiles without losing their context', () => {
+    const form = createPolicyCreateForm();
+    form.patchValue({ key: 'production', name: 'Production readiness' });
+    const gate = form.controls.gates.at(0);
+    gate.patchValue({
+      key: 'lighthouse',
+      metricKey: 'performance.lighthouse_score',
+      expectedValue: 90,
+      producerKey: 'ci-token',
+      profile: 'production-mobile-v1',
+      pageUrls: 'https://example.com/checkout\nhttps://example.com/',
+      toolVersion: 'pinned-v1',
+      runsPerPage: 3,
+    });
+    expect(form.valid).toBe(true);
+    expect(toCreateReadinessPolicyRequest(form).gates[0]).toMatchObject({
+      expected: { type: 'percentage', value: '90' },
+      producerKey: 'ci-token',
+      dimensions: {
+        pageUrls: ['https://example.com/', 'https://example.com/checkout'],
+        device: 'mobile',
+        runsPerPage: 3,
+      },
+    });
+    gate.controls.runsPerPage.setValue(3.5);
+    expect(form.invalid).toBe(true);
+    gate.controls.runsPerPage.setValue(3);
+    gate.controls.pageUrls.setValue('invalid');
+    expect(form.invalid).toBe(true);
+  });
+
   it('rejects duplicate keys and values outside metric ranges at the contract boundary', () => {
     const form = createPolicyCreateForm();
     form.patchValue({ key: 'production', name: 'Production promotion' });

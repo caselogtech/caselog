@@ -1,4 +1,6 @@
 import {
+  publishReadinessPolicyRequestSchema,
+  updateReadinessPolicyRequestSchema,
   createReadinessPolicyRequestSchema,
   createReadinessPolicyVersionRequestSchema,
   readinessPolicyParamsSchema,
@@ -8,6 +10,12 @@ import {
 } from '@caselog/schemas/readiness';
 import { createZodDto } from 'nestjs-zod';
 
+export class PublishReadinessPolicyRequestDto extends createZodDto(
+  publishReadinessPolicyRequestSchema,
+) {}
+export class UpdateReadinessPolicyRequestDto extends createZodDto(
+  updateReadinessPolicyRequestSchema,
+) {}
 export class ReadinessPolicyProjectParamsDto extends createZodDto(
   readinessPolicyProjectParamsSchema,
 ) {}

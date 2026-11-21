@@ -6,7 +6,7 @@ import {
   type NonNullableFormBuilder,
   Validators,
 } from '@angular/forms';
-import type { TestCaseTemplate } from '@caselog/schemas';
+import type { TestCaseTemplate, TestCasePriority } from '@caselog/schemas';
 
 export type CaseStepForm = FormGroup<{
   action: FormControl<string>;
@@ -14,6 +14,7 @@ export type CaseStepForm = FormGroup<{
 }>;
 
 export type CaseEditorForm = FormGroup<{
+  priority: FormControl<TestCasePriority>;
   title: FormControl<string>;
   sectionId: FormControl<string>;
   template: FormControl<TestCaseTemplate>;
@@ -28,6 +29,7 @@ export type CaseEditorForm = FormGroup<{
 
 export function createCaseEditorForm(formBuilder: NonNullableFormBuilder): CaseEditorForm {
   return formBuilder.group({
+    priority: formBuilder.control<TestCasePriority>('medium'),
     title: ['', [Validators.required, Validators.maxLength(500)]],
     sectionId: ['', Validators.required],
     template: formBuilder.control<TestCaseTemplate>('steps'),

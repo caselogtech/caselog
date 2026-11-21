@@ -257,6 +257,8 @@ Release readiness has stricter persistence rules than ordinary mutable entities:
 - normalized evidence is append-only and belongs to one candidate;
 - a correction supersedes an observation instead of mutating evidence already used;
 - editing a release policy creates an immutable policy version;
+- draft editing, priority-scoped candidate inventories and external accessibility/
+  Lighthouse gates follow [quality policy scopes](architecture/decisions/20261121-quality-policy-scopes-and-editing.md);
 - gate evaluations and readiness decisions are appended, never replaced;
 - every decision references the exact candidate, policy version, evaluator version,
   metric-definition version, gate evaluations, and evidence set;

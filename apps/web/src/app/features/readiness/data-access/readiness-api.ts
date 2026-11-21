@@ -2,6 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { releaseDetailResponseSchema, type ReleaseDetailResponse } from '@caselog/schemas';
 import {
+  type PublishReadinessPolicyRequest,
+  type UpdateReadinessPolicyRequest,
+  updateReadinessPolicyRequestSchema,
   createReadinessPolicyRequestSchema,
   createReadinessPolicyVersionRequestSchema,
   createReadinessWaiverRequestSchema,
@@ -257,6 +260,22 @@ export class ReadinessApi {
     return readinessPolicyResponseSchema.parse(response);
   }
 
+  async updatePolicy(
+    workspaceSlug: string,
+    projectSlug: string,
+    policyId: string,
+    request: UpdateReadinessPolicyRequest,
+  ): Promise<ReadinessPolicyResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.put<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/release-policies/${encodeURIComponent(policyId)}/draft`,
+        updateReadinessPolicyRequestSchema.parse(request),
+      ),
+    );
+    return readinessPolicyResponseSchema.parse(response);
+  }
+
   async createPolicyVersion(
     workspaceSlug: string,
     projectSlug: string,
@@ -281,12 +300,13 @@ export class ReadinessApi {
     projectSlug: string,
     policyId: string,
     idempotencyKey: string,
+    expected?: PublishReadinessPolicyRequest,
   ): Promise<ReadinessPolicyResponse> {
     await this.workspaceAccess.open(workspaceSlug);
     const response = await lastValueFrom(
       this.http.post<unknown>(
         `/api/v1/projects/${encodeURIComponent(projectSlug)}/release-policies/${encodeURIComponent(policyId)}/publish`,
-        {},
+        expected ?? {},
         { headers: { 'Idempotency-Key': idempotencyKey } },
       ),
     );

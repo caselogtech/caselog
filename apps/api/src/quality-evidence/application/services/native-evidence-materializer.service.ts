@@ -1,3 +1,6 @@
+import { TestCaseScopeService } from '../../../test-cases/public-api';
+import { CandidateTestScopeRepository } from '../../infrastructure/repositories/candidate-test-scope.repository';
+import { buildScopedTestMetrics } from '../../domain/policies/scoped-test-metrics';
 import { Inject, Injectable } from '@nestjs/common';
 import type { CandidateTestRunRole } from '@caselog/schemas';
 import type { ReleaseCandidateReference } from '../../../releases/public-api';
@@ -15,6 +18,8 @@ const TEST_RUN_ROLES = ['required', 'informational'] as const satisfies Candidat
 @Injectable()
 export class NativeEvidenceMaterializerService {
   constructor(
+    @Inject(TestCaseScopeService) private readonly testCases: TestCaseScopeService,
+    @Inject(CandidateTestScopeRepository) private readonly scopes: CandidateTestScopeRepository,
     @Inject(TestRunEvidenceSourceService)
     private readonly testRuns: TestRunEvidenceSourceService,
     @Inject(EvidenceObservationRepository)
@@ -37,6 +42,12 @@ export class NativeEvidenceMaterializerService {
       throw new Error('Candidate test run belongs to another project');
     }
 
+    const scope =
+      (await this.scopes.load(organizationId, candidate.projectId, candidate.id)) ??
+      (await this.scopes.freeze(organizationId, candidate.projectId, candidate.id, {
+        capturedAt: new Date().toISOString(),
+        cases: await this.testCases.capture(organizationId, candidate.projectId),
+      }));
     const inputs = TEST_RUN_ROLES.flatMap((role) => {
       const roleSnapshots = snapshots
         .filter((link) => link.role === role)
@@ -49,13 +60,16 @@ export class NativeEvidenceMaterializerService {
       const expiresAt = new Date(
         observedAt.getTime() + NATIVE_TEST_PRODUCER.freshnessSeconds * 1_000,
       );
-      return buildNativeTestMetrics(role, roleSnapshots).map((metric) => ({
+      return [
+        ...buildNativeTestMetrics(role, roleSnapshots),
+        ...buildScopedTestMetrics(role, roleSnapshots, scope),
+      ].map((metric) => ({
         ...metric,
         role,
         sourceRevision,
         observedAt,
         expiresAt,
-        idempotencyKey: `${candidate.id}:${role}:${metric.metricKey}:${sourceRevision}`,
+        idempotencyKey: `${candidate.id}:${role}:${metric.metricKey}:${sourceRevision}${metric.dimensions.minimumPriority ? `:${metric.dimensions.minimumPriority}` : ''}`,
       }));
     });
 

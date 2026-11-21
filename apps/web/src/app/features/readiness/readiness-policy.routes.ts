@@ -26,6 +26,12 @@ export const readinessPolicyRoutes: Routes = [
           ),
       },
       {
+        path: ':policyId/edit',
+        canActivate: [requireWorkspacePermission('lead')],
+        loadComponent: () =>
+          import('./pages/policy-edit/policy-edit').then(({ PolicyEdit }) => PolicyEdit),
+      },
+      {
         path: ':policyId',
         loadComponent: () =>
           import('./pages/policy-detail/policy-detail').then(

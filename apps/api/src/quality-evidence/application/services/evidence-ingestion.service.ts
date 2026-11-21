@@ -5,6 +5,7 @@ import type {
   EvidenceIngestResponse,
   OrganizationAccessPrincipal,
 } from '@caselog/schemas';
+import { QUALITY_METRIC_DEFINITIONS } from '@caselog/schemas';
 import { evidenceIngestResponseSchema } from '@caselog/schemas/evidence';
 import {
   InvalidPayloadError,
@@ -66,8 +67,7 @@ export class EvidenceIngestionService {
   }
 
   private validateMetric(request: EvidenceIngestRequest): void {
-    const expectedType =
-      request.metricKey === 'test.failed_count' ? ('integer' as const) : ('percentage' as const);
+    const expectedType = QUALITY_METRIC_DEFINITIONS[request.metricKey].valueType;
     if (request.value.type !== expectedType) {
       throw new InvalidPayloadError(
         'evidence_value_type_mismatch',

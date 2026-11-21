@@ -48,6 +48,9 @@ const METRICS: EvidenceMetricKey[] = [
   'test.pass_rate',
   'test.completion_rate',
   'test.failed_count',
+  'accessibility.wcag22_aa_violations',
+  'accessibility.wcag22_aa_manual_review',
+  'performance.lighthouse_score',
 ];
 const TRUST_LEVELS: EvidenceObservation['producer']['trust'][] = [
   'verified',

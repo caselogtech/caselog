@@ -1,16 +1,13 @@
-import type {
-  EvidenceTrust,
-  ReadinessMetricKey,
-  ReadinessValue,
-  TestRunRole,
-} from './readiness-policy';
+import type { QualityMetricDimensions } from '@caselog/schemas';
+import type { EvidenceTrust, ReadinessMetricKey, ReadinessValue } from './readiness-policy';
 
 export type ReadinessEvidence = {
   observationId: string;
   producerId: string;
   metricKey: ReadinessMetricKey;
   metricVersion: string;
-  dimensions: { testRunRole: TestRunRole };
+  dimensions: QualityMetricDimensions;
+  producerKey?: string;
   state: 'AVAILABLE' | 'INCOMPLETE';
   value: ReadinessValue | null;
   trust: EvidenceTrust;

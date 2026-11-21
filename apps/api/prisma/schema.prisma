@@ -836,6 +836,7 @@ model TestCase {
 }
 
 model TestCaseVersion {
+  priority       String       @default("medium") @db.VarChar(10)
   organizationId String       @map("organization_id") @db.Uuid
   id             String       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   testCaseId     String       @map("test_case_id") @db.Uuid
@@ -1177,11 +1178,12 @@ model EvidenceProcessingIssue {
 }
 
 model CandidateEvidenceRevision {
-  organizationId String   @map("organization_id") @db.Uuid
-  projectId      String   @map("project_id") @db.Uuid
-  candidateId    String   @map("candidate_id") @db.Uuid
-  revision       Int      @default(0)
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  testScopeSnapshot Json?    @map("test_scope_snapshot")
+  organizationId    String   @map("organization_id") @db.Uuid
+  projectId         String   @map("project_id") @db.Uuid
+  candidateId       String   @map("candidate_id") @db.Uuid
+  revision          Int      @default(0)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project      Project          @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
@@ -1272,6 +1274,8 @@ model ReleasePolicyVersion {
 }
 
 model ReadinessGate {
+  dimensions              Json                      @default("{}")
+  producerKey             String?                   @map("producer_key") @db.VarChar(120)
   organizationId          String                    @map("organization_id") @db.Uuid
   id                      String                    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   projectId               String                    @map("project_id") @db.Uuid

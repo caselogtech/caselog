@@ -47,6 +47,7 @@
             "
           />
         </div>
+        <p>{{ 'workspace.cases.priority' | transloco }}: {{ priorityLabel(result.testCase.currentVersion.priority ?? 'medium') | transloco }}</p>
         <h1 id="case-detail-title">{{ result.testCase.currentVersion.title }}</h1>
         <p>{{ 'workspace.cases.detail.description' | transloco }}</p>
       </div>

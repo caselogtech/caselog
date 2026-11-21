@@ -4,6 +4,7 @@ import type {
   ReadinessPolicySummary,
   ReadinessPolicyResponse,
 } from '@caselog/schemas';
+import type { TenantTransaction } from '../../../core/database/application/services/tenant-database.service';
 import {
   CandidateTestRunRole,
   EvidenceTrustLevel,
@@ -40,6 +41,8 @@ export const READINESS_POLICY_SELECTION = {
           metricKey: true,
           metricVersion: true,
           testRunRole: true,
+          dimensions: true,
+          producerKey: true,
           operator: true,
           expectedValueType: true,
           expectedPercentage: true,
@@ -57,6 +60,22 @@ export const READINESS_POLICY_SELECTION = {
 export type ReadinessPolicyRecord = Prisma.ReleasePolicyGetPayload<{
   select: typeof READINESS_POLICY_SELECTION;
 }>;
+
+export async function advancePolicyTimestamp(
+  transaction: TenantTransaction,
+  organizationId: string,
+  projectId: string,
+  policyId: string,
+): Promise<void> {
+  const policy = await transaction.releasePolicy.findFirstOrThrow({
+    where: { organizationId, projectId, id: policyId },
+    select: { updatedAt: true },
+  });
+  await transaction.releasePolicy.update({
+    where: { organizationId_id: { organizationId, id: policyId }, projectId },
+    data: { updatedAt: new Date(Math.max(Date.now(), policy.updatedAt.getTime() + 1)) },
+  });
+}
 
 export const READINESS_POLICY_SUMMARY_SELECTION = {
   id: true,
@@ -127,6 +146,8 @@ export function readinessGateData(input: {
     metricKey: input.gate.metricKey,
     metricVersion: input.gate.metricVersion,
     testRunRole: TEST_RUN_ROLE[input.gate.dimensions.testRunRole],
+    dimensions: input.gate.dimensions,
+    producerKey: input.gate.producerKey,
     operator: OPERATOR[input.gate.operator],
     expectedValueType:
       input.gate.expected.type === 'percentage'
@@ -197,7 +218,9 @@ function toReadinessPolicy(record: ReadinessPolicyRecord): ReadinessPolicy {
         position: gate.position,
         metricKey: gate.metricKey as ReadinessGateInput['metricKey'],
         metricVersion: gate.metricVersion as ReadinessGateInput['metricVersion'],
+        ...(gate.producerKey ? { producerKey: gate.producerKey } : {}),
         dimensions: {
+          ...(gate.dimensions as ReadinessGateInput['dimensions']),
           testRunRole:
             gate.testRunRole.toLowerCase() as ReadinessGateInput['dimensions']['testRunRole'],
         },

@@ -124,6 +124,7 @@ export class CaseCreate {
     const value = this.form.getRawValue();
     const common = {
       title: value.title,
+      priority: value.priority,
       sectionId: value.sectionId,
       template: value.template,
       automationId: value.automationId,

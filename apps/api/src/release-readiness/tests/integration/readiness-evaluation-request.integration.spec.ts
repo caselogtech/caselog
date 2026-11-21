@@ -133,7 +133,7 @@ describe('readiness evaluation requests', () => {
       candidateId,
       assignmentId,
       evidenceRevision: 3,
-      evaluatorVersion: '1.0.0',
+      evaluatorVersion: '1.1.0',
       trigger: 'EVIDENCE_CHANGED',
     });
     await expect(
@@ -143,7 +143,7 @@ describe('readiness evaluation requests', () => {
     ).resolves.toMatchObject({
       assignmentId,
       targetEvidenceRevision: 3,
-      targetEvaluatorVersion: '1.0.0',
+      targetEvaluatorVersion: '1.1.0',
       state: 'PENDING',
       failureCode: null,
     });
@@ -191,7 +191,7 @@ describe('readiness evaluation requests', () => {
     });
     expect(evaluatorUpgrade).toMatchObject({
       kind: 'requested',
-      job: { evidenceRevision: 3, evaluatorVersion: '1.0.0' },
+      job: { evidenceRevision: 3, evaluatorVersion: '1.1.0' },
     });
 
     const advanced = await requests.request({
@@ -208,7 +208,7 @@ describe('readiness evaluation requests', () => {
       }),
     ).resolves.toMatchObject({
       targetEvidenceRevision: 4,
-      targetEvaluatorVersion: '1.0.0',
+      targetEvaluatorVersion: '1.1.0',
       state: 'PENDING',
       failureCode: null,
     });
@@ -230,11 +230,11 @@ describe('readiness evaluation requests', () => {
         assignmentId,
         policyVersionId,
         evidenceRevision: 3,
-        evaluatorVersion: '1.0.0',
+        evaluatorVersion: '1.1.0',
         evaluatedAt: new Date(),
         evaluatedById: null,
         trigger: 'EVIDENCE_CHANGED',
-        evaluation: { evaluatorVersion: '1.0.0', status: 'READY', gates: [] },
+        evaluation: { evaluatorVersion: '1.1.0', status: 'READY', gates: [] },
         gates: [],
       }),
     ).resolves.toEqual({ kind: 'input_superseded' });
@@ -244,7 +244,7 @@ describe('readiness evaluation requests', () => {
       }),
     ).resolves.toMatchObject({
       targetEvidenceRevision: 4,
-      targetEvaluatorVersion: '1.0.0',
+      targetEvaluatorVersion: '1.1.0',
       state: 'PENDING',
     });
     await expect(

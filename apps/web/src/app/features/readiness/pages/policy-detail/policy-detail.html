@@ -37,6 +37,9 @@
         </div>
         @if (latestVersion(); as latest) {
           <div class="latest-version">
+            @if (canManage()) {
+              <a appButton="secondary" href="/{{ workspaceSlug }}/{{ projectSlug }}/release-policies/{{ policyId }}/edit" [routerLink]="['/', workspaceSlug, projectSlug, 'release-policies', policyId, 'edit']">{{ 'readiness.policies.edit.title' | transloco }}</a>
+            }
             <app-status-badge
               [tone]="stateTone(latest.state)"
               [label]="stateLabel(latest.state) | transloco"

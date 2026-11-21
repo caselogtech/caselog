@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { priorityLabel } from '../../domain/readiness-presentation';
+import { BrowserSession } from '../../../../core/auth/browser-session';
+import { QUALITY_METRIC_DEFINITIONS } from '@caselog/schemas';
+import { readinessMetricKeySchema } from '@caselog/schemas/readiness';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import type { ReadinessGateInput } from '@caselog/schemas/readiness';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Button, FormControlStyle, FormField, StatusBadge } from '../../../../shared/ui/public-api';
-import { createPolicyGateForm, type PolicyGateEditorForm } from './policy-gate-editor-form';
+import {
+  createPolicyGateForm,
+  type PolicyGateForm,
+  type PolicyGateEditorForm,
+} from './policy-gate-editor-form';
 
 type MetricKey = ReadinessGateInput['metricKey'];
 type Operator = ReadinessGateInput['operator'];
@@ -16,6 +24,9 @@ const METRIC_LABEL: Record<MetricKey, string> = {
   'test.pass_rate': 'readiness.metrics.passRate',
   'test.completion_rate': 'readiness.metrics.completionRate',
   'test.failed_count': 'readiness.metrics.failedCount',
+  'accessibility.wcag22_aa_violations': 'readiness.metrics.accessibilityViolations',
+  'accessibility.wcag22_aa_manual_review': 'readiness.metrics.accessibilityManualReview',
+  'performance.lighthouse_score': 'readiness.metrics.lighthouseScore',
 };
 
 const ROLE_LABEL: Record<TestRunRole, string> = {
@@ -48,9 +59,44 @@ const TRUST_LABEL: Record<MinimumTrust, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PolicyGateEditor {
+  readonly priorityLabel = priorityLabel;
+  readonly browserSession = inject(BrowserSession);
+  useMyAccount(gate: PolicyGateForm): void {
+    const user = this.browserSession.user();
+    if (user) {
+      gate.controls.producerKey.setValue(user.id);
+      gate.markAsDirty();
+    }
+  }
   readonly form = input.required<PolicyGateEditorForm>();
 
-  readonly metrics: MetricKey[] = ['test.pass_rate', 'test.completion_rate', 'test.failed_count'];
+  readonly metrics = readinessMetricKeySchema.options;
+  readonly priorities = ['low', 'medium', 'high', 'critical'] as const;
+  metricChanged(gate: PolicyGateForm): void {
+    const metric = gate.controls.metricKey.value;
+    if (metric.startsWith('test.'))
+      gate.patchValue({
+        profile: '',
+        producerKey: '',
+        pageUrls: '',
+        toolVersion: '',
+        runsPerPage: 3,
+      });
+    else
+      gate.patchValue({
+        minimumPriority: '',
+        runsPerPage: 3,
+        testRunRole: 'required',
+        staleEvidenceBehavior: 'block',
+        operator: metric === 'performance.lighthouse_score' ? 'gte' : 'eq',
+        expectedValue:
+          metric === 'performance.lighthouse_score'
+            ? '90'
+            : metric === 'accessibility.wcag22_aa_manual_review'
+              ? '1'
+              : '0',
+      });
+  }
   readonly operators: Operator[] = ['eq', 'ne', 'gt', 'gte', 'lt', 'lte'];
   readonly roles: TestRunRole[] = ['required', 'informational'];
   readonly impacts: Impact[] = ['blocking', 'warning'];
@@ -114,13 +160,19 @@ export class PolicyGateEditor {
     return { eq: '=', ne: '≠', gt: '>', gte: '≥', lt: '<', lte: '≤' }[operator];
   }
 
+  isInteger(metric: MetricKey): boolean {
+    return QUALITY_METRIC_DEFINITIONS[metric].valueType === 'integer';
+  }
+
   expectedHint(metric: MetricKey): string {
-    return metric === 'test.failed_count'
+    return QUALITY_METRIC_DEFINITIONS[metric].valueType === 'integer'
       ? 'readiness.policies.editor.integerHint'
       : 'readiness.policies.editor.percentageHint';
   }
 
-  expectedDisplay(metric: MetricKey, value: string): string {
-    return metric === 'test.failed_count' ? value || '—' : `${value || '—'}%`;
+  expectedDisplay(metric: MetricKey, value: string | number): string {
+    const display = String(value).trim() || '—';
+    if (metric === 'performance.lighthouse_score') return `${display}/100`;
+    return QUALITY_METRIC_DEFINITIONS[metric].valueType === 'integer' ? display : `${display}%`;
   }
 }

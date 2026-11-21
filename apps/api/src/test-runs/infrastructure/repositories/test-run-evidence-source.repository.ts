@@ -48,9 +48,27 @@ export class TestRunEvidenceSourceRepository {
         if (!status) throw new Error('Test run item references an unavailable result status');
         return { ...status, count: group._count._all };
       });
+      const items = await transaction.testRunItem.findMany({
+        where: { organizationId, testRunId },
+        orderBy: { id: 'asc' },
+        take: 20_001,
+        select: {
+          caseVersionId: true,
+          updatedAt: true,
+          status: { select: { key: true, isFinal: true, countsAsFailure: true } },
+        },
+      });
+      if (items.length > 20_000) throw new Error('Test run evidence exceeds 20000 items');
       const observedAt = itemUpdatedAt._max.updatedAt;
 
       return {
+        items: items.map((item) => ({
+          versionId: item.caseVersionId,
+          updatedAt: item.updatedAt.toISOString(),
+          statusKey: item.status.key,
+          isFinal: item.status.isFinal,
+          countsAsFailure: item.status.countsAsFailure,
+        })),
         projectId: run.projectId,
         testRunId: run.id,
         status: run.status.toLowerCase() as TestRunEvidenceSnapshot['status'],

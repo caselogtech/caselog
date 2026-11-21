@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { RestoreTestCaseVersionRequest } from '@caselog/schemas';
-import { testCaseContentSchema } from '@caselog/schemas';
+import { testCaseContentSchema, testCasePrioritySchema } from '@caselog/schemas';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 
 import {
@@ -55,7 +55,7 @@ export class TestCaseRepository {
           automationId: true,
           updatedAt: true,
           section: { select: { id: true, name: true } },
-          currentVersion: { select: { title: true, template: true } },
+          currentVersion: { select: { title: true, template: true, priority: true } },
         },
       });
 
@@ -72,6 +72,7 @@ export class TestCaseRepository {
                     ...testCase,
                     caseNumber: caseNumber.toString(),
                     title: currentVersion.title,
+                    priority: testCasePrioritySchema.parse(currentVersion.priority),
                     template: TEMPLATE_MAP[currentVersion.template],
                     updatedAt: updatedAt.toISOString(),
                   },
@@ -119,6 +120,7 @@ export class TestCaseRepository {
               version: true,
               title: true,
               template: true,
+              priority: true,
               preconditions: true,
               expectedResult: true,
               content: true,
@@ -133,6 +135,7 @@ export class TestCaseRepository {
               version: true,
               title: true,
               template: true,
+              priority: true,
               preconditions: true,
               expectedResult: true,
               createdAt: true,
@@ -162,12 +165,14 @@ export class TestCaseRepository {
             },
             currentVersion: {
               ...currentVersion,
+              priority: testCasePrioritySchema.parse(currentVersion.priority),
               template: TEMPLATE_MAP[currentVersion.template],
               content: testCaseContentSchema.parse(currentVersion.content),
               createdAt: currentVersion.createdAt.toISOString(),
             },
             versions: versions.map((version) => ({
               ...version,
+              priority: testCasePrioritySchema.parse(version.priority),
               template: TEMPLATE_MAP[version.template],
               createdAt: version.createdAt.toISOString(),
             })),
@@ -212,6 +217,7 @@ export class TestCaseRepository {
           version: true,
           title: true,
           template: true,
+          priority: true,
           preconditions: true,
           expectedResult: true,
           content: true,
@@ -225,6 +231,7 @@ export class TestCaseRepository {
         kind: 'found',
         value: {
           ...version,
+          priority: testCasePrioritySchema.parse(version.priority),
           template: TEMPLATE_MAP[version.template],
           content: testCaseContentSchema.parse(version.content),
           createdAt: version.createdAt.toISOString(),
@@ -283,6 +290,7 @@ export class TestCaseRepository {
         select: {
           title: true,
           template: true,
+          priority: true,
           preconditions: true,
           expectedResult: true,
           content: true,
@@ -297,6 +305,7 @@ export class TestCaseRepository {
           version: request.baseVersion + 1,
           title: target.title,
           template: target.template,
+          priority: target.priority,
           preconditions: target.preconditions,
           expectedResult: target.expectedResult,
           content: testCaseContentSchema.parse(target.content),
@@ -318,6 +327,7 @@ export class TestCaseRepository {
             caseNumber: testCase.caseNumber.toString(),
             title: target.title,
             template: TEMPLATE_MAP[target.template],
+            priority: testCasePrioritySchema.parse(target.priority),
             automationId: testCase.automationId,
             section: testCase.section,
             updatedAt: current.updatedAt.toISOString(),
@@ -371,6 +381,7 @@ export class TestCaseRepository {
             select: {
               title: true,
               template: true,
+              priority: true,
               preconditions: true,
               expectedResult: true,
               content: true,
@@ -403,6 +414,7 @@ export class TestCaseRepository {
           version: 1,
           title,
           template: source.currentVersion.template,
+          priority: source.currentVersion.priority,
           preconditions: source.currentVersion.preconditions,
           expectedResult: source.currentVersion.expectedResult,
           content: testCaseContentSchema.parse(source.currentVersion.content),
@@ -424,6 +436,7 @@ export class TestCaseRepository {
             caseNumber: testCase.caseNumber.toString(),
             title,
             template: TEMPLATE_MAP[source.currentVersion.template],
+            priority: testCasePrioritySchema.parse(source.currentVersion.priority),
             automationId: null,
             section: { id: source.sectionId, name: source.section.name },
             updatedAt: current.updatedAt.toISOString(),

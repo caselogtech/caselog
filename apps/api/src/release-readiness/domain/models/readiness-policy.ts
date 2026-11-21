@@ -1,8 +1,5 @@
-export const READINESS_METRIC_CATALOGUE = {
-  'test.pass_rate': { version: '1.0.0', valueType: 'percentage' },
-  'test.completion_rate': { version: '1.0.0', valueType: 'percentage' },
-  'test.failed_count': { version: '1.0.0', valueType: 'integer' },
-} as const;
+import { QUALITY_METRIC_DEFINITIONS, type QualityMetricDimensions } from '@caselog/schemas';
+export const READINESS_METRIC_CATALOGUE = QUALITY_METRIC_DEFINITIONS;
 
 export type ReadinessMetricKey = keyof typeof READINESS_METRIC_CATALOGUE;
 export type ReadinessValueType = 'percentage' | 'integer';
@@ -22,7 +19,8 @@ export type ReadinessGate = {
   position: number;
   metricKey: ReadinessMetricKey;
   metricVersion: string;
-  dimensions: { testRunRole: TestRunRole };
+  dimensions: QualityMetricDimensions;
+  producerKey?: string;
   operator: ReadinessOperator;
   expected: ReadinessValue;
   impact: GateImpact;

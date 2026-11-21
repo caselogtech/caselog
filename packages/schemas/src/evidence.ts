@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { projectSlugSchema } from './project.js';
-import { candidateTestRunRoleSchema } from './release.js';
+import {
+  qualityMetricKeySchema,
+  qualityMetricDimensionsSchema,
+  validateMetricDimensions,
+  QUALITY_METRIC_DEFINITIONS,
+} from './quality-metric.js';
 
-export const evidenceMetricKeySchema = z.enum([
-  'test.pass_rate',
-  'test.completion_rate',
-  'test.failed_count',
-]);
+export const evidenceMetricKeySchema = qualityMetricKeySchema;
 export const evidenceObservationStateSchema = z.enum(['available', 'incomplete']);
 export const evidenceTrustLevelSchema = z.enum(['verified', 'authenticated', 'unverified']);
 export const evidenceFreshnessSchema = z.enum(['current', 'stale']);
@@ -67,6 +68,12 @@ export const evidenceValueSchema = z.discriminatedUnion('type', [
 ]);
 
 export const nativeTestEvidenceDetailsSchema = z.object({
+  scopeCapturedAt: z.iso.datetime().optional(),
+  scopeHash: z.string().optional(),
+  requiredCaseCount: z.number().int().nonnegative().optional(),
+  missingCaseCount: z.number().int().nonnegative().optional(),
+  missingCaseIds: z.array(z.uuid()).max(100).optional(),
+  missingCaseIdsTruncated: z.boolean().optional(),
   runCount: z.number().int().nonnegative(),
   totalItems: z.number().int().nonnegative(),
   finalItems: z.number().int().nonnegative(),
@@ -91,7 +98,7 @@ const evidenceDetailScalarSchema = z.union([
 export const externalEvidenceDetailsSchema = z
   .record(
     z.string().min(1).max(80),
-    z.union([evidenceDetailScalarSchema, z.array(evidenceDetailScalarSchema).max(100)]),
+    z.union([evidenceDetailScalarSchema, z.array(evidenceDetailScalarSchema).max(500)]),
   )
   .refine((value) => JSON.stringify(value).length <= 16_384, {
     message: 'Evidence details must not exceed 16384 characters',
@@ -110,7 +117,7 @@ export const evidenceObservationSchema = z.object({
   metricVersion: z.string().min(1).max(20),
   value: evidenceValueSchema,
   state: evidenceObservationStateSchema,
-  dimensions: z.object({ testRunRole: candidateTestRunRoleSchema }),
+  dimensions: qualityMetricDimensionsSchema,
   observedAt: z.iso.datetime(),
   expiresAt: z.iso.datetime().nullable(),
   freshness: evidenceFreshnessSchema,
@@ -168,7 +175,7 @@ export const evidenceIngestRequestSchema = z
     metricVersion: z.literal('1.0.0'),
     value: evidenceValueSchema,
     state: evidenceObservationStateSchema,
-    dimensions: z.object({ testRunRole: candidateTestRunRoleSchema }).strict(),
+    dimensions: qualityMetricDimensionsSchema,
     observedAt: z.iso.datetime(),
     expiresAt: z.iso.datetime(),
     source: z
@@ -184,6 +191,74 @@ export const evidenceIngestRequestSchema = z
   })
   .strict()
   .superRefine((value, context) => {
+    validateMetricDimensions(value.metricKey, value.dimensions, context);
+    if (value.dimensions.minimumPriority)
+      context.addIssue({
+        code: 'custom',
+        path: ['dimensions', 'minimumPriority'],
+        message: 'Priority-scoped test evidence is produced by Caselog',
+      });
+    if (value.value.type !== QUALITY_METRIC_DEFINITIONS[value.metricKey].valueType)
+      context.addIssue({
+        code: 'custom',
+        path: ['value'],
+        message: 'Evidence value type does not match its metric',
+      });
+    if (!value.metricKey.startsWith('test.') && !value.source.url)
+      context.addIssue({
+        code: 'custom',
+        path: ['source', 'url'],
+        message: 'External quality evidence requires a report URL',
+      });
+    if (
+      value.metricKey === 'accessibility.wcag22_aa_manual_review' &&
+      value.value.type === 'integer' &&
+      value.value.value !== null &&
+      ![0, 1].includes(value.value.value)
+    )
+      context.addIssue({
+        code: 'custom',
+        path: ['value'],
+        message: 'Manual review is 1 (passed) or 0 (failed)',
+      });
+    if (value.metricKey === 'performance.lighthouse_score' && value.state === 'available') {
+      // biome-ignore lint/complexity/useLiteralKeys: Angular requires indexed access for record fields.
+      const samples = value.details['performanceSamples'];
+      const runs = value.dimensions.runsPerPage ?? 0;
+      const pages = value.dimensions.pageUrls?.length ?? 0;
+      if (
+        !Array.isArray(samples) ||
+        runs === 0 ||
+        samples.length !== runs * pages ||
+        samples.some(
+          (sample) =>
+            typeof sample !== 'number' || !Number.isFinite(sample) || sample < 0 || sample > 100,
+        )
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['details', 'performanceSamples'],
+          message: 'Provide 3–10 scores per page, ordered by the sorted page URLs',
+        });
+      } else {
+        const numbers = samples.filter((sample): sample is number => typeof sample === 'number');
+        const medians = Array.from({ length: pages }, (_, page) => {
+          const group = numbers.slice(page * runs, (page + 1) * runs).sort((a, b) => a - b);
+          return (
+            ((group[Math.floor((runs - 1) / 2)] ?? 0) + (group[Math.floor(runs / 2)] ?? 0)) / 2
+          );
+        });
+        if (
+          value.value.type !== 'percentage' ||
+          Math.abs(Number(value.value.value) - Math.min(...medians)) > 0.000000001
+        )
+          context.addIssue({
+            code: 'custom',
+            path: ['value'],
+            message: 'Lighthouse score must equal the minimum of the per-page medians',
+          });
+      }
+    }
     if (value.state === 'available' && value.value.value === null) {
       context.addIssue({
         code: 'custom',

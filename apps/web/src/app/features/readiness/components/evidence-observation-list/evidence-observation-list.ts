@@ -1,3 +1,4 @@
+import { priorityLabel } from '../../domain/readiness-presentation';
 import { DatePipe, JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { EvidenceObservation } from '@caselog/schemas/evidence';
@@ -28,6 +29,7 @@ const STATE_LABEL: Record<EvidenceObservation['state'], string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EvidenceObservationList {
+  readonly priorityLabel = priorityLabel;
   readonly observations = input.required<readonly EvidenceObservation[]>();
 
   metric(observation: EvidenceObservation): string {
@@ -37,6 +39,7 @@ export class EvidenceObservationList {
   value(observation: EvidenceObservation): string {
     const value = observation.value.value;
     if (value === null) return '—';
+    if (observation.metricKey === 'performance.lighthouse_score') return `${value}/100`;
     return observation.value.type === 'percentage' ? `${value}%` : String(value);
   }
 

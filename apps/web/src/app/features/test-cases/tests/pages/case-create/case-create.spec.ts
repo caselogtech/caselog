@@ -107,6 +107,7 @@ describe('CaseCreate', () => {
     await vi.waitFor(() => expect(testCasesApi.createTestCase).toHaveBeenCalledOnce());
     expect(testCasesApi.createTestCase).toHaveBeenCalledWith('acme-quality', 'authentication', {
       title: 'Sign in with a passkey',
+      priority: 'medium',
       sectionId,
       template: 'steps',
       automationId: 'auth.passkey',
@@ -127,6 +128,7 @@ describe('CaseCreate', () => {
     const fixture = TestBed.createComponent(CaseCreate);
     fixture.detectChanges();
     await vi.waitFor(() => expect(fixture.componentInstance.structure.isSuccess()).toBe(true));
+    fixture.detectChanges();
     fixture.componentInstance.form.patchValue({
       title: 'Session timeout behavior',
       template: 'text',

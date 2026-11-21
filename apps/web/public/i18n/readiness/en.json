@@ -122,7 +122,10 @@
   "metrics": {
     "passRate": "Test pass rate",
     "completionRate": "Test completion rate",
-    "failedCount": "Failed test count"
+    "failedCount": "Failed test count",
+    "accessibilityViolations": "WCAG 2.2 AA automated violations",
+    "accessibilityManualReview": "WCAG 2.2 AA manual review",
+    "lighthouseScore": "Lighthouse performance score"
   },
   "linkedRuns": {
     "eyebrow": "Native test evidence",
@@ -234,7 +237,7 @@
       "metric": "Metric",
       "operator": "Operator",
       "expected": "Expected value",
-      "integerHint": "Enter a non-negative whole number.",
+      "integerHint": "Enter a nonnegative whole number. Manual review uses 1 for passed and 0 for failed.",
       "percentageHint": "Enter a percentage from 0 to 100.",
       "expectedInvalid": "Enter a value compatible with the selected metric.",
       "impact": "Failure impact",
@@ -258,6 +261,35 @@
         "warn": "Warn",
         "block": "Block"
       }
+    },
+    "scope": {
+      "priority": "Minimum case priority",
+      "priorityHint": "Includes this priority and above from the project scope frozen at the candidate’s first native evidence processing. Missing or skipped cases do not pass.",
+      "linkedRuns": "Selected linked runs only (legacy scope)",
+      "profile": "Measurement profile",
+      "profileHint": "A versioned profile key, for example production-mobile-v1. Its report must define the pages, scenarios and measurement setup.",
+      "producer": "Evidence source key",
+      "producerHint": "Use your account for manual reports, or copy an evidence source key from Workspace settings → API tokens for CI reports.",
+      "externalNotice": "Reports come from your CI or review workflow. A WCAG score alone does not establish conformance; use automated violations and a documented manual review.",
+      "invalid": "Provide a profile, source, valid page URLs and tool/procedure version. Manual review must require a passed result (= 1).",
+      "pages": "Required page URLs",
+      "pagesHint": "One absolute URL per line, up to 50. Every listed page must be included in the report.",
+      "toolVersion": "Tool or review procedure version",
+      "device": "Device profile",
+      "mobile": "Mobile",
+      "desktop": "Desktop",
+      "runs": "Runs per page",
+      "aggregation": "Use 3–10 runs per page. The score is the minimum of the per-page medians.",
+      "useMyAccount": "Use my account",
+      "runsInvalid": "Enter a whole number of runs from 3 to 10."
+    },
+    "edit": {
+      "title": "Edit policy",
+      "description": "Save changes as a draft. Editing a published policy creates a successor draft; existing candidate assignments and decisions retain their original version. Publish and assign the new version explicitly.",
+      "save": "Save draft",
+      "saving": "Saving draft…",
+      "errorTitle": "Unable to save policy",
+      "reload": "Reload policy and discard my edits"
     }
   },
   "evidence": {

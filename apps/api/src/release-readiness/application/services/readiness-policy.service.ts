@@ -1,3 +1,9 @@
+import type {
+  UpdateReadinessPolicyRequest,
+  PublishReadinessPolicyRequest,
+} from '@caselog/schemas/readiness';
+import { AuthorizationDeniedError } from '../../../common/errors/domain.error';
+import { ReadinessPolicyEditRepository } from '../../infrastructure/repositories/readiness-policy-edit.repository';
 import { createHash } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
@@ -27,6 +33,7 @@ import {
 @Injectable()
 export class ReadinessPolicyService {
   constructor(
+    @Inject(ReadinessPolicyEditRepository) private readonly editor: ReadinessPolicyEditRepository,
     @Inject(ReadinessPolicyRepository)
     private readonly policies: ReadinessPolicyRepository,
   ) {}
@@ -80,6 +87,29 @@ export class ReadinessPolicyService {
     return readinessPolicyResponseSchema.parse(result.value);
   }
 
+  async update(
+    principal: OrganizationAccessPrincipal,
+    projectSlug: string,
+    policyId: string,
+    request: UpdateReadinessPolicyRequest,
+  ): Promise<ReadinessPolicyResponse> {
+    if (
+      principal.tokenType !== 'organization' ||
+      !['owner', 'admin', 'lead'].includes(principal.role)
+    )
+      throw new AuthorizationDeniedError();
+    this.assertValidGates(request.gates);
+    return this.resolveWrite(
+      await this.editor.update(
+        principal.organizationId,
+        projectSlug,
+        policyId,
+        principal.sub,
+        request,
+      ),
+    );
+  }
+
   async createVersion(
     principal: OrganizationAccessPrincipal,
     projectSlug: string,
@@ -107,6 +137,7 @@ export class ReadinessPolicyService {
     projectSlug: string,
     policyId: string,
     idempotencyKey: string,
+    request: PublishReadinessPolicyRequest = {},
   ): Promise<ReadinessPolicyResponse> {
     const detail = await this.detail(principal, projectSlug, policyId);
     const draft = detail.policy.versions.find(({ state }) => state === 'draft');
@@ -116,10 +147,11 @@ export class ReadinessPolicyService {
         principal.organizationId,
         projectSlug,
         policyId,
-        draft?.id ?? null,
+        request.expectedDraftId ?? draft?.id ?? null,
+        request.expectedUpdatedAt ?? detail.policy.updatedAt,
         principal.sub,
         idempotencyKey,
-        hash({ policyId }),
+        hash({ policyId, ...request }),
         principal.tokenType === 'api_token' ? principal.apiTokenId : undefined,
       ),
     );
@@ -160,7 +192,7 @@ export class ReadinessPolicyService {
     if (result.kind === 'draft_not_found' || result.kind === 'draft_changed') {
       throw new ResourceConflictError(
         'release_policy_draft_changed',
-        'The release policy draft changed before it could be published',
+        'This policy changed. Reload it before saving or publishing',
       );
     }
     if (result.kind !== 'found')
@@ -177,6 +209,7 @@ function toDomainGate(gate: ReadinessGateInput, position: number): ReadinessGate
     metricKey: gate.metricKey,
     metricVersion: gate.metricVersion,
     dimensions: gate.dimensions,
+    producerKey: gate.producerKey,
     operator: gate.operator.toUpperCase() as ReadinessGate['operator'],
     expected: gate.expected,
     impact: gate.impact.toUpperCase() as ReadinessGate['impact'],

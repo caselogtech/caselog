@@ -375,13 +375,13 @@ describe('release foundations API', () => {
 
     const response = await app.inject({
       method: 'GET',
-      url: `/api/v1/projects/${projectSlug}/evidence?candidateId=${firstCandidateId}`,
+      url: `/api/v1/projects/${projectSlug}/evidence?candidateId=${firstCandidateId}&limit=100`,
       headers: { authorization: `Bearer ${organizationToken}` },
     });
     expect(response.statusCode, response.body).toBe(200);
     const evidence = evidenceListResponseSchema.parse(response.json());
     expect(evidence).toMatchObject({ candidateId: firstCandidateId, candidateRevision: 1 });
-    expect(evidence.items).toHaveLength(6);
+    expect(evidence.items).toHaveLength(30);
     expect(evidence.items.every(({ producer }) => producer.trust === 'verified')).toBe(true);
   });
 
@@ -548,26 +548,28 @@ describe('release foundations API', () => {
 
     const currentResponse = await app.inject({
       method: 'GET',
-      url: `${url}?candidateId=${firstCandidateId}&currentOnly=true`,
+      url: `${url}?candidateId=${firstCandidateId}&currentOnly=true&limit=100`,
       headers: { authorization: `Bearer ${organizationToken}` },
     });
     const current = evidenceListResponseSchema.parse(currentResponse.json());
     expect(current.candidateRevision).toBe(3);
-    expect(current.items).toHaveLength(7);
+    expect(current.items).toHaveLength(31);
     expect(
       current.items.filter(
         ({ metricKey, dimensions }) =>
-          metricKey === 'test.pass_rate' && dimensions.testRunRole === 'required',
+          metricKey === 'test.pass_rate' &&
+          dimensions.testRunRole === 'required' &&
+          !dimensions.minimumPriority,
       ),
     ).toHaveLength(2);
 
     const historyResponse = await app.inject({
       method: 'GET',
-      url: `${url}?candidateId=${firstCandidateId}&currentOnly=false`,
+      url: `${url}?candidateId=${firstCandidateId}&currentOnly=false&limit=100`,
       headers: { authorization: `Bearer ${organizationToken}` },
     });
     const history = evidenceListResponseSchema.parse(historyResponse.json());
-    expect(history.items).toHaveLength(9);
+    expect(history.items).toHaveLength(33);
     expect(history.items.find(({ id }) => id === ingested.observation.id)?.isCurrent).toBe(false);
     expect(history.items.find(({ freshness }) => freshness === 'stale')).toBeDefined();
 

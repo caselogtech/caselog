@@ -1,3 +1,4 @@
+import { casePriorityLabel } from '../../domain/case-priority';
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -58,6 +59,7 @@ import { testCaseDraftContent } from '../../domain/test-case-draft';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CaseDetail {
+  readonly priorityLabel = casePriorityLabel;
   private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly attachmentsApi = inject(TestCaseAttachmentsApi);
@@ -218,6 +220,7 @@ export class CaseDetail {
     const version = testCase.currentVersion;
     this.form.patchValue({
       title: version.title,
+      priority: version.priority ?? 'medium',
       sectionId: testCase.section.id,
       template: version.template,
       automationId: testCase.automationId ?? '',
@@ -308,6 +311,7 @@ export class CaseDetail {
     const common = {
       baseVersion,
       title: value.title,
+      priority: value.priority,
       sectionId: value.sectionId,
       template: value.template,
       automationId: value.automationId,

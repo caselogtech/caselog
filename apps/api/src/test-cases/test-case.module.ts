@@ -1,4 +1,6 @@
 import { ProjectStructureCreateRepository } from './infrastructure/repositories/project-structure-create.repository';
+import { TestCaseScopeService } from './application/services/test-case-scope.service';
+import { TestCaseScopeRepository } from './infrastructure/repositories/test-case-scope.repository';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/public-api';
 import { ProjectStructureController } from './presentation/controllers/project-structure.controller';
@@ -12,7 +14,10 @@ import { TestCaseWriteRepository } from './infrastructure/repositories/test-case
 @Module({
   imports: [AuthModule],
   controllers: [TestCaseController, ProjectStructureController],
+  exports: [TestCaseScopeService],
   providers: [
+    TestCaseScopeService,
+    TestCaseScopeRepository,
     ProjectStructureRepository,
     ProjectStructureCreateRepository,
     ProjectStructureService,

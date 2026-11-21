@@ -1,3 +1,6 @@
+import { TestCaseScopeService } from '../../../test-cases/public-api';
+import { TestCaseScopeRepository } from '../../../test-cases/infrastructure/repositories/test-case-scope.repository';
+import { CandidateTestScopeRepository } from '../../infrastructure/repositories/candidate-test-scope.repository';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
@@ -52,7 +55,12 @@ describe('native candidate evidence', () => {
     consumer = new NativeEvidenceEventConsumerService(
       new EvidenceEventRepository(tenantDatabase),
       candidateReferences,
-      new NativeEvidenceMaterializerService(testRunSources, observations),
+      new NativeEvidenceMaterializerService(
+        new TestCaseScopeService(new TestCaseScopeRepository(tenantDatabase)),
+        new CandidateTestScopeRepository(tenantDatabase),
+        testRunSources,
+        observations,
+      ),
       new EvidenceProcessingIssueRepository(tenantDatabase),
     );
 
@@ -209,20 +217,22 @@ describe('native candidate evidence', () => {
     await Promise.all([admin.$disconnect(), application.$disconnect()]);
   });
 
-  it('materializes six verified role-scoped observations from a linked run', async () => {
+  it('materializes legacy and frozen priority-scoped observations from a linked run', async () => {
     await expect(consumer.processBatch(organizationId)).resolves.toEqual({
       processed: 1,
-      observationsCreated: 6,
+      observationsCreated: 30,
     });
     const current = await admin.currentEvidenceObservation.findMany({
       where: { organizationId, candidateId },
       include: { observation: true },
     });
-    expect(current).toHaveLength(6);
+    expect(current).toHaveLength(30);
     const requiredPassRate = current.find(
       ({ observation }) =>
         observation.metricKey === 'test.pass_rate' &&
-        (observation.dimensions as { testRunRole: string }).testRunRole === 'required',
+        (observation.dimensions as { testRunRole: string; minimumPriority?: string })
+          .testRunRole === 'required' &&
+        !(observation.dimensions as { minimumPriority?: string }).minimumPriority,
     );
     expect(requiredPassRate?.observation).toMatchObject({
       state: 'AVAILABLE',
@@ -255,12 +265,12 @@ describe('native candidate evidence', () => {
     const response = await queries.list(organizationId, projectSlug, {
       candidateId,
       currentOnly: true,
-      limit: 25,
+      limit: 100,
     });
     expect(response.kind).toBe('found');
     if (response.kind === 'found') {
       expect(response.value).toMatchObject({ candidateId, candidateRevision: 1 });
-      expect(response.value.items).toHaveLength(6);
+      expect(response.value.items).toHaveLength(30);
       expect(response.value.items.every(({ isCurrent }) => isCurrent)).toBe(true);
     }
     const filtered = await queries.list(organizationId, projectSlug, {
@@ -271,9 +281,9 @@ describe('native candidate evidence', () => {
       trust: 'verified',
       state: 'available',
       currentOnly: true,
-      limit: 25,
+      limit: 100,
     });
-    expect(filtered.kind === 'found' ? filtered.value.items : []).toHaveLength(1);
+    expect(filtered.kind === 'found' ? filtered.value.items : []).toHaveLength(3);
   });
 
   it('appends corrections and advances the candidate revision after a source change', async () => {
@@ -315,20 +325,22 @@ describe('native candidate evidence', () => {
 
     await expect(consumer.processBatch(organizationId)).resolves.toEqual({
       processed: 1,
-      observationsCreated: 3,
+      observationsCreated: 15,
     });
     const passRates = await admin.evidenceObservation.findMany({
       where: { organizationId, candidateId, metricKey: 'test.pass_rate' },
       orderBy: { createdAt: 'asc' },
     });
-    expect(passRates).toHaveLength(3);
+    expect(passRates).toHaveLength(15);
     const currentPassRates = await admin.currentEvidenceObservation.findMany({
       where: { organizationId, candidateId, metricKey: 'test.pass_rate' },
       include: { observation: true },
     });
     const currentRequired = currentPassRates.find(
       ({ observation }) =>
-        (observation.dimensions as { testRunRole: string }).testRunRole === 'required',
+        (observation.dimensions as { testRunRole: string; minimumPriority?: string })
+          .testRunRole === 'required' &&
+        !(observation.dimensions as { minimumPriority?: string }).minimumPriority,
     );
     expect(currentRequired?.evidenceRevision).toBe(2);
     await expect(
@@ -348,7 +360,7 @@ describe('native candidate evidence', () => {
       currentOnly: false,
       limit: 100,
     });
-    expect(history.kind === 'found' ? history.value.items : []).toHaveLength(9);
+    expect(history.kind === 'found' ? history.value.items : []).toHaveLength(45);
   });
 
   it('deduplicates unchanged snapshots and protects evidence with RLS and immutability', async () => {
@@ -402,7 +414,7 @@ describe('native candidate evidence', () => {
     const failing = await queries.list(organizationId, projectSlug, {
       candidateId,
       currentOnly: true,
-      limit: 25,
+      limit: 100,
     });
     expect(failing.kind === 'found' ? failing.value.issues : []).toMatchObject([
       {
@@ -427,9 +439,31 @@ describe('native candidate evidence', () => {
     const recovered = await queries.list(organizationId, projectSlug, {
       candidateId,
       currentOnly: true,
-      limit: 25,
+      limit: 100,
     });
     expect(recovered.kind === 'found' ? recovered.value.issues : []).toEqual([]);
+  });
+
+  it('freezes the candidate inventory once and protects it from replacement', async () => {
+    const scopes = new CandidateTestScopeRepository(
+      new TenantDatabaseService(application as never),
+    );
+    const original = await scopes.load(organizationId, projectId, candidateId);
+    expect(original?.cases).toHaveLength(3);
+    const reused = await scopes.freeze(organizationId, projectId, candidateId, {
+      capturedAt: new Date().toISOString(),
+      cases: [],
+    });
+    expect(reused).toEqual(original);
+    await expect(
+      admin.candidateEvidenceRevision.update({
+        where: { organizationId_candidateId: { organizationId, candidateId } },
+        data: { testScopeSnapshot: { capturedAt: new Date().toISOString(), cases: [] } },
+      }),
+    ).rejects.toThrow();
+    expect(await scopes.load(organizationId, projectId, candidateId)).toEqual(original);
+    expect(await scopes.load(organizationId, randomUUID(), candidateId)).toBeNull();
+    expect(await scopes.load(randomUUID(), projectId, candidateId)).toBeNull();
   });
 
   function createStatus(key: string, isFinal: boolean, countsAsFailure: boolean) {

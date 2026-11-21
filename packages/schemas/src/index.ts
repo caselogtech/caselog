@@ -1,3 +1,10 @@
+export {
+  testCasePrioritySchema,
+  QUALITY_METRIC_DEFINITIONS,
+  qualityMetricDimensionsSchema,
+  type TestCasePriority,
+  type QualityMetricDimensions,
+} from './quality-metric.js';
 export { apiErrorSchema, type ApiError } from './api-error.js';
 export {
   billingAccountListResponseSchema,

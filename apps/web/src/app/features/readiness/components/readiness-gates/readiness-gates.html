@@ -18,8 +18,8 @@
           [tone]="resultStatus.tone"
         />
         <div class="comparison mono">
-          <strong>{{ value(evaluation.actual) }}</strong>
-          <span>{{ operator(row) }} {{ value(evaluation.expected) }}</span>
+          <strong>{{ value(evaluation.actual, evaluation.metricKey) }}</strong>
+          <span>{{ operator(row) }} {{ value(evaluation.expected, evaluation.metricKey) }}</span>
         </div>
         <p>{{ explanation(row) | transloco }}</p>
         <span class="chevron" aria-hidden="true">›</span>
@@ -27,6 +27,10 @@
 
       <div class="gate-detail">
         <dl>
+          @if (evaluation.dimensions.minimumPriority) { <div><dt>{{ 'readiness.policies.scope.priority' | transloco }}</dt><dd>{{ priorityLabel(evaluation.dimensions.minimumPriority) | transloco }}</dd></div> }
+          @if (evaluation.dimensions.profile) { <div><dt>{{ 'readiness.policies.scope.profile' | transloco }}</dt><dd>{{ evaluation.dimensions.profile }}</dd></div> }
+          @if (evaluation.dimensions.producerKey) { <div><dt>{{ 'readiness.policies.scope.producer' | transloco }}</dt><dd class="mono">{{ evaluation.dimensions.producerKey }}</dd></div> }
+
           <div>
             <dt>{{ 'readiness.gates.metricVersion' | transloco }}</dt>
             <dd class="mono">{{ evaluation.metricVersion }}</dd>

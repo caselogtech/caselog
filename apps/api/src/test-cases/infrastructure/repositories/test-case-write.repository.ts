@@ -1,3 +1,4 @@
+import { testCasePrioritySchema } from '@caselog/schemas';
 import { createHash } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
@@ -105,6 +106,7 @@ export class TestCaseWriteRepository {
           version: 1,
           title: request.title,
           template: CREATE_TEMPLATE_MAP[request.template],
+          priority: request.priority ?? 'medium',
           preconditions: request.preconditions,
           expectedResult: request.expectedResult,
           content: request.content,
@@ -123,6 +125,7 @@ export class TestCaseWriteRepository {
           id: testCase.id,
           caseNumber: testCase.caseNumber.toString(),
           title: request.title,
+          priority: request.priority ?? 'medium',
           template: request.template,
           automationId: request.automationId ?? null,
           section: { id: section.id, name: section.name },
@@ -191,7 +194,11 @@ export class TestCaseWriteRepository {
 
       const testCase = await transaction.testCase.findUnique({
         where: { organizationId_id: { organizationId, id: caseId } },
-        select: { id: true, caseNumber: true, currentVersion: { select: { version: true } } },
+        select: {
+          id: true,
+          caseNumber: true,
+          currentVersion: { select: { version: true, priority: true } },
+        },
       });
       if (!testCase?.currentVersion) {
         return { kind: 'case_not_found' };
@@ -232,6 +239,7 @@ export class TestCaseWriteRepository {
           organizationId,
           testCaseId: testCase.id,
           version: request.baseVersion + 1,
+          priority: request.priority ?? testCase.currentVersion.priority,
           title: request.title,
           template: CREATE_TEMPLATE_MAP[request.template],
           preconditions: request.preconditions,
@@ -257,6 +265,9 @@ export class TestCaseWriteRepository {
           id: current.id,
           caseNumber: testCase.caseNumber.toString(),
           title: request.title,
+          priority: testCasePrioritySchema.parse(
+            request.priority ?? testCase.currentVersion.priority,
+          ),
           template: request.template,
           automationId: current.automationId,
           section: { id: section.id, name: section.name },

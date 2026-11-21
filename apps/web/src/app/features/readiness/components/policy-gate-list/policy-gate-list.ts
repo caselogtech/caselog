@@ -1,3 +1,4 @@
+import { priorityLabel } from '../../domain/readiness-presentation';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { ReadinessPolicy } from '@caselog/schemas/readiness';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -16,6 +17,9 @@ const METRIC_LABEL: Record<ReadinessMetricKey, string> = {
   'test.pass_rate': 'readiness.metrics.passRate',
   'test.completion_rate': 'readiness.metrics.completionRate',
   'test.failed_count': 'readiness.metrics.failedCount',
+  'accessibility.wcag22_aa_violations': 'readiness.metrics.accessibilityViolations',
+  'accessibility.wcag22_aa_manual_review': 'readiness.metrics.accessibilityManualReview',
+  'performance.lighthouse_score': 'readiness.metrics.lighthouseScore',
 };
 
 const OPERATOR_LABEL: Record<ReadinessOperator, string> = {
@@ -57,6 +61,7 @@ const MINIMUM_TRUST_LABEL: Record<ReadinessMinimumTrust, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PolicyGateList {
+  readonly priorityLabel = priorityLabel;
   readonly gates = input.required<ReadonlyArray<ReadinessGate>>();
 
   metricLabel(metric: ReadinessMetricKey): string {
@@ -68,6 +73,7 @@ export class PolicyGateList {
   }
 
   expectedValue(gate: ReadinessGate): string {
+    if (gate.metricKey === 'performance.lighthouse_score') return `${gate.expected.value}/100`;
     return gate.expected.type === 'percentage'
       ? `${gate.expected.value}%`
       : String(gate.expected.value);

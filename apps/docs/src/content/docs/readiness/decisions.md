@@ -16,6 +16,9 @@ to the release decision. Policy authoring and waivers require suitable workspace
 5. Request evaluation and inspect each gate's evidence and diagnostics.
 6. Resolve blockers through new results or observations, then evaluate the current inputs.
 
+See [Configure and edit release policies](../policies/) for priority-scoped coverage,
+WCAG review, Lighthouse profiles, external report examples and safe draft editing.
+
 For a new build, create a new candidate. Do not repurpose an earlier candidate by
 changing its identity or assume evidence from another build applies automatically.
 
