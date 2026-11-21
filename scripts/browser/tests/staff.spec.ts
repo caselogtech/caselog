@@ -191,8 +191,13 @@ test('owners filter the immutable staff audit and retain filters through paginat
     });
     expect(grant.ok()).toBeTruthy();
   }
-  const from = new Date(Date.now() - 3_600_000).toISOString();
-  const to = new Date(Date.now() + 3_600_000).toISOString();
+  const fromInstant = new Date(Date.now() - 3_600_000);
+  const toInstant = new Date(Date.now() + 3_600_000);
+  // Cover fractional seconds that native inputs normalize by dropping trailing zeros.
+  fromInstant.setUTCMilliseconds(350);
+  toInstant.setUTCMilliseconds(350);
+  const from = fromInstant.toISOString();
+  const to = toInstant.toISOString();
   const params = new URLSearchParams({
     q: session.user.email,
     action: 'staff.operator.granted',
@@ -212,8 +217,8 @@ test('owners filter the immutable staff audit and retain filters through paginat
   await page.getByLabel('Action (exact)', { exact: true }).fill('staff.operator.granted');
   await page.getByLabel('Target type (exact)', { exact: true }).fill('staff_operator');
   await page.getByLabel('Target ID (exact)', { exact: true }).fill(session.user.id);
-  await page.getByLabel('From (UTC, inclusive)', { exact: true }).fill(from.slice(0, -1));
-  await page.getByLabel('Until (UTC, exclusive)', { exact: true }).fill(to.slice(0, -1));
+  await page.getByLabel('From (UTC, inclusive)', { exact: true }).fill(dateTimeInputValue(from));
+  await page.getByLabel('Until (UTC, exclusive)', { exact: true }).fill(dateTimeInputValue(to));
   await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
   await expect(page).toHaveURL(/action=staff.operator.granted/);
   await expect(page.locator('.audit-list')).toContainText(firstEvent.reason);
@@ -232,8 +237,8 @@ test('owners filter the immutable staff audit and retain filters through paginat
   await page.getByRole('button', { name: 'First page', exact: true }).click();
   await expect(page.locator('.audit-list')).toContainText(firstEvent.reason);
   const appliedUrl = page.url();
-  await page.getByLabel('From (UTC, inclusive)', { exact: true }).fill(to.slice(0, -1));
-  await page.getByLabel('Until (UTC, exclusive)', { exact: true }).fill(from.slice(0, -1));
+  await page.getByLabel('From (UTC, inclusive)', { exact: true }).fill(dateTimeInputValue(to));
+  await page.getByLabel('Until (UTC, exclusive)', { exact: true }).fill(dateTimeInputValue(from));
   await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Until later than From');
   expect(page.url()).toBe(appliedUrl);
@@ -251,3 +256,11 @@ test('owners filter the immutable staff audit and retain filters through paginat
   );
   await page.screenshot({ path: '.cache/staff-audit-preview.png', fullPage: true });
 });
+
+function dateTimeInputValue(instant: string): string {
+  return instant
+    .replace(/Z$/, '')
+    .replace(/(\.\d*?[1-9])0+$/, '$1')
+    .replace(/\.0+$/, '')
+    .replace(/:00$/, '');
+}
