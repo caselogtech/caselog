@@ -251,6 +251,9 @@ Release readiness has stricter persistence rules than ordinary mutable entities:
 - `Release` owns a product-version lifecycle; `ReleaseCandidate` identifies the exact
   commit/build being assessed.
 - release lifecycle and readiness classification are separate types and columns;
+- owners, admins and leads may correct release metadata in Draft/Active using optimistic
+  concurrency; release keys and candidate identities stay immutable, and terminal
+  releases stay read-only (see [release metadata editing](architecture/decisions/20261121-release-metadata-editing.md));
 - normalized evidence is append-only and belongs to one candidate;
 - a correction supersedes an observation instead of mutating evidence already used;
 - editing a release policy creates an immutable policy version;

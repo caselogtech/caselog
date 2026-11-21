@@ -79,6 +79,27 @@ describe('ReleasesApi', () => {
     await expect(created).resolves.toMatchObject({ release: { key: '2026.08' } });
   });
 
+  it('updates release metadata with its expected version through workspace access', async () => {
+    const api = TestBed.inject(ReleasesApi);
+    const body = {
+      name: 'Updated release',
+      environmentId: null,
+      targetDate: null,
+      externalReference: null,
+      expectedUpdatedAt: releaseSummary().updatedAt,
+    };
+    const response = api.updateRelease('acme', 'authentication', releaseSummary().id, body);
+    await Promise.resolve();
+    const request = TestBed.inject(HttpTestingController).expectOne(
+      `/api/v1/projects/authentication/releases/${releaseSummary().id}`,
+    );
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(body);
+    request.flush({ release: { ...releaseSummary(), name: body.name } });
+    await expect(response).resolves.toMatchObject({ release: { name: body.name } });
+    expect(workspaceAccess.open).toHaveBeenCalledWith('acme');
+  });
+
   it('loads release detail and posts lifecycle transitions', async () => {
     const api = TestBed.inject(ReleasesApi);
     const http = TestBed.inject(HttpTestingController);

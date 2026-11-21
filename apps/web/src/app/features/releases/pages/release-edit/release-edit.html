@@ -1,0 +1,67 @@
+<main class="release-edit-page" aria-labelledby="release-edit-title">
+  <nav appBreadcrumbs [attr.aria-label]="'app.navigation.breadcrumbs' | transloco">
+    <a href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}" [routerLink]="detailLink">{{ initial()?.key ?? ('releases.list.title' | transloco) }}</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ 'releases.edit.title' | transloco }}</span>
+  </nav>
+  <h1 id="release-edit-title">{{ 'releases.edit.title' | transloco }}</h1>
+  <p class="description">{{ 'releases.edit.description' | transloco }}</p>
+  @if (detail.isPending()) {
+    <app-loading-skeleton preset="block" [label]="'releases.detail.loading' | transloco" />
+  } @else if (detail.isError() && !initial()) {
+    <app-page-state [title]="'releases.detail.errorTitle' | transloco" [message]="errorTranslationKey() | transloco">
+      <button actions appButton="secondary" type="button" (click)="detail.refetch()">{{ 'releases.list.retry' | transloco }}</button>
+    </app-page-state>
+  } @else if (!canEdit()) {
+    <app-callout tone="neutral" [title]="'releases.edit.unavailableTitle' | transloco">
+      <p>{{ 'releases.edit.unavailableDescription' | transloco }}</p>
+    </app-callout>
+  } @else if (initial()) {
+    @if (save.isError() || environments.isError() || detail.isError()) {
+      <app-callout tone="danger" liveRole="alert" [title]="'releases.edit.errorTitle' | transloco">
+        <p>{{ errorTranslationKey() | transloco }}</p>
+        @if (conflict()) {
+          <button appButton="secondary" type="button" [disabled]="detail.isFetching()" (click)="reload()">{{ 'releases.edit.reload' | transloco }}</button>
+        }
+        @if (environments.isError()) {
+          <button appButton="secondary" type="button" (click)="environments.refetch()">{{ 'releases.list.retry' | transloco }}</button>
+        }
+      </app-callout>
+    }
+    <form [formGroup]="form" (ngSubmit)="submit()" [attr.aria-busy]="save.isPending()">
+      <fieldset [disabled]="save.isPending()">
+        <app-form-field controlId="edit-release-name" [label]="'releases.create.name' | transloco" [required]="true"
+          [error]="form.controls.name.touched && form.controls.name.invalid ? ('releases.create.nameInvalid' | transloco) : undefined">
+          <input appControl #nameInput id="edit-release-name" aria-describedby="edit-release-name-description" formControlName="name" type="text" maxlength="200" autocomplete="off" [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid" />
+        </app-form-field>
+        @if (environments.isPending()) {
+          <p role="status">{{ 'releases.create.loadingEnvironments' | transloco }}</p>
+        } @else {
+          <app-form-field controlId="edit-release-environment" [label]="'releases.create.environment' | transloco" [hint]="'releases.edit.environmentHint' | transloco">
+            <select appControl id="edit-release-environment" formControlName="environmentId" aria-describedby="edit-release-environment-description">
+              <option value="">{{ 'releases.create.noEnvironment' | transloco }}</option>
+              @if (initial()?.environment; as current) {
+                @if (current.state === 'archived') { <option [value]="current.id">{{ current.name }} ({{ 'releases.list.archived' | transloco }})</option> }
+              }
+              @for (environment of activeEnvironments(); track environment.id) { <option [value]="environment.id">{{ environment.name }}</option> }
+            </select>
+          </app-form-field>
+        }
+        <app-form-field controlId="edit-release-target" [label]="'releases.create.targetDate' | transloco" [hint]="'releases.create.targetDateHint' | transloco"
+          [error]="form.controls.targetDate.touched && form.controls.targetDate.invalid ? ('releases.edit.dateInvalid' | transloco) : undefined">
+          <input appControl id="edit-release-target" formControlName="targetDate" type="date" aria-describedby="edit-release-target-description" [attr.aria-invalid]="form.controls.targetDate.touched && form.controls.targetDate.invalid" />
+        </app-form-field>
+        <app-form-field controlId="edit-release-reference" [label]="'releases.create.externalReference' | transloco" [hint]="'releases.create.externalReferenceHint' | transloco"
+          [error]="form.controls.externalReference.touched && form.controls.externalReference.invalid ? ('releases.create.externalReferenceInvalid' | transloco) : undefined">
+          <input appControl id="edit-release-reference" formControlName="externalReference" type="text" maxlength="2048" aria-describedby="edit-release-reference-description" />
+        </app-form-field>
+      </fieldset>
+      <footer>
+        <a appButton="secondary" href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}" [routerLink]="detailLink">{{ 'releases.create.cancel' | transloco }}</a>
+        <button appButton="primary" type="submit" [disabled]="save.isPending() || !environments.isSuccess() || conflict()">
+          {{ (save.isPending() ? 'releases.edit.saving' : 'releases.edit.save') | transloco }}
+        </button>
+      </footer>
+    </form>
+  }
+</main>

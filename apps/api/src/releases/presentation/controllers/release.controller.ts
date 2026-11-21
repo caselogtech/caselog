@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import type {
   ReleaseLifecycleResponse,
   ReleaseListResponse,
   ReleaseState,
+  UpdateReleaseResponse,
 } from '@caselog/schemas';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import {
@@ -25,6 +27,7 @@ import {
   RequireOrganizationAccess,
 } from '../../../auth/public-api';
 import { ReleaseService } from '../../application/services/release.service';
+import { ReleaseUpdateService } from '../../application/services/release-update.service';
 // biome-ignore lint/style/useImportType: Nest uses DTO classes as runtime validation metadata.
 import {
   CreateReleaseHeadersDto,
@@ -32,19 +35,24 @@ import {
   ReleaseListQueryDto,
   ReleaseParamsDto,
   ReleaseProjectParamsDto,
+  UpdateReleaseRequestDto,
 } from '../dto/release.dto';
 import {
   CreateReleaseResponseDto,
   ReleaseDetailResponseDto,
   ReleaseLifecycleResponseDto,
   ReleaseListResponseDto,
+  UpdateReleaseResponseDto,
 } from '../dto/release-response.dto';
 
 @Controller('projects/:projectSlug/releases')
 @UseGuards(OrganizationAuthGuard, OrganizationRoleGuard)
 @ApiBearerAuth('access-token')
 export class ReleaseController {
-  constructor(@Inject(ReleaseService) private readonly releases: ReleaseService) {}
+  constructor(
+    @Inject(ReleaseService) private readonly releases: ReleaseService,
+    @Inject(ReleaseUpdateService) private readonly updates: ReleaseUpdateService,
+  ) {}
 
   @Get()
   @ApiOkResponse({ type: ReleaseListResponseDto })
@@ -75,6 +83,17 @@ export class ReleaseController {
     @Param() params: ReleaseParamsDto,
   ): Promise<ReleaseDetailResponse> {
     return this.releases.detail(principal.organizationId, params.projectSlug, params.releaseId);
+  }
+
+  @Put(':releaseId')
+  @RequireOrganizationAccess('lead')
+  @ApiOkResponse({ type: UpdateReleaseResponseDto })
+  update(
+    @CurrentOrganization() principal: OrganizationAccessPrincipal,
+    @Param() params: ReleaseParamsDto,
+    @Body() request: UpdateReleaseRequestDto,
+  ): Promise<UpdateReleaseResponse> {
+    return this.updates.update(principal, params.projectSlug, params.releaseId, request);
   }
 
   @Post(':releaseId/activate')

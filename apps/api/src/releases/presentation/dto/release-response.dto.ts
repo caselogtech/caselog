@@ -11,6 +11,7 @@ import {
   releaseLifecycleResponseSchema,
   releaseListResponseSchema,
   updateEnvironmentResponseSchema,
+  updateReleaseResponseSchema,
 } from '@caselog/schemas';
 import { createZodDto } from 'nestjs-zod';
 
@@ -22,6 +23,7 @@ export class EnvironmentLifecycleResponseDto extends createZodDto(
 ) {}
 export class ReleaseListResponseDto extends createZodDto(releaseListResponseSchema) {}
 export class CreateReleaseResponseDto extends createZodDto(createReleaseResponseSchema) {}
+export class UpdateReleaseResponseDto extends createZodDto(updateReleaseResponseSchema) {}
 export class ReleaseDetailResponseDto extends createZodDto(releaseDetailResponseSchema) {}
 export class ReleaseLifecycleResponseDto extends createZodDto(releaseLifecycleResponseSchema) {}
 export class ReleaseCandidateListResponseDto extends createZodDto(

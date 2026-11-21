@@ -972,7 +972,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["ReleaseController_detail"];
-        put?: never;
+        put: operations["ReleaseController_update"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3156,6 +3156,42 @@ export interface components {
                 /** Format: date-time */
                 occurredAt: string;
             }[];
+        };
+        UpdateReleaseRequestDto: {
+            name: string;
+            environmentId: string | null;
+            targetDate: string | null;
+            externalReference: string | null;
+            /** Format: date-time */
+            expectedUpdatedAt: string;
+        };
+        UpdateReleaseResponseDto: {
+            release: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                name: string;
+                /** @enum {string} */
+                state: "draft" | "active" | "released" | "cancelled";
+                environment: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    slug: string;
+                    /** @enum {string} */
+                    state: "active" | "archived";
+                } | null;
+                targetDate: string | null;
+                externalReference: string | null;
+                candidateCount: number;
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                updatedAt: string;
+                activatedAt: string | null;
+                releasedAt: string | null;
+                cancelledAt: string | null;
+            };
         };
         ReleaseLifecycleResponseDto: {
             /** Format: uuid */
@@ -7459,6 +7495,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReleaseDetailResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    ReleaseController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                releaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReleaseRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateReleaseResponseDto"];
                 };
             };
             /** @description API error */

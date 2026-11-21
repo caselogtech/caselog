@@ -1,6 +1,6 @@
 # Caselog roadmap
 
-Product direction agreed on 2026-11-18; status reviewed on 2026-11-20. This roadmap
+Product direction agreed on 2026-11-18; status reviewed on 2026-11-21. This roadmap
 tracks implemented work and remaining acceptance, without promising launch dates.
 Checked items have passed their stated checkpoint. Unchecked items may have working
 foundations but still require implementation, verification or an operator decision.
@@ -53,6 +53,9 @@ integration remain undecided.
   with case-version snapshots, results and JUnit ingestion.
 - [x] Implement immutable release candidates, normalized evidence, versioned policies,
   readiness evaluation, freshness handling, decision history and audited waivers.
+- [x] Allow owners, admins and leads to edit Draft/Active release metadata, including
+  adding a missing environment; verify tenant/project boundaries through API tests and
+  version conflicts, terminal-state protection and immutable history through the browser.
 - [x] Verify missing/failed/stale evidence, unauthorized and cross-tenant access,
   idempotent retries and history preservation in the relevant API/integration suites.
 - [x] Run `pnpm check`, `pnpm test` and `pnpm build` on the pinned toolchain; verify the
@@ -78,6 +81,11 @@ including rejection of corrupt backups and nonempty restore targets. This host r
 snapshot error. Real MinIO-to-SeaweedFS fixture migration passed, including replay,
 metadata/checksum verification and conflict/missing/extra-object rejection. Existing
 lint, CSS-budget and PostgreSQL-client deprecation warnings remain.
+
+Release-editing verification on 2026-11-21: `pnpm check`, all 786 tests and `pnpm build`
+passed. An isolated Chromium journey verified missing-environment correction, persistence,
+mobile layout, independent-client conflict recovery, terminal-state protection and
+unchanged candidate/lifecycle/decision history. No database migration is required.
 
 ### Operational acceptance
 

@@ -159,7 +159,27 @@ describe('ReleaseDetail', () => {
     expect(text).toContain('Regression');
     expect(text).toContain('Required');
     expect(text).toContain('Mark released');
+    expect(fixture.nativeElement.querySelector('a[href$="/edit"]')?.textContent).toContain(
+      'Edit release',
+    );
   });
+
+  it.each(['released', 'cancelled', 'read_only'] as const)(
+    'hides editing for %s',
+    async (restriction) => {
+      if (restriction === 'read_only') TestBed.inject(WorkspaceSession).role.set('read_only');
+      else
+        releasesApi.releaseDetail.mockResolvedValue({
+          ...response,
+          release: { ...response.release, state: restriction },
+        });
+      const fixture = TestBed.createComponent(ReleaseDetail);
+      fixture.detectChanges();
+      await vi.waitFor(() => expect(fixture.componentInstance.detail.isSuccess()).toBe(true));
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('a[href$="/edit"]')).toBeNull();
+    },
+  );
 
   it('requires confirmation before posting an allowed lifecycle transition', async () => {
     const fixture = TestBed.createComponent(ReleaseDetail);

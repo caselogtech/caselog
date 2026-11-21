@@ -18,6 +18,12 @@ export const releasesRoutes: Routes = [
           ),
       },
       {
+        path: ':releaseId/edit',
+        canActivate: [requireWorkspacePermission('lead')],
+        loadComponent: () =>
+          import('./pages/release-edit/release-edit').then(({ ReleaseEdit }) => ReleaseEdit),
+      },
+      {
         path: ':releaseId/candidates/new',
         canActivate: [requireWorkspacePermission('lead')],
         loadComponent: () =>

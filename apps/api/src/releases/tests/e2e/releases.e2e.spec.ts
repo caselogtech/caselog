@@ -238,6 +238,19 @@ describe('release foundations API', () => {
       headers: { authorization: `Bearer ${organizationToken}` },
     });
     expect(archiveBlocked.statusCode, archiveBlocked.body).toBe(409);
+    const updated = await app.inject({
+      method: 'PUT',
+      url: `/api/v1/projects/${projectSlug}/releases/${releaseId}`,
+      headers: { authorization: `Bearer ${organizationToken}` },
+      payload: {
+        name: created.name,
+        environmentId,
+        targetDate: created.targetDate,
+        externalReference: 'EDIT-REF',
+        expectedUpdatedAt: created.updatedAt,
+      },
+    });
+    expect(updated.statusCode, updated.body).toBe(200);
   });
 
   it('registers immutable, project-unique release candidates', async () => {

@@ -113,6 +113,19 @@ export const createReleaseRequestSchema = z.object({
     .transform((value) => value || undefined),
 });
 export const createReleaseResponseSchema = z.object({ release: releaseSummarySchema });
+export const updateReleaseRequestSchema = z.strictObject({
+  name: z.string().trim().min(1).max(200),
+  environmentId: z.uuid().nullable(),
+  targetDate: z.iso.datetime().nullable(),
+  externalReference: z
+    .string()
+    .trim()
+    .max(2_048)
+    .nullable()
+    .transform((value) => value || null),
+  expectedUpdatedAt: z.iso.datetime(),
+});
+export const updateReleaseResponseSchema = z.object({ release: releaseSummarySchema });
 export const releaseLifecycleResponseSchema = z.object({
   releaseId: z.uuid(),
   state: releaseStateSchema,
@@ -220,6 +233,8 @@ export type ReleaseSummary = z.infer<typeof releaseSummarySchema>;
 export type ReleaseListResponse = z.infer<typeof releaseListResponseSchema>;
 export type CreateReleaseRequest = z.infer<typeof createReleaseRequestSchema>;
 export type CreateReleaseResponse = z.infer<typeof createReleaseResponseSchema>;
+export type UpdateReleaseRequest = z.infer<typeof updateReleaseRequestSchema>;
+export type UpdateReleaseResponse = z.infer<typeof updateReleaseResponseSchema>;
 export type ReleaseLifecycleResponse = z.infer<typeof releaseLifecycleResponseSchema>;
 export type ReleaseCandidate = z.infer<typeof releaseCandidateSchema>;
 export type ReleaseCandidateListQuery = z.infer<typeof releaseCandidateListQuerySchema>;

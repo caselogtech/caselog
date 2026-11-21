@@ -41,6 +41,11 @@
 
       @if (actions().length > 0) {
         <div class="lifecycle-actions" [attr.aria-label]="'releases.detail.lifecycleActions' | transloco">
+          @if (canMutateCandidates()) {
+            <a appButton="secondary" href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}/edit" [routerLink]="['/', workspaceSlug, projectSlug, 'releases', releaseId, 'edit']">
+              {{ 'releases.edit.title' | transloco }}
+            </a>
+          }
           @for (action of actions(); track action) {
             <button
               [appButton]="actionVariant(action)"

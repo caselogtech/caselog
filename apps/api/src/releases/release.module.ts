@@ -6,6 +6,8 @@ import { ReleaseCandidateService } from './application/services/release-candidat
 import { ReleaseCandidateReferenceService } from './application/services/release-candidate-reference.service';
 import { ReleaseOverviewReferenceService } from './application/services/release-overview-reference.service';
 import { ReleaseService } from './application/services/release.service';
+import { ReleaseUpdateService } from './application/services/release-update.service';
+import { ReleaseUpdateRepository } from './infrastructure/repositories/release-update.repository';
 import { EnvironmentRepository } from './infrastructure/repositories/environment.repository';
 import { CandidateTestRunRepository } from './infrastructure/repositories/candidate-test-run.repository';
 import { ReleaseCandidateRepository } from './infrastructure/repositories/release-candidate.repository';
@@ -29,6 +31,8 @@ import { ReleaseController } from './presentation/controllers/release.controller
     EnvironmentService,
     ReleaseRepository,
     ReleaseService,
+    ReleaseUpdateService,
+    ReleaseUpdateRepository,
     ReleaseCandidateRepository,
     CandidateTestRunRepository,
     ReleaseCandidateService,

@@ -23,6 +23,7 @@ import { canTransitionRelease } from '../../domain/policies/release-lifecycle.po
 import { appendReleaseIntegrationEvent } from '../persistence/release-event.persistence';
 import { RELEASE_STATE, toReleaseCandidate, toReleaseSummary } from '../persistence/release.mapper';
 import type { IdempotentCreateResult, ProjectResult } from './release.repository.types';
+import { RELEASE_SELECTION } from '../persistence/release.selection';
 import type { ReleaseOverviewReference } from '../../application/ports/release-overview-reference';
 
 const STATE: Record<PublicReleaseState, ReleaseState> = {
@@ -37,22 +38,6 @@ const TRANSITION_AUDIT_ACTION: Record<Exclude<PublicReleaseState, 'draft'>, stri
   released: 'release.released',
   cancelled: 'release.cancelled',
 };
-
-const RELEASE_SELECTION = {
-  id: true,
-  key: true,
-  name: true,
-  state: true,
-  targetDate: true,
-  externalReference: true,
-  createdAt: true,
-  updatedAt: true,
-  activatedAt: true,
-  releasedAt: true,
-  cancelledAt: true,
-  environment: { select: { id: true, name: true, slug: true, state: true } },
-  _count: { select: { candidates: true } },
-} satisfies Prisma.ReleaseSelect;
 
 const RELEASE_OVERVIEW_SELECTION = {
   ...RELEASE_SELECTION,

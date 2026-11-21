@@ -6,6 +6,7 @@ export const RELEASE_INTEGRATION_EVENT = {
   environmentUpdated: 'releases.environment_updated',
   environmentStateChanged: 'releases.environment_state_changed',
   releaseCreated: 'releases.release_created',
+  releaseUpdated: 'releases.release_updated',
   releaseStateChanged: 'releases.release_state_changed',
   candidateCreated: 'releases.candidate_created',
   candidateTestRunLinked: 'releases.candidate_test_run_linked',
@@ -126,6 +127,28 @@ export function releaseCreatedEvent(
       key: release.key,
       name: release.name,
       state: 'draft',
+    },
+  });
+}
+
+export function releaseUpdatedEvent(
+  context: EventContext,
+  change: {
+    releaseId: string;
+    projectId: string;
+    changedFields: string[];
+    sourceRevision: string;
+  },
+): ReleaseIntegrationEvent {
+  return event(context, RELEASE_INTEGRATION_EVENT.releaseUpdated, {
+    sourceType: 'release',
+    sourceId: change.releaseId,
+    sourceRevision: change.sourceRevision,
+    payload: {
+      actorId: context.actorId,
+      projectId: change.projectId,
+      releaseId: change.releaseId,
+      changedFields: change.changedFields.join(','),
     },
   });
 }

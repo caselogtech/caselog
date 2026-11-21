@@ -4,6 +4,11 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Add Edit release and a version-checked public update endpoint for draft/active release
+  names, environments, target dates and external references. Preserve candidate and
+  readiness history, audit actual edits, and explain concurrent-write conflicts without
+  losing form input. No database migration is required.
+
 - Replace bundled MinIO with digest-pinned SeaweedFS 4.54 in development, CI and
   self-hosted Compose. Keep the S3/API contracts and add a streaming, resumable
   copy-and-verify tool. Existing installations require the

@@ -44,6 +44,7 @@ const TRANSLATED_ERROR_KEYS = new Set([
   'errors.release_policy_assignment_changed',
   'errors.release_candidate_identity_taken',
   'errors.release_finalized',
+  'errors.release_changed',
   'errors.invalid_release_policy',
   'errors.release_policy_draft_changed',
   'errors.release_policy_draft_exists',

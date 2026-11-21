@@ -123,6 +123,7 @@
     "workspace_recovery_window_expired": "This workspace can no longer be restored because its recovery window has expired.",
     "workspace_slug_taken": "This workspace URL is unavailable.",
     "staff_last_owner_required": "At least one active staff owner must remain.",
-    "staff_operator_self_revoke": "Use another owner to revoke your staff access."
+    "staff_operator_self_revoke": "Use another owner to revoke your staff access.",
+    "release_changed": "This release changed in another session. Reload it before saving your changes."
   }
 }

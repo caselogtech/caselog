@@ -1,0 +1,41 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+.release-edit-page {
+  margin-inline: auto;
+  max-width: 900px;
+  padding: var(--space-5) var(--content-gutter) var(--space-6);
+}
+h1 {
+  font-size: var(--font-size-xl);
+  margin-block: var(--space-4) var(--space-2);
+}
+.description {
+  color: var(--text-2);
+}
+app-callout,
+app-loading-skeleton {
+  display: block;
+  margin-block: var(--space-5);
+}
+form {
+  margin-top: var(--space-5);
+}
+fieldset {
+  display: grid;
+  gap: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin: 0;
+  min-width: 0;
+  background: var(--surface-2);
+}
+footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}

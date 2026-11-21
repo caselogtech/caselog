@@ -144,5 +144,17 @@
     "sourceUrlInvalid": "Enter a valid absolute URL up to 2,048 characters.",
     "submit": "Register candidate",
     "creating": "Registering candidate…"
+  },
+  "edit": {
+    "title": "Edit release",
+    "description": "Update the release name and delivery context. The release key and candidate identities stay unchanged.",
+    "environmentHint": "Choose an active environment, keep the current one, or leave it unset.",
+    "dateInvalid": "Enter a valid target date.",
+    "unavailableTitle": "Release editing is unavailable",
+    "unavailableDescription": "Owners, administrators, and leads can edit draft and active releases. Released and cancelled releases are read-only.",
+    "errorTitle": "Unable to save release",
+    "reload": "Reload release and discard my edits",
+    "save": "Save changes",
+    "saving": "Saving changes…"
   }
 }

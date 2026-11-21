@@ -9,6 +9,9 @@ import {
   releaseLifecycleResponseSchema,
   releaseReadinessListResponseSchema,
   testRunListResponseSchema,
+  updateReleaseResponseSchema,
+  type UpdateReleaseRequest,
+  type UpdateReleaseResponse,
   type CandidateTestRunResponse,
   type CandidateTestRunRole,
   type CreateReleaseCandidateRequest,
@@ -29,6 +32,22 @@ import { WorkspaceAccess } from '../../workspace/public-api';
 export class ReleasesApi {
   private readonly http = inject(HttpClient);
   private readonly workspaceAccess = inject(WorkspaceAccess);
+
+  async updateRelease(
+    workspaceSlug: string,
+    projectSlug: string,
+    releaseId: string,
+    request: UpdateReleaseRequest,
+  ): Promise<UpdateReleaseResponse> {
+    await this.workspaceAccess.open(workspaceSlug);
+    const response = await lastValueFrom(
+      this.http.put<unknown>(
+        `/api/v1/projects/${encodeURIComponent(projectSlug)}/releases/${encodeURIComponent(releaseId)}`,
+        request,
+      ),
+    );
+    return updateReleaseResponseSchema.parse(response);
+  }
 
   async listEnvironments(
     workspaceSlug: string,
