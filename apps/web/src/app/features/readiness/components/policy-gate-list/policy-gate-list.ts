@@ -1,8 +1,8 @@
-import { priorityLabel } from '../../domain/readiness-presentation';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { ReadinessPolicy } from '@caselog/schemas/readiness';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { StatusBadge, type StatusBadgeTone } from '../../../../shared/ui/public-api';
+import { priorityLabel } from '../../domain/readiness-presentation';
 
 type ReadinessPolicyVersion = ReadinessPolicy['versions'][number];
 type ReadinessGate = ReadinessPolicyVersion['gates'][number];
@@ -17,6 +17,7 @@ const METRIC_LABEL: Record<ReadinessMetricKey, string> = {
   'test.pass_rate': 'readiness.metrics.passRate',
   'test.completion_rate': 'readiness.metrics.completionRate',
   'test.failed_count': 'readiness.metrics.failedCount',
+  'accessibility.manual_review': 'readiness.accessibility.title',
   'accessibility.wcag22_aa_violations': 'readiness.metrics.accessibilityViolations',
   'accessibility.wcag22_aa_manual_review': 'readiness.metrics.accessibilityManualReview',
   'performance.lighthouse_score': 'readiness.metrics.lighthouseScore',

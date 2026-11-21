@@ -884,6 +884,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/accessibility-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AccessibilityReviewController_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/accessibility-reviews/reports/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AccessibilityReviewController_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/accessibility-reviews/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AccessibilityReviewController_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/accessibility-reviews/reports/{reportId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AccessibilityReviewController_download"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectSlug}/environments": {
         parameters: {
             query?: never;
@@ -2788,7 +2852,7 @@ export interface components {
                 /** Format: uuid */
                 candidateId: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                 metricVersion: string;
                 value: {
                     /** @constant */
@@ -2806,6 +2870,8 @@ export interface components {
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
                     minimumPriority?: "low" | "medium" | "high" | "critical";
+                    accessibilityStandard?: string;
+                    manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                     profile?: string;
                     pageUrls?: string[];
                     toolVersion?: string;
@@ -2855,6 +2921,20 @@ export interface components {
                         revision: number;
                     }[];
                     runRevisionsTruncated: boolean;
+                } | {
+                    /** @enum {string} */
+                    outcome: "ok" | "not_ok";
+                    /** Format: uuid */
+                    actorId: string;
+                    reviewerName?: string;
+                    tools: string[];
+                    /** @enum {string} */
+                    keyboardNavigation: "passed" | "failed" | "not_checked";
+                    /** @enum {string} */
+                    screenReader: "passed" | "failed" | "not_checked";
+                    reportIds: string[];
+                    reportNames: string[];
+                    notes: string;
                 } | {
                     [key: string]: (string | number | boolean | null) | (string | number | boolean | null)[];
                 };
@@ -2910,6 +2990,8 @@ export interface components {
                 testRunRole: "required" | "informational";
                 /** @enum {string} */
                 minimumPriority?: "low" | "medium" | "high" | "critical";
+                accessibilityStandard?: string;
+                manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                 profile?: string;
                 pageUrls?: string[];
                 toolVersion?: string;
@@ -2930,6 +3012,20 @@ export interface components {
             };
             /** @default {} */
             details: {
+                /** @enum {string} */
+                outcome: "ok" | "not_ok";
+                /** Format: uuid */
+                actorId: string;
+                reviewerName?: string;
+                tools: string[];
+                /** @enum {string} */
+                keyboardNavigation: "passed" | "failed" | "not_checked";
+                /** @enum {string} */
+                screenReader: "passed" | "failed" | "not_checked";
+                reportIds: string[];
+                reportNames: string[];
+                notes: string;
+            } | {
                 [key: string]: (string | number | boolean | null) | (string | number | boolean | null)[];
             };
             /** @default null */
@@ -2944,7 +3040,7 @@ export interface components {
                 /** Format: uuid */
                 candidateId: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                 metricVersion: string;
                 value: {
                     /** @constant */
@@ -2962,6 +3058,8 @@ export interface components {
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
                     minimumPriority?: "low" | "medium" | "high" | "critical";
+                    accessibilityStandard?: string;
+                    manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                     profile?: string;
                     pageUrls?: string[];
                     toolVersion?: string;
@@ -3012,6 +3110,20 @@ export interface components {
                     }[];
                     runRevisionsTruncated: boolean;
                 } | {
+                    /** @enum {string} */
+                    outcome: "ok" | "not_ok";
+                    /** Format: uuid */
+                    actorId: string;
+                    reviewerName?: string;
+                    tools: string[];
+                    /** @enum {string} */
+                    keyboardNavigation: "passed" | "failed" | "not_checked";
+                    /** @enum {string} */
+                    screenReader: "passed" | "failed" | "not_checked";
+                    reportIds: string[];
+                    reportNames: string[];
+                    notes: string;
+                } | {
                     [key: string]: (string | number | boolean | null) | (string | number | boolean | null)[];
                 };
                 supersedesObservationId: string | null;
@@ -3021,6 +3133,80 @@ export interface components {
             };
             candidateRevision: number;
             replayed: boolean;
+        };
+        AccessibilityReviewRequestDto: {
+            dimensions: {
+                /** @enum {string} */
+                testRunRole: "required" | "informational";
+                /** @enum {string} */
+                minimumPriority?: "low" | "medium" | "high" | "critical";
+                accessibilityStandard?: string;
+                manualChecks?: ("keyboard_navigation" | "screen_reader")[];
+                profile?: string;
+                pageUrls?: string[];
+                toolVersion?: string;
+                /** @enum {string} */
+                device?: "mobile" | "desktop";
+                runsPerPage?: number;
+            };
+            /** @enum {string} */
+            outcome: "ok" | "not_ok";
+            tools: string[];
+            /** @enum {string} */
+            keyboardNavigation: "passed" | "failed" | "not_checked";
+            /** @enum {string} */
+            screenReader: "passed" | "failed" | "not_checked";
+            reportIds: string[];
+            /** @default  */
+            notes: string;
+            expectedObservationId: string | null;
+        };
+        CandidateReportUploadRequestDto: {
+            fileName: string;
+            /** @enum {string} */
+            contentType: "application/pdf" | "application/json" | "text/html" | "text/plain";
+            sizeBytes: number;
+            checksumSha256: string;
+        };
+        ReportUploadResponseDto: {
+            upload: {
+                /** Format: uuid */
+                id: string;
+                /** @constant */
+                method: "PUT";
+                /** Format: uri */
+                url: string;
+                headers: {
+                    [key: string]: string;
+                };
+                /** Format: date-time */
+                expiresAt: string;
+            };
+        };
+        CompleteReportRequestDto: {
+            /** Format: uuid */
+            uploadId: string;
+        };
+        CandidateReportResponseDto: {
+            attachment: {
+                /** Format: uuid */
+                id: string;
+                fileName: string;
+                /** @enum {string} */
+                contentType: "application/pdf" | "application/json" | "text/html" | "text/plain";
+                sizeBytes: number;
+                checksumSha256: string;
+                /** Format: date-time */
+                createdAt: string;
+            };
+        };
+        ReportDownloadResponseDto: {
+            download: {
+                /** Format: uri */
+                url: string;
+                /** Format: date-time */
+                expiresAt: string;
+            };
         };
         EnvironmentListResponseDto: {
             items: {
@@ -4189,7 +4375,7 @@ export interface components {
             gates: {
                 key: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                 /** @constant */
                 metricVersion: "1.0.0";
                 dimensions: {
@@ -4197,6 +4383,8 @@ export interface components {
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
                     minimumPriority?: "low" | "medium" | "high" | "critical";
+                    accessibilityStandard?: string;
+                    manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                     profile?: string;
                     pageUrls?: string[];
                     toolVersion?: string;
@@ -4261,7 +4449,7 @@ export interface components {
                     gates: {
                         key: string;
                         /** @enum {string} */
-                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                         /** @constant */
                         metricVersion: "1.0.0";
                         dimensions: {
@@ -4269,6 +4457,8 @@ export interface components {
                             testRunRole: "required" | "informational";
                             /** @enum {string} */
                             minimumPriority?: "low" | "medium" | "high" | "critical";
+                            accessibilityStandard?: string;
+                            manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                             profile?: string;
                             pageUrls?: string[];
                             toolVersion?: string;
@@ -4318,7 +4508,7 @@ export interface components {
             gates: {
                 key: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                 /** @constant */
                 metricVersion: "1.0.0";
                 dimensions: {
@@ -4326,6 +4516,8 @@ export interface components {
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
                     minimumPriority?: "low" | "medium" | "high" | "critical";
+                    accessibilityStandard?: string;
+                    manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                     profile?: string;
                     pageUrls?: string[];
                     toolVersion?: string;
@@ -4371,7 +4563,7 @@ export interface components {
             gates: {
                 key: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                 /** @constant */
                 metricVersion: "1.0.0";
                 dimensions: {
@@ -4379,6 +4571,8 @@ export interface components {
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
                     minimumPriority?: "low" | "medium" | "high" | "critical";
+                    accessibilityStandard?: string;
+                    manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                     profile?: string;
                     pageUrls?: string[];
                     toolVersion?: string;
@@ -4519,13 +4713,15 @@ export interface components {
                     /** @enum {string} */
                     diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
                     /** @enum {string} */
-                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                     metricVersion: string;
                     dimensions: {
                         /** @enum {string} */
                         testRunRole: "required" | "informational";
                         /** @enum {string} */
                         minimumPriority?: "low" | "medium" | "high" | "critical";
+                        accessibilityStandard?: string;
+                        manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                         profile?: string;
                         pageUrls?: string[];
                         toolVersion?: string;
@@ -4636,13 +4832,15 @@ export interface components {
                     /** @enum {string} */
                     diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
                     /** @enum {string} */
-                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                     metricVersion: string;
                     dimensions: {
                         /** @enum {string} */
                         testRunRole: "required" | "informational";
                         /** @enum {string} */
                         minimumPriority?: "low" | "medium" | "high" | "critical";
+                        accessibilityStandard?: string;
+                        manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                         profile?: string;
                         pageUrls?: string[];
                         toolVersion?: string;
@@ -4754,13 +4952,15 @@ export interface components {
                     /** @enum {string} */
                     diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
                     /** @enum {string} */
-                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                     metricVersion: string;
                     dimensions: {
                         /** @enum {string} */
                         testRunRole: "required" | "informational";
                         /** @enum {string} */
                         minimumPriority?: "low" | "medium" | "high" | "critical";
+                        accessibilityStandard?: string;
+                        manualChecks?: ("keyboard_navigation" | "screen_reader")[];
                         profile?: string;
                         pageUrls?: string[];
                         toolVersion?: string;
@@ -7357,7 +7557,7 @@ export interface operations {
         parameters: {
             query: {
                 candidateId: string;
-                metricKey?: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score";
+                metricKey?: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
                 producerKey?: string;
                 sourceType?: string;
                 trust?: "verified" | "authenticated" | "unverified";
@@ -7419,6 +7619,145 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvidenceIngestResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    AccessibilityReviewController_record: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessibilityReviewRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceIngestResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    AccessibilityReviewController_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CandidateReportUploadRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportUploadResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    AccessibilityReviewController_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteReportRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateReportResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    AccessibilityReviewController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportDownloadResponseDto"];
                 };
             };
             /** @description API error */

@@ -10,11 +10,22 @@ export const qualityMetricKeySchema = z.enum([
   'accessibility.wcag22_aa_violations',
   'accessibility.wcag22_aa_manual_review',
   'performance.lighthouse_score',
+  'accessibility.manual_review',
 ]);
 export const qualityMetricDimensionsSchema = z
   .object({
     testRunRole: z.enum(['required', 'informational']),
     minimumPriority: testCasePrioritySchema.optional(),
+    accessibilityStandard: z.string().trim().min(1).max(120).optional(),
+    manualChecks: z
+      .array(z.enum(['keyboard_navigation', 'screen_reader']))
+      .max(2)
+      .refine(
+        (checks) =>
+          new Set(checks).size === checks.length && checks.join() === [...checks].sort().join(),
+        { message: 'Manual checks must be unique and sorted' },
+      )
+      .optional(),
     profile: z
       .string()
       .regex(/^[a-z0-9][a-z0-9._-]{0,79}$/)
@@ -36,6 +47,7 @@ export const qualityMetricDimensionsSchema = z
   })
   .strict();
 export const QUALITY_METRIC_DEFINITIONS = {
+  'accessibility.manual_review': { version: '1.0.0', valueType: 'integer' },
   'test.pass_rate': { version: '1.0.0', valueType: 'percentage' },
   'test.completion_rate': { version: '1.0.0', valueType: 'percentage' },
   'test.failed_count': { version: '1.0.0', valueType: 'integer' },
@@ -50,6 +62,34 @@ export function validateMetricDimensions(
   dimensions: QualityMetricDimensions,
   context: z.RefinementCtx,
 ): void {
+  if (metric === 'accessibility.manual_review') {
+    if (
+      !dimensions.accessibilityStandard ||
+      !dimensions.pageUrls ||
+      dimensions.pageUrls.some((url) => !/^https?:\/\//i.test(url)) ||
+      !dimensions.manualChecks ||
+      dimensions.testRunRole !== 'required' ||
+      dimensions.minimumPriority ||
+      dimensions.profile ||
+      dimensions.toolVersion ||
+      dimensions.device ||
+      dimensions.runsPerPage
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['dimensions'],
+        message: 'Accessibility reviews require a standard, pages and manual checks only',
+      });
+    }
+    return;
+  }
+  if (dimensions.accessibilityStandard || dimensions.manualChecks) {
+    context.addIssue({
+      code: 'custom',
+      path: ['dimensions'],
+      message: 'Accessibility requirements belong to manual reviews',
+    });
+  }
   const native = metric.startsWith('test.');
   if (
     (native &&

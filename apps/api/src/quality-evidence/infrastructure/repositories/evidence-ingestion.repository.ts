@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
 import type { EvidenceIngestRequest } from '@caselog/schemas';
+import { Inject, Injectable } from '@nestjs/common';
+import { appendAuditLog } from '../../../audit/public-api';
 import {
   TenantDatabaseService,
   type TenantTransaction,
@@ -16,11 +17,11 @@ import type {
   EvidenceIngestionInput,
   EvidenceIngestionResult,
 } from '../../application/ports/evidence-ingestion';
+import { appendEvidenceIntegrationEvent } from '../persistence/evidence-integration-event.persistence';
 import {
   EVIDENCE_OBSERVATION_SELECTION,
   toEvidenceObservation,
 } from '../persistence/evidence-observation.persistence';
-import { appendEvidenceIntegrationEvent } from '../persistence/evidence-integration-event.persistence';
 
 @Injectable()
 export class EvidenceIngestionRepository {
@@ -28,6 +29,16 @@ export class EvidenceIngestionRepository {
     @Inject(TenantDatabaseService) private readonly tenantDatabase: TenantDatabaseService,
   ) {}
 
+  projectExists(organizationId: string, slug: string, projectId: string): Promise<boolean> {
+    return this.tenantDatabase.run(organizationId, (transaction) =>
+      transaction.project
+        .findFirst({
+          where: { organizationId, id: projectId, slug, deletedAt: null },
+          select: { id: true },
+        })
+        .then(Boolean),
+    );
+  }
   ingest(input: EvidenceIngestionInput): Promise<EvidenceIngestionResult> {
     return this.tenantDatabase.run(input.organizationId, async (transaction) => {
       const project = await transaction.project.findUnique({
@@ -42,7 +53,11 @@ export class EvidenceIngestionRepository {
       });
       if (!project) return { kind: 'project_not_found' };
       const candidate = await transaction.releaseCandidate.findFirst({
-        where: { id: input.request.candidateId, projectId: project.id },
+        where: {
+          organizationId: input.organizationId,
+          id: input.request.candidateId,
+          projectId: project.id,
+        },
         select: { id: true },
       });
       if (!candidate) return { kind: 'candidate_not_found' };
@@ -135,6 +150,11 @@ export class EvidenceIngestionRepository {
           observation: { select: { observedAt: true } },
         },
       });
+      if (
+        input.manualReview &&
+        (current?.observationId ?? null) !== input.manualReview.expectedObservationId
+      )
+        return { kind: 'review_changed' };
       const correction = await this.resolveCorrection(
         transaction,
         input,
@@ -147,6 +167,7 @@ export class EvidenceIngestionRepository {
 
       const observedAt = new Date(input.request.observedAt);
       const becomesCurrent =
+        input.manualReview !== undefined ||
         correction.observationId !== null ||
         current === null ||
         observedAt > current.observation.observedAt;
@@ -162,6 +183,16 @@ export class EvidenceIngestionRepository {
         select: { id: true },
       });
 
+      if (input.manualReview)
+        await appendAuditLog(transaction, {
+          organizationId: input.organizationId,
+          actorId: input.manualReview.actorId,
+          actorType: 'user',
+          action: 'accessibility_review.recorded',
+          targetType: 'evidence_observation',
+          targetId: created.id,
+          metadata: { projectId: project.id, candidateId: candidate.id },
+        });
       if (becomesCurrent) {
         await transaction.currentEvidenceObservation.upsert({
           where: {
@@ -284,7 +315,7 @@ function observationData(
     dimensions: input.request.dimensions,
     dimensionsHash,
     observedAt: new Date(input.request.observedAt),
-    expiresAt: new Date(input.request.expiresAt),
+    expiresAt: input.request.expiresAt ? new Date(input.request.expiresAt) : null,
     trustLevel: EvidenceTrustLevel.AUTHENTICATED,
     sourceType: input.request.source.type,
     sourceId: input.request.source.id,
@@ -292,11 +323,11 @@ function observationData(
     sourceUrl: input.request.source.url,
     idempotencyKey: input.idempotencyKey,
     requestHash: input.requestHash,
-    supersedesObservationId,
+    supersedesObservationId: input.manualReview?.expectedObservationId ?? supersedesObservationId,
     payload: input.request.details as Prisma.InputJsonObject,
   };
 }
 
-function hashDimensions(request: EvidenceIngestRequest): string {
+function hashDimensions(request: Pick<EvidenceIngestRequest, 'dimensions'>): string {
   return createHash('sha256').update(JSON.stringify(request.dimensions)).digest('hex');
 }

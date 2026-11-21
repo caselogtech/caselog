@@ -50,6 +50,10 @@ The user-approved quality policy extension is defined in
 versioned case priorities, frozen candidate test coverage, external WCAG 2.2 AA and
 Lighthouse evidence, and safe policy draft/successor editing. Scanner execution and
 automatic environment-based policy assignment remain outside this extension.
+Accessibility authoring now follows
+`architecture/decisions/20261121-manual-accessibility-reviews.md`: manual candidate-bound
+OK / Not OK reviews with standards, pages, required checks and attached reports. Legacy
+WCAG evidence and published policy history remain readable.
 
 ## 2. Sources of truth
 

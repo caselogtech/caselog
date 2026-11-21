@@ -76,8 +76,7 @@ test('configure test priority, WCAG and Lighthouse gates and edit the saved poli
     await gate.locator('select[formControlName="staleEvidenceBehavior"]').selectOption('block');
   }
   for (const [key, metric] of [
-    ['wcag-automated', 'accessibility.wcag22_aa_violations'],
-    ['wcag-manual', 'accessibility.wcag22_aa_manual_review'],
+    ['accessibility', 'accessibility.manual_review'],
     ['lighthouse', 'performance.lighthouse_score'],
   ] as const) {
     const count = await articles.count();
@@ -87,15 +86,28 @@ test('configure test priority, WCAG and Lighthouse gates and edit the saved poli
     await gate.locator('input[formControlName="key"]').fill(key);
     await gate.getByRole('combobox', { name: 'Metric', exact: true }).selectOption(metric);
     await gate
-      .getByRole('textbox', { name: 'Measurement profile', exact: true })
-      .fill('production-mobile-v1');
-    await gate.getByRole('button', { name: 'Use my account', exact: true }).click();
-    await gate
       .getByRole('textbox', { name: 'Required page URLs', exact: true })
       .fill('https://example.com/\nhttps://example.com/checkout');
-    await gate
-      .getByRole('textbox', { name: 'Tool or review procedure version', exact: true })
-      .fill('ci-review-v1');
+    if (metric === 'accessibility.manual_review') {
+      await expect(
+        gate.getByRole('textbox', { name: 'Accessibility standard', exact: true }),
+      ).toHaveValue('WCAG 2.2 AA');
+      await expect(gate.locator('[formControlName="expectedValue"]')).toHaveCount(0);
+      await expect(
+        gate.getByRole('textbox', { name: 'Measurement profile', exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        gate.getByRole('textbox', { name: 'Evidence source key', exact: true }),
+      ).toHaveCount(0);
+    } else {
+      await gate
+        .getByRole('textbox', { name: 'Measurement profile', exact: true })
+        .fill('production-mobile-v1');
+      await gate.getByRole('button', { name: 'Use my account', exact: true }).click();
+      await gate
+        .getByRole('textbox', { name: 'Tool or review procedure version', exact: true })
+        .fill('ci-review-v1');
+    }
   }
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
@@ -107,7 +119,7 @@ test('configure test priority, WCAG and Lighthouse gates and edit the saved poli
     await (await request.get(apiPath, { headers })).json(),
   ).policy;
   const draft = saved.versions.find((version) => version.state === 'draft');
-  expect(draft?.gates).toHaveLength(5);
+  expect(draft?.gates).toHaveLength(4);
   expect(saved.versions.find((version) => version.state === 'published')).toEqual(
     original.policy.versions.find((version) => version.state === 'published'),
   );
@@ -122,7 +134,7 @@ test('configure test priority, WCAG and Lighthouse gates and edit the saved poli
     },
   });
   await page.getByRole('link', { name: 'Edit policy', exact: true }).click();
-  await expect(articles).toHaveCount(5);
+  await expect(articles).toHaveCount(4);
   await expect(
     articles.last().getByRole('textbox', { name: 'Required page URLs', exact: true }),
   ).toHaveValue('https://example.com/\nhttps://example.com/checkout');
@@ -139,6 +151,73 @@ test('configure test priority, WCAG and Lighthouse gates and edit the saved poli
       .find((version) => version.state === 'published')
       ?.gates.find((gate) => gate.key === 'lighthouse')?.expected.value,
   ).toBe('95');
+
+  const release = await request.post('/api/v1/projects/checkout/releases', {
+    headers: { ...headers, 'idempotency-key': randomUUID() },
+    data: { key: `A11Y-${randomUUID().slice(0, 8)}`, name: 'Manual accessibility browser review' },
+  });
+  expect(release.ok(), await release.text()).toBeTruthy();
+  const releaseId = (await release.json()).release.id;
+  const candidate = await request.post(
+    `/api/v1/projects/checkout/releases/${releaseId}/candidates`,
+    {
+      headers: { ...headers, 'idempotency-key': randomUUID() },
+      data: { sourceRevision: randomUUID() },
+    },
+  );
+  expect(candidate.ok(), await candidate.text()).toBeTruthy();
+  const candidateId = (await candidate.json()).candidate.id;
+  const assigned = await request.put(
+    `/api/v1/projects/checkout/candidates/${candidateId}/readiness-policy`,
+    { headers: { ...headers, 'idempotency-key': randomUUID() }, data: { policyId } },
+  );
+  expect(assigned.ok(), await assigned.text()).toBeTruthy();
+  await page.goto(`/acme/checkout/releases/${releaseId}/candidates/${candidateId}`);
+  const panel = page.locator('app-accessibility-reviews');
+  const form = panel.locator('app-accessibility-review-form');
+  await expect(form.getByRole('heading', { name: 'WCAG 2.2 AA', exact: true })).toBeVisible();
+  await form.getByRole('combobox', { name: 'Review result', exact: true }).selectOption('not_ok');
+  await form
+    .getByRole('textbox', { name: 'Tools used', exact: true })
+    .fill('Lighthouse 13, Deque axe 4.10');
+  await form
+    .getByRole('textbox', { name: 'Review notes', exact: true })
+    .fill('Keyboard issue found on checkout.');
+  await form.getByLabel('Reports', { exact: false }).setInputFiles({
+    name: 'axe-report.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"violations":["keyboard"]}'),
+  });
+  await expect(form.getByText('axe-report.json', { exact: false })).toBeVisible();
+  await form.getByRole('button', { name: 'Record accessibility review', exact: true }).click();
+  await expect(panel.locator('article')).toHaveCount(1);
+  await expect(panel.locator('article').first()).toContainText('Not OK');
+  await form.getByRole('combobox', { name: 'Review result', exact: true }).selectOption('ok');
+  await form
+    .getByRole('textbox', { name: 'Tools used', exact: true })
+    .fill('Lighthouse 13, Deque axe 4.10, NVDA');
+  await form
+    .getByRole('combobox', { name: 'Keyboard navigation', exact: true })
+    .selectOption('passed');
+  await form.getByRole('combobox', { name: 'Screen reader', exact: true }).selectOption('passed');
+  await form.getByLabel('Reports', { exact: false }).setInputFiles({
+    name: 'axe-reviewed.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"violations":[]}'),
+  });
+  await expect(form.getByText('axe-reviewed.json', { exact: false })).toBeVisible();
+  await form.getByRole('button', { name: 'Record accessibility review', exact: true }).click();
+  await expect(panel.locator('article')).toHaveCount(2);
+  await expect(panel.locator('article').first().getByText('OK', { exact: true })).toBeVisible();
+  await expect(panel.locator('article').last()).toContainText('Replaced by a newer review');
+  const downloadPromise = page.waitForEvent('download');
+  await panel.getByRole('button', { name: 'axe-reviewed.json', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('axe-reviewed.json');
+  expect(await download.failure()).toBeNull();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
 
   const caseTemplate = testCaseDetailResponseSchema.parse(
     await (

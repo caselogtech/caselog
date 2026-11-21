@@ -3665,7 +3665,8 @@
                 "test.failed_count",
                 "accessibility.wcag22_aa_violations",
                 "accessibility.wcag22_aa_manual_review",
-                "performance.lighthouse_score"
+                "performance.lighthouse_score",
+                "accessibility.manual_review"
               ]
             }
           },
@@ -3877,6 +3878,289 @@
         ],
         "tags": [
           "Evidence"
+        ]
+      }
+    },
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/accessibility-reviews": {
+      "post": {
+        "operationId": "AccessibilityReviewController_record",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "minLength": 8,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessibilityReviewRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceIngestResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "AccessibilityReview"
+        ]
+      }
+    },
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/accessibility-reviews/reports/uploads": {
+      "post": {
+        "operationId": "AccessibilityReviewController_upload",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CandidateReportUploadRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportUploadResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "AccessibilityReview"
+        ]
+      }
+    },
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/accessibility-reviews/reports": {
+      "post": {
+        "operationId": "AccessibilityReviewController_complete",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteReportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateReportResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "AccessibilityReview"
+        ]
+      }
+    },
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/accessibility-reviews/reports/{reportId}/download": {
+      "post": {
+        "operationId": "AccessibilityReviewController_download",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDownloadResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "AccessibilityReview"
         ]
       }
     },
@@ -13422,7 +13706,8 @@
                     "test.failed_count",
                     "accessibility.wcag22_aa_violations",
                     "accessibility.wcag22_aa_manual_review",
-                    "performance.lighthouse_score"
+                    "performance.lighthouse_score",
+                    "accessibility.manual_review"
                   ]
                 },
                 "metricVersion": {
@@ -13508,6 +13793,22 @@
                         "high",
                         "critical"
                       ]
+                    },
+                    "accessibilityStandard": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "manualChecks": {
+                      "maxItems": 2,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "keyboard_navigation",
+                          "screen_reader"
+                        ]
+                      }
                     },
                     "profile": {
                       "type": "string",
@@ -13763,6 +14064,85 @@
                         "incompleteRunIds",
                         "runRevisions",
                         "runRevisionsTruncated"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "outcome": {
+                          "type": "string",
+                          "enum": [
+                            "ok",
+                            "not_ok"
+                          ]
+                        },
+                        "actorId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "reviewerName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "tools": {
+                          "maxItems": 10,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        },
+                        "keyboardNavigation": {
+                          "type": "string",
+                          "enum": [
+                            "passed",
+                            "failed",
+                            "not_checked"
+                          ]
+                        },
+                        "screenReader": {
+                          "type": "string",
+                          "enum": [
+                            "passed",
+                            "failed",
+                            "not_checked"
+                          ]
+                        },
+                        "reportIds": {
+                          "minItems": 1,
+                          "maxItems": 10,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          }
+                        },
+                        "reportNames": {
+                          "minItems": 1,
+                          "maxItems": 10,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 255
+                          }
+                        },
+                        "notes": {
+                          "type": "string",
+                          "maxLength": 2000
+                        }
+                      },
+                      "required": [
+                        "outcome",
+                        "actorId",
+                        "tools",
+                        "keyboardNavigation",
+                        "screenReader",
+                        "reportIds",
+                        "reportNames",
+                        "notes"
                       ]
                     },
                     {
@@ -14068,6 +14448,22 @@
                   "critical"
                 ]
               },
+              "accessibilityStandard": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "manualChecks": {
+                "maxItems": 2,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "keyboard_navigation",
+                    "screen_reader"
+                  ]
+                }
+              },
               "profile": {
                 "type": "string",
                 "pattern": "^[a-z0-9][a-z0-9._-]{0,79}$"
@@ -14156,54 +14552,137 @@
           },
           "details": {
             "default": {},
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 80
-            },
-            "additionalProperties": {
-              "anyOf": [
-                {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "outcome": {
+                    "type": "string",
+                    "enum": [
+                      "ok",
+                      "not_ok"
+                    ]
+                  },
+                  "actorId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "reviewerName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "tools": {
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 80
+                    }
+                  },
+                  "keyboardNavigation": {
+                    "type": "string",
+                    "enum": [
+                      "passed",
+                      "failed",
+                      "not_checked"
+                    ]
+                  },
+                  "screenReader": {
+                    "type": "string",
+                    "enum": [
+                      "passed",
+                      "failed",
+                      "not_checked"
+                    ]
+                  },
+                  "reportIds": {
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "reportNames": {
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 255
+                    }
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "outcome",
+                  "actorId",
+                  "tools",
+                  "keyboardNavigation",
+                  "screenReader",
+                  "reportIds",
+                  "reportNames",
+                  "notes"
+                ]
+              },
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "additionalProperties": {
                   "anyOf": [
                     {
-                      "type": "string",
-                      "maxLength": 500
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     {
-                      "type": "number"
-                    },
-                    {
-                      "type": "boolean"
-                    },
-                    {
-                      "type": "null"
+                      "maxItems": 500,
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
                     }
                   ]
-                },
-                {
-                  "maxItems": 500,
-                  "type": "array",
-                  "items": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "maxLength": 500
-                      },
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  }
                 }
-              ]
-            }
+              }
+            ]
           },
           "supersedesObservationId": {
             "default": null,
@@ -14261,7 +14740,8 @@
                   "test.failed_count",
                   "accessibility.wcag22_aa_violations",
                   "accessibility.wcag22_aa_manual_review",
-                  "performance.lighthouse_score"
+                  "performance.lighthouse_score",
+                  "accessibility.manual_review"
                 ]
               },
               "metricVersion": {
@@ -14347,6 +14827,22 @@
                       "high",
                       "critical"
                     ]
+                  },
+                  "accessibilityStandard": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "manualChecks": {
+                    "maxItems": 2,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "keyboard_navigation",
+                        "screen_reader"
+                      ]
+                    }
                   },
                   "profile": {
                     "type": "string",
@@ -14606,6 +15102,85 @@
                   },
                   {
                     "type": "object",
+                    "properties": {
+                      "outcome": {
+                        "type": "string",
+                        "enum": [
+                          "ok",
+                          "not_ok"
+                        ]
+                      },
+                      "actorId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "reviewerName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "tools": {
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 80
+                        }
+                      },
+                      "keyboardNavigation": {
+                        "type": "string",
+                        "enum": [
+                          "passed",
+                          "failed",
+                          "not_checked"
+                        ]
+                      },
+                      "screenReader": {
+                        "type": "string",
+                        "enum": [
+                          "passed",
+                          "failed",
+                          "not_checked"
+                        ]
+                      },
+                      "reportIds": {
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        }
+                      },
+                      "reportNames": {
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      },
+                      "notes": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "outcome",
+                      "actorId",
+                      "tools",
+                      "keyboardNavigation",
+                      "screenReader",
+                      "reportIds",
+                      "reportNames",
+                      "notes"
+                    ]
+                  },
+                  {
+                    "type": "object",
                     "propertyNames": {
                       "type": "string",
                       "minLength": 1,
@@ -14710,6 +15285,327 @@
           "observation",
           "candidateRevision",
           "replayed"
+        ]
+      },
+      "AccessibilityReviewRequestDto": {
+        "type": "object",
+        "properties": {
+          "dimensions": {
+            "type": "object",
+            "properties": {
+              "testRunRole": {
+                "type": "string",
+                "enum": [
+                  "required",
+                  "informational"
+                ]
+              },
+              "minimumPriority": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "critical"
+                ]
+              },
+              "accessibilityStandard": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "manualChecks": {
+                "maxItems": 2,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "keyboard_navigation",
+                    "screen_reader"
+                  ]
+                }
+              },
+              "profile": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]{0,79}$"
+              },
+              "pageUrls": {
+                "minItems": 1,
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 2048,
+                  "format": "uri"
+                }
+              },
+              "toolVersion": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "device": {
+                "type": "string",
+                "enum": [
+                  "mobile",
+                  "desktop"
+                ]
+              },
+              "runsPerPage": {
+                "type": "integer",
+                "minimum": 3,
+                "maximum": 10
+              }
+            },
+            "required": [
+              "testRunRole"
+            ],
+            "additionalProperties": false
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "not_ok"
+            ]
+          },
+          "tools": {
+            "minItems": 1,
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            }
+          },
+          "keyboardNavigation": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "failed",
+              "not_checked"
+            ]
+          },
+          "screenReader": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "failed",
+              "not_checked"
+            ]
+          },
+          "reportIds": {
+            "minItems": 1,
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "notes": {
+            "default": "",
+            "type": "string",
+            "maxLength": 2000
+          },
+          "expectedObservationId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "dimensions",
+          "outcome",
+          "tools",
+          "keyboardNavigation",
+          "screenReader",
+          "reportIds",
+          "expectedObservationId"
+        ],
+        "additionalProperties": false
+      },
+      "CandidateReportUploadRequestDto": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "application/pdf",
+              "application/json",
+              "text/html",
+              "text/plain"
+            ]
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 104857600
+          },
+          "checksumSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{64}$"
+          }
+        },
+        "required": [
+          "fileName",
+          "contentType",
+          "sizeBytes",
+          "checksumSha256"
+        ]
+      },
+      "ReportUploadResponseDto": {
+        "type": "object",
+        "properties": {
+          "upload": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "method": {
+                "type": "string",
+                "const": "PUT"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "headers": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "method",
+              "url",
+              "headers",
+              "expiresAt"
+            ]
+          }
+        },
+        "required": [
+          "upload"
+        ]
+      },
+      "CompleteReportRequestDto": {
+        "type": "object",
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "uploadId"
+        ]
+      },
+      "CandidateReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "attachment": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "fileName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contentType": {
+                "type": "string",
+                "enum": [
+                  "application/pdf",
+                  "application/json",
+                  "text/html",
+                  "text/plain"
+                ]
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "checksumSha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "fileName",
+              "contentType",
+              "sizeBytes",
+              "checksumSha256",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "attachment"
+        ]
+      },
+      "ReportDownloadResponseDto": {
+        "type": "object",
+        "properties": {
+          "download": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "url",
+              "expiresAt"
+            ]
+          }
+        },
+        "required": [
+          "download"
         ]
       },
       "EnvironmentListResponseDto": {
@@ -20803,7 +21699,8 @@
                     "test.failed_count",
                     "accessibility.wcag22_aa_violations",
                     "accessibility.wcag22_aa_manual_review",
-                    "performance.lighthouse_score"
+                    "performance.lighthouse_score",
+                    "accessibility.manual_review"
                   ]
                 },
                 "metricVersion": {
@@ -20828,6 +21725,22 @@
                         "high",
                         "critical"
                       ]
+                    },
+                    "accessibilityStandard": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "manualChecks": {
+                      "maxItems": 2,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "keyboard_navigation",
+                          "screen_reader"
+                        ]
+                      }
                     },
                     "profile": {
                       "type": "string",
@@ -21089,7 +22002,8 @@
                               "test.failed_count",
                               "accessibility.wcag22_aa_violations",
                               "accessibility.wcag22_aa_manual_review",
-                              "performance.lighthouse_score"
+                              "performance.lighthouse_score",
+                              "accessibility.manual_review"
                             ]
                           },
                           "metricVersion": {
@@ -21114,6 +22028,22 @@
                                   "high",
                                   "critical"
                                 ]
+                              },
+                              "accessibilityStandard": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 120
+                              },
+                              "manualChecks": {
+                                "maxItems": 2,
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "keyboard_navigation",
+                                    "screen_reader"
+                                  ]
+                                }
                               },
                               "profile": {
                                 "type": "string",
@@ -21335,7 +22265,8 @@
                     "test.failed_count",
                     "accessibility.wcag22_aa_violations",
                     "accessibility.wcag22_aa_manual_review",
-                    "performance.lighthouse_score"
+                    "performance.lighthouse_score",
+                    "accessibility.manual_review"
                   ]
                 },
                 "metricVersion": {
@@ -21360,6 +22291,22 @@
                         "high",
                         "critical"
                       ]
+                    },
+                    "accessibilityStandard": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "manualChecks": {
+                      "maxItems": 2,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "keyboard_navigation",
+                          "screen_reader"
+                        ]
+                      }
                     },
                     "profile": {
                       "type": "string",
@@ -21551,7 +22498,8 @@
                     "test.failed_count",
                     "accessibility.wcag22_aa_violations",
                     "accessibility.wcag22_aa_manual_review",
-                    "performance.lighthouse_score"
+                    "performance.lighthouse_score",
+                    "accessibility.manual_review"
                   ]
                 },
                 "metricVersion": {
@@ -21576,6 +22524,22 @@
                         "high",
                         "critical"
                       ]
+                    },
+                    "accessibilityStandard": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "manualChecks": {
+                      "maxItems": 2,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "keyboard_navigation",
+                          "screen_reader"
+                        ]
+                      }
                     },
                     "profile": {
                       "type": "string",
@@ -22093,7 +23057,8 @@
                             "test.failed_count",
                             "accessibility.wcag22_aa_violations",
                             "accessibility.wcag22_aa_manual_review",
-                            "performance.lighthouse_score"
+                            "performance.lighthouse_score",
+                            "accessibility.manual_review"
                           ]
                         },
                         "metricVersion": {
@@ -22117,6 +23082,22 @@
                                 "high",
                                 "critical"
                               ]
+                            },
+                            "accessibilityStandard": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 120
+                            },
+                            "manualChecks": {
+                              "maxItems": 2,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "keyboard_navigation",
+                                  "screen_reader"
+                                ]
+                              }
                             },
                             "profile": {
                               "type": "string",
@@ -22638,7 +23619,8 @@
                           "test.failed_count",
                           "accessibility.wcag22_aa_violations",
                           "accessibility.wcag22_aa_manual_review",
-                          "performance.lighthouse_score"
+                          "performance.lighthouse_score",
+                          "accessibility.manual_review"
                         ]
                       },
                       "metricVersion": {
@@ -22662,6 +23644,22 @@
                               "high",
                               "critical"
                             ]
+                          },
+                          "accessibilityStandard": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "manualChecks": {
+                            "maxItems": 2,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "keyboard_navigation",
+                                "screen_reader"
+                              ]
+                            }
                           },
                           "profile": {
                             "type": "string",
@@ -23183,7 +24181,8 @@
                         "test.failed_count",
                         "accessibility.wcag22_aa_violations",
                         "accessibility.wcag22_aa_manual_review",
-                        "performance.lighthouse_score"
+                        "performance.lighthouse_score",
+                        "accessibility.manual_review"
                       ]
                     },
                     "metricVersion": {
@@ -23207,6 +24206,22 @@
                             "high",
                             "critical"
                           ]
+                        },
+                        "accessibilityStandard": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "manualChecks": {
+                          "maxItems": 2,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "keyboard_navigation",
+                              "screen_reader"
+                            ]
+                          }
                         },
                         "profile": {
                           "type": "string",

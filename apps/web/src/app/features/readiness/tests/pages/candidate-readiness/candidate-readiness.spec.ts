@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -10,6 +11,7 @@ import {
   candidateId,
   evidence,
   history,
+  policy,
   policyId,
   policyList,
   readiness,
@@ -22,6 +24,7 @@ describe('CandidateReadiness', () => {
     releaseDetail: vi.fn(),
     current: vi.fn(),
     policies: vi.fn(),
+    policy: vi.fn(),
     evidence: vi.fn(),
     history: vi.fn(),
     evaluate: vi.fn(),
@@ -33,6 +36,7 @@ describe('CandidateReadiness', () => {
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     readinessApi.releaseDetail.mockReset().mockResolvedValue(releaseDetail);
     readinessApi.current.mockReset().mockResolvedValue(readiness);
+    readinessApi.policy.mockReset().mockResolvedValue(policy);
     readinessApi.policies.mockReset().mockResolvedValue(policyList);
     readinessApi.evidence.mockReset().mockResolvedValue(evidence);
     readinessApi.history.mockReset().mockResolvedValue(history);
@@ -43,6 +47,7 @@ describe('CandidateReadiness', () => {
     await TestBed.configureTestingModule({
       imports: [CandidateReadiness, i18nTestingModule()],
       providers: [
+        provideHttpClient(),
         provideRouter([]),
         provideTanStackQuery(queryClient),
         { provide: ReadinessApi, useValue: readinessApi },

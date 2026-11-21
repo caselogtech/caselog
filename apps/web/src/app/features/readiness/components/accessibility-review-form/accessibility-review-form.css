@@ -1,0 +1,30 @@
+:host,
+form,
+fieldset {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+form {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+h3,
+p {
+  margin: 0;
+}
+ul {
+  margin: 0;
+  padding-left: var(--space-5);
+  overflow-wrap: anywhere;
+}
+button {
+  justify-self: start;
+}

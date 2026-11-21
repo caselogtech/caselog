@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { projectSlugSchema } from './project.js';
-import { releaseListQuerySchema, releaseSummarySchema } from './release.js';
 import {
-  qualityMetricKeySchema,
-  qualityMetricDimensionsSchema,
   QUALITY_METRIC_DEFINITIONS,
+  qualityMetricDimensionsSchema,
+  qualityMetricKeySchema,
   validateMetricDimensions,
 } from './quality-metric.js';
+import { releaseListQuerySchema, releaseSummarySchema } from './release.js';
 
 export const readinessMetricKeySchema = qualityMetricKeySchema;
 export const readinessOperatorSchema = z.enum(['eq', 'ne', 'gt', 'gte', 'lt', 'lte']);
@@ -85,7 +85,11 @@ export const readinessGateInputSchema = z
   .strict()
   .superRefine((gate, context) => {
     validateMetricDimensions(gate.metricKey, gate.dimensions, context);
-    if (!gate.metricKey.startsWith('test.') && !gate.producerKey)
+    if (
+      !gate.metricKey.startsWith('test.') &&
+      gate.metricKey !== 'accessibility.manual_review' &&
+      !gate.producerKey
+    )
       context.addIssue({
         code: 'custom',
         path: ['producerKey'],
@@ -101,9 +105,25 @@ export const readinessGateInputSchema = z
         path: ['producerKey'],
         message: 'Priority scopes require native test evidence',
       });
+    if (
+      gate.metricKey === 'accessibility.manual_review' &&
+      (gate.producerKey ||
+        gate.minimumTrust !== 'authenticated' ||
+        gate.missingEvidenceBehavior !== 'block' ||
+        gate.staleEvidenceBehavior !== 'block')
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['dimensions'],
+        message:
+          'Manual accessibility reviews require authenticated reviews and block missing or stale evidence; no producer key is needed',
+      });
+    }
     const expectedType = QUALITY_METRIC_DEFINITIONS[gate.metricKey].valueType;
     if (
-      gate.metricKey === 'accessibility.wcag22_aa_manual_review' &&
+      ['accessibility.wcag22_aa_manual_review', 'accessibility.manual_review'].includes(
+        gate.metricKey,
+      ) &&
       (gate.operator !== 'eq' || gate.expected.type !== 'integer' || gate.expected.value !== 1)
     )
       context.addIssue({

@@ -572,3 +572,9 @@ and [the scenario and acceptance guide](apps/docs/src/content/docs/automation/mc
 The [structure authoring extension](architecture/decisions/20261119-mcp-structure-authoring.md)
 adds replay-safe suite/section creates using an independent `structure:write` scope;
 it grants no structure rename, move or delete operations.
+
+Manual accessibility reviews follow
+[manual accessibility reviews](architecture/decisions/20261121-manual-accessibility-reviews.md).
+Quality-evidence owns review observations; attachments owns candidate report storage through
+its public API. Attachments must not import releases, which already depends on test-runs
+and attachments. Reviews remain evidence, separate from approvals, decisions and waivers.

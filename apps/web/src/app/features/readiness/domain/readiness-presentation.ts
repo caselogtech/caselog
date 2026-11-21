@@ -74,6 +74,7 @@ const METRIC: Record<GateEvaluation['metricKey'], string> = {
   'test.pass_rate': 'readiness.metrics.passRate',
   'test.completion_rate': 'readiness.metrics.completionRate',
   'test.failed_count': 'readiness.metrics.failedCount',
+  'accessibility.manual_review': 'readiness.accessibility.title',
   'accessibility.wcag22_aa_violations': 'readiness.metrics.accessibilityViolations',
   'accessibility.wcag22_aa_manual_review': 'readiness.metrics.accessibilityManualReview',
   'performance.lighthouse_score': 'readiness.metrics.lighthouseScore',

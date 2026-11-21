@@ -18,8 +18,8 @@
           [tone]="resultStatus.tone"
         />
         <div class="comparison mono">
-          <strong>{{ value(evaluation.actual, evaluation.metricKey) }}</strong>
-          <span>{{ operator(row) }} {{ value(evaluation.expected, evaluation.metricKey) }}</span>
+          @if (evaluation.metricKey === 'accessibility.manual_review') { <strong>{{ (evaluation.actual === null ? 'readiness.accessibility.notReviewed' : evaluation.actual.value === 1 ? 'readiness.accessibility.ok' : 'readiness.accessibility.notOk') | transloco }}</strong> }
+          @else { <strong>{{ value(evaluation.actual, evaluation.metricKey) }}</strong><span>{{ operator(row) }} {{ value(evaluation.expected, evaluation.metricKey) }}</span> }
         </div>
         <p>{{ explanation(row) | transloco }}</p>
         <span class="chevron" aria-hidden="true">›</span>

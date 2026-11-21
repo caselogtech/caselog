@@ -94,3 +94,23 @@ export type CaseAttachmentListQuery = z.infer<typeof caseAttachmentListQuerySche
 export type CaseAttachment = z.infer<typeof caseAttachmentSchema>;
 export type CaseAttachmentListResponse = z.infer<typeof caseAttachmentListResponseSchema>;
 export type CaseAttachmentResponse = z.infer<typeof caseAttachmentResponseSchema>;
+
+export const candidateReportContentTypeSchema = z.enum([
+  'application/pdf',
+  'application/json',
+  'text/html',
+  'text/plain',
+]);
+export const createCandidateReportUploadRequestSchema =
+  createCaseAttachmentUploadSessionRequestSchema.extend({
+    contentType: candidateReportContentTypeSchema,
+  });
+export const candidateReportSchema = caseAttachmentSchema.extend({
+  contentType: candidateReportContentTypeSchema,
+});
+export const candidateReportResponseSchema = z.object({ attachment: candidateReportSchema });
+export type CandidateReport = z.infer<typeof candidateReportSchema>;
+export type CandidateReportResponse = z.infer<typeof candidateReportResponseSchema>;
+export type CreateCandidateReportUploadRequest = z.infer<
+  typeof createCandidateReportUploadRequestSchema
+>;

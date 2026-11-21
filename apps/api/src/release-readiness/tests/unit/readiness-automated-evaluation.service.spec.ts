@@ -16,7 +16,7 @@ const job = {
   candidateId,
   assignmentId,
   evidenceRevision: 3,
-  evaluatorVersion: '1.1.0',
+  evaluatorVersion: '1.2.0',
   trigger: 'EVIDENCE_CHANGED',
 } as const satisfies ReadinessEvaluationJob;
 

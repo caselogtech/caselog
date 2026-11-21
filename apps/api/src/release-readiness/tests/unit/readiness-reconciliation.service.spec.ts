@@ -54,7 +54,7 @@ describe('ReadinessReconciliationService', () => {
           projection: {
             assignmentId,
             targetEvidenceRevision: 5,
-            targetEvaluatorVersion: '1.1.0',
+            targetEvaluatorVersion: '1.2.0',
             state: 'FAILED',
             decision: null,
           },

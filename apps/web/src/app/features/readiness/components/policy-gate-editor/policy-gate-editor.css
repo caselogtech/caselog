@@ -136,3 +136,18 @@ article > header {
     grid-template-columns: 1fr;
   }
 }
+
+fieldset {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  min-width: 0;
+}
+fieldset label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-min-size);
+}

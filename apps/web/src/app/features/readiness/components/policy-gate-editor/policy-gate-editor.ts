@@ -1,16 +1,16 @@
-import { priorityLabel } from '../../domain/readiness-presentation';
-import { BrowserSession } from '../../../../core/auth/browser-session';
-import { QUALITY_METRIC_DEFINITIONS } from '@caselog/schemas';
-import { readinessMetricKeySchema } from '@caselog/schemas/readiness';
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
+import { QUALITY_METRIC_DEFINITIONS } from '@caselog/schemas';
 import type { ReadinessGateInput } from '@caselog/schemas/readiness';
+import { readinessMetricKeySchema } from '@caselog/schemas/readiness';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { BrowserSession } from '../../../../core/auth/browser-session';
 import { Button, FormControlStyle, FormField, StatusBadge } from '../../../../shared/ui/public-api';
+import { priorityLabel } from '../../domain/readiness-presentation';
 import {
   createPolicyGateForm,
-  type PolicyGateForm,
   type PolicyGateEditorForm,
+  type PolicyGateForm,
 } from './policy-gate-editor-form';
 
 type MetricKey = ReadinessGateInput['metricKey'];
@@ -21,6 +21,7 @@ type EvidenceBehavior = ReadinessGateInput['missingEvidenceBehavior'];
 type MinimumTrust = ReadinessGateInput['minimumTrust'];
 
 const METRIC_LABEL: Record<MetricKey, string> = {
+  'accessibility.manual_review': 'readiness.accessibility.title',
   'test.pass_rate': 'readiness.metrics.passRate',
   'test.completion_rate': 'readiness.metrics.completionRate',
   'test.failed_count': 'readiness.metrics.failedCount',
@@ -70,10 +71,35 @@ export class PolicyGateEditor {
   }
   readonly form = input.required<PolicyGateEditorForm>();
 
-  readonly metrics = readinessMetricKeySchema.options;
+  readonly metrics = readinessMetricKeySchema.options.filter(
+    (metric) => !metric.startsWith('accessibility.wcag'),
+  );
   readonly priorities = ['low', 'medium', 'high', 'critical'] as const;
   metricChanged(gate: PolicyGateForm): void {
     const metric = gate.controls.metricKey.value;
+    if (metric === 'accessibility.manual_review') {
+      let suffix = 1;
+      while (
+        this.form().controls.gates.controls.some(
+          (other) => other !== gate && other.controls.key.value === `accessibility-${suffix}`,
+        )
+      )
+        suffix++;
+      gate.patchValue({
+        key: `accessibility-${suffix}`,
+        profile: '',
+        producerKey: '',
+        toolVersion: '',
+        minimumPriority: '',
+        testRunRole: 'required',
+        operator: 'eq',
+        expectedValue: '1',
+        missingEvidenceBehavior: 'block',
+        staleEvidenceBehavior: 'block',
+        minimumTrust: 'authenticated',
+      });
+      return;
+    }
     if (metric.startsWith('test.'))
       gate.patchValue({
         profile: '',

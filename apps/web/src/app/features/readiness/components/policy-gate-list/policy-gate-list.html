@@ -13,6 +13,10 @@
         />
       </header>
       <dl>
+        @if (gate.dimensions.accessibilityStandard) { <div><dt>{{ 'readiness.accessibility.standard' | transloco }}</dt><dd>{{ gate.dimensions.accessibilityStandard }}</dd></div> }
+        @if (gate.dimensions.manualChecks?.includes('keyboard_navigation')) { <div><dt>{{ 'readiness.accessibility.requiredChecks' | transloco }}</dt><dd>{{ 'readiness.accessibility.keyboard' | transloco }}</dd></div> }
+        @if (gate.dimensions.manualChecks?.includes('screen_reader')) { <div><dt>{{ 'readiness.accessibility.requiredChecks' | transloco }}</dt><dd>{{ 'readiness.accessibility.screenReader' | transloco }}</dd></div> }
+
         @if (gate.dimensions.minimumPriority) { <div><dt>{{ 'readiness.policies.scope.priority' | transloco }}</dt><dd>{{ priorityLabel(gate.dimensions.minimumPriority) | transloco }}</dd></div> }
         @if (gate.dimensions.profile) { <div><dt>{{ 'readiness.policies.scope.profile' | transloco }}</dt><dd>{{ gate.dimensions.profile }}</dd></div> }
         @if (gate.dimensions.pageUrls) { <div><dt>{{ 'readiness.policies.scope.pages' | transloco }}</dt><dd>{{ gate.dimensions.pageUrls.join(', ') }}</dd></div> }
@@ -24,7 +28,7 @@
         <div>
           <dt>{{ 'readiness.policies.gates.comparison' | transloco }}</dt>
           <dd class="comparison">
-            {{ operatorLabel(gate.operator) }} {{ expectedValue(gate) }}
+            @if (gate.metricKey === 'accessibility.manual_review') { {{ 'readiness.accessibility.policyHint' | transloco }} } @else { {{ operatorLabel(gate.operator) }} {{ expectedValue(gate) }} }
           </dd>
         </div>
         <div>

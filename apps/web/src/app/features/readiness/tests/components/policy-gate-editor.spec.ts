@@ -5,6 +5,32 @@ import {
 } from '../../components/policy-gate-editor/policy-gate-editor-form';
 
 describe('policy gate editor form', () => {
+  it('maps simple manual accessibility requirements without technical source or measurement settings', () => {
+    const form = createPolicyCreateForm();
+    form.patchValue({ key: 'production', name: 'Production' });
+    const gate = form.controls.gates.at(0);
+    gate.patchValue({
+      key: 'accessibility',
+      metricKey: 'accessibility.manual_review',
+      expectedValue: '1',
+      pageUrls: 'https://example.com/',
+      operator: 'eq',
+    });
+    expect(form.valid).toBe(true);
+    const input = toCreateReadinessPolicyRequest(form).gates[0];
+    expect(input).toMatchObject({
+      dimensions: {
+        accessibilityStandard: 'WCAG 2.2 AA',
+        pageUrls: ['https://example.com/'],
+        manualChecks: ['keyboard_navigation', 'screen_reader'],
+      },
+      operator: 'eq',
+      expected: { type: 'integer', value: 1 },
+      missingEvidenceBehavior: 'block',
+    });
+    expect(input?.producerKey).toBeUndefined();
+    expect(input?.dimensions.profile).toBeUndefined();
+  });
   it('converts compatible metric values into typed gate contracts', () => {
     const form = createPolicyCreateForm();
     form.patchValue({ key: 'production', name: 'Production promotion' });

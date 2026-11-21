@@ -1,0 +1,36 @@
+@if (policy.isPending()) { <app-loading-skeleton preset="row" [label]="'readiness.accessibility.loading' | transloco" /> }
+@else if (policy.isError()) { <app-callout tone="danger" [title]="'readiness.accessibility.loadFailed' | transloco"><button appButton="secondary" type="button" (click)="policy.refetch()">{{ 'readiness.retry' | transloco }}</button></app-callout> }
+@else if (requirements().length > 0) {
+  <section aria-labelledby="accessibility-reviews-title">
+    <h2 id="accessibility-reviews-title">{{ 'readiness.accessibility.title' | transloco }}</h2>
+    @if (message(); as status) { <p role="status">{{ status | transloco }}</p> }
+    @if (current.isPending()) { <app-loading-skeleton preset="block" [label]="'readiness.accessibility.loading' | transloco" /> }
+    @else if (current.isError()) { <app-callout tone="danger" [title]="'readiness.accessibility.loadFailed' | transloco"><button appButton="secondary" type="button" (click)="current.refetch()">{{ 'readiness.retry' | transloco }}</button></app-callout> }
+    @else if (current.hasNextPage()) { <button appButton="secondary" type="button" [disabled]="current.isFetchingNextPage()" (click)="current.fetchNextPage()">{{ 'readiness.accessibility.loadContext' | transloco }}</button> }
+    @else if (canManage()) {
+      @for (gate of requirements(); track gate.id) { <app-accessibility-review-form [workspace]="workspace()" [project]="project()" [candidate]="candidate()" [gateKey]="gate.key" [dimensions]="gate.dimensions" [currentReview]="currentReview(gate.dimensions)" (saved)="reviewSaved()" (reload)="reload()" /> }
+    }
+    <h3>{{ 'readiness.accessibility.history' | transloco }}</h3>
+    @if (history.isPending()) { <app-loading-skeleton preset="row" [label]="'readiness.accessibility.loading' | transloco" /> }
+    @else if (history.isError()) { <app-callout tone="danger" [title]="'readiness.accessibility.loadFailed' | transloco"><button appButton="secondary" type="button" (click)="history.refetch()">{{ 'readiness.retry' | transloco }}</button></app-callout> }
+    @else if (observations().length === 0) { <p>{{ 'readiness.accessibility.noReviews' | transloco }}</p> }
+    @for (review of observations(); track review.id) {
+      @if (details(review); as data) {
+        <article>
+          <header><strong>{{ (data.outcome === 'ok' ? 'readiness.accessibility.ok' : 'readiness.accessibility.notOk') | transloco }}</strong> · {{ review.dimensions.accessibilityStandard }} · <time [attr.datetime]="review.observedAt">{{ review.observedAt | date: 'medium' }}</time></header>
+          <p>{{ 'readiness.accessibility.reviewer' | transloco }}: <span class="mono">{{ data.reviewerName ?? ('readiness.accessibility.workspaceReviewer' | transloco) }}</span></p>
+          <p>{{ 'readiness.accessibility.validUntil' | transloco }}: {{ review.expiresAt ? (review.expiresAt | date: 'medium') : ('readiness.evidence.noExpiry' | transloco) }}</p>
+          <p>{{ 'readiness.policies.scope.pages' | transloco }}: {{ review.dimensions.pageUrls?.join(', ') }}</p>
+          <p>{{ 'readiness.accessibility.tools' | transloco }}: {{ data.tools.join(', ') }}</p>
+          <p>{{ 'readiness.accessibility.keyboard' | transloco }}: {{ checkStateKey(data.keyboardNavigation) | transloco }}</p>
+          <p>{{ 'readiness.accessibility.screenReader' | transloco }}: {{ checkStateKey(data.screenReader) | transloco }}</p>
+          @if (data.notes) { <p class="notes">{{ data.notes }}</p> }
+          <ul>@for (id of data.reportIds; track id; let index = $index) { <li><button appButton="quiet" type="button" (click)="download(id)">{{ data.reportNames[index] }}</button></li> }</ul>
+          @if (!review.isCurrent) { <p>{{ 'readiness.accessibility.superseded' | transloco }}</p> }
+        </article>
+      }
+    }
+    @if (history.hasNextPage()) { <button appButton="secondary" type="button" [disabled]="history.isFetchingNextPage()" (click)="history.fetchNextPage()">{{ 'readiness.accessibility.loadMore' | transloco }}</button> }
+    @if (downloadError()) { <p role="alert">{{ 'readiness.accessibility.downloadFailed' | transloco }}</p> }
+  </section>
+}

@@ -58,6 +58,7 @@
         </header>
 
         <div class="gate-fields">
+          @if (gate.controls.metricKey.value !== 'accessibility.manual_review') {
           <app-form-field
             [controlId]="'policy-gate-key-' + index"
             [label]="'readiness.policies.editor.gateKey' | transloco"
@@ -74,6 +75,7 @@
               [attr.aria-invalid]="gate.controls.key.touched && gate.controls.key.invalid"
             />
           </app-form-field>
+          }
 
           <app-form-field
             [controlId]="'policy-gate-metric-' + index"
@@ -81,6 +83,7 @@
             [required]="true"
           >
             <select appControl [id]="'policy-gate-metric-' + index" formControlName="metricKey" (change)="metricChanged(gate)">
+              @if (gate.controls.metricKey.value.startsWith('accessibility.wcag')) { <option [value]="gate.controls.metricKey.value">{{ metricLabel(gate.controls.metricKey.value) | transloco }}</option> }
               @for (metric of metrics; track metric) {
                 <option [value]="metric">{{ metricLabel(metric) | transloco }}</option>
               }
@@ -94,6 +97,18 @@
               @for (priority of priorities; track priority) { <option [value]="priority">{{ priorityLabel(priority) | transloco }}</option> }
             </select>
           </app-form-field>
+          } @else if (gate.controls.metricKey.value === 'accessibility.manual_review') {
+            <app-form-field [controlId]="'policy-gate-standard-' + index" [label]="'readiness.accessibility.standard' | transloco" [required]="true" [error]="gate.touched && gate.hasError('invalidMetricScope') ? ('readiness.accessibility.requirementsInvalid' | transloco) : undefined">
+              <input appControl [id]="'policy-gate-standard-' + index" formControlName="accessibilityStandard" maxlength="120" />
+            </app-form-field>
+            <app-form-field [controlId]="'policy-gate-a11y-pages-' + index" [label]="'readiness.policies.scope.pages' | transloco" [hint]="'readiness.policies.scope.pagesHint' | transloco" [required]="true">
+              <textarea appControl [id]="'policy-gate-a11y-pages-' + index" formControlName="pageUrls" rows="3"></textarea>
+            </app-form-field>
+            <fieldset><legend>{{ 'readiness.accessibility.requiredChecks' | transloco }}</legend>
+              <label><input type="checkbox" formControlName="keyboardNavigation" /> {{ 'readiness.accessibility.keyboard' | transloco }}</label>
+              <label><input type="checkbox" formControlName="screenReader" /> {{ 'readiness.accessibility.screenReader' | transloco }}</label>
+            </fieldset>
+            <p class="scope-hint">{{ 'readiness.accessibility.policyHint' | transloco }}</p>
           } @else {
           <app-form-field [controlId]="'policy-gate-profile-' + index" [label]="'readiness.policies.scope.profile' | transloco" [hint]="'readiness.policies.scope.profileHint' | transloco" [required]="true" [error]="gate.touched && gate.hasError('invalidMetricScope') ? ('readiness.policies.scope.invalid' | transloco) : undefined">
             <input appControl [id]="'policy-gate-profile-' + index" formControlName="profile" maxlength="80" />
@@ -132,6 +147,7 @@
           </app-form-field>
 
           }
+          @if (gate.controls.metricKey.value !== 'accessibility.manual_review') {
           <app-form-field
             [controlId]="'policy-gate-operator-' + index"
             [label]="'readiness.policies.editor.operator' | transloco"
@@ -163,6 +179,7 @@
             />
           </app-form-field>
 
+          }
           <app-form-field
             [controlId]="'policy-gate-impact-' + index"
             [label]="'readiness.policies.editor.impact' | transloco"
@@ -175,6 +192,7 @@
             </select>
           </app-form-field>
 
+          @if (gate.controls.metricKey.value !== 'accessibility.manual_review') {
           <app-form-field
             [controlId]="'policy-gate-missing-' + index"
             [label]="'readiness.policies.gates.missing' | transloco"
@@ -210,6 +228,7 @@
               }
             </select>
           </app-form-field>
+          }
         </div>
 
         <div class="gate-preview">
@@ -217,6 +236,9 @@
             [tone]="gate.controls.impact.value === 'blocking' ? 'danger' : 'warning'"
             [label]="impactLabel(gate.controls.impact.value) | transloco"
           />
+          @if (gate.controls.metricKey.value === 'accessibility.manual_review') {
+            <p>{{ 'readiness.accessibility.policyHint' | transloco }}</p>
+          } @else {
           <p>
             {{ 'readiness.policies.editor.previewPrefix' | transloco }}
             <strong>{{ roleLabel(gate.controls.testRunRole.value) | transloco }}</strong>
@@ -224,6 +246,7 @@
             <span class="mono">{{ operatorLabel(gate.controls.operator.value) }} {{ expectedDisplay(gate.controls.metricKey.value, gate.controls.expectedValue.value) }}</span>;
             {{ 'readiness.policies.editor.previewFailure' | transloco }}
           </p>
+          }
         </div>
       </article>
     }

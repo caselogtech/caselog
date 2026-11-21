@@ -1,10 +1,11 @@
 import { z } from 'zod';
+import { accessibilityReviewDetailsSchema } from './accessibility-review.js';
 import { projectSlugSchema } from './project.js';
 import {
-  qualityMetricKeySchema,
-  qualityMetricDimensionsSchema,
-  validateMetricDimensions,
   QUALITY_METRIC_DEFINITIONS,
+  qualityMetricDimensionsSchema,
+  qualityMetricKeySchema,
+  validateMetricDimensions,
 } from './quality-metric.js';
 
 export const evidenceMetricKeySchema = qualityMetricKeySchema;
@@ -106,6 +107,7 @@ export const externalEvidenceDetailsSchema = z
 
 export const evidenceDetailsSchema = z.union([
   nativeTestEvidenceDetailsSchema,
+  accessibilityReviewDetailsSchema,
   externalEvidenceDetailsSchema,
 ]);
 
@@ -171,7 +173,7 @@ export const evidenceIngestHeadersSchema = z.object({
 export const evidenceIngestRequestSchema = z
   .object({
     candidateId: z.uuid(),
-    metricKey: evidenceMetricKeySchema,
+    metricKey: evidenceMetricKeySchema.exclude(['accessibility.manual_review']),
     metricVersion: z.literal('1.0.0'),
     value: evidenceValueSchema,
     state: evidenceObservationStateSchema,
@@ -186,7 +188,7 @@ export const evidenceIngestRequestSchema = z
         url: z.string().url().max(2048).nullable().default(null),
       })
       .strict(),
-    details: externalEvidenceDetailsSchema.default({}),
+    details: z.union([accessibilityReviewDetailsSchema, externalEvidenceDetailsSchema]).default({}),
     supersedesObservationId: z.uuid().nullable().default(null),
   })
   .strict()
@@ -222,8 +224,8 @@ export const evidenceIngestRequestSchema = z
         message: 'Manual review is 1 (passed) or 0 (failed)',
       });
     if (value.metricKey === 'performance.lighthouse_score' && value.state === 'available') {
-      // biome-ignore lint/complexity/useLiteralKeys: Angular requires indexed access for record fields.
-      const samples = value.details['performanceSamples'];
+      const samples =
+        'performanceSamples' in value.details ? value.details['performanceSamples'] : undefined;
       const runs = value.dimensions.runsPerPage ?? 0;
       const pages = value.dimensions.pageUrls?.length ?? 0;
       if (

@@ -209,8 +209,9 @@ enum CustomFieldEntityType {
 }
 
 enum AttachmentTargetType {
-  CASE_VERSION @map("case_version")
-  RESULT       @map("result")
+  CANDIDATE_REPORT @map("candidate_report")
+  CASE_VERSION     @map("case_version")
+  RESULT           @map("result")
 
   @@map("attachment_target_type")
 }
@@ -1002,6 +1003,7 @@ model ReleaseCandidate {
   currentReadinessDecision   CurrentReadinessDecision?
   readinessWaivers           ReadinessWaiver[]
   readinessWaiverRevocations ReadinessWaiverRevocation[]
+  reportUploads              UploadSession[]
 
   @@id([organizationId, id], map: "pk_release_candidates")
   @@unique([organizationId, projectId, id], map: "uq_release_candidates_organization_project_id")
@@ -1708,6 +1710,7 @@ model UploadSession {
   projectId      String    @map("project_id") @db.Uuid
   testRunId      String?   @map("test_run_id") @db.Uuid
   testRunItemId  String?   @map("test_run_item_id") @db.Uuid
+  candidateId    String?   @map("candidate_id") @db.Uuid
   caseVersionId  String?   @map("case_version_id") @db.Uuid
   createdById    String    @map("created_by_id") @db.Uuid
   storageKey     String    @map("storage_key") @db.VarChar(1024)
@@ -1720,17 +1723,19 @@ model UploadSession {
   completedAt    DateTime? @map("completed_at") @db.Timestamptz(3)
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project      Project          @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
-  testRun      TestRun?         @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Cascade)
-  testRunItem  TestRunItem?     @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Cascade)
-  caseVersion  TestCaseVersion? @relation(fields: [organizationId, caseVersionId], references: [organizationId, id], onDelete: Cascade)
-  createdBy    User             @relation("UploadCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project           @relation(fields: [organizationId, projectId], references: [organizationId, id], onDelete: Restrict)
+  testRun      TestRun?          @relation(fields: [organizationId, testRunId], references: [organizationId, id], onDelete: Cascade)
+  testRunItem  TestRunItem?      @relation(fields: [organizationId, testRunItemId], references: [organizationId, id], onDelete: Cascade)
+  candidate    ReleaseCandidate? @relation(fields: [organizationId, projectId, candidateId], references: [organizationId, projectId, id], onDelete: Restrict)
+  caseVersion  TestCaseVersion?  @relation(fields: [organizationId, caseVersionId], references: [organizationId, id], onDelete: Cascade)
+  createdBy    User              @relation("UploadCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
   @@id([organizationId, id], map: "pk_upload_sessions")
   @@unique([organizationId, storageKey], map: "uq_upload_sessions_organization_id_storage_key")
   @@index([organizationId, testRunItemId, completedAt, expiresAt], map: "idx_upload_sessions_org_item_completed_expires")
   @@index([organizationId, caseVersionId, completedAt, expiresAt], map: "idx_upload_sessions_org_case_version_completed_expires")
+  @@index([organizationId, candidateId, completedAt, expiresAt], map: "idx_upload_sessions_org_candidate_completed_expires")
   @@index([organizationId, expiresAt], map: "idx_upload_sessions_organization_id_expires_at")
   @@map("upload_sessions")
 }

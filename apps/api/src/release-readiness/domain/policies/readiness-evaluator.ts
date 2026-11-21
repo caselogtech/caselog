@@ -8,7 +8,7 @@ import {
   validateReadinessGates,
 } from '../models/readiness-policy';
 
-export const READINESS_EVALUATOR_VERSION = '1.1.0';
+export const READINESS_EVALUATOR_VERSION = '1.2.0';
 
 export type GateEvaluationResult = 'PASSED' | 'WARNING' | 'FAILED' | 'UNKNOWN';
 export type GateDiagnostic = 'NONE' | 'MISSING' | 'INCOMPLETE' | 'STALE' | 'UNTRUSTED';
@@ -77,6 +77,11 @@ function evaluateGate(
       observation.metricVersion === gate.metricVersion &&
       observation.dimensions.testRunRole === gate.dimensions.testRunRole &&
       observation.dimensions.minimumPriority === gate.dimensions.minimumPriority &&
+      observation.dimensions.accessibilityStandard === gate.dimensions.accessibilityStandard &&
+      JSON.stringify(observation.dimensions.manualChecks ?? []) ===
+        JSON.stringify(gate.dimensions.manualChecks ?? []) &&
+      (gate.metricKey !== 'accessibility.manual_review' ||
+        observation.producerKey === 'caselog.accessibility-reviews') &&
       observation.dimensions.profile === gate.dimensions.profile &&
       observation.dimensions.toolVersion === gate.dimensions.toolVersion &&
       observation.dimensions.device === gate.dimensions.device &&

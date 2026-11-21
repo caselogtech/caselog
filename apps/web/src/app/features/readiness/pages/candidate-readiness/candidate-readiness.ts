@@ -11,8 +11,8 @@ import {
 } from '@tanstack/angular-query-experimental';
 import { WorkspaceSession } from '../../../../core/auth/workspace-session';
 import { apiErrorCode, apiErrorTranslationKey } from '../../../../shared/api/api-error';
-import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import { IdempotencyIdentity } from '../../../../shared/api/idempotency-identity';
+import { hasWorkspacePermission } from '../../../../shared/models/workspace-role';
 import {
   Breadcrumbs,
   Button,
@@ -21,6 +21,7 @@ import {
   PageState,
   StatusBadge,
 } from '../../../../shared/ui/public-api';
+import { AccessibilityReviews } from '../../components/accessibility-reviews/accessibility-reviews';
 import { CandidateEvidence } from '../../components/candidate-evidence/candidate-evidence';
 import { DecisionHistory } from '../../components/decision-history/decision-history';
 import { LinkedRunSummary } from '../../components/linked-run-summary/linked-run-summary';
@@ -33,6 +34,7 @@ import { buildReadinessGateRows, releasePresentation } from '../../domain/readin
 @Component({
   selector: 'app-candidate-readiness',
   imports: [
+    AccessibilityReviews,
     Breadcrumbs,
     Button,
     Callout,
@@ -170,6 +172,9 @@ export class CandidateReadiness {
     return releasePresentation(state);
   }
 
+  async accessibilitySaved(): Promise<void> {
+    await Promise.all([this.current.refetch(), this.evidence.refetch(), this.history.refetch()]);
+  }
   requestEvaluation(): void {
     if (this.canManage() && !this.evaluate.isPending()) this.evaluate.mutate();
   }

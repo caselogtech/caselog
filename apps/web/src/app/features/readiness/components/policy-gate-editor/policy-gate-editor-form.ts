@@ -1,4 +1,3 @@
-import { QUALITY_METRIC_DEFINITIONS, type TestCasePriority } from '@caselog/schemas';
 import {
   type AbstractControl,
   FormArray,
@@ -7,16 +6,20 @@ import {
   type ValidatorFn,
   Validators,
 } from '@angular/forms';
+import { QUALITY_METRIC_DEFINITIONS, type TestCasePriority } from '@caselog/schemas';
 import {
-  createReadinessPolicyRequestSchema,
-  createReadinessPolicyVersionRequestSchema,
-  readinessGateInputSchema,
   type CreateReadinessPolicyRequest,
   type CreateReadinessPolicyVersionRequest,
+  createReadinessPolicyRequestSchema,
+  createReadinessPolicyVersionRequestSchema,
   type ReadinessGateInput,
+  readinessGateInputSchema,
 } from '@caselog/schemas/readiness';
 
 export type PolicyGateForm = FormGroup<{
+  accessibilityStandard: FormControl<string>;
+  keyboardNavigation: FormControl<boolean>;
+  screenReader: FormControl<boolean>;
   minimumPriority: FormControl<TestCasePriority | ''>;
   profile: FormControl<string>;
   producerKey: FormControl<string>;
@@ -80,6 +83,11 @@ const validMetricScope: ValidatorFn = (control) => {
   const metric = control.get('metricKey')?.value;
   if (typeof metric !== 'string') return null;
   if (metric.startsWith('test.')) return null;
+  if (metric === 'accessibility.manual_review')
+    return control.get('accessibilityStandard')?.value?.trim() &&
+      validReportPages(String(control.get('pageUrls')?.value ?? ''))
+      ? null
+      : { invalidMetricScope: true };
   return control.get('profile')?.value?.trim() &&
     control.get('producerKey')?.value?.trim() &&
     validReportPages(String(control.get('pageUrls')?.value ?? '')) &&
@@ -121,6 +129,18 @@ const uniqueGateKeys: ValidatorFn = (control: AbstractControl) => {
 export function createPolicyGateForm(gate?: ReadinessGateInput): PolicyGateForm {
   return new FormGroup(
     {
+      accessibilityStandard: new FormControl(
+        gate?.dimensions.accessibilityStandard ?? 'WCAG 2.2 AA',
+        { nonNullable: true, validators: [Validators.maxLength(120)] },
+      ),
+      keyboardNavigation: new FormControl(
+        gate?.dimensions.manualChecks?.includes('keyboard_navigation') ?? true,
+        { nonNullable: true },
+      ),
+      screenReader: new FormControl(
+        gate?.dimensions.manualChecks?.includes('screen_reader') ?? true,
+        { nonNullable: true },
+      ),
       pageUrls: new FormControl(gate?.dimensions.pageUrls?.join('\n') ?? '', { nonNullable: true }),
       toolVersion: new FormControl(gate?.dimensions.toolVersion ?? '', {
         nonNullable: true,
@@ -225,7 +245,15 @@ export function toReadinessGateInput(form: PolicyGateForm): ReadinessGateInput {
       ...(value.minimumPriority ? { minimumPriority: value.minimumPriority } : {}),
       ...(!value.metricKey.startsWith('test.')
         ? {
-            profile: value.profile.trim(),
+            ...(value.metricKey !== 'accessibility.manual_review'
+              ? { profile: value.profile.trim(), toolVersion: value.toolVersion.trim() }
+              : {
+                  accessibilityStandard: value.accessibilityStandard.trim(),
+                  manualChecks: [
+                    ...(value.keyboardNavigation ? ['keyboard_navigation'] : []),
+                    ...(value.screenReader ? ['screen_reader'] : []),
+                  ],
+                }),
             pageUrls: [
               ...new Set(
                 value.pageUrls
@@ -234,23 +262,31 @@ export function toReadinessGateInput(form: PolicyGateForm): ReadinessGateInput {
                   .filter(Boolean),
               ),
             ].sort(),
-            toolVersion: value.toolVersion.trim(),
             ...(value.metricKey === 'performance.lighthouse_score'
               ? { device: value.device, runsPerPage: value.runsPerPage }
               : {}),
           }
         : {}),
     },
-    ...(value.producerKey.trim() ? { producerKey: value.producerKey.trim() } : {}),
-    operator: value.operator,
+    ...(value.metricKey !== 'accessibility.manual_review' && value.producerKey.trim()
+      ? { producerKey: value.producerKey.trim() }
+      : {}),
+    operator: value.metricKey === 'accessibility.manual_review' ? 'eq' : value.operator,
     expected:
       QUALITY_METRIC_DEFINITIONS[value.metricKey].valueType === 'integer'
-        ? { type: 'integer', value: Number(value.expectedValue) }
+        ? {
+            type: 'integer',
+            value:
+              value.metricKey === 'accessibility.manual_review' ? 1 : Number(value.expectedValue),
+          }
         : { type: 'percentage', value: String(value.expectedValue).trim() },
     impact: value.impact,
-    missingEvidenceBehavior: value.missingEvidenceBehavior,
-    staleEvidenceBehavior: value.staleEvidenceBehavior,
-    minimumTrust: value.minimumTrust,
+    missingEvidenceBehavior:
+      value.metricKey === 'accessibility.manual_review' ? 'block' : value.missingEvidenceBehavior,
+    staleEvidenceBehavior:
+      value.metricKey === 'accessibility.manual_review' ? 'block' : value.staleEvidenceBehavior,
+    minimumTrust:
+      value.metricKey === 'accessibility.manual_review' ? 'authenticated' : value.minimumTrust,
   });
 }
 

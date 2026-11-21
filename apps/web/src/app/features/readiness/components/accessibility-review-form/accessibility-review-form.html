@@ -1,0 +1,19 @@
+<form [formGroup]="form" (ngSubmit)="submit()" (input)="captureExpected()" (change)="captureExpected()" [attr.aria-busy]="busy() || uploading()">
+  <h3>{{ dimensions().accessibilityStandard }}</h3>
+  <ul>@for (page of dimensions().pageUrls; track page) { <li><a href="{{ page }}" target="_blank" rel="noopener noreferrer">{{ page }}</a></li> }</ul>
+  <p>{{ 'readiness.accessibility.reviewHint' | transloco }}</p>
+  <fieldset [disabled]="busy() || conflict()">
+    <app-form-field [controlId]="gateKey() + '-outcome'" [label]="'readiness.accessibility.outcome' | transloco" [required]="true">
+      <select appControl [id]="gateKey() + '-outcome'" formControlName="outcome"><option value="">{{ 'readiness.accessibility.selectOutcome' | transloco }}</option><option value="ok">{{ 'readiness.accessibility.ok' | transloco }}</option><option value="not_ok">{{ 'readiness.accessibility.notOk' | transloco }}</option></select>
+    </app-form-field>
+    <app-form-field [controlId]="gateKey() + '-tools'" [label]="'readiness.accessibility.tools' | transloco" [hint]="'readiness.accessibility.toolsHint' | transloco" [required]="true"><textarea appControl [id]="gateKey() + '-tools'" formControlName="tools" rows="2" maxlength="800"></textarea></app-form-field>
+    <app-form-field [controlId]="gateKey() + '-keyboard'" [label]="'readiness.accessibility.keyboard' | transloco" [required]="checks().includes('keyboard_navigation')"><select appControl [id]="gateKey() + '-keyboard'" formControlName="keyboardNavigation"><option value="not_checked">{{ 'readiness.accessibility.notChecked' | transloco }}</option><option value="passed">{{ 'readiness.accessibility.passed' | transloco }}</option><option value="failed">{{ 'readiness.accessibility.failed' | transloco }}</option></select></app-form-field>
+    <app-form-field [controlId]="gateKey() + '-screen-reader'" [label]="'readiness.accessibility.screenReader' | transloco" [required]="checks().includes('screen_reader')"><select appControl [id]="gateKey() + '-screen-reader'" formControlName="screenReader"><option value="not_checked">{{ 'readiness.accessibility.notChecked' | transloco }}</option><option value="passed">{{ 'readiness.accessibility.passed' | transloco }}</option><option value="failed">{{ 'readiness.accessibility.failed' | transloco }}</option></select></app-form-field>
+    <app-form-field [controlId]="gateKey() + '-reports'" [label]="'readiness.accessibility.reports' | transloco" [hint]="'readiness.accessibility.filesHint' | transloco" [required]="true"><input appControl [id]="gateKey() + '-reports'" type="file" accept=".pdf,.json,.html,.htm,.txt" multiple [disabled]="uploading() || reports().length >= 10" (change)="upload($event)" /></app-form-field>
+    @if (uploading()) { <p role="status">{{ 'readiness.accessibility.uploading' | transloco }}</p> }
+    <ul>@for (report of reports(); track report.id) { <li>{{ report.fileName }} <button appButton="quiet" type="button" [disabled]="uploading()" (click)="removeReport(report.id)" [attr.aria-label]="'readiness.accessibility.removeReport' | transloco: { name: report.fileName }">{{ 'readiness.policies.editor.remove' | transloco }}</button></li> }</ul>
+    <app-form-field [controlId]="gateKey() + '-notes'" [label]="'readiness.accessibility.notes' | transloco"><textarea appControl [id]="gateKey() + '-notes'" formControlName="notes" rows="3" maxlength="2000"></textarea></app-form-field>
+    <button appButton="primary" type="submit" [disabled]="busy() || uploading()">{{ (busy() ? 'readiness.accessibility.saving' : 'readiness.accessibility.save') | transloco }}</button>
+  </fieldset>
+  @if (error(); as message) { <app-callout tone="danger" liveRole="alert" [title]="'readiness.accessibility.error' | transloco"><p>{{ message | transloco }}</p>@if (conflict()) { <button appButton="secondary" type="button" (click)="discardConflict()">{{ 'readiness.accessibility.reload' | transloco }}</button> }</app-callout> }
+</form>

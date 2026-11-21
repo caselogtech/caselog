@@ -4,6 +4,13 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Simplify accessibility policies to a standard, pages and required keyboard/screen-reader
+  checks. Record manual OK / Not OK candidate reviews with multiple tools and uploaded
+  PDF/HTML/JSON/text reports. Preserve review and decision history, audit corrections,
+  reject stale edits and keep legacy WCAG policies readable. Apply additive migration
+  `20261121210000_manual_accessibility_reviews`; drain old evaluator jobs and upgrade
+  artifacts together. New evaluations use evaluator 1.2.0.
+
 - Add versioned case priorities and frozen candidate test coverage, WCAG 2.2 AA
   automated/manual evidence and Lighthouse gates with pinned sources and measurement
   profiles. Add conflict-safe policy editing and successor drafts, preserving published

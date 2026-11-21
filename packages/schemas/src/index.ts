@@ -618,3 +618,19 @@ export {
   type RestoreTestCaseVersionRequest,
   type TestCaseLifecycleResponse,
 } from './test-case.js';
+
+export {
+  accessibilityReviewParamsSchema,
+  accessibilityReviewRequestSchema,
+  accessibilityReviewDetailsSchema,
+  type AccessibilityReviewRequest,
+} from './accessibility-review.js';
+export {
+  candidateReportContentTypeSchema,
+  createCandidateReportUploadRequestSchema,
+  candidateReportSchema,
+  candidateReportResponseSchema,
+  type CandidateReport,
+  type CandidateReportResponse,
+  type CreateCandidateReportUploadRequest,
+} from './attachment.js';

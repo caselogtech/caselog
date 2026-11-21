@@ -60,6 +60,9 @@ integration remain undecided.
   evidence and Lighthouse profiles with pinned sources, pages, tool versions and device
   settings. Verify frozen case/version scope, report matching and minimum page medians;
   edit drafts or create successors without changing published gate inputs or decisions.
+- [x] Simplify accessibility to manual candidate reviews: standard, pages, required keyboard
+  and screen-reader checks, multiple tools and attached reports; verify corrections,
+  conflict handling, tenant isolation and report downloads through API and browser.
 - [x] Verify missing/failed/stale evidence, unauthorized and cross-tenant access,
   idempotent retries and history preservation in the relevant API/integration suites.
 - [x] Run `pnpm check`, `pnpm test` and `pnpm build` on the pinned toolchain; verify the
@@ -97,6 +100,17 @@ existing-database migration checks pass. Apply `20261121190000_quality_policy_sc
 before new artifacts; drain old evaluator jobs before stopping old workers and upgrading. The core
 now supports frozen priority coverage, WCAG reports, Lighthouse profiles and policy
 draft/successor editing; scanners and environment-based assignment remain outside scope.
+
+
+Manual-accessibility verification on 2026-11-21 covers all 833 tests, `pnpm check`,
+`pnpm build` and seven Chromium journeys across self-hosted and managed modes. The
+accessibility journey verifies simple policy requirements, human Not OK → OK corrections,
+multiple tools, report uploads/downloads, review history and mobile layout. PostgreSQL/API
+coverage verifies missing evidence, required checks, checksum failures, retries, competing
+reviewers, role/token boundaries, tenant/project/candidate isolation and unchanged historical
+decisions. Migration `20261121210000_manual_accessibility_reviews` passes on an existing
+local database and disposable empty databases. New evaluations use evaluator 1.2.0;
+legacy WCAG policy versions and decisions retain their original meaning.
 
 ### Operational acceptance
 
