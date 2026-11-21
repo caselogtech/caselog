@@ -1,6 +1,9 @@
 # Caselog
 
-Open-source release readiness with built-in manual and automated test management.
+**Simple test management and release readiness for small teams.**
+
+Open source, built for self-hosting and managed hosting. Our goal is to keep testing
+organized and make everyday work simpler.
 
 **Can this exact build be promoted safely, and what is blocking it?** Caselog connects
 test cases, manual runs, and CI results to immutable release candidates, versioned
