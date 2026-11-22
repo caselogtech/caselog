@@ -133,7 +133,15 @@ describe('CandidateReadiness', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Assign a release policy');
 
-    fixture.componentInstance.assignPolicy.mutate(policyId);
+    const host: HTMLElement = fixture.nativeElement;
+    const select = host.querySelector<HTMLSelectElement>('app-policy-assignment select');
+    const button = host.querySelector<HTMLButtonElement>('app-policy-assignment button');
+    expect(select).not.toBeNull();
+    expect(button?.textContent).toContain('Assign policy');
+    if (!select || !button) throw new Error('Policy assignment controls are missing');
+    select.value = policyId;
+    select.dispatchEvent(new Event('change'));
+    button.click();
     await vi.waitFor(() => expect(readinessApi.assignPolicy).toHaveBeenCalledOnce());
     expect(readinessApi.assignPolicy).toHaveBeenCalledWith(
       'acme',
@@ -142,6 +150,29 @@ describe('CandidateReadiness', () => {
       policyId,
       expect.stringMatching(/^[0-9a-f-]{36}$/),
     );
+  });
+
+  it('renders assignment after visiting the paginated policy catalogue without changing its cache', async () => {
+    const catalogueKey = ['readiness-policies', 'acme', 'checkout'];
+    const catalogueData = { pages: [policyList], pageParams: [null] };
+    queryClient.setQueryDefaults(catalogueKey, { staleTime: Number.POSITIVE_INFINITY });
+    queryClient.setQueryData(catalogueKey, catalogueData);
+    readinessApi.current.mockRejectedValueOnce(noPolicyError());
+
+    const fixture = TestBed.createComponent(CandidateReadiness);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.policies.isSuccess()).toBe(true));
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    const select = host.querySelector<HTMLSelectElement>('app-policy-assignment select');
+    expect(select?.querySelector(`option[value="${policyId}"]`)?.textContent).toContain(
+      'Production promotion',
+    );
+    expect(host.querySelector('app-policy-assignment button')?.textContent).toContain(
+      'Assign policy',
+    );
+    expect(queryClient.getQueryData(catalogueKey)).toEqual(catalogueData);
   });
 });
 

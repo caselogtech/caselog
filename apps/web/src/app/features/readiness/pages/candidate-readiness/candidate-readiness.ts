@@ -101,7 +101,7 @@ export class CandidateReadiness {
       apiErrorCode(this.current.error()) === 'release_policy_not_assigned',
   );
   readonly policies = injectQuery(() => ({
-    queryKey: ['readiness-policies', this.workspaceSlug, this.projectSlug],
+    queryKey: ['readiness-policies', this.workspaceSlug, this.projectSlug, 'assignment'],
     queryFn: () => this.readinessApi.policies(this.workspaceSlug, this.projectSlug),
     enabled: this.noPolicy() && this.canManage(),
   }));
