@@ -37,6 +37,10 @@ for that database. Local services are available at these addresses:
 Use `pnpm docs:dev` for the [documentation site](apps/docs/README.md) and
 `pnpm site:dev` for the [public website](apps/site/README.md).
 
+The API watcher writes to `apps/api/.cache/dev`; production builds and OpenAPI checks
+write to `apps/api/dist`. These outputs are separate so verification can run while
+`pnpm dev` remains active.
+
 Keep code, technical documentation and product text in English. Follow the existing
 formatter, module layout, public APIs and semantic Transloco keys. A change to tenant data
 must preserve organization scoping, server-side authorization, constraints and RLS.

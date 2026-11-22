@@ -3,6 +3,7 @@
   "files": {
     "includes": [
       "**",
+      "!!**/.cache/**",
       "!!**/.angular/**",
       "!!**/.astro/**",
       "!!**/dist/**",

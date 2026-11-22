@@ -10,7 +10,7 @@
     "openapi:generate": "pnpm build && node dist/openapi/generate-openapi.js",
     "openapi:check": "pnpm build && node dist/openapi/generate-openapi.js --check",
     "predev": "pnpm --filter @caselog/schemas build && pnpm prisma:generate",
-    "dev": "nest start --watch",
+    "dev": "nest start --watch --path tsconfig.dev.json",
     "start": "node dist/main.js",
     "start:prod": "node dist/main.js",
     "pretest": "pnpm --filter @caselog/schemas build && pnpm prisma:generate",
