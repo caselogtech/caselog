@@ -1,8 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import type { CandidateReadinessResponse, GateEvaluation } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { Button, Callout, LoadingSkeleton } from '../../../../shared/ui/public-api';
 import { ReadinessApi } from '../../data-access/readiness-api';
+import {
+  gateResultPresentation,
+  readinessProjectionPresentation,
+} from '../../domain/readiness-presentation';
 import { GateFormResponse } from '../gate-form-response/gate-form-response';
 @Component({
   selector: 'app-candidate-gate-forms',
@@ -12,7 +17,7 @@ import { GateFormResponse } from '../gate-form-response/gate-form-response';
     @else if (policy.isError()) { <app-callout tone="danger" [title]="'readiness.forms.loadFailed' | transloco"><button appButton="secondary" type="button" (click)="policy.refetch()">{{ 'readiness.retry' | transloco }}</button></app-callout> }
     @else if (gates().length) {
       <section><h2>{{ 'readiness.forms.title' | transloco }}</h2>
-        @for (gate of gates(); track gate.id) { @if (gate.form; as form) { <app-gate-form-response [workspace]="workspace()" [project]="project()" [candidate]="candidate()" [gateId]="gate.id" [definition]="form" [canManage]="canManage()" (saved)="saved.emit()" /> } }
+        @for (gate of gates(); track gate.id) { @if (gate.form; as form) { <app-gate-form-response [workspace]="workspace()" [project]="project()" [candidate]="candidate()" [gateId]="gate.id" [definition]="form" [canManage]="canManage()" [status]="statusFor(gate.id)" (saved)="saved.emit()" /> } }
       </section>
     }
   `,
@@ -27,6 +32,8 @@ export class CandidateGateForms {
   readonly policyId = input.required<string>();
   readonly versionId = input.required<string>();
   readonly canManage = input(false);
+  readonly evaluations = input<GateEvaluation[]>([]);
+  readonly evaluationState = input<CandidateReadinessResponse['state']>('pending');
   readonly saved = output<void>();
   readonly policy = injectQuery(() => ({
     queryKey: ['readiness-policy', this.workspace(), this.project(), this.policyId()],
@@ -39,4 +46,10 @@ export class CandidateGateForms {
         ?.policy.versions.find(({ id }) => id === this.versionId())
         ?.gates.filter(({ form }) => Boolean(form)) ?? [],
   );
+  statusFor(gateId: string) {
+    const state = this.evaluationState();
+    if (state !== 'current') return readinessProjectionPresentation(state);
+    const evaluation = this.evaluations().find((item) => item.gateId === gateId);
+    return gateResultPresentation(evaluation?.result ?? 'unknown');
+  }
 }

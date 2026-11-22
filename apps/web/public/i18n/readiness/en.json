@@ -529,6 +529,9 @@
   },
   "forms": {
     "title": "Gate forms",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "unsaved": "Unsaved changes",
     "editorHint": "Define the information to collect and the conditions that must pass for this gate.",
     "newGate": "New gate",
     "name": "Gate name",

@@ -67,6 +67,9 @@ integration remain undecided.
   required/optional typed fields, checkbox/number/choice conditions and native priority-scoped
   test results. Verify report-backed candidate responses, concurrency, immutable history,
   legacy compatibility and end-to-end UI authoring before marking this checkpoint complete.
+- [x] Collapse candidate gate forms by default, keep server evaluation and unsaved-change
+  indicators visible in the headers, and preserve answers while toggling. Verify keyboard
+  operation, stale results, saving and automatic status updates in unit tests and Chromium.
 - [x] Verify missing/failed/stale evidence, unauthorized and cross-tenant access,
   idempotent retries and history preservation in the relevant API/integration suites.
 - [x] Run `pnpm check`, `pnpm test` and `pnpm build` on the pinned toolchain; verify the

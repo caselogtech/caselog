@@ -1,5 +1,15 @@
-<section [attr.aria-labelledby]="'form-title-' + gateId()">
-  <h3 [id]="'form-title-' + gateId()">{{ definition().name }}</h3>
+<details class="gate-panel">
+  <summary class="gate-summary">
+    <h3>{{ definition().name }}</h3>
+    <span class="gate-status">
+      @if (status(); as gateStatus) { <app-status-badge [label]="gateStatus.labelKey | transloco" [tone]="gateStatus.tone" /> }
+      @if (dirty()) { <app-status-badge [label]="'readiness.forms.unsaved' | transloco" tone="neutral" /> }
+    </span>
+    <span class="expand-label">{{ 'readiness.forms.expand' | transloco }}</span>
+    <span class="collapse-label">{{ 'readiness.forms.collapse' | transloco }}</span>
+    <span class="chevron" aria-hidden="true">›</span>
+  </summary>
+  <div class="gate-body">
   @if (definition().description) { <p class="description">{{ definition().description }}</p> }
   @if (current.isPending()) { <app-loading-skeleton preset="block" [label]="'readiness.forms.loading' | transloco" /> }
   @else if (current.isError()) { <app-callout tone="danger" [title]="'readiness.forms.loadFailed' | transloco"><button appButton="secondary" type="button" (click)="current.refetch()">{{ 'readiness.retry' | transloco }}</button></app-callout> }
@@ -37,7 +47,7 @@
   @if (error(); as key) { <p role="alert">{{ key | transloco }}</p> }
   @if (conflict()) { <button appButton="secondary" type="button" (click)="reload()" [disabled]="current.isFetching()">{{ 'readiness.forms.rebase' | transloco }}</button> }
   @if (message()) { <p role="status">{{ 'readiness.forms.saved' | transloco }}</p> }
-  <details>
+  <details class="response-history">
     <summary>{{ 'readiness.forms.history' | transloco }}</summary>
     @if (history.isPending()) { <app-loading-skeleton preset="row" [label]="'readiness.forms.loading' | transloco" /> }
     @else if (history.isError()) { <app-callout tone="danger" [title]="'readiness.forms.loadFailed' | transloco"><button appButton="secondary" type="button" (click)="history.refetch()">{{ 'readiness.retry' | transloco }}</button></app-callout> }
@@ -52,4 +62,5 @@
     } @empty { @if (history.isSuccess()) { <p>{{ 'readiness.forms.noResponses' | transloco }}</p> } }
     @if (history.hasNextPage()) { <button appButton="secondary" type="button" (click)="history.fetchNextPage()" [disabled]="history.isFetchingNextPage()">{{ 'readiness.forms.loadMore' | transloco }}</button> }
   </details>
-</section>
+  </div>
+</details>

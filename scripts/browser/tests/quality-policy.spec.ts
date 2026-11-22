@@ -186,7 +186,13 @@ test('author a custom gate, combine native tests with manual answers, attach rep
 
   await page.goto(`/acme/checkout/releases/${releaseId}/candidates/${candidateId}`);
   const panel = page.locator('app-gate-form-response');
+  const toggle = panel.locator('.gate-summary');
   const form = panel.locator('form');
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toContainText('Release quality');
+  await expect(form).toBeHidden();
+  await toggle.focus();
+  await page.keyboard.press('Enter');
   await expect(form).toBeVisible();
   await form.getByRole('button', { name: 'Save response', exact: true }).click();
   await expect(
@@ -200,6 +206,17 @@ test('author a custom gate, combine native tests with manual answers, attach rep
     .getByRole('textbox', { name: 'Tools used', exact: true })
     .fill('Lighthouse, axe, NVDA');
   await form.getByRole('spinbutton', { name: 'Lighthouse score', exact: true }).fill('96');
+  await toggle.focus();
+  await page.keyboard.press('Space');
+  await expect(form).toBeHidden();
+  await expect(toggle).toContainText('Unsaved changes');
+  await toggle.click();
+  await expect(form.getByRole('spinbutton', { name: 'Lighthouse score', exact: true })).toHaveValue(
+    '96',
+  );
+  await expect(form.getByRole('textbox', { name: 'Standard', exact: true })).toHaveValue(
+    'WCAG 2.2 AA',
+  );
   await form.getByLabel('Reports', { exact: false }).setInputFiles({
     name: 'quality-report.json',
     mimeType: 'application/json',
@@ -216,6 +233,7 @@ test('author a custom gate, combine native tests with manual answers, attach rep
     return data.state === 'current' ? data.decision?.status : data.state;
   };
   await expect.poll(status, { timeout: 20_000 }).toBe('blocked');
+  await expect(toggle).toContainText('Failed');
   await form.getByRole('checkbox', { name: 'Keyboard navigation', exact: true }).check();
   await form.getByRole('button', { name: 'Save response', exact: true }).click();
   await expect.poll(status, { timeout: 20_000 }).toBe('ready');
@@ -224,12 +242,14 @@ test('author a custom gate, combine native tests with manual answers, attach rep
   await expect(page.locator('app-readiness-summary')).toContainText('Current');
   await expect(page.locator('app-decision-history')).toContainText(decision.id);
   await expect(page.getByText('Readiness is updating', { exact: true })).toHaveCount(0);
+  await expect(toggle).toContainText('Passed');
+  await expect(toggle).not.toContainText('Unsaved changes');
   expect(
     decision.gates[0].criteria.every(
       (criterion: { result: string }) => criterion.result === 'passed',
     ),
   ).toBe(true);
-  await panel.locator('summary').click();
+  await panel.locator('.response-history > summary').click();
   await expect(panel.locator('article')).toHaveCount(2);
   await expect(panel.locator('article').last()).toContainText('Superseded response');
   const downloadPromise = page.waitForEvent('download');

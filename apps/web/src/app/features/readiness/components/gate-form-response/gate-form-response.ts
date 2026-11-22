@@ -37,8 +37,10 @@ import {
   FormControlStyle,
   FormField,
   LoadingSkeleton,
+  StatusBadge,
 } from '../../../../shared/ui/public-api';
 import { GateFormsApi } from '../../data-access/gate-forms-api';
+import type { StatusPresentation } from '../../domain/readiness-presentation';
 
 @Component({
   selector: 'app-gate-form-response',
@@ -51,6 +53,7 @@ import { GateFormsApi } from '../../data-access/gate-forms-api';
     FormControlStyle,
     FormField,
     LoadingSkeleton,
+    StatusBadge,
   ],
   templateUrl: './gate-form-response.html',
   styleUrl: './gate-form-response.css',
@@ -68,6 +71,7 @@ export class GateFormResponse {
   readonly gateId = input.required<string>();
   readonly definition = input.required<GateFormDefinition>();
   readonly canManage = input(false);
+  readonly status = input<StatusPresentation | null>(null);
   readonly saved = output<void>();
   readonly values = signal<GateFormAnswers>({});
   readonly reportNames = signal<Record<string, string>>({});
