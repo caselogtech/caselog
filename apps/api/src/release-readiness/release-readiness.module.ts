@@ -1,3 +1,6 @@
+import { AttachmentModule } from '../attachments/public-api';
+import { GateFormService } from './application/services/gate-form.service';
+import { GateFormController } from './presentation/controllers/gate-form.controller';
 import { ReadinessPolicyEditRepository } from './infrastructure/repositories/readiness-policy-edit.repository';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/public-api';
@@ -33,8 +36,9 @@ import { ReadinessWaiverController } from './presentation/controllers/readiness-
 import { ReadinessEvaluationWorker } from './presentation/workers/readiness-evaluation.worker';
 
 @Module({
-  imports: [AuthModule, ReleaseModule, QualityEvidenceModule],
+  imports: [AttachmentModule, AuthModule, ReleaseModule, QualityEvidenceModule],
   controllers: [
+    GateFormController,
     ReadinessPolicyController,
     CandidatePolicyAssignmentController,
     ReadinessDecisionController,
@@ -43,6 +47,7 @@ import { ReadinessEvaluationWorker } from './presentation/workers/readiness-eval
     ReleaseReadinessSummaryController,
   ],
   providers: [
+    GateFormService,
     ReadinessPolicyEditRepository,
     ReadinessPolicyRepository,
     ReadinessPolicyService,

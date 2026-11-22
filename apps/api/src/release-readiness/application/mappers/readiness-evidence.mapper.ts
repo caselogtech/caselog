@@ -11,6 +11,7 @@ export function toReadinessEvidence(
         ? { type: 'percentage' as const, value: observation.value.value }
         : { type: 'integer' as const, value: observation.value.value };
   return {
+    ...(observation.formResponse ? { formResponse: observation.formResponse } : {}),
     observationId: observation.id,
     producerId: observation.producerId,
     producerKey: observation.producerKey,

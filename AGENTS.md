@@ -54,6 +54,11 @@ Accessibility authoring now follows
 `architecture/decisions/20261121-manual-accessibility-reviews.md`: manual candidate-bound
 OK / Not OK reviews with standards, pages, required checks and attached reports. Legacy
 WCAG evidence and published policy history remain readable.
+Custom gate authoring now follows
+`architecture/decisions/20261122-custom-gate-forms.md`: one bounded form builder with typed
+required/optional fields and AND conditions over human answers and native test results.
+Legacy published gates remain readable; generic workflow engines and scanner execution
+remain outside scope.
 
 ## 2. Sources of truth
 

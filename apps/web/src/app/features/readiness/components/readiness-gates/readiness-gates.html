@@ -6,7 +6,7 @@
     <details>
       <summary>
         <div class="gate-identity">
-          <strong>{{ metric(row) | transloco }}</strong>
+          <strong>{{ evaluation.form?.name || (metric(row) | transloco) }}</strong>
           <span class="mono">{{ evaluation.gateKey }}</span>
         </div>
         <app-status-badge
@@ -18,7 +18,8 @@
           [tone]="resultStatus.tone"
         />
         <div class="comparison mono">
-          @if (evaluation.metricKey === 'accessibility.manual_review') { <strong>{{ (evaluation.actual === null ? 'readiness.accessibility.notReviewed' : evaluation.actual.value === 1 ? 'readiness.accessibility.ok' : 'readiness.accessibility.notOk') | transloco }}</strong> }
+          @if (evaluation.form) { <strong>{{ resultStatus.labelKey | transloco }}</strong> }
+          @else if (evaluation.metricKey === 'accessibility.manual_review') { <strong>{{ (evaluation.actual === null ? 'readiness.accessibility.notReviewed' : evaluation.actual.value === 1 ? 'readiness.accessibility.ok' : 'readiness.accessibility.notOk') | transloco }}</strong> }
           @else { <strong>{{ value(evaluation.actual, evaluation.metricKey) }}</strong><span>{{ operator(row) }} {{ value(evaluation.expected, evaluation.metricKey) }}</span> }
         </div>
         <p>{{ explanation(row) | transloco }}</p>
@@ -26,6 +27,10 @@
       </summary>
 
       <div class="gate-detail">
+        @if (evaluation.form) { <p>{{ evaluation.form.description }}</p> }
+        @if (evaluation.criteria; as criteria) {
+          <ul>@for (criterion of criteria; track criterion.key) { <li><strong>{{ criterionLabel(criterion.label) }}</strong>: {{ criterionValue(criterion.actual) }} · {{ criterionValue(criterion.expected) }} · {{ criterionResult(criterion.result) | transloco }} @if (criterion.diagnostic !== 'none') { · {{ criterionDiagnostic(criterion.diagnostic) | transloco }} } @if (criterion.observationId) { <span class="mono">{{ criterion.observationId }}</span> }</li> }</ul>
+        }
         <dl>
           @if (evaluation.dimensions.minimumPriority) { <div><dt>{{ 'readiness.policies.scope.priority' | transloco }}</dt><dd>{{ priorityLabel(evaluation.dimensions.minimumPriority) | transloco }}</dd></div> }
           @if (evaluation.dimensions.profile) { <div><dt>{{ 'readiness.policies.scope.profile' | transloco }}</dt><dd>{{ evaluation.dimensions.profile }}</dd></div> }

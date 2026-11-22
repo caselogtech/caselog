@@ -4,7 +4,7 @@
       <header>
         <span class="position">{{ gate.position + 1 }}</span>
         <div>
-          <strong>{{ metricLabel(gate.metricKey) | transloco }}</strong>
+          <strong>{{ gate.form?.name || (metricLabel(gate.metricKey) | transloco) }}</strong>
           <code>{{ gate.key }}</code>
         </div>
         <app-status-badge
@@ -12,6 +12,14 @@
           [label]="impactLabel(gate.impact) | transloco"
         />
       </header>
+      @if (gate.form; as form) {
+        <p>{{ form.description }}</p>
+        <h4>{{ 'readiness.forms.fields' | transloco }}</h4>
+        <ul>@for (field of form.fields; track field.key) { <li>{{ field.label }} · {{ (field.required ? 'readiness.forms.required' : 'readiness.forms.optional') | transloco }}</li> }</ul>
+        <h4>{{ 'readiness.forms.criteria' | transloco }}</h4>
+        <p>{{ 'readiness.forms.criteriaHint' | transloco }}</p>
+        <ul>@for (criterion of form.criteria; track $index) { <li>{{ criterionDescription(form, criterion) }}</li> }</ul>
+      } @else {
       <dl>
         @if (gate.dimensions.accessibilityStandard) { <div><dt>{{ 'readiness.accessibility.standard' | transloco }}</dt><dd>{{ gate.dimensions.accessibilityStandard }}</dd></div> }
         @if (gate.dimensions.manualChecks?.includes('keyboard_navigation')) { <div><dt>{{ 'readiness.accessibility.requiredChecks' | transloco }}</dt><dd>{{ 'readiness.accessibility.keyboard' | transloco }}</dd></div> }
@@ -48,6 +56,7 @@
           <dd>{{ trustLabel(gate.minimumTrust) | transloco }}</dd>
         </div>
       </dl>
+      }
     </li>
   }
 </ol>

@@ -44,6 +44,8 @@ export class EvidenceQueryRepository {
 
       const now = new Date();
       const filters = {
+        organizationId,
+        dimensions: query.gateId ? { path: ['gateId'], equals: query.gateId } : undefined,
         projectId: project.id,
         candidateId: candidate.id,
         metricKey: query.metricKey,

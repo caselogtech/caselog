@@ -5,6 +5,50 @@ import {
 } from '../../components/policy-gate-editor/policy-gate-editor-form';
 
 describe('policy gate editor form', () => {
+  it('requires a named form with valid field references and maps custom conditions', () => {
+    const form = createPolicyCreateForm();
+    form.patchValue({ key: 'production', name: 'Production' });
+    const gate = form.controls.gates.at(0);
+    expect(form.invalid).toBe(true);
+    gate.controls.form.setValue({
+      name: 'Quality approval',
+      description: 'Review',
+      fields: [
+        {
+          key: 'approval',
+          label: 'Approved',
+          description: '',
+          type: 'checkbox',
+          required: true,
+          options: [],
+        },
+      ],
+      criteria: [
+        { type: 'checkbox', fieldKey: 'approval' },
+        {
+          type: 'test_results',
+          metricKey: 'test.pass_rate',
+          testRunRole: 'required',
+          minimumPriority: 'medium',
+          operator: 'gte',
+          expected: 100,
+        },
+      ],
+    });
+    expect(form.valid).toBe(true);
+    expect(toCreateReadinessPolicyRequest(form).gates[0]).toMatchObject({
+      metricKey: 'gate.form_response',
+      form: {
+        name: 'Quality approval',
+        criteria: [{ type: 'checkbox' }, { type: 'test_results', minimumPriority: 'medium' }],
+      },
+      staleEvidenceBehavior: 'block',
+    });
+    const definition = gate.controls.form.value;
+    if (!definition) throw new Error('Missing form');
+    gate.controls.form.setValue({ ...definition, fields: [] });
+    expect(form.invalid).toBe(true);
+  });
   it('maps simple manual accessibility requirements without technical source or measurement settings', () => {
     const form = createPolicyCreateForm();
     form.patchValue({ key: 'production', name: 'Production' });
@@ -88,7 +132,7 @@ describe('policy gate editor form', () => {
     const form = createPolicyCreateForm();
     form.patchValue({ key: 'production', name: 'Production promotion' });
     const first = form.controls.gates.at(0);
-    first.patchValue({ key: 'pass-rate', expectedValue: '101' });
+    first.patchValue({ key: 'pass-rate', metricKey: 'test.pass_rate', expectedValue: '101' });
     expect(first.hasError('incompatibleExpectedValue')).toBe(true);
 
     first.controls.expectedValue.setValue('98');

@@ -634,3 +634,5 @@ export {
   type CandidateReportResponse,
   type CreateCandidateReportUploadRequest,
 } from './attachment.js';
+
+export * from './gate-form.js';

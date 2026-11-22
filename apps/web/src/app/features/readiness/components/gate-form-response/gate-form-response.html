@@ -1,0 +1,54 @@
+<section [attr.aria-labelledby]="'form-title-' + gateId()">
+  <h3 [id]="'form-title-' + gateId()">{{ definition().name }}</h3>
+  @if (definition().description) { <p class="description">{{ definition().description }}</p> }
+  @if (current.isPending()) { <app-loading-skeleton preset="block" [label]="'readiness.forms.loading' | transloco" /> }
+  @else if (current.isError()) { <app-callout tone="danger" [title]="'readiness.forms.loadFailed' | transloco"><button appButton="secondary" type="button" (click)="current.refetch()">{{ 'readiness.retry' | transloco }}</button></app-callout> }
+  @else if (canManage() && definition().fields.length > 0) {
+    <form (ngSubmit)="submit()" novalidate>
+      <fieldset [disabled]="busy() || uploading()">
+        <legend class="sr-only">{{ 'readiness.forms.response' | transloco }}</legend>
+        @for (field of definition().fields; track field.key) {
+          @let id = 'response-' + gateId() + '-' + field.key;
+          @if (field.type === 'checkbox') {
+            <label class="check" [for]="id"><input [id]="id" type="checkbox" [ngModel]="values()[field.key] === true" (ngModelChange)="change(field.key, $event)" [ngModelOptions]="{standalone: true}" [attr.aria-describedby]="field.description ? id + '-help' : null" />{{ field.label }}</label>
+            @if (field.description) { <p class="hint" [id]="id + '-help'">{{ field.description }}</p> }
+          } @else {
+            <app-form-field [controlId]="id" [label]="field.label" [required]="field.required" [hint]="field.description" [error]="invalid().includes(field.key) ? ('readiness.forms.fieldInvalid' | transloco) : ''">
+              @switch (field.type) {
+                @case ('textarea') { <textarea appControl [id]="id" [ngModel]="values()[field.key] || ''" (ngModelChange)="change(field.key, $event)" [ngModelOptions]="{standalone: true}" maxlength="4000" rows="3" [attr.aria-required]="field.required" [attr.aria-invalid]="invalid().includes(field.key)" [attr.aria-describedby]="field.description || invalid().includes(field.key) ? id + '-description' : null"></textarea> }
+                @case ('select') { <select appControl [id]="id" [ngModel]="values()[field.key] || ''" (ngModelChange)="change(field.key, $event)" [ngModelOptions]="{standalone: true}" [attr.aria-required]="field.required" [attr.aria-invalid]="invalid().includes(field.key)"><option value="">{{ 'readiness.forms.chooseOption' | transloco }}</option>@for (option of field.options; track option.key) { <option [value]="option.key">{{ option.label }}</option> }</select> }
+                @case ('number') { <input appControl [id]="id" type="number" [ngModel]="values()[field.key] ?? null" (ngModelChange)="change(field.key, $event)" [ngModelOptions]="{standalone: true}" min="-1000000000" max="1000000000" [attr.aria-required]="field.required" [attr.aria-invalid]="invalid().includes(field.key)"  [attr.aria-describedby]="field.description || invalid().includes(field.key) ? id + '-description' : null"/> }
+                @case ('files') {
+                  <input appControl [id]="id" type="file" multiple accept=".pdf,.json,.html,.htm,.txt" (change)="upload(field.key, $event)" [attr.aria-required]="field.required" [attr.aria-invalid]="invalid().includes(field.key)"  [attr.aria-describedby]="field.description || invalid().includes(field.key) ? id + '-description' : null"/>
+                  <ul>@for (fileId of fileIds(field.key); track fileId) { <li><button appButton="quiet" type="button" (click)="download(fileId)">{{ reportNames()[fileId] || fileId }}</button><button appButton="quiet" type="button" (click)="removeFile(field.key, fileId)" [attr.aria-label]="'readiness.forms.removeReport' | transloco: {name: reportNames()[fileId] || fileId}">×</button></li> }</ul>
+                }
+                @default { <input appControl [id]="id" [type]="field.type === 'url' ? 'url' : 'text'" [ngModel]="values()[field.key] || ''" (ngModelChange)="change(field.key, $event)" [ngModelOptions]="{standalone: true}" maxlength="4000" [attr.aria-required]="field.required" [attr.aria-invalid]="invalid().includes(field.key)"  [attr.aria-describedby]="field.description || invalid().includes(field.key) ? id + '-description' : null"/> }
+              }
+            </app-form-field>
+          }
+        }
+      </fieldset>
+      <p class="hint">{{ 'readiness.forms.responseHint' | transloco }}</p>
+      <button appButton="primary" type="submit" [disabled]="busy() || uploading() || conflict()">{{ (busy() ? 'readiness.forms.saving' : 'readiness.forms.save') | transloco }}</button>
+      @if (uploading()) { <p role="status">{{ 'readiness.forms.uploading' | transloco }}</p> }
+    </form>
+  } @else if (definition().fields.length === 0) { <p>{{ 'readiness.forms.automatic' | transloco }}</p> }
+  @if (error(); as key) { <p role="alert">{{ key | transloco }}</p> }
+  @if (conflict()) { <button appButton="secondary" type="button" (click)="reload()" [disabled]="current.isFetching()">{{ 'readiness.forms.rebase' | transloco }}</button> }
+  @if (message()) { <p role="status">{{ 'readiness.forms.saved' | transloco }}</p> }
+  <details>
+    <summary>{{ 'readiness.forms.history' | transloco }}</summary>
+    @if (history.isPending()) { <app-loading-skeleton preset="row" [label]="'readiness.forms.loading' | transloco" /> }
+    @else if (history.isError()) { <app-callout tone="danger" [title]="'readiness.forms.loadFailed' | transloco"><button appButton="secondary" type="button" (click)="history.refetch()">{{ 'readiness.retry' | transloco }}</button></app-callout> }
+    @for (item of observations(); track item.id) {
+      @if (details(item); as data) {
+        <article>
+          <p><strong>{{ data.reviewerName }}</strong> · <time [attr.datetime]="item.observedAt">{{ item.observedAt | date: 'medium' }}</time> · {{ (item.isCurrent ? 'readiness.forms.current' : 'readiness.forms.superseded') | transloco }}</p>
+          <dl>@for (field of definition().fields; track field.key) { <div><dt>{{ field.label }}</dt><dd>@if (field.type === 'checkbox') { {{ (data.values[field.key] === undefined ? 'readiness.forms.noAnswer' : data.values[field.key] === true ? 'readiness.forms.yes' : 'readiness.forms.no') | transloco }} } @else { {{ display(field, data.values) }} }</dd></div> }</dl>
+          <ul>@for (report of data.reports; track report.id) { <li><button appButton="quiet" type="button" (click)="download(report.id)">{{ report.fileName }}</button></li> }</ul>
+        </article>
+      }
+    } @empty { @if (history.isSuccess()) { <p>{{ 'readiness.forms.noResponses' | transloco }}</p> } }
+    @if (history.hasNextPage()) { <button appButton="secondary" type="button" (click)="history.fetchNextPage()" [disabled]="history.isFetchingNextPage()">{{ 'readiness.forms.loadMore' | transloco }}</button> }
+  </details>
+</section>

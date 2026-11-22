@@ -173,7 +173,8 @@
         }
 
         <app-readiness-summary [readiness]="readinessModel" />
-        <app-accessibility-reviews [workspace]="workspaceSlug" [project]="projectSlug" [candidate]="candidateId" [policyId]="readinessModel.assignment.policy.id" [versionId]="readinessModel.assignment.policyVersion.id" [canManage]="canManage()" (saved)="accessibilitySaved()" />
+        <app-candidate-gate-forms [workspace]="workspaceSlug" [project]="projectSlug" [candidate]="candidateId" [policyId]="readinessModel.assignment.policy.id" [versionId]="readinessModel.assignment.policyVersion.id" [canManage]="canManage()" (saved)="accessibilitySaved()" />
+<app-accessibility-reviews [workspace]="workspaceSlug" [project]="projectSlug" [candidate]="candidateId" [policyId]="readinessModel.assignment.policy.id" [versionId]="readinessModel.assignment.policyVersion.id" [canManage]="canManage()" (saved)="accessibilitySaved()" />
 
         <section class="content-section" aria-labelledby="linked-runs-title">
           <div class="section-heading">

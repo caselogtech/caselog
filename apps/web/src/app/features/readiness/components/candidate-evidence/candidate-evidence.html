@@ -26,7 +26,7 @@
               <span>{{ observation.dimensions.testRunRole }}</span>
             </td>
             <td class="mono" [attr.data-label]="'readiness.evidence.value' | transloco">
-              {{ value(observation) }}
+              {{ observation.metricKey === 'gate.form_response' ? ('readiness.forms.recordedAnswers' | transloco) : value(observation) }}
             </td>
             <td class="mono" [attr.data-label]="'readiness.evidence.producer' | transloco">
               {{ observation.producer.key }}

@@ -141,6 +141,7 @@ export class ReadinessPolicyVersionCreate {
 
 function toEditableGate(gate: PolicyGate): ReadinessGateInput {
   return {
+    ...(gate.form ? { form: gate.form } : {}),
     key: gate.key,
     metricKey: gate.metricKey,
     metricVersion: gate.metricVersion,

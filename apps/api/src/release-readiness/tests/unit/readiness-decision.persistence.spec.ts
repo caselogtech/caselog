@@ -6,7 +6,7 @@ describe('current readiness projection mapping', () => {
     const response = toCandidateReadinessResponse(
       {
         targetEvidenceRevision: 4,
-        targetEvaluatorVersion: '1.2.0',
+        targetEvaluatorVersion: '1.3.0',
         state: 'FAILED',
         failureCode: 'evaluation_retries_exhausted',
         assignment: {
@@ -26,7 +26,7 @@ describe('current readiness projection mapping', () => {
           assignmentId: '019c2f66-a1f4-7000-8000-000000000001',
           policyVersionId: '019c2f66-a1f4-7000-8000-000000000004',
           evidenceRevision: 3,
-          evaluatorVersion: '1.2.0',
+          evaluatorVersion: '1.3.0',
           trigger: 'EVIDENCE_CHANGED',
           status: 'READY',
           evaluatedAt: new Date('2026-08-27T12:00:00.000Z'),
@@ -49,7 +49,7 @@ describe('current readiness projection mapping', () => {
     expect(response).toMatchObject({
       state: 'failed',
       targetEvidenceRevision: 4,
-      targetEvaluatorVersion: '1.2.0',
+      targetEvaluatorVersion: '1.3.0',
       currentEvidenceRevision: 4,
       failureCode: 'evaluation_retries_exhausted',
       decision: { evidenceRevision: 3 },

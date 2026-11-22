@@ -578,3 +578,11 @@ Manual accessibility reviews follow
 Quality-evidence owns review observations; attachments owns candidate report storage through
 its public API. Attachments must not import releases, which already depends on test-runs
 and attachments. Reviews remain evidence, separate from approvals, decisions and waivers.
+
+Custom gate forms follow
+[custom gate forms](architecture/decisions/20261122-custom-gate-forms.md).
+Release-readiness owns immutable field definitions, AND conditions and deterministic
+per-condition evaluation snapshots. Quality-evidence owns authenticated candidate/gate
+responses through its public service; attachments owns candidate-bound report storage.
+Only explicit human sessions can submit responses. Legacy metrics and published decisions
+retain their original contracts. New UI authoring uses the bounded form builder.

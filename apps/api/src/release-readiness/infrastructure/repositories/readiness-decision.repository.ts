@@ -58,7 +58,11 @@ export class ReadinessDecisionRepository {
       if (!project) return { kind: 'project_not_found' };
       if (project.id !== input.projectId) return { kind: 'candidate_not_found' };
       const current = await transaction.currentCandidatePolicyAssignment.findFirst({
-        where: { projectId: project.id, candidateId: input.candidateId },
+        where: {
+          organizationId: input.organizationId,
+          projectId: project.id,
+          candidateId: input.candidateId,
+        },
         select: { assignmentId: true },
       });
       if (!current) return { kind: 'assignment_not_found' };
@@ -69,7 +73,10 @@ export class ReadinessDecisionRepository {
       );
       if (!assignment) return { kind: 'assignment_not_found' };
       const gates = await transaction.readinessGate.findMany({
-        where: { policyVersionId: assignment.policyVersion.id },
+        where: {
+          organizationId: input.organizationId,
+          policyVersionId: assignment.policyVersion.id,
+        },
         orderBy: { position: 'asc' },
         select: READINESS_GATE_FOR_EVALUATION_SELECTION,
       });
@@ -87,7 +94,11 @@ export class ReadinessDecisionRepository {
   }): Promise<ReadinessEvaluationContextResult> {
     return this.tenantDatabase.run(input.organizationId, async (transaction) => {
       const current = await transaction.currentCandidatePolicyAssignment.findFirst({
-        where: { projectId: input.projectId, candidateId: input.candidateId },
+        where: {
+          organizationId: input.organizationId,
+          projectId: input.projectId,
+          candidateId: input.candidateId,
+        },
         select: { assignmentId: true },
       });
       if (!current) return { kind: 'assignment_not_found' };
@@ -98,7 +109,10 @@ export class ReadinessDecisionRepository {
       );
       if (!assignment) return { kind: 'assignment_not_found' };
       const gates = await transaction.readinessGate.findMany({
-        where: { policyVersionId: assignment.policyVersion.id },
+        where: {
+          organizationId: input.organizationId,
+          policyVersionId: assignment.policyVersion.id,
+        },
         orderBy: { position: 'asc' },
         select: READINESS_GATE_FOR_EVALUATION_SELECTION,
       });
@@ -195,6 +209,7 @@ export class ReadinessDecisionRepository {
             const gate = gateById.get(evaluation.gateId);
             if (!gate) throw new Error(`Readiness gate ${evaluation.gateId} disappeared`);
             return {
+              criteria: evaluation.criteria ?? [],
               organizationId: input.organizationId,
               projectId: input.projectId,
               candidateId: input.candidateId,

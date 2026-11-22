@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { gateFormDefinitionSchema, gateFormCriterionResultSchema } from './gate-form.js';
 import { projectSlugSchema } from './project.js';
 import {
   QUALITY_METRIC_DEFINITIONS,
@@ -71,6 +72,7 @@ export const readinessGateInputSchema = z
       .min(2)
       .max(50)
       .regex(/^[a-z][a-z0-9_.-]{1,49}$/),
+    form: gateFormDefinitionSchema.optional(),
     metricKey: readinessMetricKeySchema,
     metricVersion: z.literal('1.0.0'),
     dimensions: qualityMetricDimensionsSchema,
@@ -85,9 +87,34 @@ export const readinessGateInputSchema = z
   .strict()
   .superRefine((gate, context) => {
     validateMetricDimensions(gate.metricKey, gate.dimensions, context);
+    if (gate.metricKey === 'gate.form_response') {
+      if (
+        !gate.form ||
+        gate.dimensions.gateId ||
+        gate.producerKey ||
+        gate.minimumTrust !== 'authenticated' ||
+        gate.missingEvidenceBehavior !== 'block' ||
+        gate.staleEvidenceBehavior !== 'block' ||
+        gate.operator !== 'eq' ||
+        gate.expected.type !== 'integer' ||
+        gate.expected.value !== 1
+      )
+        context.addIssue({
+          code: 'custom',
+          path: ['form'],
+          message:
+            'Form gates require a definition, authenticated evidence, blocking missing evidence and a passed result',
+        });
+    } else if (gate.form)
+      context.addIssue({
+        code: 'custom',
+        path: ['form'],
+        message: 'Form definitions belong to form gates',
+      });
     if (
       !gate.metricKey.startsWith('test.') &&
       gate.metricKey !== 'accessibility.manual_review' &&
+      gate.metricKey !== 'gate.form_response' &&
       !gate.producerKey
     )
       context.addIssue({
@@ -346,6 +373,8 @@ export const gateEvaluationSchema = z.object({
   id: z.uuid(),
   gateId: z.uuid(),
   gateKey: z.string(),
+  form: gateFormDefinitionSchema.optional(),
+  criteria: z.array(gateFormCriterionResultSchema).max(50).optional(),
   position: z.number().int().nonnegative(),
   impact: readinessGateImpactSchema,
   result: gateEvaluationResultSchema,

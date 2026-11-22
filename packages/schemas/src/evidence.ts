@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { gateFormResponseDetailsSchema } from './gate-form.js';
 import { accessibilityReviewDetailsSchema } from './accessibility-review.js';
 import { projectSlugSchema } from './project.js';
 import {
@@ -28,6 +29,7 @@ export const evidenceListQuerySchema = z
   .object({
     candidateId: z.uuid(),
     metricKey: evidenceMetricKeySchema.optional(),
+    gateId: z.uuid().optional(),
     producerKey: z.string().trim().min(1).max(120).optional(),
     sourceType: z.string().trim().min(1).max(80).optional(),
     trust: evidenceTrustLevelSchema.optional(),
@@ -107,6 +109,7 @@ export const externalEvidenceDetailsSchema = z
 
 export const evidenceDetailsSchema = z.union([
   nativeTestEvidenceDetailsSchema,
+  gateFormResponseDetailsSchema,
   accessibilityReviewDetailsSchema,
   externalEvidenceDetailsSchema,
 ]);
@@ -173,7 +176,10 @@ export const evidenceIngestHeadersSchema = z.object({
 export const evidenceIngestRequestSchema = z
   .object({
     candidateId: z.uuid(),
-    metricKey: evidenceMetricKeySchema.exclude(['accessibility.manual_review']),
+    metricKey: evidenceMetricKeySchema.exclude([
+      'accessibility.manual_review',
+      'gate.form_response',
+    ]),
     metricVersion: z.literal('1.0.0'),
     value: evidenceValueSchema,
     state: evidenceObservationStateSchema,

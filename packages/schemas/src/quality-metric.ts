@@ -11,9 +11,11 @@ export const qualityMetricKeySchema = z.enum([
   'accessibility.wcag22_aa_manual_review',
   'performance.lighthouse_score',
   'accessibility.manual_review',
+  'gate.form_response',
 ]);
 export const qualityMetricDimensionsSchema = z
   .object({
+    gateId: z.uuid().optional(),
     testRunRole: z.enum(['required', 'informational']),
     minimumPriority: testCasePrioritySchema.optional(),
     accessibilityStandard: z.string().trim().min(1).max(120).optional(),
@@ -47,6 +49,7 @@ export const qualityMetricDimensionsSchema = z
   })
   .strict();
 export const QUALITY_METRIC_DEFINITIONS = {
+  'gate.form_response': { version: '1.0.0', valueType: 'integer' },
   'accessibility.manual_review': { version: '1.0.0', valueType: 'integer' },
   'test.pass_rate': { version: '1.0.0', valueType: 'percentage' },
   'test.completion_rate': { version: '1.0.0', valueType: 'percentage' },
@@ -62,6 +65,24 @@ export function validateMetricDimensions(
   dimensions: QualityMetricDimensions,
   context: z.RefinementCtx,
 ): void {
+  if (metric === 'gate.form_response') {
+    if (
+      dimensions.testRunRole !== 'required' ||
+      Object.keys(dimensions).some((key) => !['testRunRole', 'gateId'].includes(key))
+    )
+      context.addIssue({
+        code: 'custom',
+        path: ['dimensions'],
+        message: 'Gate responses accept only the required role and gate identity',
+      });
+    return;
+  }
+  if (dimensions.gateId)
+    context.addIssue({
+      code: 'custom',
+      path: ['dimensions', 'gateId'],
+      message: 'Gate identity is reserved for form responses',
+    });
   if (metric === 'accessibility.manual_review') {
     if (
       !dimensions.accessibilityStandard ||

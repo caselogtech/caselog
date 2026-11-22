@@ -1,9 +1,10 @@
+import type { GateFormCriterionResult } from '@caselog/schemas';
 import { priorityLabel } from '../../domain/readiness-presentation';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import type { GateEvaluation } from '@caselog/schemas';
 import type { EvidenceObservation } from '@caselog/schemas/evidence';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { StatusBadge } from '../../../../shared/ui/public-api';
 import {
   evidenceFreshnessPresentation,
@@ -26,6 +27,43 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReadinessGates {
+  private readonly i18n = inject(TranslocoService);
+  criterionLabel(label: string): string {
+    const keys: Record<string, string> = {
+      'test.pass_rate': 'readiness.metrics.passRate',
+      'test.completion_rate': 'readiness.metrics.completionRate',
+      'test.failed_count': 'readiness.metrics.failedCount',
+    };
+    return keys[label] ? this.i18n.translate(keys[label]) : label;
+  }
+  criterionResult(result: GateFormCriterionResult['result']): string {
+    return gateResultPresentation(result).labelKey;
+  }
+  criterionDiagnostic(diagnostic: GateFormCriterionResult['diagnostic']): string {
+    return diagnosticLabel(diagnostic);
+  }
+  criterionValue(value: string | null): string {
+    const keys: Record<string, string> = {
+      Complete: 'readiness.forms.complete',
+      Incomplete: 'readiness.forms.incomplete',
+      Checked: 'readiness.forms.checked',
+      'Required fields completed': 'readiness.forms.requiredCompleted',
+      true: 'readiness.forms.yes',
+      false: 'readiness.forms.no',
+    };
+    if (value === null) return '—';
+    if (keys[value]) return this.i18n.translate(keys[value]);
+    const comparison = /^(eq|ne|gt|gte|lt|lte) (-?[0-9.]+)$/.exec(value);
+    const symbols: Record<string, string> = {
+      eq: '=',
+      ne: '≠',
+      gt: '>',
+      gte: '≥',
+      lt: '<',
+      lte: '≤',
+    };
+    return comparison?.[1] ? `${symbols[comparison[1]]} ${comparison[2]}` : value;
+  }
   readonly priorityLabel = priorityLabel;
   readonly rows = input.required<readonly ReadinessGateRow[]>();
 

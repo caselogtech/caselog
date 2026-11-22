@@ -1,3 +1,4 @@
+import { gateFormResponseDetailsSchema } from '@caselog/schemas';
 import { Inject, Injectable } from '@nestjs/common';
 import { TenantDatabaseService } from '../../../core/database/application/services/tenant-database.service';
 import { refreshEvidenceRevisions } from '../persistence/evidence-freshness.persistence';
@@ -44,6 +45,7 @@ export class EvidenceSnapshotRepository {
         where: { organizationId, projectId, candidateId, currentFor: { isNot: null } },
         orderBy: [{ metricKey: 'asc' }, { dimensionsHash: 'asc' }, { producerId: 'asc' }],
         select: {
+          payload: true,
           id: true,
           producerId: true,
           producer: { select: { producerKey: true } },
@@ -63,6 +65,9 @@ export class EvidenceSnapshotRepository {
         candidateId,
         revision: revision.revision,
         observations: current.map((observation) => ({
+          ...(observation.metricKey === 'gate.form_response'
+            ? { formResponse: gateFormResponseDetailsSchema.parse(observation.payload) }
+            : {}),
           id: observation.id,
           producerId: observation.producerId,
           producerKey: observation.producer.producerKey,

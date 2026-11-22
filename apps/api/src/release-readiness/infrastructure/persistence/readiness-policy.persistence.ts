@@ -1,3 +1,4 @@
+import { gateFormDefinitionSchema } from '@caselog/schemas';
 import type {
   ReadinessGateInput,
   ReadinessPolicy,
@@ -35,6 +36,7 @@ export const READINESS_POLICY_SELECTION = {
       gates: {
         orderBy: { position: 'asc' as const },
         select: {
+          form: true,
           id: true,
           key: true,
           position: true,
@@ -141,6 +143,7 @@ export function readinessGateData(input: {
     organizationId: input.organizationId,
     projectId: input.projectId,
     policyVersionId: input.policyVersionId,
+    form: input.gate.form,
     key: input.gate.key,
     position: input.position,
     metricKey: input.gate.metricKey,
@@ -213,6 +216,7 @@ function toReadinessPolicy(record: ReadinessPolicyRecord): ReadinessPolicy {
       publishedAt: version.publishedAt?.toISOString() ?? null,
       retiredAt: version.retiredAt?.toISOString() ?? null,
       gates: version.gates.map((gate) => ({
+        ...(gate.form ? { form: gateFormDefinitionSchema.parse(gate.form) } : {}),
         id: gate.id,
         key: gate.key,
         position: gate.position,

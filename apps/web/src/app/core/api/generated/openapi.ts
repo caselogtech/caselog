@@ -1524,6 +1524,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/gate-forms/{gateId}/responses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GateFormController_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/gate-forms/reports/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GateFormController_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/gate-forms/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GateFormController_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/gate-forms/reports/{reportId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["GateFormController_download"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{projectSlug}/release-policies": {
         parameters: {
             query?: never;
@@ -2852,7 +2916,7 @@ export interface components {
                 /** Format: uuid */
                 candidateId: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
                 metricVersion: string;
                 value: {
                     /** @constant */
@@ -2866,6 +2930,8 @@ export interface components {
                 /** @enum {string} */
                 state: "available" | "incomplete";
                 dimensions: {
+                    /** Format: uuid */
+                    gateId?: string;
                     /** @enum {string} */
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
@@ -2921,6 +2987,20 @@ export interface components {
                         revision: number;
                     }[];
                     runRevisionsTruncated: boolean;
+                } | {
+                    /** @constant */
+                    kind: "gate_form_response";
+                    /** Format: uuid */
+                    actorId: string;
+                    reviewerName: string;
+                    values: {
+                        [key: string]: string | number | boolean | string[];
+                    };
+                    reports: {
+                        /** Format: uuid */
+                        id: string;
+                        fileName: string;
+                    }[];
                 } | {
                     /** @enum {string} */
                     outcome: "ok" | "not_ok";
@@ -2986,6 +3066,8 @@ export interface components {
             /** @enum {string} */
             state: "available" | "incomplete";
             dimensions: {
+                /** Format: uuid */
+                gateId?: string;
                 /** @enum {string} */
                 testRunRole: "required" | "informational";
                 /** @enum {string} */
@@ -3040,7 +3122,7 @@ export interface components {
                 /** Format: uuid */
                 candidateId: string;
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
                 metricVersion: string;
                 value: {
                     /** @constant */
@@ -3054,6 +3136,8 @@ export interface components {
                 /** @enum {string} */
                 state: "available" | "incomplete";
                 dimensions: {
+                    /** Format: uuid */
+                    gateId?: string;
                     /** @enum {string} */
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
@@ -3110,6 +3194,20 @@ export interface components {
                     }[];
                     runRevisionsTruncated: boolean;
                 } | {
+                    /** @constant */
+                    kind: "gate_form_response";
+                    /** Format: uuid */
+                    actorId: string;
+                    reviewerName: string;
+                    values: {
+                        [key: string]: string | number | boolean | string[];
+                    };
+                    reports: {
+                        /** Format: uuid */
+                        id: string;
+                        fileName: string;
+                    }[];
+                } | {
                     /** @enum {string} */
                     outcome: "ok" | "not_ok";
                     /** Format: uuid */
@@ -3136,6 +3234,8 @@ export interface components {
         };
         AccessibilityReviewRequestDto: {
             dimensions: {
+                /** Format: uuid */
+                gateId?: string;
                 /** @enum {string} */
                 testRunRole: "required" | "informational";
                 /** @enum {string} */
@@ -4329,6 +4429,178 @@ export interface components {
             parentId: string | null;
             position: number;
         };
+        GateFormRequestDto: {
+            values: {
+                [key: string]: string | number | boolean | string[];
+            };
+            expectedObservationId: string | null;
+        };
+        GateFormResponseDto: {
+            observation: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                projectId: string;
+                /** Format: uuid */
+                candidateId: string;
+                /** @enum {string} */
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
+                metricVersion: string;
+                value: {
+                    /** @constant */
+                    type: "percentage";
+                    value: string | null;
+                } | {
+                    /** @constant */
+                    type: "integer";
+                    value: number | null;
+                };
+                /** @enum {string} */
+                state: "available" | "incomplete";
+                dimensions: {
+                    /** Format: uuid */
+                    gateId?: string;
+                    /** @enum {string} */
+                    testRunRole: "required" | "informational";
+                    /** @enum {string} */
+                    minimumPriority?: "low" | "medium" | "high" | "critical";
+                    accessibilityStandard?: string;
+                    manualChecks?: ("keyboard_navigation" | "screen_reader")[];
+                    profile?: string;
+                    pageUrls?: string[];
+                    toolVersion?: string;
+                    /** @enum {string} */
+                    device?: "mobile" | "desktop";
+                    runsPerPage?: number;
+                };
+                /** Format: date-time */
+                observedAt: string;
+                expiresAt: string | null;
+                /** @enum {string} */
+                freshness: "current" | "stale";
+                producer: {
+                    /** Format: uuid */
+                    id: string;
+                    type: string;
+                    key: string;
+                    schemaVersion: number;
+                    /** @enum {string} */
+                    trust: "verified" | "authenticated" | "unverified";
+                };
+                source: {
+                    type: string;
+                    id: string;
+                    revision: string;
+                    url: string | null;
+                };
+                details: {
+                    /** Format: date-time */
+                    scopeCapturedAt?: string;
+                    scopeHash?: string;
+                    requiredCaseCount?: number;
+                    missingCaseCount?: number;
+                    missingCaseIds?: string[];
+                    missingCaseIdsTruncated?: boolean;
+                    runCount: number;
+                    totalItems: number;
+                    finalItems: number;
+                    executedFinalItems: number;
+                    passedItems: number;
+                    failedItems: number;
+                    skippedItems: number;
+                    incompleteRunIds: string[];
+                    runRevisions: {
+                        /** Format: uuid */
+                        testRunId: string;
+                        revision: number;
+                    }[];
+                    runRevisionsTruncated: boolean;
+                } | {
+                    /** @constant */
+                    kind: "gate_form_response";
+                    /** Format: uuid */
+                    actorId: string;
+                    reviewerName: string;
+                    values: {
+                        [key: string]: string | number | boolean | string[];
+                    };
+                    reports: {
+                        /** Format: uuid */
+                        id: string;
+                        fileName: string;
+                    }[];
+                } | {
+                    /** @enum {string} */
+                    outcome: "ok" | "not_ok";
+                    /** Format: uuid */
+                    actorId: string;
+                    reviewerName?: string;
+                    tools: string[];
+                    /** @enum {string} */
+                    keyboardNavigation: "passed" | "failed" | "not_checked";
+                    /** @enum {string} */
+                    screenReader: "passed" | "failed" | "not_checked";
+                    reportIds: string[];
+                    reportNames: string[];
+                    notes: string;
+                } | {
+                    [key: string]: (string | number | boolean | null) | (string | number | boolean | null)[];
+                };
+                supersedesObservationId: string | null;
+                isCurrent: boolean;
+                /** Format: date-time */
+                createdAt: string;
+            };
+            candidateRevision: number;
+            replayed: boolean;
+        };
+        GateFormUploadRequestDto: {
+            fileName: string;
+            /** @enum {string} */
+            contentType: "application/pdf" | "application/json" | "text/html" | "text/plain";
+            sizeBytes: number;
+            checksumSha256: string;
+        };
+        GateFormUploadResponseDto: {
+            upload: {
+                /** Format: uuid */
+                id: string;
+                /** @constant */
+                method: "PUT";
+                /** Format: uri */
+                url: string;
+                headers: {
+                    [key: string]: string;
+                };
+                /** Format: date-time */
+                expiresAt: string;
+            };
+        };
+        GateFormCompleteRequestDto: {
+            /** Format: uuid */
+            uploadId: string;
+        };
+        GateFormReportResponseDto: {
+            attachment: {
+                /** Format: uuid */
+                id: string;
+                fileName: string;
+                /** @enum {string} */
+                contentType: "application/pdf" | "application/json" | "text/html" | "text/plain";
+                sizeBytes: number;
+                checksumSha256: string;
+                /** Format: date-time */
+                createdAt: string;
+            };
+        };
+        GateFormDownloadResponseDto: {
+            download: {
+                /** Format: uri */
+                url: string;
+                /** Format: date-time */
+                expiresAt: string;
+            };
+        };
         ReadinessPolicyListResponseDto: {
             items: {
                 /** Format: uuid */
@@ -4374,11 +4646,61 @@ export interface components {
             description: string | null;
             gates: {
                 key: string;
+                form?: {
+                    name: string;
+                    /** @default  */
+                    description: string;
+                    fields: {
+                        key: string;
+                        label: string;
+                        /** @default  */
+                        description: string;
+                        /** @enum {string} */
+                        type: "text" | "textarea" | "number" | "checkbox" | "select" | "url" | "files";
+                        required: boolean;
+                        /** @default [] */
+                        options: {
+                            key: string;
+                            label: string;
+                        }[];
+                    }[];
+                    criteria: ({
+                        /** @constant */
+                        type: "checkbox";
+                        fieldKey: string;
+                    } | {
+                        /** @constant */
+                        type: "number";
+                        fieldKey: string;
+                        /** @enum {string} */
+                        operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                        expected: number;
+                    } | {
+                        /** @constant */
+                        type: "select";
+                        fieldKey: string;
+                        expected: string;
+                    } | {
+                        /** @constant */
+                        type: "test_results";
+                        /** @enum {string} */
+                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                        /** @enum {string} */
+                        testRunRole: "required" | "informational";
+                        /** @enum {string} */
+                        minimumPriority?: "low" | "medium" | "high" | "critical";
+                        /** @enum {string} */
+                        operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                        expected: number;
+                    })[];
+                };
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
                 /** @constant */
                 metricVersion: "1.0.0";
                 dimensions: {
+                    /** Format: uuid */
+                    gateId?: string;
                     /** @enum {string} */
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
@@ -4448,11 +4770,61 @@ export interface components {
                     retiredAt: string | null;
                     gates: {
                         key: string;
+                        form?: {
+                            name: string;
+                            /** @default  */
+                            description: string;
+                            fields: {
+                                key: string;
+                                label: string;
+                                /** @default  */
+                                description: string;
+                                /** @enum {string} */
+                                type: "text" | "textarea" | "number" | "checkbox" | "select" | "url" | "files";
+                                required: boolean;
+                                /** @default [] */
+                                options: {
+                                    key: string;
+                                    label: string;
+                                }[];
+                            }[];
+                            criteria: ({
+                                /** @constant */
+                                type: "checkbox";
+                                fieldKey: string;
+                            } | {
+                                /** @constant */
+                                type: "number";
+                                fieldKey: string;
+                                /** @enum {string} */
+                                operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                                expected: number;
+                            } | {
+                                /** @constant */
+                                type: "select";
+                                fieldKey: string;
+                                expected: string;
+                            } | {
+                                /** @constant */
+                                type: "test_results";
+                                /** @enum {string} */
+                                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                                /** @enum {string} */
+                                testRunRole: "required" | "informational";
+                                /** @enum {string} */
+                                minimumPriority?: "low" | "medium" | "high" | "critical";
+                                /** @enum {string} */
+                                operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                                expected: number;
+                            })[];
+                        };
                         /** @enum {string} */
-                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
                         /** @constant */
                         metricVersion: "1.0.0";
                         dimensions: {
+                            /** Format: uuid */
+                            gateId?: string;
                             /** @enum {string} */
                             testRunRole: "required" | "informational";
                             /** @enum {string} */
@@ -4507,11 +4879,61 @@ export interface components {
             description: string | null;
             gates: {
                 key: string;
+                form?: {
+                    name: string;
+                    /** @default  */
+                    description: string;
+                    fields: {
+                        key: string;
+                        label: string;
+                        /** @default  */
+                        description: string;
+                        /** @enum {string} */
+                        type: "text" | "textarea" | "number" | "checkbox" | "select" | "url" | "files";
+                        required: boolean;
+                        /** @default [] */
+                        options: {
+                            key: string;
+                            label: string;
+                        }[];
+                    }[];
+                    criteria: ({
+                        /** @constant */
+                        type: "checkbox";
+                        fieldKey: string;
+                    } | {
+                        /** @constant */
+                        type: "number";
+                        fieldKey: string;
+                        /** @enum {string} */
+                        operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                        expected: number;
+                    } | {
+                        /** @constant */
+                        type: "select";
+                        fieldKey: string;
+                        expected: string;
+                    } | {
+                        /** @constant */
+                        type: "test_results";
+                        /** @enum {string} */
+                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                        /** @enum {string} */
+                        testRunRole: "required" | "informational";
+                        /** @enum {string} */
+                        minimumPriority?: "low" | "medium" | "high" | "critical";
+                        /** @enum {string} */
+                        operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                        expected: number;
+                    })[];
+                };
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
                 /** @constant */
                 metricVersion: "1.0.0";
                 dimensions: {
+                    /** Format: uuid */
+                    gateId?: string;
                     /** @enum {string} */
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
@@ -4562,11 +4984,61 @@ export interface components {
         CreateReadinessPolicyVersionRequestDto: {
             gates: {
                 key: string;
+                form?: {
+                    name: string;
+                    /** @default  */
+                    description: string;
+                    fields: {
+                        key: string;
+                        label: string;
+                        /** @default  */
+                        description: string;
+                        /** @enum {string} */
+                        type: "text" | "textarea" | "number" | "checkbox" | "select" | "url" | "files";
+                        required: boolean;
+                        /** @default [] */
+                        options: {
+                            key: string;
+                            label: string;
+                        }[];
+                    }[];
+                    criteria: ({
+                        /** @constant */
+                        type: "checkbox";
+                        fieldKey: string;
+                    } | {
+                        /** @constant */
+                        type: "number";
+                        fieldKey: string;
+                        /** @enum {string} */
+                        operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                        expected: number;
+                    } | {
+                        /** @constant */
+                        type: "select";
+                        fieldKey: string;
+                        expected: string;
+                    } | {
+                        /** @constant */
+                        type: "test_results";
+                        /** @enum {string} */
+                        metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                        /** @enum {string} */
+                        testRunRole: "required" | "informational";
+                        /** @enum {string} */
+                        minimumPriority?: "low" | "medium" | "high" | "critical";
+                        /** @enum {string} */
+                        operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                        expected: number;
+                    })[];
+                };
                 /** @enum {string} */
-                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
                 /** @constant */
                 metricVersion: "1.0.0";
                 dimensions: {
+                    /** Format: uuid */
+                    gateId?: string;
                     /** @enum {string} */
                     testRunRole: "required" | "informational";
                     /** @enum {string} */
@@ -4705,6 +5177,65 @@ export interface components {
                     /** Format: uuid */
                     gateId: string;
                     gateKey: string;
+                    form?: {
+                        name: string;
+                        /** @default  */
+                        description: string;
+                        fields: {
+                            key: string;
+                            label: string;
+                            /** @default  */
+                            description: string;
+                            /** @enum {string} */
+                            type: "text" | "textarea" | "number" | "checkbox" | "select" | "url" | "files";
+                            required: boolean;
+                            /** @default [] */
+                            options: {
+                                key: string;
+                                label: string;
+                            }[];
+                        }[];
+                        criteria: ({
+                            /** @constant */
+                            type: "checkbox";
+                            fieldKey: string;
+                        } | {
+                            /** @constant */
+                            type: "number";
+                            fieldKey: string;
+                            /** @enum {string} */
+                            operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                            expected: number;
+                        } | {
+                            /** @constant */
+                            type: "select";
+                            fieldKey: string;
+                            expected: string;
+                        } | {
+                            /** @constant */
+                            type: "test_results";
+                            /** @enum {string} */
+                            metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                            /** @enum {string} */
+                            testRunRole: "required" | "informational";
+                            /** @enum {string} */
+                            minimumPriority?: "low" | "medium" | "high" | "critical";
+                            /** @enum {string} */
+                            operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                            expected: number;
+                        })[];
+                    };
+                    criteria?: {
+                        key: string;
+                        label: string;
+                        /** @enum {string} */
+                        result: "passed" | "failed" | "warning" | "unknown";
+                        /** @enum {string} */
+                        diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
+                        observationId: string | null;
+                        actual: string | null;
+                        expected: string;
+                    }[];
                     position: number;
                     /** @enum {string} */
                     impact: "warning" | "blocking";
@@ -4713,9 +5244,11 @@ export interface components {
                     /** @enum {string} */
                     diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
                     /** @enum {string} */
-                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
                     metricVersion: string;
                     dimensions: {
+                        /** Format: uuid */
+                        gateId?: string;
                         /** @enum {string} */
                         testRunRole: "required" | "informational";
                         /** @enum {string} */
@@ -4824,6 +5357,65 @@ export interface components {
                     /** Format: uuid */
                     gateId: string;
                     gateKey: string;
+                    form?: {
+                        name: string;
+                        /** @default  */
+                        description: string;
+                        fields: {
+                            key: string;
+                            label: string;
+                            /** @default  */
+                            description: string;
+                            /** @enum {string} */
+                            type: "text" | "textarea" | "number" | "checkbox" | "select" | "url" | "files";
+                            required: boolean;
+                            /** @default [] */
+                            options: {
+                                key: string;
+                                label: string;
+                            }[];
+                        }[];
+                        criteria: ({
+                            /** @constant */
+                            type: "checkbox";
+                            fieldKey: string;
+                        } | {
+                            /** @constant */
+                            type: "number";
+                            fieldKey: string;
+                            /** @enum {string} */
+                            operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                            expected: number;
+                        } | {
+                            /** @constant */
+                            type: "select";
+                            fieldKey: string;
+                            expected: string;
+                        } | {
+                            /** @constant */
+                            type: "test_results";
+                            /** @enum {string} */
+                            metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                            /** @enum {string} */
+                            testRunRole: "required" | "informational";
+                            /** @enum {string} */
+                            minimumPriority?: "low" | "medium" | "high" | "critical";
+                            /** @enum {string} */
+                            operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                            expected: number;
+                        })[];
+                    };
+                    criteria?: {
+                        key: string;
+                        label: string;
+                        /** @enum {string} */
+                        result: "passed" | "failed" | "warning" | "unknown";
+                        /** @enum {string} */
+                        diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
+                        observationId: string | null;
+                        actual: string | null;
+                        expected: string;
+                    }[];
                     position: number;
                     /** @enum {string} */
                     impact: "warning" | "blocking";
@@ -4832,9 +5424,11 @@ export interface components {
                     /** @enum {string} */
                     diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
                     /** @enum {string} */
-                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
                     metricVersion: string;
                     dimensions: {
+                        /** Format: uuid */
+                        gateId?: string;
                         /** @enum {string} */
                         testRunRole: "required" | "informational";
                         /** @enum {string} */
@@ -4944,6 +5538,65 @@ export interface components {
                     /** Format: uuid */
                     gateId: string;
                     gateKey: string;
+                    form?: {
+                        name: string;
+                        /** @default  */
+                        description: string;
+                        fields: {
+                            key: string;
+                            label: string;
+                            /** @default  */
+                            description: string;
+                            /** @enum {string} */
+                            type: "text" | "textarea" | "number" | "checkbox" | "select" | "url" | "files";
+                            required: boolean;
+                            /** @default [] */
+                            options: {
+                                key: string;
+                                label: string;
+                            }[];
+                        }[];
+                        criteria: ({
+                            /** @constant */
+                            type: "checkbox";
+                            fieldKey: string;
+                        } | {
+                            /** @constant */
+                            type: "number";
+                            fieldKey: string;
+                            /** @enum {string} */
+                            operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                            expected: number;
+                        } | {
+                            /** @constant */
+                            type: "select";
+                            fieldKey: string;
+                            expected: string;
+                        } | {
+                            /** @constant */
+                            type: "test_results";
+                            /** @enum {string} */
+                            metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count";
+                            /** @enum {string} */
+                            testRunRole: "required" | "informational";
+                            /** @enum {string} */
+                            minimumPriority?: "low" | "medium" | "high" | "critical";
+                            /** @enum {string} */
+                            operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte";
+                            expected: number;
+                        })[];
+                    };
+                    criteria?: {
+                        key: string;
+                        label: string;
+                        /** @enum {string} */
+                        result: "passed" | "failed" | "warning" | "unknown";
+                        /** @enum {string} */
+                        diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
+                        observationId: string | null;
+                        actual: string | null;
+                        expected: string;
+                    }[];
                     position: number;
                     /** @enum {string} */
                     impact: "warning" | "blocking";
@@ -4952,9 +5605,11 @@ export interface components {
                     /** @enum {string} */
                     diagnostic: "none" | "missing" | "incomplete" | "stale" | "untrusted";
                     /** @enum {string} */
-                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                    metricKey: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
                     metricVersion: string;
                     dimensions: {
+                        /** Format: uuid */
+                        gateId?: string;
                         /** @enum {string} */
                         testRunRole: "required" | "informational";
                         /** @enum {string} */
@@ -7557,7 +8212,8 @@ export interface operations {
         parameters: {
             query: {
                 candidateId: string;
-                metricKey?: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review";
+                metricKey?: "test.pass_rate" | "test.completion_rate" | "test.failed_count" | "accessibility.wcag22_aa_violations" | "accessibility.wcag22_aa_manual_review" | "performance.lighthouse_score" | "accessibility.manual_review" | "gate.form_response";
+                gateId?: string;
                 producerKey?: string;
                 sourceType?: string;
                 trust?: "verified" | "authenticated" | "unverified";
@@ -9396,6 +10052,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SectionResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    GateFormController_record: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                projectSlug: string;
+                candidateId: string;
+                gateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GateFormRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateFormResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    GateFormController_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GateFormUploadRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateFormUploadResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    GateFormController_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GateFormCompleteRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateFormReportResponseDto"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponseDto"];
+                };
+            };
+        };
+    };
+    GateFormController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectSlug: string;
+                candidateId: string;
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateFormDownloadResponseDto"];
                 };
             };
             /** @description API error */

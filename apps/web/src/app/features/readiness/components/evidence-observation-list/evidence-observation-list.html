@@ -7,7 +7,7 @@
       <header>
         <div class="observation-identity">
           <p class="metric">{{ metric(observation) | transloco }}</p>
-          <p class="value mono">{{ value(observation) }}</p>
+          <p class="value mono">{{ observation.metricKey === 'gate.form_response' ? ('readiness.forms.recordedAnswers' | transloco) : value(observation) }}</p>
           <span class="version mono">{{ observation.metricVersion }}</span>
         </div>
         <div class="status-stack">

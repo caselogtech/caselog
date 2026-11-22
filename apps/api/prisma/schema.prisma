@@ -1276,6 +1276,7 @@ model ReleasePolicyVersion {
 }
 
 model ReadinessGate {
+  form                    Json?                     @map("form_definition")
   dimensions              Json                      @default("{}")
   producerKey             String?                   @map("producer_key") @db.VarChar(120)
   organizationId          String                    @map("organization_id") @db.Uuid
@@ -1389,6 +1390,7 @@ model ReadinessDecision {
 }
 
 model GateEvaluation {
+  criteria              Json                     @default("[]")
   organizationId        String                   @map("organization_id") @db.Uuid
   id                    String                   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   projectId             String                   @map("project_id") @db.Uuid

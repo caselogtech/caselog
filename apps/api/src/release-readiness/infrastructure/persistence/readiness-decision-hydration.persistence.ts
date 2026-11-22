@@ -1,3 +1,4 @@
+import { gateFormDefinitionSchema } from '@caselog/schemas';
 import type { CandidatePolicyAssignment } from '@caselog/schemas';
 import type { TenantTransaction } from '../../../core/database/application/services/tenant-database.service';
 import {
@@ -64,7 +65,7 @@ export async function hydrateReadinessDecisions(
   });
   const gates = await transaction.readinessGate.findMany({
     where: { id: { in: [...new Set(evaluations.map(({ gateId }) => gateId))] } },
-    select: { id: true, key: true, impact: true },
+    select: { id: true, key: true, impact: true, form: true },
   });
   const waivers = await transaction.readinessWaiver.findMany({
     where: { decisionId: { in: decisions.map(({ id }) => id) } },
@@ -84,7 +85,12 @@ export async function hydrateReadinessDecisions(
         .map((evaluation) => {
           const gate = gateById.get(evaluation.gateId);
           if (!gate) throw new Error(`Readiness gate ${evaluation.gateId} disappeared`);
-          return { ...evaluation, gateKey: gate.key, impact: gate.impact };
+          return {
+            ...evaluation,
+            gateKey: gate.key,
+            impact: gate.impact,
+            ...(gate.form ? { form: gateFormDefinitionSchema.parse(gate.form) } : {}),
+          };
         }),
       waivers: waivers.filter(({ decisionId }) => decisionId === decision.id),
     };

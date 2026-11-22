@@ -1,0 +1,108 @@
+<div class="definition">
+  <div class="grid">
+    <app-form-field [controlId]="prefix() + '-name'" [label]="'readiness.forms.name' | transloco" [required]="true">
+      <input appControl [id]="prefix() + '-name'" [ngModel]="form.name" (ngModelChange)="change({name: $event})" [ngModelOptions]="{standalone: true}" maxlength="120" required />
+    </app-form-field>
+    <app-form-field [controlId]="prefix() + '-description'" [label]="'readiness.forms.description' | transloco">
+      <textarea appControl [id]="prefix() + '-description'" [ngModel]="form.description" (ngModelChange)="change({description: $event})" [ngModelOptions]="{standalone: true}" maxlength="2000" rows="2"></textarea>
+    </app-form-field>
+  </div>
+  <section>
+    <div class="heading"><h4>{{ 'readiness.forms.fields' | transloco }}</h4><button appButton="secondary" type="button" (click)="addField()" [disabled]="form.fields.length >= 30">{{ 'readiness.forms.addField' | transloco }}</button></div>
+    <p class="hint">{{ 'readiness.forms.fieldsHint' | transloco }}</p>
+    @for (item of form.fields; track item.key; let f = $index) {
+      <fieldset>
+        <legend>{{ item.label || ('readiness.forms.newField' | transloco) }}</legend>
+        <div class="grid">
+          <app-form-field [controlId]="prefix() + '-field-' + f" [label]="'readiness.forms.fieldLabel' | transloco" [required]="true">
+            <input appControl [id]="prefix() + '-field-' + f" [ngModel]="item.label" (ngModelChange)="field(f, {label: $event})" [ngModelOptions]="{standalone: true}" maxlength="120" required />
+          </app-form-field>
+          <app-form-field [controlId]="prefix() + '-type-' + f" [label]="'readiness.forms.fieldType' | transloco">
+            <select appControl [id]="prefix() + '-type-' + f" [ngModel]="item.type" (ngModelChange)="changeType(f, $event)" [ngModelOptions]="{standalone: true}">
+              @for (type of fieldTypes; track type) { <option [value]="type">{{ fieldTypeLabel(type) | transloco }}</option> }
+            </select>
+          </app-form-field>
+          <app-form-field [controlId]="prefix() + '-help-' + f" [label]="'readiness.forms.helpText' | transloco">
+            <input appControl [id]="prefix() + '-help-' + f" [ngModel]="item.description" (ngModelChange)="field(f, {description: $event})" [ngModelOptions]="{standalone: true}" maxlength="500" />
+          </app-form-field>
+          <label class="check"><input type="checkbox" [ngModel]="item.required" (ngModelChange)="field(f, {required: $event})" [ngModelOptions]="{standalone: true}" />{{ 'readiness.forms.required' | transloco }}</label>
+        </div>
+        @if (item.type === 'select') {
+          @for (optionItem of item.options; track optionItem.key; let o = $index) {
+            <div class="option">
+              <app-form-field [controlId]="prefix() + '-option-' + f + '-' + o" [label]="'readiness.forms.option' | transloco" [required]="true">
+                <input appControl [id]="prefix() + '-option-' + f + '-' + o" [ngModel]="optionItem.label" (ngModelChange)="option(f, o, $event)" [ngModelOptions]="{standalone: true}" maxlength="120" required />
+              </app-form-field>
+              <button appButton="quiet" type="button" (click)="removeOption(f, o)">{{ 'readiness.forms.removeOption' | transloco }}</button>
+            </div>
+          }
+          <button appButton="secondary" type="button" (click)="addOption(f)" [disabled]="item.options.length >= 30">{{ 'readiness.forms.addOption' | transloco }}</button>
+        }
+        <button appButton="quiet" type="button" (click)="removeField(f)">{{ 'readiness.forms.removeField' | transloco }}</button>
+      </fieldset>
+    }
+    @empty { <p>{{ 'readiness.forms.noFields' | transloco }}</p> }
+  </section>
+  <section>
+    <div class="heading"><h4>{{ 'readiness.forms.criteria' | transloco }}</h4><button appButton="secondary" type="button" (click)="addCriterion()" [disabled]="form.criteria.length >= 20">{{ 'readiness.forms.addCondition' | transloco }}</button></div>
+    <p class="hint">{{ 'readiness.forms.criteriaHint' | transloco }}</p>
+    @for (c of form.criteria; track $index; let i = $index) {
+      <fieldset>
+        <legend>{{ 'readiness.forms.condition' | transloco: {number: i + 1} }}</legend>
+        <div class="grid">
+          <app-form-field [controlId]="prefix() + '-condition-' + i" [label]="'readiness.forms.conditionType' | transloco">
+            <select appControl [id]="prefix() + '-condition-' + i" [ngModel]="c.type" (ngModelChange)="criterionType(i, $event)" [ngModelOptions]="{standalone: true}">
+              @for (type of conditionTypes; track type) { <option [value]="type">{{ criterionLabel(type) | transloco }}</option> }
+            </select>
+          </app-form-field>
+          @if (c.type !== 'test_results') {
+            <app-form-field [controlId]="prefix() + '-condition-field-' + i" [label]="'readiness.forms.conditionField' | transloco" [required]="true">
+              <select appControl [id]="prefix() + '-condition-field-' + i" [ngModel]="c.fieldKey" (ngModelChange)="fieldCondition(i, c, $event)" [ngModelOptions]="{standalone: true}">
+                <option value="">{{ 'readiness.forms.chooseField' | transloco }}</option>
+                @for (item of matchingFields(c.type); track item.key) { <option [value]="item.key">{{ item.label }}</option> }
+              </select>
+            </app-form-field>
+            @if (matchingFields(c.type).length === 0) { <p class="hint">{{ 'readiness.forms.noMatchingField' | transloco }}</p> }
+          }
+          @if (c.type === 'test_results') {
+            <app-form-field [controlId]="prefix() + '-metric-' + i" [label]="'readiness.forms.testMetric' | transloco">
+              <select appControl [id]="prefix() + '-metric-' + i" [ngModel]="c.metricKey" (ngModelChange)="replaceCriterion(i, {type: c.type, metricKey: $event, testRunRole: c.testRunRole, minimumPriority: c.minimumPriority, operator: c.operator, expected: c.expected})" [ngModelOptions]="{standalone: true}">
+                @for (metric of metrics; track metric) { <option [value]="metric">{{ metricLabel(metric) | transloco }}</option> }
+              </select>
+            </app-form-field>
+            <app-form-field [controlId]="prefix() + '-priority-' + i" [label]="'readiness.policies.scope.priority' | transloco">
+              <select appControl [id]="prefix() + '-priority-' + i" [ngModel]="c.minimumPriority || ''" (ngModelChange)="replaceCriterion(i, {type: c.type, metricKey: c.metricKey, testRunRole: c.testRunRole, minimumPriority: $event || undefined, operator: c.operator, expected: c.expected})" [ngModelOptions]="{standalone: true}">
+                @for (priority of priorities; track priority) { <option [value]="priority">{{ (priority ? priorityLabel(priority) : 'readiness.forms.allPriorities') | transloco }}</option> }
+              </select>
+            </app-form-field>
+            <app-form-field [controlId]="prefix() + '-role-' + i" [label]="'readiness.gates.testRunRole' | transloco">
+              <select appControl [id]="prefix() + '-role-' + i" [ngModel]="c.testRunRole" (ngModelChange)="replaceCriterion(i, {type: c.type, metricKey: c.metricKey, testRunRole: $event, minimumPriority: c.minimumPriority, operator: c.operator, expected: c.expected})" [ngModelOptions]="{standalone: true}">
+                <option value="required">{{ 'readiness.gates.roles.required' | transloco }}</option><option value="informational">{{ 'readiness.gates.roles.informational' | transloco }}</option>
+              </select>
+            </app-form-field>
+          }
+          @if (c.type === 'number' || c.type === 'test_results') {
+            <app-form-field [controlId]="prefix() + '-operator-' + i" [label]="'readiness.forms.comparison' | transloco">
+              <select appControl [id]="prefix() + '-operator-' + i" [ngModel]="c.operator" (ngModelChange)="replaceCriterion(i, c.type === 'number' ? {type: c.type, fieldKey: c.fieldKey, expected: c.expected, operator: $event} : {type: c.type, metricKey: c.metricKey, testRunRole: c.testRunRole, minimumPriority: c.minimumPriority, expected: c.expected, operator: $event})" [ngModelOptions]="{standalone: true}">
+                @for (operator of operators; track operator) { <option [value]="operator">{{ operatorLabel(operator) }}</option> }
+              </select>
+            </app-form-field>
+            <app-form-field [controlId]="prefix() + '-expected-' + i" [label]="'readiness.forms.threshold' | transloco" [required]="true">
+              <input appControl type="number" [id]="prefix() + '-expected-' + i" [ngModel]="c.expected" (ngModelChange)="replaceCriterion(i, c.type === 'number' ? {type: c.type, fieldKey: c.fieldKey, operator: c.operator, expected: $event} : {type: c.type, metricKey: c.metricKey, testRunRole: c.testRunRole, minimumPriority: c.minimumPriority, operator: c.operator, expected: $event})" [ngModelOptions]="{standalone: true}" required />
+            </app-form-field>
+          }
+          @if (c.type === 'select') {
+            <app-form-field [controlId]="prefix() + '-choice-' + i" [label]="'readiness.forms.acceptedOption' | transloco">
+              <select appControl [id]="prefix() + '-choice-' + i" [ngModel]="c.expected" (ngModelChange)="replaceCriterion(i, {type: c.type, fieldKey: c.fieldKey, expected: $event})" [ngModelOptions]="{standalone: true}">
+                <option value="">{{ 'readiness.forms.chooseOption' | transloco }}</option>
+                @for (optionItem of options(c.fieldKey); track optionItem.key) { <option [value]="optionItem.key">{{ optionItem.label }}</option> }
+              </select>
+            </app-form-field>
+          }
+        </div>
+        <button appButton="quiet" type="button" (click)="removeCriterion(i)">{{ 'readiness.forms.removeCondition' | transloco }}</button>
+      </fieldset>
+    }
+    @empty { <p role="status">{{ 'readiness.forms.conditionRequired' | transloco }}</p> }
+  </section>
+</div>

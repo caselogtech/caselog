@@ -63,6 +63,10 @@ integration remain undecided.
 - [x] Simplify accessibility to manual candidate reviews: standard, pages, required keyboard
   and screen-reader checks, multiple tools and attached reports; verify corrections,
   conflict handling, tenant isolation and report downloads through API and browser.
+- [x] Replace new-gate presets with one bounded form builder: names, descriptions,
+  required/optional typed fields, checkbox/number/choice conditions and native priority-scoped
+  test results. Verify report-backed candidate responses, concurrency, immutable history,
+  legacy compatibility and end-to-end UI authoring before marking this checkpoint complete.
 - [x] Verify missing/failed/stale evidence, unauthorized and cross-tenant access,
   idempotent retries and history preservation in the relevant API/integration suites.
 - [x] Run `pnpm check`, `pnpm test` and `pnpm build` on the pinned toolchain; verify the
@@ -111,6 +115,17 @@ reviewers, role/token boundaries, tenant/project/candidate isolation and unchang
 decisions. Migration `20261121210000_manual_accessibility_reviews` passes on an existing
 local database and disposable empty databases. New evaluations use evaluator 1.2.0;
 legacy WCAG policy versions and decisions retain their original meaning.
+
+Custom-gate verification on 2026-11-22 covers all 849 tests, `pnpm check`, `pnpm build`
+and seven Chromium journeys across self-hosted and managed modes. The form journey
+builds and edits a custom policy, combines native priority-scoped tests with manual
+answers, uploads/downloads reports and verifies failed-to-passed corrections and history
+on a narrow viewport. API/PostgreSQL coverage proves roles/token restrictions, report
+and tenant isolation, replay, concurrent corrections, audit and unchanged published
+versions/decisions. A failed immediate enqueue preserves the accepted response and recovers
+through the durable revision event. Migration `20261122100000_custom_gate_forms` passes
+on the existing local database and disposable empty databases. New decisions use evaluator
+1.3.0; existing gates remain available through explicit legacy retention/replacement.
 
 ### Operational acceptance
 

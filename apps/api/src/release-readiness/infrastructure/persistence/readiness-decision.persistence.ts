@@ -1,3 +1,4 @@
+import { gateFormDefinitionSchema, gateFormCriterionResultSchema } from '@caselog/schemas';
 import type {
   CandidatePolicyAssignment,
   CandidateReadinessResponse,
@@ -11,6 +12,7 @@ import type { ReadinessWaiverRecord } from './readiness-waiver.persistence';
 import { toReadinessWaiver } from './readiness-waiver.persistence';
 
 export const READINESS_GATE_FOR_EVALUATION_SELECTION = {
+  form: true,
   id: true,
   key: true,
   position: true,
@@ -42,6 +44,7 @@ export const READINESS_DECISION_SCALAR_SELECTION = {
 } satisfies Prisma.ReadinessDecisionSelect;
 
 export const GATE_EVALUATION_SCALAR_SELECTION = {
+  criteria: true,
   id: true,
   decisionId: true,
   gateId: true,
@@ -83,7 +86,11 @@ export type HydratedReadinessDecisionRecord = ReadinessDecisionScalarRecord & {
     policy: { id: string; key: string; name: string };
   };
   gateEvaluations: Array<
-    GateEvaluationScalarRecord & { gateKey: string; impact: ReadinessGateRecord['impact'] }
+    GateEvaluationScalarRecord & {
+      form?: ReadinessGate['form'];
+      gateKey: string;
+      impact: ReadinessGateRecord['impact'];
+    }
   >;
   waivers: ReadinessWaiverRecord[];
 };
@@ -99,6 +106,7 @@ export type CurrentReadinessRecord = {
 
 export function toDomainReadinessGates(records: ReadinessGateRecord[]): ReadinessGate[] {
   return records.map((gate) => ({
+    ...(gate.form ? { form: gateFormDefinitionSchema.parse(gate.form) } : {}),
     id: gate.id,
     key: gate.key,
     position: gate.position,
@@ -173,6 +181,9 @@ export function toReadinessDecision(
     }),
     evaluatedAt: record.evaluatedAt.toISOString(),
     gates: record.gateEvaluations.map((gate) => ({
+      ...(gate.form
+        ? { form: gate.form, criteria: gateFormCriterionResultSchema.array().parse(gate.criteria) }
+        : {}),
       id: gate.id,
       gateId: gate.gateId,
       gateKey: gate.gateKey,

@@ -9,3 +9,5 @@ export {
   QUALITY_EVIDENCE_INTEGRATION_EVENT,
   type CandidateEvidenceRevisionAdvancedEvent,
 } from './application/events/evidence-integration-event';
+
+export { GateFormEvidenceService } from './application/services/gate-form-evidence.service';

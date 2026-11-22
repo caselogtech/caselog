@@ -1,3 +1,4 @@
+import { CandidateGateForms } from '../../components/candidate-gate-forms/candidate-gate-forms';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -34,6 +35,7 @@ import { buildReadinessGateRows, releasePresentation } from '../../domain/readin
 @Component({
   selector: 'app-candidate-readiness',
   imports: [
+    CandidateGateForms,
     AccessibilityReviews,
     Breadcrumbs,
     Button,

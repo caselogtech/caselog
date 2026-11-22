@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { gateCriterionDescription } from '../../domain/gate-form-presentation';
+import type { GateFormDefinition, GateFormCriterion } from '@caselog/schemas';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import type { ReadinessPolicy } from '@caselog/schemas/readiness';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { StatusBadge, type StatusBadgeTone } from '../../../../shared/ui/public-api';
 import { priorityLabel } from '../../domain/readiness-presentation';
 
@@ -17,6 +19,7 @@ const METRIC_LABEL: Record<ReadinessMetricKey, string> = {
   'test.pass_rate': 'readiness.metrics.passRate',
   'test.completion_rate': 'readiness.metrics.completionRate',
   'test.failed_count': 'readiness.metrics.failedCount',
+  'gate.form_response': 'readiness.forms.title',
   'accessibility.manual_review': 'readiness.accessibility.title',
   'accessibility.wcag22_aa_violations': 'readiness.metrics.accessibilityViolations',
   'accessibility.wcag22_aa_manual_review': 'readiness.metrics.accessibilityManualReview',
@@ -62,6 +65,22 @@ const MINIMUM_TRUST_LABEL: Record<ReadinessMinimumTrust, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PolicyGateList {
+  private readonly i18n = inject(TranslocoService);
+  criterionDescription(form: GateFormDefinition, criterion: GateFormCriterion): string {
+    const description = gateCriterionDescription(form, criterion);
+    const label = description.metric
+      ? this.i18n.translate(
+          this.metricLabel(
+            criterion.type === 'test_results' ? criterion.metricKey : 'test.pass_rate',
+          ),
+        )
+      : description.label;
+    const scope =
+      criterion.type === 'test_results'
+        ? ` · ${this.i18n.translate(this.roleLabel(criterion.testRunRole))}${criterion.minimumPriority ? ` · ${this.i18n.translate(priorityLabel(criterion.minimumPriority))}+` : ''}`
+        : '';
+    return `${label}: ${description.value === 'checked' ? this.i18n.translate('readiness.forms.checked') : description.value}${scope}`;
+  }
   readonly priorityLabel = priorityLabel;
   readonly gates = input.required<ReadonlyArray<ReadinessGate>>();
 

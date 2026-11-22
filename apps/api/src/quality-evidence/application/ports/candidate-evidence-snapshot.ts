@@ -1,6 +1,11 @@
-import type { EvidenceMetricKey, QualityMetricDimensions } from '@caselog/schemas';
+import type {
+  EvidenceMetricKey,
+  GateFormResponseDetails,
+  QualityMetricDimensions,
+} from '@caselog/schemas';
 
 export type CandidateEvidenceSnapshotObservation = {
+  formResponse?: GateFormResponseDetails;
   id: string;
   producerId: string;
   metricKey: EvidenceMetricKey;

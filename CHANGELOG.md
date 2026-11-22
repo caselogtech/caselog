@@ -4,6 +4,12 @@
 
 Changes after the 0.1.0 baseline belong here until the next release is prepared.
 
+- Add one custom gate form builder with required/optional fields and AND conditions over
+  manual checkboxes, numbers, choices and native test results. Record candidate-bound human
+  responses with reports, audit, conflict protection and history; preserve legacy gates.
+  Apply `20261122100000_custom_gate_forms` before new artifacts, drain old evaluator jobs
+  and upgrade workers together to evaluator 1.3.0. Roll forward after adopting form policies.
+
 - Simplify accessibility policies to a standard, pages and required keyboard/screen-reader
   checks. Record manual OK / Not OK candidate reviews with multiple tools and uploaded
   PDF/HTML/JSON/text reports. Preserve review and decision history, audit corrections,

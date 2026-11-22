@@ -185,7 +185,7 @@ async function createReadinessRecords(
       assignmentId: assignment.id,
       policyVersionId: version.id,
       evidenceRevision: 0,
-      evaluatorVersion: '1.2.0',
+      evaluatorVersion: '1.3.0',
       trigger: 'MANUAL',
       status: 'BLOCKED',
       evaluatedById: input.ownerId,
@@ -288,7 +288,7 @@ function createEvaluation(
       expectedPercentage: '95',
       actualPercentage,
       explanationCode: 'comparison_failed',
-      evaluatorVersion: '1.2.0',
+      evaluatorVersion: '1.3.0',
       evaluatedAt: new Date(),
     },
   });

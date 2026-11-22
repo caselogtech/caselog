@@ -1,15 +1,16 @@
+import { evidenceListResponseSchema } from '../../../packages/schemas/dist/evidence.js';
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import {
   sessionResponseSchema,
-  testCaseDetailResponseSchema,
-  createTestCaseResponseSchema,
+  testCaseListResponseSchema,
+  testRunDetailResponseSchema,
 } from '../../../packages/schemas/dist/index.js';
 import { readinessPolicyResponseSchema } from '../../../packages/schemas/dist/readiness.js';
 
 test.use({ actionTimeout: 15_000 });
 
-test('configure test priority, WCAG and Lighthouse gates and edit the saved policy', async ({
+test('author a custom gate, combine native tests with manual answers, attach reports and edit the policy', async ({
   page,
   request,
 }) => {
@@ -20,232 +21,220 @@ test('configure test priority, WCAG and Lighthouse gates and edit the saved poli
   await page.getByLabel('Password', { exact: true }).fill('CaselogDemo123!');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/auth\/workspaces/);
-  const signedIn = await request.post('/api/v1/auth/login', {
-    data: { email: 'demo@caselog.local', password: 'CaselogDemo123!' },
-  });
-  expect(signedIn.ok()).toBeTruthy();
-  const login = sessionResponseSchema.parse(await signedIn.json());
+  const login = sessionResponseSchema.parse(
+    await (
+      await request.post('/api/v1/auth/login', {
+        data: { email: 'demo@caselog.local', password: 'CaselogDemo123!' },
+      })
+    ).json(),
+  );
   const exchanged = await request.post('/api/v1/auth/organizations/acme/token', {
     headers: { authorization: `Bearer ${login.accessToken}` },
   });
-  expect(exchanged.ok()).toBeTruthy();
-  const headers = {
-    authorization: `Bearer ${(await exchanged.json()).accessToken}`,
-    'idempotency-key': randomUUID(),
-  };
-  const policyBase = '/api/v1/projects/checkout/release-policies';
-  const template = readinessPolicyResponseSchema.parse(
-    await (
-      await request.get(`${policyBase}/00000000-0000-4000-8000-000000000501`, { headers })
-    ).json(),
-  );
-  const templateVersion = template.policy.versions.find((version) => version.state === 'published');
-  if (!templateVersion) throw new Error('Missing policy template');
-  const created = await request.post(policyBase, {
-    headers,
-    data: {
-      key: `quality-browser-${randomUUID().slice(0, 8)}`,
-      name: 'Quality browser baseline',
-      gates: templateVersion.gates.map(({ id: _id, position: _position, ...gate }) => gate),
-    },
-  });
-  expect(created.ok(), await created.text()).toBeTruthy();
-  const policyId = readinessPolicyResponseSchema.parse(await created.json()).policy.id;
-  const initialPublication = await request.post(`${policyBase}/${policyId}/publish`, {
-    headers: { ...headers, 'idempotency-key': randomUUID() },
-    data: {},
-  });
-  expect(initialPublication.ok(), await initialPublication.text()).toBeTruthy();
-  const apiPath = `/api/v1/projects/checkout/release-policies/${policyId}`;
-  const path = `/acme/checkout/release-policies/${policyId}`;
-  const original = readinessPolicyResponseSchema.parse(
-    await (await request.get(apiPath, { headers })).json(),
-  );
-  await page.goto(path);
-  await page.getByRole('link', { name: 'Edit policy', exact: true }).click();
+  const auth = { authorization: `Bearer ${(await exchanged.json()).accessToken}` };
+  const headers = () => ({ ...auth, 'idempotency-key': randomUUID() });
+  const base = '/api/v1/projects/checkout';
+  await page.goto('/acme/checkout/release-policies/new');
   await page
-    .getByRole('textbox', { name: 'Policy name', exact: true })
-    .fill('Production readiness');
-  const articles = page.locator('app-policy-gate-editor article');
-  for (let index = 0; index < 2; index++) {
-    const gate = articles.nth(index);
-    await gate
-      .getByRole('combobox', { name: 'Minimum case priority', exact: true })
-      .selectOption('medium');
-    await gate.locator('input[formControlName="expectedValue"]').fill('100');
-    await gate.locator('select[formControlName="staleEvidenceBehavior"]').selectOption('block');
-  }
-  for (const [key, metric] of [
-    ['accessibility', 'accessibility.manual_review'],
-    ['lighthouse', 'performance.lighthouse_score'],
+    .getByRole('textbox', { name: 'Policy key', exact: true })
+    .fill(`quality-${randomUUID().slice(0, 8)}`);
+  await page.getByRole('textbox', { name: 'Policy name', exact: true }).fill('Production review');
+  const gate = page.locator('app-policy-gate-editor article').first();
+  await gate.getByRole('textbox', { name: 'Gate name', exact: true }).fill('Release quality');
+  await gate
+    .getByRole('textbox', { name: 'Gate description', exact: true })
+    .fill('WCAG 2.2 AA and Lighthouse review');
+  const editor = gate.locator('app-gate-form-definition-editor');
+  const fields = editor.locator('section').nth(0).locator(':scope > fieldset');
+  await fields
+    .first()
+    .getByRole('textbox', { name: 'Field label', exact: true })
+    .fill('Keyboard navigation');
+  for (const [label, type, required] of [
+    ['Lighthouse score', 'number', true],
+    ['Reports', 'files', true],
+    ['Standard', 'text', true],
+    ['Pages reviewed', 'textarea', true],
+    ['Tools used', 'text', true],
+    ['Notes', 'textarea', false],
   ] as const) {
-    const count = await articles.count();
-    await page.getByRole('button', { name: 'Add gate', exact: true }).click();
-    await expect(articles).toHaveCount(count + 1);
-    const gate = articles.nth(count);
-    await gate.locator('input[formControlName="key"]').fill(key);
-    await gate.getByRole('combobox', { name: 'Metric', exact: true }).selectOption(metric);
-    await gate
-      .getByRole('textbox', { name: 'Required page URLs', exact: true })
-      .fill('https://example.com/\nhttps://example.com/checkout');
-    if (metric === 'accessibility.manual_review') {
-      await expect(
-        gate.getByRole('textbox', { name: 'Accessibility standard', exact: true }),
-      ).toHaveValue('WCAG 2.2 AA');
-      await expect(gate.locator('[formControlName="expectedValue"]')).toHaveCount(0);
-      await expect(
-        gate.getByRole('textbox', { name: 'Measurement profile', exact: true }),
-      ).toHaveCount(0);
-      await expect(
-        gate.getByRole('textbox', { name: 'Evidence source key', exact: true }),
-      ).toHaveCount(0);
-    } else {
-      await gate
-        .getByRole('textbox', { name: 'Measurement profile', exact: true })
-        .fill('production-mobile-v1');
-      await gate.getByRole('button', { name: 'Use my account', exact: true }).click();
-      await gate
-        .getByRole('textbox', { name: 'Tool or review procedure version', exact: true })
-        .fill('ci-review-v1');
-    }
+    const fieldCount = await fields.count();
+    await editor.getByRole('button', { name: 'Add field', exact: true }).click();
+    await expect(fields).toHaveCount(fieldCount + 1);
+    const field = fields.last();
+    await field.getByRole('textbox', { name: 'Field label', exact: true }).fill(label);
+    await field.getByRole('combobox', { name: 'Field type', exact: true }).selectOption(type);
+    if (required)
+      await field.getByRole('checkbox', { name: 'Required answer', exact: true }).check();
   }
+  const conditions = editor.locator('section').nth(1).locator(':scope > fieldset');
+  await editor.getByRole('button', { name: 'Add condition', exact: true }).click();
+  await expect(conditions).toHaveCount(2);
+  await conditions
+    .last()
+    .getByRole('combobox', { name: 'Minimum case priority', exact: true })
+    .selectOption('medium');
+  await editor.getByRole('button', { name: 'Add condition', exact: true }).click();
+  await expect(conditions).toHaveCount(3);
+  await conditions
+    .last()
+    .getByRole('combobox', { name: 'Condition type', exact: true })
+    .selectOption('number');
+  await conditions.last().getByRole('spinbutton', { name: 'Threshold', exact: true }).fill('90');
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
-  await page.getByRole('button', { name: 'Save draft', exact: true }).click();
-  await expect(page).toHaveURL(path);
-  const saved = readinessPolicyResponseSchema.parse(
-    await (await request.get(apiPath, { headers })).json(),
-  ).policy;
-  const draft = saved.versions.find((version) => version.state === 'draft');
-  expect(draft?.gates).toHaveLength(4);
-  expect(saved.versions.find((version) => version.state === 'published')).toEqual(
-    original.policy.versions.find((version) => version.state === 'published'),
-  );
-  expect(draft?.gates[0]?.dimensions.minimumPriority).toBe('medium');
-  expect(draft?.gates.find((gate) => gate.key === 'lighthouse')).toMatchObject({
-    expected: { type: 'percentage', value: '90' },
-    producerKey: login.user.id,
-    dimensions: {
-      device: 'mobile',
-      runsPerPage: 3,
-      pageUrls: ['https://example.com/', 'https://example.com/checkout'],
-    },
-  });
+  await page.getByRole('button', { name: 'Create policy', exact: true }).click();
+  await expect(page).toHaveURL(/\/release-policies\/[0-9a-f-]{36}$/);
+  const policyId = page.url().split('/').at(-1);
+  const path = `/acme/checkout/release-policies/${policyId}`;
+  const apiPath = `${base}/release-policies/${policyId}`;
   await page.getByRole('link', { name: 'Edit policy', exact: true }).click();
-  await expect(articles).toHaveCount(4);
-  await expect(
-    articles.last().getByRole('textbox', { name: 'Required page URLs', exact: true }),
-  ).toHaveValue('https://example.com/\nhttps://example.com/checkout');
-  await articles.last().locator('input[formControlName="expectedValue"]').fill('95');
+  await conditions.last().getByRole('spinbutton', { name: 'Threshold', exact: true }).fill('95');
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await expect(page).toHaveURL(path);
   await page.getByRole('button', { name: 'Publish draft', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Publish draft', exact: true })).toHaveCount(0);
   const published = readinessPolicyResponseSchema.parse(
-    await (await request.get(apiPath, { headers })).json(),
-  ).policy;
-  expect(
-    published.versions
-      .find((version) => version.state === 'published')
-      ?.gates.find((gate) => gate.key === 'lighthouse')?.expected.value,
-  ).toBe('95');
+    await (await request.get(apiPath, { headers: auth })).json(),
+  );
+  const publishedGate = published.policy.versions.find(({ state }) => state === 'published')
+    ?.gates[0];
+  expect(publishedGate?.form?.criteria).toMatchObject([
+    { type: 'checkbox' },
+    { type: 'test_results', minimumPriority: 'medium' },
+    { type: 'number', expected: 95 },
+  ]);
 
-  const release = await request.post('/api/v1/projects/checkout/releases', {
-    headers: { ...headers, 'idempotency-key': randomUUID() },
-    data: { key: `A11Y-${randomUUID().slice(0, 8)}`, name: 'Manual accessibility browser review' },
+  // Complete every case before linking, so priority-scoped native coverage has no missing cases.
+  const cases = testCaseListResponseSchema.parse(
+    await (await request.get(`${base}/cases?limit=100`, { headers: auth })).json(),
+  );
+  expect(cases.nextCursor).toBeNull();
+  const createdRun = await request.post(`${base}/runs`, {
+    headers: headers(),
+    data: { name: 'Custom gate native checks', caseIds: cases.items.map(({ id }) => id) },
+  });
+  expect(createdRun.ok(), await createdRun.text()).toBeTruthy();
+  const runId = (await createdRun.json()).run.id;
+  expect(
+    (await request.post(`${base}/runs/${runId}/start`, { headers: headers(), data: {} })).ok(),
+  ).toBeTruthy();
+  const run = testRunDetailResponseSchema.parse(
+    await (await request.get(`${base}/runs/${runId}?limit=100`, { headers: auth })).json(),
+  );
+  const passed = run.statuses.find(({ key }) => key === 'passed');
+  if (!passed) throw new Error('Missing passed status');
+  const results = await request.post(`${base}/runs/${runId}/results/bulk`, {
+    headers: headers(),
+    data: { results: run.items.map(({ id }) => ({ itemId: id, statusId: passed.id })) },
+  });
+  expect(results.ok(), await results.text()).toBeTruthy();
+  expect(
+    (await request.post(`${base}/runs/${runId}/close`, { headers: headers(), data: {} })).ok(),
+  ).toBeTruthy();
+  const release = await request.post(`${base}/releases`, {
+    headers: headers(),
+    data: { key: `FORM-${randomUUID().slice(0, 8)}`, name: 'Custom gate release' },
   });
   expect(release.ok(), await release.text()).toBeTruthy();
   const releaseId = (await release.json()).release.id;
-  const candidate = await request.post(
-    `/api/v1/projects/checkout/releases/${releaseId}/candidates`,
-    {
-      headers: { ...headers, 'idempotency-key': randomUUID() },
-      data: { sourceRevision: randomUUID() },
-    },
-  );
+  const candidate = await request.post(`${base}/releases/${releaseId}/candidates`, {
+    headers: headers(),
+    data: { sourceRevision: randomUUID() },
+  });
   expect(candidate.ok(), await candidate.text()).toBeTruthy();
   const candidateId = (await candidate.json()).candidate.id;
-  const assigned = await request.put(
-    `/api/v1/projects/checkout/candidates/${candidateId}/readiness-policy`,
-    { headers: { ...headers, 'idempotency-key': randomUUID() }, data: { policyId } },
-  );
-  expect(assigned.ok(), await assigned.text()).toBeTruthy();
+  expect(
+    (
+      await request.put(`${base}/candidates/${candidateId}/readiness-policy`, {
+        headers: headers(),
+        data: { policyId },
+      })
+    ).ok(),
+  ).toBeTruthy();
+  const link = await request.put(`${base}/candidates/${candidateId}/test-runs/${runId}`, {
+    headers: headers(),
+    data: { role: 'required' },
+  });
+  expect(link.ok(), await link.text()).toBeTruthy();
+  // Native materialization uses the existing scheduled worker. Establish its evidence
+  // before testing the immediate evaluation triggered by each human response.
+  await expect
+    .poll(
+      async () => {
+        const evidence = evidenceListResponseSchema.parse(
+          await (
+            await request.get(
+              `${base}/evidence?candidateId=${candidateId}&metricKey=test.pass_rate&producerKey=caselog.test-runs&currentOnly=true&limit=100`,
+              { headers: auth },
+            )
+          ).json(),
+        );
+        return evidence.items.some(
+          (item) =>
+            item.dimensions.minimumPriority === 'medium' &&
+            item.dimensions.testRunRole === 'required' &&
+            item.state === 'available' &&
+            item.value.value === '100',
+        );
+      },
+      { timeout: 90_000 },
+    )
+    .toBe(true);
+
   await page.goto(`/acme/checkout/releases/${releaseId}/candidates/${candidateId}`);
-  const panel = page.locator('app-accessibility-reviews');
-  const form = panel.locator('app-accessibility-review-form');
-  await expect(form.getByRole('heading', { name: 'WCAG 2.2 AA', exact: true })).toBeVisible();
-  await form.getByRole('combobox', { name: 'Review result', exact: true }).selectOption('not_ok');
+  const panel = page.locator('app-gate-form-response');
+  const form = panel.locator('form');
+  await expect(form).toBeVisible();
+  await form.getByRole('button', { name: 'Save response', exact: true }).click();
+  await expect(
+    panel.getByRole('alert').filter({ hasText: 'Complete the required fields' }),
+  ).toBeVisible();
+  await form.getByRole('textbox', { name: 'Standard', exact: true }).fill('WCAG 2.2 AA');
+  await form
+    .getByRole('textbox', { name: 'Pages reviewed', exact: true })
+    .fill('https://example.com/checkout');
   await form
     .getByRole('textbox', { name: 'Tools used', exact: true })
-    .fill('Lighthouse 13, Deque axe 4.10');
-  await form
-    .getByRole('textbox', { name: 'Review notes', exact: true })
-    .fill('Keyboard issue found on checkout.');
+    .fill('Lighthouse, axe, NVDA');
+  await form.getByRole('spinbutton', { name: 'Lighthouse score', exact: true }).fill('96');
   await form.getByLabel('Reports', { exact: false }).setInputFiles({
-    name: 'axe-report.json',
+    name: 'quality-report.json',
     mimeType: 'application/json',
-    buffer: Buffer.from('{"violations":["keyboard"]}'),
+    buffer: Buffer.from('{"violations":[],"score":96}'),
   });
-  await expect(form.getByText('axe-report.json', { exact: false })).toBeVisible();
-  await form.getByRole('button', { name: 'Record accessibility review', exact: true }).click();
-  await expect(panel.locator('article')).toHaveCount(1);
-  await expect(panel.locator('article').first()).toContainText('Not OK');
-  await form.getByRole('combobox', { name: 'Review result', exact: true }).selectOption('ok');
-  await form
-    .getByRole('textbox', { name: 'Tools used', exact: true })
-    .fill('Lighthouse 13, Deque axe 4.10, NVDA');
-  await form
-    .getByRole('combobox', { name: 'Keyboard navigation', exact: true })
-    .selectOption('passed');
-  await form.getByRole('combobox', { name: 'Screen reader', exact: true }).selectOption('passed');
-  await form.getByLabel('Reports', { exact: false }).setInputFiles({
-    name: 'axe-reviewed.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from('{"violations":[]}'),
-  });
-  await expect(form.getByText('axe-reviewed.json', { exact: false })).toBeVisible();
-  await form.getByRole('button', { name: 'Record accessibility review', exact: true }).click();
+  await expect(
+    form.getByRole('button', { name: 'quality-report.json', exact: true }),
+  ).toBeVisible();
+  await form.getByRole('button', { name: 'Save response', exact: true }).click();
+  await expect(panel.getByRole('status')).toContainText('Response recorded');
+  const readinessUrl = `${base}/candidates/${candidateId}/readiness`;
+  const status = async () => {
+    const data = await (await request.get(readinessUrl, { headers: auth })).json();
+    return data.state === 'current' ? data.decision?.status : data.state;
+  };
+  await expect.poll(status, { timeout: 20_000 }).toBe('blocked');
+  await form.getByRole('checkbox', { name: 'Keyboard navigation', exact: true }).check();
+  await form.getByRole('button', { name: 'Save response', exact: true }).click();
+  await expect.poll(status, { timeout: 20_000 }).toBe('ready');
+  const decision = (await (await request.get(readinessUrl, { headers: auth })).json()).decision;
+  expect(
+    decision.gates[0].criteria.every(
+      (criterion: { result: string }) => criterion.result === 'passed',
+    ),
+  ).toBe(true);
+  await panel.locator('summary').click();
   await expect(panel.locator('article')).toHaveCount(2);
-  await expect(panel.locator('article').first().getByText('OK', { exact: true })).toBeVisible();
-  await expect(panel.locator('article').last()).toContainText('Replaced by a newer review');
+  await expect(panel.locator('article').last()).toContainText('Superseded response');
   const downloadPromise = page.waitForEvent('download');
-  await panel.getByRole('button', { name: 'axe-reviewed.json', exact: true }).click();
+  await form.getByRole('button', { name: 'quality-report.json', exact: true }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('axe-reviewed.json');
+  expect(download.suggestedFilename()).toBe('quality-report.json');
   expect(await download.failure()).toBeNull();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
-
-  const caseTemplate = testCaseDetailResponseSchema.parse(
-    await (
-      await request.get('/api/v1/projects/checkout/cases/00000000-0000-4000-8000-000000000101', {
-        headers,
-      })
-    ).json(),
-  );
-  const createdCase = await request.post('/api/v1/projects/checkout/cases', {
-    headers: { ...headers, 'idempotency-key': randomUUID() },
-    data: {
-      sectionId: caseTemplate.testCase.section.id,
-      title: 'Quality browser priority',
-      template: 'text',
-      priority: 'medium',
-      content: { text: 'Verify the versioned priority' },
-    },
-  });
-  expect(createdCase.ok(), await createdCase.text()).toBeTruthy();
-  const caseId = createTestCaseResponseSchema.parse(await createdCase.json()).testCase.id;
-  await page.goto(`/acme/checkout/cases/${caseId}`);
-  await page.getByRole('button', { name: 'Edit test case', exact: true }).click();
-  await page.getByRole('combobox', { name: 'Priority', exact: true }).selectOption('critical');
-  await page.getByRole('button', { name: 'Save new version', exact: true }).click();
-  await expect(page.getByText('Priority: Critical', { exact: true })).toBeVisible();
-  const detail = testCaseDetailResponseSchema.parse(
-    await (await request.get(`/api/v1/projects/checkout/cases/${caseId}`, { headers })).json(),
-  );
-  expect(detail.testCase.currentVersion.priority).toBe('critical');
   expect(errors).toEqual([]);
 });

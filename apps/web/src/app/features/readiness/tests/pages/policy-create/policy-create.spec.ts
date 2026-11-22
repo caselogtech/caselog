@@ -50,7 +50,23 @@ describe('ReadinessPolicyCreate', () => {
       name: ' Production promotion ',
       description: ' Production readiness policy ',
     });
-    fixture.componentInstance.form.controls.gates.at(0).controls.key.setValue('required-pass-rate');
+    const gate = fixture.componentInstance.form.controls.gates.at(0);
+    gate.controls.key.setValue('required-pass-rate');
+    gate.controls.form.setValue({
+      name: 'Manual release approval',
+      description: '',
+      fields: [
+        {
+          key: 'approval',
+          label: 'Approval',
+          description: '',
+          type: 'checkbox',
+          required: true,
+          options: [],
+        },
+      ],
+      criteria: [{ type: 'checkbox', fieldKey: 'approval' }],
+    });
 
     expect(fixture.componentInstance.form.valid).toBe(true);
     fixture.componentInstance.submit();
@@ -66,14 +82,29 @@ describe('ReadinessPolicyCreate', () => {
         gates: [
           {
             key: 'required-pass-rate',
-            metricKey: 'test.pass_rate',
+            form: {
+              name: 'Manual release approval',
+              description: '',
+              fields: [
+                {
+                  key: 'approval',
+                  label: 'Approval',
+                  description: '',
+                  type: 'checkbox',
+                  required: true,
+                  options: [],
+                },
+              ],
+              criteria: [{ type: 'checkbox', fieldKey: 'approval' }],
+            },
+            metricKey: 'gate.form_response',
             metricVersion: '1.0.0',
             dimensions: { testRunRole: 'required' },
-            operator: 'gte',
-            expected: { type: 'percentage', value: '98' },
+            operator: 'eq',
+            expected: { type: 'integer', value: 1 },
             impact: 'blocking',
             missingEvidenceBehavior: 'block',
-            staleEvidenceBehavior: 'unknown',
+            staleEvidenceBehavior: 'block',
             minimumTrust: 'authenticated',
           },
         ],

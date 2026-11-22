@@ -1,3 +1,5 @@
+import type { GateFormCriterionResult } from '@caselog/schemas';
+import { evaluateGateForm } from './gate-form-evaluator';
 import type { ReadinessEvidence } from '../models/readiness-evidence';
 import {
   type EvidenceBehavior,
@@ -8,13 +10,14 @@ import {
   validateReadinessGates,
 } from '../models/readiness-policy';
 
-export const READINESS_EVALUATOR_VERSION = '1.2.0';
+export const READINESS_EVALUATOR_VERSION = '1.3.0';
 
 export type GateEvaluationResult = 'PASSED' | 'WARNING' | 'FAILED' | 'UNKNOWN';
 export type GateDiagnostic = 'NONE' | 'MISSING' | 'INCOMPLETE' | 'STALE' | 'UNTRUSTED';
 export type ReadinessStatus = 'READY' | 'AT_RISK' | 'BLOCKED' | 'UNKNOWN';
 
 export type GateEvaluation = {
+  criteria?: GateFormCriterionResult[];
   gateId: string;
   gateKey: string;
   position: number;
@@ -58,7 +61,11 @@ export function evaluateReadiness(input: {
 
   const gates = [...input.gates]
     .sort((left, right) => left.position - right.position || left.key.localeCompare(right.key))
-    .map((gate) => evaluateGate(gate, input.evidence, evaluatedAt));
+    .map((gate) =>
+      gate.metricKey === 'gate.form_response'
+        ? evaluateGateForm(gate, input.evidence, evaluatedAt, evaluateGate)
+        : evaluateGate(gate, input.evidence, evaluatedAt),
+    );
   return {
     evaluatorVersion: READINESS_EVALUATOR_VERSION,
     status: classify(gates),
@@ -75,6 +82,9 @@ function evaluateGate(
     (observation) =>
       observation.metricKey === gate.metricKey &&
       observation.metricVersion === gate.metricVersion &&
+      observation.dimensions.gateId === gate.dimensions.gateId &&
+      (gate.metricKey !== 'gate.form_response' ||
+        observation.producerKey === 'caselog.gate-forms') &&
       observation.dimensions.testRunRole === gate.dimensions.testRunRole &&
       observation.dimensions.minimumPriority === gate.dimensions.minimumPriority &&
       observation.dimensions.accessibilityStandard === gate.dimensions.accessibilityStandard &&

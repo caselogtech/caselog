@@ -1,0 +1,87 @@
+import type { GateFormDefinition, ReadinessGateInput } from '@caselog/schemas';
+export const qualityForm: GateFormDefinition = {
+  name: 'Production quality review',
+  description: 'WCAG 2.2 AA and release performance review.',
+  fields: [
+    {
+      key: 'standard',
+      label: 'Standard',
+      type: 'text',
+      required: true,
+      description: '',
+      options: [],
+    },
+    {
+      key: 'pages',
+      label: 'Pages reviewed',
+      type: 'textarea',
+      required: true,
+      description: '',
+      options: [],
+    },
+    {
+      key: 'tools',
+      label: 'Tools used',
+      type: 'text',
+      required: true,
+      description: '',
+      options: [],
+    },
+    {
+      key: 'keyboard',
+      label: 'Keyboard navigation',
+      type: 'checkbox',
+      required: true,
+      description: '',
+      options: [],
+    },
+    {
+      key: 'score',
+      label: 'Lighthouse score',
+      type: 'number',
+      required: true,
+      description: '',
+      options: [],
+    },
+    {
+      key: 'reports',
+      label: 'Reports',
+      type: 'files',
+      required: false,
+      description: '',
+      options: [],
+    },
+    {
+      key: 'notes',
+      label: 'Notes',
+      type: 'textarea',
+      required: false,
+      description: '',
+      options: [],
+    },
+  ],
+  criteria: [
+    { type: 'checkbox', fieldKey: 'keyboard' },
+    { type: 'number', fieldKey: 'score', operator: 'gte', expected: 90 },
+  ],
+};
+export const formGateInput: ReadinessGateInput = {
+  key: 'production-review',
+  form: qualityForm,
+  metricKey: 'gate.form_response',
+  metricVersion: '1.0.0',
+  dimensions: { testRunRole: 'required' },
+  operator: 'eq',
+  expected: { type: 'integer', value: 1 },
+  impact: 'blocking',
+  minimumTrust: 'authenticated',
+  missingEvidenceBehavior: 'block',
+  staleEvidenceBehavior: 'block',
+};
+export const qualityAnswers = {
+  standard: 'WCAG 2.2 AA',
+  pages: 'https://example.com/checkout',
+  tools: 'axe, Lighthouse, NVDA',
+  keyboard: true,
+  score: 92,
+};

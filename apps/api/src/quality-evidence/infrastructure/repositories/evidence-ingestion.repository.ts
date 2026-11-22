@@ -188,7 +188,10 @@ export class EvidenceIngestionRepository {
           organizationId: input.organizationId,
           actorId: input.manualReview.actorId,
           actorType: 'user',
-          action: 'accessibility_review.recorded',
+          action:
+            input.request.metricKey === 'gate.form_response'
+              ? 'gate_form.recorded'
+              : 'accessibility_review.recorded',
           targetType: 'evidence_observation',
           targetId: created.id,
           metadata: { projectId: project.id, candidateId: candidate.id },

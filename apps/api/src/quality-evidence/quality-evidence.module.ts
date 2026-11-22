@@ -1,3 +1,4 @@
+import { GateFormEvidenceService } from './application/services/gate-form-evidence.service';
 import { Module } from '@nestjs/common';
 import { AttachmentModule } from '../attachments/public-api';
 import { AuthModule } from '../auth/public-api';
@@ -28,6 +29,7 @@ import { NativeEvidenceWorker } from './presentation/workers/native-evidence.wor
   imports: [AttachmentModule, AuthModule, ReleaseModule, TestRunModule, TestCaseModule],
   controllers: [EvidenceController, AccessibilityReviewController],
   providers: [
+    GateFormEvidenceService,
     AccessibilityReviewService,
     CandidateTestScopeRepository,
     EvidenceEventRepository,
@@ -46,6 +48,6 @@ import { NativeEvidenceWorker } from './presentation/workers/native-evidence.wor
     NativeEvidenceReconciliationService,
     NativeEvidenceWorker,
   ],
-  exports: [EvidenceSnapshotService],
+  exports: [EvidenceSnapshotService, GateFormEvidenceService],
 })
 export class QualityEvidenceModule {}

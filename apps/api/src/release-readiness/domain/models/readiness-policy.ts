@@ -1,4 +1,8 @@
-import { QUALITY_METRIC_DEFINITIONS, type QualityMetricDimensions } from '@caselog/schemas';
+import {
+  QUALITY_METRIC_DEFINITIONS,
+  type GateFormDefinition,
+  type QualityMetricDimensions,
+} from '@caselog/schemas';
 export const READINESS_METRIC_CATALOGUE = QUALITY_METRIC_DEFINITIONS;
 
 export type ReadinessMetricKey = keyof typeof READINESS_METRIC_CATALOGUE;
@@ -14,6 +18,7 @@ export type ReadinessValue =
   | { type: 'integer'; value: number };
 
 export type ReadinessGate = {
+  form?: GateFormDefinition;
   id: string;
   key: string;
   position: number;

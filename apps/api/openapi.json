@@ -3666,8 +3666,19 @@
                 "accessibility.wcag22_aa_violations",
                 "accessibility.wcag22_aa_manual_review",
                 "performance.lighthouse_score",
-                "accessibility.manual_review"
+                "accessibility.manual_review",
+                "gate.form_response"
               ]
+            }
+          },
+          {
+            "name": "gateId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
             }
           },
           {
@@ -7483,6 +7494,299 @@
         ],
         "tags": [
           "ProjectStructure"
+        ]
+      }
+    },
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/gate-forms/{gateId}/responses": {
+      "post": {
+        "operationId": "GateFormController_record",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "gateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "minLength": 8,
+              "maxLength": 200,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GateFormRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateFormResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "GateForm"
+        ]
+      }
+    },
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/gate-forms/reports/uploads": {
+      "post": {
+        "operationId": "GateFormController_upload",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GateFormUploadRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateFormUploadResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "GateForm"
+        ]
+      }
+    },
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/gate-forms/reports": {
+      "post": {
+        "operationId": "GateFormController_complete",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GateFormCompleteRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateFormReportResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "GateForm"
+        ]
+      }
+    },
+    "/api/v1/projects/{projectSlug}/candidates/{candidateId}/gate-forms/reports/{reportId}/download": {
+      "post": {
+        "operationId": "GateFormController_download",
+        "parameters": [
+          {
+            "name": "projectSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 50,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateFormDownloadResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "GateForm"
         ]
       }
     },
@@ -13707,7 +14011,8 @@
                     "accessibility.wcag22_aa_violations",
                     "accessibility.wcag22_aa_manual_review",
                     "performance.lighthouse_score",
-                    "accessibility.manual_review"
+                    "accessibility.manual_review",
+                    "gate.form_response"
                   ]
                 },
                 "metricVersion": {
@@ -13778,6 +14083,11 @@
                 "dimensions": {
                   "type": "object",
                   "properties": {
+                    "gateId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
                     "testRunRole": {
                       "type": "string",
                       "enum": [
@@ -14065,6 +14375,88 @@
                         "runRevisions",
                         "runRevisionsTruncated"
                       ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "gate_form_response"
+                        },
+                        "actorId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "reviewerName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "values": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                          },
+                          "additionalProperties": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 4000
+                              },
+                              {
+                                "type": "number",
+                                "minimum": -1000000000,
+                                "maximum": 1000000000
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "maxItems": 10,
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "reports": {
+                          "maxItems": 30,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "fileName": {
+                                "type": "string",
+                                "maxLength": 255
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "fileName"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "actorId",
+                        "reviewerName",
+                        "values",
+                        "reports"
+                      ],
+                      "additionalProperties": false
                     },
                     {
                       "type": "object",
@@ -14432,6 +14824,11 @@
           "dimensions": {
             "type": "object",
             "properties": {
+              "gateId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
               "testRunRole": {
                 "type": "string",
                 "enum": [
@@ -14741,7 +15138,8 @@
                   "accessibility.wcag22_aa_violations",
                   "accessibility.wcag22_aa_manual_review",
                   "performance.lighthouse_score",
-                  "accessibility.manual_review"
+                  "accessibility.manual_review",
+                  "gate.form_response"
                 ]
               },
               "metricVersion": {
@@ -14812,6 +15210,11 @@
               "dimensions": {
                 "type": "object",
                 "properties": {
+                  "gateId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
                   "testRunRole": {
                     "type": "string",
                     "enum": [
@@ -15103,6 +15506,88 @@
                   {
                     "type": "object",
                     "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "gate_form_response"
+                      },
+                      "actorId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "reviewerName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "values": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 4000
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -1000000000,
+                              "maximum": 1000000000
+                            },
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "maxItems": 10,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "reports": {
+                        "maxItems": 30,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "fileName": {
+                              "type": "string",
+                              "maxLength": 255
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "fileName"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "actorId",
+                      "reviewerName",
+                      "values",
+                      "reports"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
                       "outcome": {
                         "type": "string",
                         "enum": [
@@ -15293,6 +15778,11 @@
           "dimensions": {
             "type": "object",
             "properties": {
+              "gateId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
               "testRunRole": {
                 "type": "string",
                 "enum": [
@@ -21456,6 +21946,898 @@
           "position"
         ]
       },
+      "GateFormRequestDto": {
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,49}$"
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                {
+                  "type": "number",
+                  "minimum": -1000000000,
+                  "maximum": 1000000000
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "maxItems": 10,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                }
+              ]
+            }
+          },
+          "expectedObservationId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "values",
+          "expectedObservationId"
+        ],
+        "additionalProperties": false
+      },
+      "GateFormResponseDto": {
+        "type": "object",
+        "properties": {
+          "observation": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "projectId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "candidateId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "metricKey": {
+                "type": "string",
+                "enum": [
+                  "test.pass_rate",
+                  "test.completion_rate",
+                  "test.failed_count",
+                  "accessibility.wcag22_aa_violations",
+                  "accessibility.wcag22_aa_manual_review",
+                  "performance.lighthouse_score",
+                  "accessibility.manual_review",
+                  "gate.form_response"
+                ]
+              },
+              "metricVersion": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 20
+              },
+              "value": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "percentage"
+                      },
+                      "value": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^\\d{1,3}(?:\\.\\d{1,9})?$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "value"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "integer"
+                      },
+                      "value": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "value"
+                    ]
+                  }
+                ]
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "available",
+                  "incomplete"
+                ]
+              },
+              "dimensions": {
+                "type": "object",
+                "properties": {
+                  "gateId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "testRunRole": {
+                    "type": "string",
+                    "enum": [
+                      "required",
+                      "informational"
+                    ]
+                  },
+                  "minimumPriority": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      "critical"
+                    ]
+                  },
+                  "accessibilityStandard": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "manualChecks": {
+                    "maxItems": 2,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "keyboard_navigation",
+                        "screen_reader"
+                      ]
+                    }
+                  },
+                  "profile": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9._-]{0,79}$"
+                  },
+                  "pageUrls": {
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 2048,
+                      "format": "uri"
+                    }
+                  },
+                  "toolVersion": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "device": {
+                    "type": "string",
+                    "enum": [
+                      "mobile",
+                      "desktop"
+                    ]
+                  },
+                  "runsPerPage": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 10
+                  }
+                },
+                "required": [
+                  "testRunRole"
+                ],
+                "additionalProperties": false
+              },
+              "observedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              },
+              "expiresAt": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "freshness": {
+                "type": "string",
+                "enum": [
+                  "current",
+                  "stale"
+                ]
+              },
+              "producer": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "schemaVersion": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "trust": {
+                    "type": "string",
+                    "enum": [
+                      "verified",
+                      "authenticated",
+                      "unverified"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "key",
+                  "schemaVersion",
+                  "trust"
+                ]
+              },
+              "source": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "revision": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "id",
+                  "revision",
+                  "url"
+                ]
+              },
+              "details": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "scopeCapturedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                      },
+                      "scopeHash": {
+                        "type": "string"
+                      },
+                      "requiredCaseCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "missingCaseCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "missingCaseIds": {
+                        "maxItems": 100,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        }
+                      },
+                      "missingCaseIdsTruncated": {
+                        "type": "boolean"
+                      },
+                      "runCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "totalItems": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "finalItems": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "executedFinalItems": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "passedItems": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "failedItems": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "skippedItems": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "incompleteRunIds": {
+                        "maxItems": 100,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        }
+                      },
+                      "runRevisions": {
+                        "maxItems": 100,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "testRunId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "revision": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "testRunId",
+                            "revision"
+                          ]
+                        }
+                      },
+                      "runRevisionsTruncated": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "runCount",
+                      "totalItems",
+                      "finalItems",
+                      "executedFinalItems",
+                      "passedItems",
+                      "failedItems",
+                      "skippedItems",
+                      "incompleteRunIds",
+                      "runRevisions",
+                      "runRevisionsTruncated"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "gate_form_response"
+                      },
+                      "actorId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "reviewerName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "values": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 4000
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -1000000000,
+                              "maximum": 1000000000
+                            },
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "maxItems": 10,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "reports": {
+                        "maxItems": 30,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "fileName": {
+                              "type": "string",
+                              "maxLength": 255
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "fileName"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "actorId",
+                      "reviewerName",
+                      "values",
+                      "reports"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "outcome": {
+                        "type": "string",
+                        "enum": [
+                          "ok",
+                          "not_ok"
+                        ]
+                      },
+                      "actorId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "reviewerName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "tools": {
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 80
+                        }
+                      },
+                      "keyboardNavigation": {
+                        "type": "string",
+                        "enum": [
+                          "passed",
+                          "failed",
+                          "not_checked"
+                        ]
+                      },
+                      "screenReader": {
+                        "type": "string",
+                        "enum": [
+                          "passed",
+                          "failed",
+                          "not_checked"
+                        ]
+                      },
+                      "reportIds": {
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        }
+                      },
+                      "reportNames": {
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      },
+                      "notes": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "outcome",
+                      "actorId",
+                      "tools",
+                      "keyboardNavigation",
+                      "screenReader",
+                      "reportIds",
+                      "reportNames",
+                      "notes"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 500
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        {
+                          "maxItems": 500,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 500
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "supersedesObservationId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "isCurrent": {
+                "type": "boolean"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "projectId",
+              "candidateId",
+              "metricKey",
+              "metricVersion",
+              "value",
+              "state",
+              "dimensions",
+              "observedAt",
+              "expiresAt",
+              "freshness",
+              "producer",
+              "source",
+              "details",
+              "supersedesObservationId",
+              "isCurrent",
+              "createdAt"
+            ]
+          },
+          "candidateRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "observation",
+          "candidateRevision",
+          "replayed"
+        ]
+      },
+      "GateFormUploadRequestDto": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "application/pdf",
+              "application/json",
+              "text/html",
+              "text/plain"
+            ]
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 104857600
+          },
+          "checksumSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{64}$"
+          }
+        },
+        "required": [
+          "fileName",
+          "contentType",
+          "sizeBytes",
+          "checksumSha256"
+        ]
+      },
+      "GateFormUploadResponseDto": {
+        "type": "object",
+        "properties": {
+          "upload": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "method": {
+                "type": "string",
+                "const": "PUT"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "headers": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "method",
+              "url",
+              "headers",
+              "expiresAt"
+            ]
+          }
+        },
+        "required": [
+          "upload"
+        ]
+      },
+      "GateFormCompleteRequestDto": {
+        "type": "object",
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "uploadId"
+        ]
+      },
+      "GateFormReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "attachment": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "fileName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "contentType": {
+                "type": "string",
+                "enum": [
+                  "application/pdf",
+                  "application/json",
+                  "text/html",
+                  "text/plain"
+                ]
+              },
+              "sizeBytes": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "checksumSha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "fileName",
+              "contentType",
+              "sizeBytes",
+              "checksumSha256",
+              "createdAt"
+            ]
+          }
+        },
+        "required": [
+          "attachment"
+        ]
+      },
+      "GateFormDownloadResponseDto": {
+        "type": "object",
+        "properties": {
+          "download": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "url",
+              "expiresAt"
+            ]
+          }
+        },
+        "required": [
+          "download"
+        ]
+      },
       "ReadinessPolicyListResponseDto": {
         "type": "object",
         "properties": {
@@ -21691,6 +23073,239 @@
                   "maxLength": 50,
                   "pattern": "^[a-z][a-z0-9_.-]{1,49}$"
                 },
+                "form": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "description": {
+                      "default": "",
+                      "type": "string",
+                      "maxLength": 2000
+                    },
+                    "fields": {
+                      "maxItems": 30,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                          },
+                          "label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "description": {
+                            "default": "",
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "textarea",
+                              "number",
+                              "checkbox",
+                              "select",
+                              "url",
+                              "files"
+                            ]
+                          },
+                          "required": {
+                            "type": "boolean"
+                          },
+                          "options": {
+                            "default": [],
+                            "maxItems": 30,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                },
+                                "label": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "label",
+                          "type",
+                          "required"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "criteria": {
+                      "minItems": 1,
+                      "maxItems": 20,
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "checkbox"
+                              },
+                              "fieldKey": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "fieldKey"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "number"
+                              },
+                              "fieldKey": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              },
+                              "operator": {
+                                "type": "string",
+                                "enum": [
+                                  "eq",
+                                  "ne",
+                                  "gt",
+                                  "gte",
+                                  "lt",
+                                  "lte"
+                                ]
+                              },
+                              "expected": {
+                                "type": "number",
+                                "minimum": -1000000000,
+                                "maximum": 1000000000
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "fieldKey",
+                              "operator",
+                              "expected"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "select"
+                              },
+                              "fieldKey": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              },
+                              "expected": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "fieldKey",
+                              "expected"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "test_results"
+                              },
+                              "metricKey": {
+                                "type": "string",
+                                "enum": [
+                                  "test.pass_rate",
+                                  "test.completion_rate",
+                                  "test.failed_count"
+                                ]
+                              },
+                              "testRunRole": {
+                                "type": "string",
+                                "enum": [
+                                  "required",
+                                  "informational"
+                                ]
+                              },
+                              "minimumPriority": {
+                                "type": "string",
+                                "enum": [
+                                  "low",
+                                  "medium",
+                                  "high",
+                                  "critical"
+                                ]
+                              },
+                              "operator": {
+                                "type": "string",
+                                "enum": [
+                                  "eq",
+                                  "ne",
+                                  "gt",
+                                  "gte",
+                                  "lt",
+                                  "lte"
+                                ]
+                              },
+                              "expected": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "metricKey",
+                              "testRunRole",
+                              "operator",
+                              "expected"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "fields",
+                    "criteria"
+                  ],
+                  "additionalProperties": false
+                },
                 "metricKey": {
                   "type": "string",
                   "enum": [
@@ -21700,7 +23315,8 @@
                     "accessibility.wcag22_aa_violations",
                     "accessibility.wcag22_aa_manual_review",
                     "performance.lighthouse_score",
-                    "accessibility.manual_review"
+                    "accessibility.manual_review",
+                    "gate.form_response"
                   ]
                 },
                 "metricVersion": {
@@ -21710,6 +23326,11 @@
                 "dimensions": {
                   "type": "object",
                   "properties": {
+                    "gateId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
                     "testRunRole": {
                       "type": "string",
                       "enum": [
@@ -21994,6 +23615,239 @@
                             "maxLength": 50,
                             "pattern": "^[a-z][a-z0-9_.-]{1,49}$"
                           },
+                          "form": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 120
+                              },
+                              "description": {
+                                "default": "",
+                                "type": "string",
+                                "maxLength": 2000
+                              },
+                              "fields": {
+                                "maxItems": 30,
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "key": {
+                                      "type": "string",
+                                      "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 120
+                                    },
+                                    "description": {
+                                      "default": "",
+                                      "type": "string",
+                                      "maxLength": 500
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "text",
+                                        "textarea",
+                                        "number",
+                                        "checkbox",
+                                        "select",
+                                        "url",
+                                        "files"
+                                      ]
+                                    },
+                                    "required": {
+                                      "type": "boolean"
+                                    },
+                                    "options": {
+                                      "default": [],
+                                      "maxItems": 30,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "key": {
+                                            "type": "string",
+                                            "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                          },
+                                          "label": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 120
+                                          }
+                                        },
+                                        "required": [
+                                          "key",
+                                          "label"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "key",
+                                    "label",
+                                    "type",
+                                    "required"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "criteria": {
+                                "minItems": 1,
+                                "maxItems": 20,
+                                "type": "array",
+                                "items": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "const": "checkbox"
+                                        },
+                                        "fieldKey": {
+                                          "type": "string",
+                                          "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "fieldKey"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "const": "number"
+                                        },
+                                        "fieldKey": {
+                                          "type": "string",
+                                          "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                        },
+                                        "operator": {
+                                          "type": "string",
+                                          "enum": [
+                                            "eq",
+                                            "ne",
+                                            "gt",
+                                            "gte",
+                                            "lt",
+                                            "lte"
+                                          ]
+                                        },
+                                        "expected": {
+                                          "type": "number",
+                                          "minimum": -1000000000,
+                                          "maximum": 1000000000
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "fieldKey",
+                                        "operator",
+                                        "expected"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "const": "select"
+                                        },
+                                        "fieldKey": {
+                                          "type": "string",
+                                          "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                        },
+                                        "expected": {
+                                          "type": "string",
+                                          "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "fieldKey",
+                                        "expected"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "const": "test_results"
+                                        },
+                                        "metricKey": {
+                                          "type": "string",
+                                          "enum": [
+                                            "test.pass_rate",
+                                            "test.completion_rate",
+                                            "test.failed_count"
+                                          ]
+                                        },
+                                        "testRunRole": {
+                                          "type": "string",
+                                          "enum": [
+                                            "required",
+                                            "informational"
+                                          ]
+                                        },
+                                        "minimumPriority": {
+                                          "type": "string",
+                                          "enum": [
+                                            "low",
+                                            "medium",
+                                            "high",
+                                            "critical"
+                                          ]
+                                        },
+                                        "operator": {
+                                          "type": "string",
+                                          "enum": [
+                                            "eq",
+                                            "ne",
+                                            "gt",
+                                            "gte",
+                                            "lt",
+                                            "lte"
+                                          ]
+                                        },
+                                        "expected": {
+                                          "type": "number",
+                                          "minimum": 0,
+                                          "maximum": 1000000000
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "metricKey",
+                                        "testRunRole",
+                                        "operator",
+                                        "expected"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "fields",
+                              "criteria"
+                            ],
+                            "additionalProperties": false
+                          },
                           "metricKey": {
                             "type": "string",
                             "enum": [
@@ -22003,7 +23857,8 @@
                               "accessibility.wcag22_aa_violations",
                               "accessibility.wcag22_aa_manual_review",
                               "performance.lighthouse_score",
-                              "accessibility.manual_review"
+                              "accessibility.manual_review",
+                              "gate.form_response"
                             ]
                           },
                           "metricVersion": {
@@ -22013,6 +23868,11 @@
                           "dimensions": {
                             "type": "object",
                             "properties": {
+                              "gateId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
                               "testRunRole": {
                                 "type": "string",
                                 "enum": [
@@ -22257,6 +24117,239 @@
                   "maxLength": 50,
                   "pattern": "^[a-z][a-z0-9_.-]{1,49}$"
                 },
+                "form": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "description": {
+                      "default": "",
+                      "type": "string",
+                      "maxLength": 2000
+                    },
+                    "fields": {
+                      "maxItems": 30,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                          },
+                          "label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "description": {
+                            "default": "",
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "textarea",
+                              "number",
+                              "checkbox",
+                              "select",
+                              "url",
+                              "files"
+                            ]
+                          },
+                          "required": {
+                            "type": "boolean"
+                          },
+                          "options": {
+                            "default": [],
+                            "maxItems": 30,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                },
+                                "label": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "label",
+                          "type",
+                          "required"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "criteria": {
+                      "minItems": 1,
+                      "maxItems": 20,
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "checkbox"
+                              },
+                              "fieldKey": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "fieldKey"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "number"
+                              },
+                              "fieldKey": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              },
+                              "operator": {
+                                "type": "string",
+                                "enum": [
+                                  "eq",
+                                  "ne",
+                                  "gt",
+                                  "gte",
+                                  "lt",
+                                  "lte"
+                                ]
+                              },
+                              "expected": {
+                                "type": "number",
+                                "minimum": -1000000000,
+                                "maximum": 1000000000
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "fieldKey",
+                              "operator",
+                              "expected"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "select"
+                              },
+                              "fieldKey": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              },
+                              "expected": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "fieldKey",
+                              "expected"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "test_results"
+                              },
+                              "metricKey": {
+                                "type": "string",
+                                "enum": [
+                                  "test.pass_rate",
+                                  "test.completion_rate",
+                                  "test.failed_count"
+                                ]
+                              },
+                              "testRunRole": {
+                                "type": "string",
+                                "enum": [
+                                  "required",
+                                  "informational"
+                                ]
+                              },
+                              "minimumPriority": {
+                                "type": "string",
+                                "enum": [
+                                  "low",
+                                  "medium",
+                                  "high",
+                                  "critical"
+                                ]
+                              },
+                              "operator": {
+                                "type": "string",
+                                "enum": [
+                                  "eq",
+                                  "ne",
+                                  "gt",
+                                  "gte",
+                                  "lt",
+                                  "lte"
+                                ]
+                              },
+                              "expected": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "metricKey",
+                              "testRunRole",
+                              "operator",
+                              "expected"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "fields",
+                    "criteria"
+                  ],
+                  "additionalProperties": false
+                },
                 "metricKey": {
                   "type": "string",
                   "enum": [
@@ -22266,7 +24359,8 @@
                     "accessibility.wcag22_aa_violations",
                     "accessibility.wcag22_aa_manual_review",
                     "performance.lighthouse_score",
-                    "accessibility.manual_review"
+                    "accessibility.manual_review",
+                    "gate.form_response"
                   ]
                 },
                 "metricVersion": {
@@ -22276,6 +24370,11 @@
                 "dimensions": {
                   "type": "object",
                   "properties": {
+                    "gateId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
                     "testRunRole": {
                       "type": "string",
                       "enum": [
@@ -22490,6 +24589,239 @@
                   "maxLength": 50,
                   "pattern": "^[a-z][a-z0-9_.-]{1,49}$"
                 },
+                "form": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "description": {
+                      "default": "",
+                      "type": "string",
+                      "maxLength": 2000
+                    },
+                    "fields": {
+                      "maxItems": 30,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                          },
+                          "label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "description": {
+                            "default": "",
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "textarea",
+                              "number",
+                              "checkbox",
+                              "select",
+                              "url",
+                              "files"
+                            ]
+                          },
+                          "required": {
+                            "type": "boolean"
+                          },
+                          "options": {
+                            "default": [],
+                            "maxItems": 30,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                },
+                                "label": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "label",
+                          "type",
+                          "required"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "criteria": {
+                      "minItems": 1,
+                      "maxItems": 20,
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "checkbox"
+                              },
+                              "fieldKey": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "fieldKey"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "number"
+                              },
+                              "fieldKey": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              },
+                              "operator": {
+                                "type": "string",
+                                "enum": [
+                                  "eq",
+                                  "ne",
+                                  "gt",
+                                  "gte",
+                                  "lt",
+                                  "lte"
+                                ]
+                              },
+                              "expected": {
+                                "type": "number",
+                                "minimum": -1000000000,
+                                "maximum": 1000000000
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "fieldKey",
+                              "operator",
+                              "expected"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "select"
+                              },
+                              "fieldKey": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              },
+                              "expected": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "fieldKey",
+                              "expected"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "const": "test_results"
+                              },
+                              "metricKey": {
+                                "type": "string",
+                                "enum": [
+                                  "test.pass_rate",
+                                  "test.completion_rate",
+                                  "test.failed_count"
+                                ]
+                              },
+                              "testRunRole": {
+                                "type": "string",
+                                "enum": [
+                                  "required",
+                                  "informational"
+                                ]
+                              },
+                              "minimumPriority": {
+                                "type": "string",
+                                "enum": [
+                                  "low",
+                                  "medium",
+                                  "high",
+                                  "critical"
+                                ]
+                              },
+                              "operator": {
+                                "type": "string",
+                                "enum": [
+                                  "eq",
+                                  "ne",
+                                  "gt",
+                                  "gte",
+                                  "lt",
+                                  "lte"
+                                ]
+                              },
+                              "expected": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "metricKey",
+                              "testRunRole",
+                              "operator",
+                              "expected"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "fields",
+                    "criteria"
+                  ],
+                  "additionalProperties": false
+                },
                 "metricKey": {
                   "type": "string",
                   "enum": [
@@ -22499,7 +24831,8 @@
                     "accessibility.wcag22_aa_violations",
                     "accessibility.wcag22_aa_manual_review",
                     "performance.lighthouse_score",
-                    "accessibility.manual_review"
+                    "accessibility.manual_review",
+                    "gate.form_response"
                   ]
                 },
                 "metricVersion": {
@@ -22509,6 +24842,11 @@
                 "dimensions": {
                   "type": "object",
                   "properties": {
+                    "gateId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
                     "testRunRole": {
                       "type": "string",
                       "enum": [
@@ -23018,6 +25356,311 @@
                         "gateKey": {
                           "type": "string"
                         },
+                        "form": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 120
+                            },
+                            "description": {
+                              "default": "",
+                              "type": "string",
+                              "maxLength": 2000
+                            },
+                            "fields": {
+                              "maxItems": 30,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 120
+                                  },
+                                  "description": {
+                                    "default": "",
+                                    "type": "string",
+                                    "maxLength": 500
+                                  },
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "text",
+                                      "textarea",
+                                      "number",
+                                      "checkbox",
+                                      "select",
+                                      "url",
+                                      "files"
+                                    ]
+                                  },
+                                  "required": {
+                                    "type": "boolean"
+                                  },
+                                  "options": {
+                                    "default": [],
+                                    "maxItems": 30,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "key": {
+                                          "type": "string",
+                                          "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                        },
+                                        "label": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 120
+                                        }
+                                      },
+                                      "required": [
+                                        "key",
+                                        "label"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "label",
+                                  "type",
+                                  "required"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "criteria": {
+                              "minItems": 1,
+                              "maxItems": 20,
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "const": "checkbox"
+                                      },
+                                      "fieldKey": {
+                                        "type": "string",
+                                        "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "fieldKey"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "const": "number"
+                                      },
+                                      "fieldKey": {
+                                        "type": "string",
+                                        "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                      },
+                                      "operator": {
+                                        "type": "string",
+                                        "enum": [
+                                          "eq",
+                                          "ne",
+                                          "gt",
+                                          "gte",
+                                          "lt",
+                                          "lte"
+                                        ]
+                                      },
+                                      "expected": {
+                                        "type": "number",
+                                        "minimum": -1000000000,
+                                        "maximum": 1000000000
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "fieldKey",
+                                      "operator",
+                                      "expected"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "const": "select"
+                                      },
+                                      "fieldKey": {
+                                        "type": "string",
+                                        "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                      },
+                                      "expected": {
+                                        "type": "string",
+                                        "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "fieldKey",
+                                      "expected"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "const": "test_results"
+                                      },
+                                      "metricKey": {
+                                        "type": "string",
+                                        "enum": [
+                                          "test.pass_rate",
+                                          "test.completion_rate",
+                                          "test.failed_count"
+                                        ]
+                                      },
+                                      "testRunRole": {
+                                        "type": "string",
+                                        "enum": [
+                                          "required",
+                                          "informational"
+                                        ]
+                                      },
+                                      "minimumPriority": {
+                                        "type": "string",
+                                        "enum": [
+                                          "low",
+                                          "medium",
+                                          "high",
+                                          "critical"
+                                        ]
+                                      },
+                                      "operator": {
+                                        "type": "string",
+                                        "enum": [
+                                          "eq",
+                                          "ne",
+                                          "gt",
+                                          "gte",
+                                          "lt",
+                                          "lte"
+                                        ]
+                                      },
+                                      "expected": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1000000000
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "metricKey",
+                                      "testRunRole",
+                                      "operator",
+                                      "expected"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "fields",
+                            "criteria"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "criteria": {
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "maxLength": 80
+                              },
+                              "label": {
+                                "type": "string",
+                                "maxLength": 120
+                              },
+                              "result": {
+                                "type": "string",
+                                "enum": [
+                                  "passed",
+                                  "failed",
+                                  "warning",
+                                  "unknown"
+                                ]
+                              },
+                              "diagnostic": {
+                                "type": "string",
+                                "enum": [
+                                  "none",
+                                  "missing",
+                                  "incomplete",
+                                  "stale",
+                                  "untrusted"
+                                ]
+                              },
+                              "observationId": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "actual": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "maxLength": 4000
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "expected": {
+                                "type": "string",
+                                "maxLength": 120
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "label",
+                              "result",
+                              "diagnostic",
+                              "observationId",
+                              "actual",
+                              "expected"
+                            ]
+                          }
+                        },
                         "position": {
                           "type": "integer",
                           "minimum": 0,
@@ -23058,7 +25701,8 @@
                             "accessibility.wcag22_aa_violations",
                             "accessibility.wcag22_aa_manual_review",
                             "performance.lighthouse_score",
-                            "accessibility.manual_review"
+                            "accessibility.manual_review",
+                            "gate.form_response"
                           ]
                         },
                         "metricVersion": {
@@ -23067,6 +25711,11 @@
                         "dimensions": {
                           "type": "object",
                           "properties": {
+                            "gateId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
                             "testRunRole": {
                               "type": "string",
                               "enum": [
@@ -23580,6 +26229,311 @@
                       "gateKey": {
                         "type": "string"
                       },
+                      "form": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "description": {
+                            "default": "",
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "fields": {
+                            "maxItems": 30,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                },
+                                "label": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                },
+                                "description": {
+                                  "default": "",
+                                  "type": "string",
+                                  "maxLength": 500
+                                },
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "text",
+                                    "textarea",
+                                    "number",
+                                    "checkbox",
+                                    "select",
+                                    "url",
+                                    "files"
+                                  ]
+                                },
+                                "required": {
+                                  "type": "boolean"
+                                },
+                                "options": {
+                                  "default": [],
+                                  "maxItems": 30,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "key": {
+                                        "type": "string",
+                                        "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 120
+                                      }
+                                    },
+                                    "required": [
+                                      "key",
+                                      "label"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label",
+                                "type",
+                                "required"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "criteria": {
+                            "minItems": 1,
+                            "maxItems": 20,
+                            "type": "array",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "checkbox"
+                                    },
+                                    "fieldKey": {
+                                      "type": "string",
+                                      "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "fieldKey"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "number"
+                                    },
+                                    "fieldKey": {
+                                      "type": "string",
+                                      "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                    },
+                                    "operator": {
+                                      "type": "string",
+                                      "enum": [
+                                        "eq",
+                                        "ne",
+                                        "gt",
+                                        "gte",
+                                        "lt",
+                                        "lte"
+                                      ]
+                                    },
+                                    "expected": {
+                                      "type": "number",
+                                      "minimum": -1000000000,
+                                      "maximum": 1000000000
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "fieldKey",
+                                    "operator",
+                                    "expected"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "select"
+                                    },
+                                    "fieldKey": {
+                                      "type": "string",
+                                      "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                    },
+                                    "expected": {
+                                      "type": "string",
+                                      "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "fieldKey",
+                                    "expected"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "test_results"
+                                    },
+                                    "metricKey": {
+                                      "type": "string",
+                                      "enum": [
+                                        "test.pass_rate",
+                                        "test.completion_rate",
+                                        "test.failed_count"
+                                      ]
+                                    },
+                                    "testRunRole": {
+                                      "type": "string",
+                                      "enum": [
+                                        "required",
+                                        "informational"
+                                      ]
+                                    },
+                                    "minimumPriority": {
+                                      "type": "string",
+                                      "enum": [
+                                        "low",
+                                        "medium",
+                                        "high",
+                                        "critical"
+                                      ]
+                                    },
+                                    "operator": {
+                                      "type": "string",
+                                      "enum": [
+                                        "eq",
+                                        "ne",
+                                        "gt",
+                                        "gte",
+                                        "lt",
+                                        "lte"
+                                      ]
+                                    },
+                                    "expected": {
+                                      "type": "number",
+                                      "minimum": 0,
+                                      "maximum": 1000000000
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "metricKey",
+                                    "testRunRole",
+                                    "operator",
+                                    "expected"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "fields",
+                          "criteria"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "criteria": {
+                        "maxItems": 50,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string",
+                              "maxLength": 80
+                            },
+                            "label": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "result": {
+                              "type": "string",
+                              "enum": [
+                                "passed",
+                                "failed",
+                                "warning",
+                                "unknown"
+                              ]
+                            },
+                            "diagnostic": {
+                              "type": "string",
+                              "enum": [
+                                "none",
+                                "missing",
+                                "incomplete",
+                                "stale",
+                                "untrusted"
+                              ]
+                            },
+                            "observationId": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "actual": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 4000
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "expected": {
+                              "type": "string",
+                              "maxLength": 120
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "label",
+                            "result",
+                            "diagnostic",
+                            "observationId",
+                            "actual",
+                            "expected"
+                          ]
+                        }
+                      },
                       "position": {
                         "type": "integer",
                         "minimum": 0,
@@ -23620,7 +26574,8 @@
                           "accessibility.wcag22_aa_violations",
                           "accessibility.wcag22_aa_manual_review",
                           "performance.lighthouse_score",
-                          "accessibility.manual_review"
+                          "accessibility.manual_review",
+                          "gate.form_response"
                         ]
                       },
                       "metricVersion": {
@@ -23629,6 +26584,11 @@
                       "dimensions": {
                         "type": "object",
                         "properties": {
+                          "gateId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
                           "testRunRole": {
                             "type": "string",
                             "enum": [
@@ -24142,6 +27102,311 @@
                     "gateKey": {
                       "type": "string"
                     },
+                    "form": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "description": {
+                          "default": "",
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "fields": {
+                          "maxItems": 30,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                              },
+                              "label": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 120
+                              },
+                              "description": {
+                                "default": "",
+                                "type": "string",
+                                "maxLength": 500
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "textarea",
+                                  "number",
+                                  "checkbox",
+                                  "select",
+                                  "url",
+                                  "files"
+                                ]
+                              },
+                              "required": {
+                                "type": "boolean"
+                              },
+                              "options": {
+                                "default": [],
+                                "maxItems": 30,
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "key": {
+                                      "type": "string",
+                                      "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 120
+                                    }
+                                  },
+                                  "required": [
+                                    "key",
+                                    "label"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "label",
+                              "type",
+                              "required"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "criteria": {
+                          "minItems": 1,
+                          "maxItems": 20,
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "checkbox"
+                                  },
+                                  "fieldKey": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "fieldKey"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "number"
+                                  },
+                                  "fieldKey": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                  },
+                                  "operator": {
+                                    "type": "string",
+                                    "enum": [
+                                      "eq",
+                                      "ne",
+                                      "gt",
+                                      "gte",
+                                      "lt",
+                                      "lte"
+                                    ]
+                                  },
+                                  "expected": {
+                                    "type": "number",
+                                    "minimum": -1000000000,
+                                    "maximum": 1000000000
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "fieldKey",
+                                  "operator",
+                                  "expected"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "select"
+                                  },
+                                  "fieldKey": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                  },
+                                  "expected": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-z0-9_]{0,49}$"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "fieldKey",
+                                  "expected"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "test_results"
+                                  },
+                                  "metricKey": {
+                                    "type": "string",
+                                    "enum": [
+                                      "test.pass_rate",
+                                      "test.completion_rate",
+                                      "test.failed_count"
+                                    ]
+                                  },
+                                  "testRunRole": {
+                                    "type": "string",
+                                    "enum": [
+                                      "required",
+                                      "informational"
+                                    ]
+                                  },
+                                  "minimumPriority": {
+                                    "type": "string",
+                                    "enum": [
+                                      "low",
+                                      "medium",
+                                      "high",
+                                      "critical"
+                                    ]
+                                  },
+                                  "operator": {
+                                    "type": "string",
+                                    "enum": [
+                                      "eq",
+                                      "ne",
+                                      "gt",
+                                      "gte",
+                                      "lt",
+                                      "lte"
+                                    ]
+                                  },
+                                  "expected": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1000000000
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "metricKey",
+                                  "testRunRole",
+                                  "operator",
+                                  "expected"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "fields",
+                        "criteria"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "criteria": {
+                      "maxItems": 50,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          "label": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "result": {
+                            "type": "string",
+                            "enum": [
+                              "passed",
+                              "failed",
+                              "warning",
+                              "unknown"
+                            ]
+                          },
+                          "diagnostic": {
+                            "type": "string",
+                            "enum": [
+                              "none",
+                              "missing",
+                              "incomplete",
+                              "stale",
+                              "untrusted"
+                            ]
+                          },
+                          "observationId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "actual": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 4000
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "expected": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "label",
+                          "result",
+                          "diagnostic",
+                          "observationId",
+                          "actual",
+                          "expected"
+                        ]
+                      }
+                    },
                     "position": {
                       "type": "integer",
                       "minimum": 0,
@@ -24182,7 +27447,8 @@
                         "accessibility.wcag22_aa_violations",
                         "accessibility.wcag22_aa_manual_review",
                         "performance.lighthouse_score",
-                        "accessibility.manual_review"
+                        "accessibility.manual_review",
+                        "gate.form_response"
                       ]
                     },
                     "metricVersion": {
@@ -24191,6 +27457,11 @@
                     "dimensions": {
                       "type": "object",
                       "properties": {
+                        "gateId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
                         "testRunRole": {
                           "type": "string",
                           "enum": [

@@ -2,6 +2,7 @@ import type {
   EvidenceIngestRequest,
   EvidenceIngestResponse,
   EvidenceMetricKey,
+  GateFormResponseDetails,
 } from '@caselog/schemas';
 
 export type EvidenceProducerIdentity = {
@@ -16,9 +17,10 @@ export type EvidenceIngestionInput = {
   producer: EvidenceProducerIdentity;
   idempotencyKey: string;
   requestHash: string;
-  request: Omit<EvidenceIngestRequest, 'expiresAt' | 'metricKey'> & {
+  request: Omit<EvidenceIngestRequest, 'expiresAt' | 'metricKey' | 'details'> & {
     expiresAt: string | null;
     metricKey: EvidenceMetricKey;
+    details: EvidenceIngestRequest['details'] | GateFormResponseDetails;
   };
   manualReview?: { expectedObservationId: string | null; actorId: string };
 };

@@ -6,7 +6,12 @@ import {
   type ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { QUALITY_METRIC_DEFINITIONS, type TestCasePriority } from '@caselog/schemas';
+import {
+  QUALITY_METRIC_DEFINITIONS,
+  gateFormDefinitionSchema,
+  type GateFormDefinition,
+  type TestCasePriority,
+} from '@caselog/schemas';
 import {
   type CreateReadinessPolicyRequest,
   type CreateReadinessPolicyVersionRequest,
@@ -17,6 +22,7 @@ import {
 } from '@caselog/schemas/readiness';
 
 export type PolicyGateForm = FormGroup<{
+  form: FormControl<GateFormDefinition | null>;
   accessibilityStandard: FormControl<string>;
   keyboardNavigation: FormControl<boolean>;
   screenReader: FormControl<boolean>;
@@ -82,6 +88,10 @@ const compatibleExpectedValue: ValidatorFn = (control: AbstractControl) => {
 const validMetricScope: ValidatorFn = (control) => {
   const metric = control.get('metricKey')?.value;
   if (typeof metric !== 'string') return null;
+  if (metric === 'gate.form_response')
+    return gateFormDefinitionSchema.safeParse(control.get('form')?.value).success
+      ? null
+      : { invalidGateForm: true };
   if (metric.startsWith('test.')) return null;
   if (metric === 'accessibility.manual_review')
     return control.get('accessibilityStandard')?.value?.trim() &&
@@ -126,9 +136,29 @@ const uniqueGateKeys: ValidatorFn = (control: AbstractControl) => {
   return new Set(keys).size === keys.length ? null : { duplicateGateKeys: true };
 };
 
+export function defaultGateForm(): GateFormDefinition {
+  return {
+    name: '',
+    description: '',
+    fields: [
+      {
+        key: 'approval',
+        label: '',
+        description: '',
+        type: 'checkbox',
+        required: true,
+        options: [],
+      },
+    ],
+    criteria: [{ type: 'checkbox', fieldKey: 'approval' }],
+  };
+}
 export function createPolicyGateForm(gate?: ReadinessGateInput): PolicyGateForm {
   return new FormGroup(
     {
+      form: new FormControl<GateFormDefinition | null>(
+        gate ? (gate.form ?? null) : defaultGateForm(),
+      ),
       accessibilityStandard: new FormControl(
         gate?.dimensions.accessibilityStandard ?? 'WCAG 2.2 AA',
         { nonNullable: true, validators: [Validators.maxLength(120)] },
@@ -170,7 +200,7 @@ export function createPolicyGateForm(gate?: ReadinessGateInput): PolicyGateForm 
         nonNullable: true,
         validators: [Validators.maxLength(120)],
       }),
-      key: new FormControl(gate?.key ?? '', {
+      key: new FormControl(gate?.key ?? 'gate-1', {
         nonNullable: true,
         validators: [
           trimmedRequired,
@@ -178,17 +208,17 @@ export function createPolicyGateForm(gate?: ReadinessGateInput): PolicyGateForm 
           Validators.pattern(/^\s*[a-z][a-z0-9_.-]{1,49}\s*$/),
         ],
       }),
-      metricKey: new FormControl(gate?.metricKey ?? 'test.pass_rate', { nonNullable: true }),
+      metricKey: new FormControl(gate?.metricKey ?? 'gate.form_response', { nonNullable: true }),
       testRunRole: new FormControl(gate?.dimensions.testRunRole ?? 'required', {
         nonNullable: true,
       }),
-      operator: new FormControl(gate?.operator ?? 'gte', { nonNullable: true }),
+      operator: new FormControl(gate?.operator ?? 'eq', { nonNullable: true }),
       expectedValue: new FormControl<string | number>(
         gate
           ? gate.expected.type === 'percentage'
             ? gate.expected.value
             : String(gate.expected.value)
-          : '98',
+          : '1',
         { nonNullable: true, validators: [expectedRequired] },
       ),
       impact: new FormControl(gate?.impact ?? 'blocking', { nonNullable: true }),
@@ -236,6 +266,20 @@ export function createPolicyVersionCreateForm(
 
 export function toReadinessGateInput(form: PolicyGateForm): ReadinessGateInput {
   const value = form.getRawValue();
+  if (value.metricKey === 'gate.form_response')
+    return readinessGateInputSchema.parse({
+      key: value.key.trim(),
+      form: value.form,
+      metricKey: 'gate.form_response',
+      metricVersion: '1.0.0',
+      dimensions: { testRunRole: 'required' },
+      operator: 'eq',
+      expected: { type: 'integer', value: 1 },
+      impact: value.impact,
+      missingEvidenceBehavior: 'block',
+      staleEvidenceBehavior: 'block',
+      minimumTrust: 'authenticated',
+    });
   return readinessGateInputSchema.parse({
     key: value.key.trim(),
     metricKey: value.metricKey,
