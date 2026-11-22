@@ -607,6 +607,7 @@
     "incomplete": "Incomplete",
     "checked": "Checked",
     "requiredCompleted": "Required fields completed",
+    "filesHint": "PDF, JSON, HTML (.html or .htm), or TXT. Up to 100 MB per file, 10 files per field, and 30 files per form.",
     "filesInvalid": "Choose non-empty PDF, HTML, JSON or text files, at most 100 MB each. Attach up to 10 files per field and 30 per form.",
     "recordedAnswers": "Recorded answers"
   }
