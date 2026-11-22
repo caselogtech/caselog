@@ -84,6 +84,8 @@
     "created": "Created",
     "candidateEyebrow": "Immutable build identity",
     "candidateTitle": "Release candidates",
+    "viewCandidate": "View candidate",
+    "viewCandidateLabel": "View candidate {{label}}",
     "noCandidatesTitle": "No candidates registered",
     "noCandidatesDescription": "Register a build or source revision before evaluating readiness.",
     "sourceRevision": "Source revision",

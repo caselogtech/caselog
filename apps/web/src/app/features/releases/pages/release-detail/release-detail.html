@@ -170,7 +170,28 @@
                     {{ candidate.createdAt | date: 'medium' }}
                   </time>
                 </div>
-                <span class="candidate-sequence mono">#{{ candidate.sequence }}</span>
+                <div class="candidate-actions">
+                  <span class="candidate-sequence mono">#{{ candidate.sequence }}</span>
+                  <a
+                    appButton="secondary"
+                    href="/{{ workspaceSlug }}/{{ projectSlug }}/releases/{{ releaseId }}/candidates/{{ candidate.id }}"
+                    [routerLink]="[
+                      '/',
+                      workspaceSlug,
+                      projectSlug,
+                      'releases',
+                      releaseId,
+                      'candidates',
+                      candidate.id
+                    ]"
+                    [attr.aria-label]="
+                      'releases.detail.viewCandidateLabel' | transloco: { label: candidate.label }
+                    "
+                  >
+                    {{ 'releases.detail.viewCandidate' | transloco }}
+                    <span aria-hidden="true">→</span>
+                  </a>
+                </div>
               </header>
 
               <dl class="candidate-identity">

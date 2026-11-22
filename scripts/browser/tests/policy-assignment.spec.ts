@@ -61,7 +61,18 @@ test('assign a published policy after visiting its catalogue and return to the c
   await page.getByRole('link', { name: 'Releases', exact: true }).click();
   await page.getByRole('link', { name: release.name, exact: true }).click();
   await expect(page.getByRole('heading', { name: release.name, exact: true })).toBeVisible();
-  await page.getByRole('link', { name: candidate.label, exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const viewCandidate = page.getByRole('link', {
+    name: `View candidate ${candidate.label}`,
+    exact: true,
+  });
+  await expect(viewCandidate).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await viewCandidate.click();
+  await expect(page).toHaveURL(`/acme/checkout/releases/${release.id}/candidates/${candidate.id}`);
+  await page.setViewportSize({ width: 1280, height: 900 });
 
   const assignment = page.locator('app-policy-assignment');
   await expect(
