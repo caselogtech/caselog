@@ -33,8 +33,8 @@
     "failed": "Evaluation failed",
     "pendingTitle": "Evaluation is pending",
     "pendingDescription": "Caselog is evaluating the assigned policy. No decision is synthesized while processing is incomplete.",
-    "staleTitle": "This decision is stale",
-    "staleDescription": "Newer evidence exists than the decision shown below. Request another evaluation before relying on it.",
+    "staleTitle": "Readiness is updating",
+    "staleDescription": "New evidence has been saved. Caselog evaluates it automatically and refreshes this page. The decision below still refers to earlier evidence.",
     "failedTitle": "The latest evaluation failed",
     "failureRetriesExhausted": "Automatic evaluation exhausted its retries. You can safely request another evaluation.",
     "failureUnknown": "The evaluation could not complete. Request another evaluation or inspect the service diagnostics."

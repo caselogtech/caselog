@@ -220,6 +220,10 @@ test('author a custom gate, combine native tests with manual answers, attach rep
   await form.getByRole('button', { name: 'Save response', exact: true }).click();
   await expect.poll(status, { timeout: 20_000 }).toBe('ready');
   const decision = (await (await request.get(readinessUrl, { headers: auth })).json()).decision;
+  await expect(page.locator('app-readiness-summary .primary-card')).toContainText('Ready');
+  await expect(page.locator('app-readiness-summary')).toContainText('Current');
+  await expect(page.locator('app-decision-history')).toContainText(decision.id);
+  await expect(page.getByText('Readiness is updating', { exact: true })).toHaveCount(0);
   expect(
     decision.gates[0].criteria.every(
       (criterion: { result: string }) => criterion.result === 'passed',

@@ -1,6 +1,13 @@
 import { CandidateGateForms } from '../../components/candidate-gate-forms/candidate-gate-forms';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  untracked,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import type { CandidateReadinessResponse, ReleaseState } from '@caselog/schemas';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -169,6 +176,20 @@ export class CandidateReadiness {
       ]);
     },
   }));
+
+  constructor() {
+    let lastDecisionId: string | null | undefined;
+    effect(() => {
+      if (!this.current.isSuccess()) return;
+      const decisionId = this.current.data()?.decision?.id ?? null;
+      const changed = lastDecisionId !== undefined && decisionId !== lastDecisionId;
+      lastDecisionId = decisionId;
+      if (!changed) return;
+      untracked(() => {
+        void Promise.all([this.evidence.refetch(), this.invalidateDecisionData()]);
+      });
+    });
+  }
 
   lifecycle(state: ReleaseState) {
     return releasePresentation(state);

@@ -159,7 +159,7 @@
             <p>{{ 'readiness.projection.pendingDescription' | transloco }}</p>
           </app-callout>
         } @else if (readinessModel.state === 'stale') {
-          <app-callout tone="warning" [title]="'readiness.projection.staleTitle' | transloco">
+          <app-callout tone="warning" liveRole="status" [title]="'readiness.projection.staleTitle' | transloco">
             <p>{{ 'readiness.projection.staleDescription' | transloco }}</p>
           </app-callout>
         } @else if (readinessModel.state === 'failed') {

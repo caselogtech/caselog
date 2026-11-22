@@ -124,6 +124,62 @@ describe('CandidateReadiness', () => {
     }
   });
 
+  it('refreshes evidence and history when a saved review is evaluated in the background', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const fixture = TestBed.createComponent(CandidateReadiness);
+    try {
+      fixture.detectChanges();
+      await vi.waitFor(() => expect(fixture.componentInstance.history.isSuccess()).toBe(true));
+      const previousDecision = readiness.decision;
+      if (!previousDecision) throw new Error('Missing initial test decision');
+      const revision = readiness.currentEvidenceRevision + 1;
+      readinessApi.current.mockResolvedValue({
+        ...readiness,
+        state: 'stale',
+        targetEvidenceRevision: revision,
+        currentEvidenceRevision: revision,
+      });
+
+      await fixture.componentInstance.accessibilitySaved();
+      await vi.waitFor(() => expect(fixture.componentInstance.current.data()?.state).toBe('stale'));
+      fixture.detectChanges();
+      expect(fixture.componentInstance.current.data()?.state).toBe('stale');
+      expect(fixture.componentInstance.current.data()?.decision?.id).toBe(previousDecision.id);
+      expect(fixture.nativeElement.textContent).toContain('Readiness is updating');
+      expect(fixture.nativeElement.textContent).toContain('New evidence has been saved.');
+
+      const nextDecision = {
+        ...previousDecision,
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        evidenceRevision: revision,
+      };
+      const nextObservation = { ...evidence.items[0], id: nextDecision.id };
+      readinessApi.current.mockResolvedValue({
+        ...readiness,
+        currentEvidenceRevision: revision,
+        targetEvidenceRevision: revision,
+        decision: nextDecision,
+      });
+      readinessApi.history.mockResolvedValue({ ...history, items: [nextDecision] });
+      readinessApi.evidence.mockResolvedValue({ ...evidence, items: [nextObservation] });
+      await vi.advanceTimersByTimeAsync(5_000);
+      await vi.waitFor(() =>
+        expect(fixture.componentInstance.current.data()?.decision?.id).toBe(nextDecision.id),
+      );
+      fixture.detectChanges();
+      await vi.waitFor(() =>
+        expect(fixture.componentInstance.decisions()[0]?.id).toBe(nextDecision.id),
+      );
+      expect(fixture.componentInstance.observations()[0]?.id).toBe(nextObservation.id);
+      expect(readinessApi.evaluate).not.toHaveBeenCalled();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).not.toContain('Readiness is updating');
+    } finally {
+      fixture.destroy();
+      vi.useRealTimers();
+    }
+  });
+
   it('offers published policy assignment when the candidate has no policy', async () => {
     readinessApi.current.mockRejectedValueOnce(noPolicyError());
     const fixture = TestBed.createComponent(CandidateReadiness);
